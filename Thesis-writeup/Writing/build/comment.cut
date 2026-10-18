@@ -1,9 +1,8 @@
-
-where
-$f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$
-is evaluated at $(\tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau})$, and
-$f^{\mathrm n}_{\mathrm{base}}$, $f^{\mathrm n}_{\mathrm{aug}}$ and
-$g^{\mathrm n}_{\mathrm{aug}}$ take the arguments of \eqref{eq:aug_loss}.
-We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, as
-in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
-\kw{so} the network is trained using the gradient of its projected output.
+\subsection{OBC and experiment details}
+\begin{itemize}
+\item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension
+\item Derive $J^+\Delta^*$ and list the measured singular-direction contributions to the predicted parameter bias
+\item List dataset identifiers, split membership, hyperparameters, seed, and exact metric definitions for every reported arm
+\item Figure (existing, optional): place \texttt{controller-chain-v1} here only if the controller reconstruction cannot be audited adequately in prose and equations
+\end{itemize}
+\todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}

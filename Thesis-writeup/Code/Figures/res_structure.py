@@ -1,13 +1,14 @@
 """Table I (Aspect 2, with the black box of Aspect 4): NRMS_e per axis in % (the primary metric,
 05_setup eq:setup_rms) and, in a second table, the RMS in m, each the mean over the records of one
 split and record group: with and without the training multisine reported separately (D-256), on
-test over I1 to I6 only. One table per split (D-269); the validation table decides the design
-choices and is also written as `res_structure.tex`, the name the paper inputs.
+test over I1 to I6 only. One table per split (D-269).
 
 Reads Results/res_structure.csv (Code/Evaluation/make_results.py), writes
-Writing/tables/res_structure_<split>.tex (NRMS_e), res_structure_<split>_m.tex (m) and
-res_structure.tex (= validation, NRMS_e). Rows from a run that has not finished are marked with a
-dagger and its label is stated below the table.
+  res_structure.tex             MAIN TEXT (result B, Dirk 2026-10-18): test records I1 to I6, only the
+                                baseline at the true parameters, the final model, the black box, the floor
+  res_structure_<split>.tex     APPENDIX: every model, NRMS_e (the validation table decides the choices)
+  res_structure_<split>_m.tex   the same in metres
+Rows from a run that has not finished are marked with a dagger and its label is stated below the table.
 """
 import csv
 
@@ -16,7 +17,8 @@ import numpy as np
 from _fig_common import RESULTS_DIR, nrms_pct, preliminary, save_table
 
 STEM = "res_structure"
-MAIN_SPLIT = "val"
+MAIN_SPLIT = "test"
+MAIN_LABELS = ("Baseline, true parameters", "Final model (OBC), detuned start", "Black box", "Noise floor")
 SPLIT_NAME = {"train": "training", "val": "validation", "test": "test (I1 to I6)", "twins": "multisine twins"}
 SHORT = {"Baseline, true parameters": r"Baseline, true $\theta$",
          "Baseline, detuned start": r"Baseline, detuned $\theta$",
@@ -29,6 +31,7 @@ SHORT = {"Baseline, true parameters": r"Baseline, true $\theta$",
          "PS start, $n_a=8$": r"PS init., $n_a{=}8$",
          "PS start, $n_a=2$, detuned start": r"PS init., detuned $\theta$",
          "Final model (OBC), detuned start": r"Augmented (OBC), detuned $\theta$",
+         "Noise floor": "Noise floor",
          "Black box": "Black-box model"}
 AX = ("X1", "X2", "Y")
 AXTEX = {"X1": "$X_1$", "X2": "$X_2$", "Y": "$Y$"}
@@ -39,7 +42,7 @@ def sci(x):
     return r"$%.2f\times10^{%d}$" % (x / 10 ** e, e)
 
 
-def table(rows, metric):
+def table(rows, metric, seps=("Black box", "Noise floor", "Final model (OBC), detuned start")):
     groups = list(dict.fromkeys(r["group"] for r in rows))
     labels = list(dict.fromkeys(r["label"] for r in rows))
     val = {(r["label"], r["group"]): r for r in rows}
@@ -50,7 +53,7 @@ def table(rows, metric):
              (r"$\mathrm{NRMS}_e$ (\%)" if metric == "nrms_e" else "RMS (m)") + " & "
              + " & ".join(AXTEX[a] for _ in groups for a in AX) + r"\\", r"\midrule"]
     for lbl in labels:
-        if lbl in ("Black box", "Noise floor", "Final model (OBC), detuned start") and not lines[-1].endswith(r"\midrule"):
+        if lbl in seps and not lines[-1].endswith(r"\midrule"):
             lines.append(r"\midrule")
         any_row = next(val[(lbl, g)] for g in groups if (lbl, g) in val)
         dag = r"$^\dagger$" if any_row["status"].startswith("preliminary") else ""
@@ -81,7 +84,8 @@ def main():
         save_table("%% %s records\n" % SPLIT_NAME.get(split, split) + table(sub, "nrms_e"), "%s_%s" % (STEM, split))
         save_table("%% %s records\n" % SPLIT_NAME.get(split, split) + table(sub, "rms"), "%s_%s_m" % (STEM, split))
         if split == MAIN_SPLIT:
-            save_table("%% %s records\n" % SPLIT_NAME[split] + table(sub, "nrms_e"), STEM)
+            main_rows = [r for r in sub if r["label"] in MAIN_LABELS]
+            save_table("%% main text: %s records\n" % SPLIT_NAME[split] + table(main_rows, "nrms_e", seps=("Noise floor",)), STEM)
 
 
 if __name__ == "__main__":

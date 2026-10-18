@@ -340,8 +340,7 @@ The polish is only kept if its validation error is lower.
 error measured before rebuilding $\Phi_\Gamma$.
 The final runs will use the error measured after the rebuild.}
 
-The construction makes the estimate of $\beta$ unique to first order.
-This does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
+The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
 That depends on whether what the baseline misses on the tuples is itself
 orthogonal to the stacked Jacobian:
 \begin{equation}
@@ -377,8 +376,10 @@ We obtain it by minimising the squared one-step error.
 The estimate equals $\beta^\star$ if and only if
 $\Phi^\top\Xi=0$, requiring $\Xi$ to be orthogonal to the
 columns of $\Phi$ on the tuples~\cite[Condition~4, Remark~5]{gyorok2026obc}.
-This holds for the one-step least-squares fit at $\bar x=0$, not for
-minimising the closed-loop loss \eqref{eq:aug_loss}.
+This is a first-order result for the one-step least-squares
+problem on the fixed reference slice $\bar x=0$; it does not
+predict the parameter bias from minimising the closed-loop
+loss \eqref{eq:aug_loss} with active added states.
 \\
 We measure orthogonality using the normalised inner product,
 with the physical state normalised using \eqref{eq:aug_norm}:

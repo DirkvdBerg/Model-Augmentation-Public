@@ -554,32 +554,42 @@ from \eqref{eq:aug_cl_step}.
 We use $\hat y^{\mathrm n,0}_k$ as the model output
 and set the controller state $x^c$ to zero at the 
 start of each record (see Section~\ref{sec:aug_loop}).
-\todo{Missing: initial state of \eqref{eq:aug_enc_sim} per record (D-251 open).
-Candidate: the measured positions with zero velocity at the record start
-(basis: the records start at rest, to be checked in the data).}
+For our closed-loop simulation, each record starts from the measured
+positions in generalised coordinates, $q=P^{-\top}y$, with zero
+velocities, zero added states and $x^c=0$.
+\todo{Check what Hoekstra et al.\ use as the initial state of the baseline
+simulation that generates the encoder-fitting data (2026 Sec.~5.4.2,
+encoder paper Sec.~3.2, and their public code), and whether our records
+start at rest, which the zero velocities assume.}
 The physical rows of the encoder are then fitted to the simulated
-states~\cite[Eq.~(30)]{hoekstra2026lfr}:
+states by least squares~\cite[Eq.~(33)]{hoekstra2026encoder}:
 \begin{equation}
- \theta^{b,0}_{\mathrm{enc}}\in\arg\min_{\theta^b_{\mathrm{enc}}}
+ \bigl(W^{b,0},b^{b,0}\bigr)\in\arg\min_{W^b,\,b}
  \frac{1}{|\mathcal D|}\sum_{\tau\in\mathcal D}
- \bigl\|\psi_b(\theta^b_{\mathrm{enc}},\chi^{0}_\tau)-\tilde x^{\mathrm n,0}_\tau\bigr\|_2^2,
+ \bigl\|W^b\chi^{0}_\tau+b-\tilde x^{\mathrm n,0}_\tau\bigr\|_2^2,
  \label{eq:aug_enc_fit}
 \end{equation}
-where $\theta^b_{\mathrm{enc}}$ consists of $W^b$,
-the hidden-layer parameters of $\tilde\psi$ and the physical
-rows of its output layer.
-These parameters are fitted starting from the weights drawn from
-$\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input
-size of the layer.
-The fitted values $\theta^{b,0}_{\mathrm{enc}}$ are used
-to start training.
+where $b\in\R^6$ is an intercept.
+Hoekstra et al.\ use this linear fit for LTI baselines and fit a
+neural network for nonlinear baselines~\cite[Eqs.~(33), (35)]{hoekstra2026encoder}.
+We use the linear fit as a linear restriction of their data-based
+initialisation, and learn the nonlinear correction $\tilde\psi$ during
+training.
+The affine fit is computed by a single numerical-rank-truncated
+SVD solve in centred and standardised regressors, without
+gradient-based pre-training.
+The intercept $b^{b,0}$ is placed in the output bias of the physical rows
+of $\tilde\psi$, whose output weights start at zero, so that
+$\psi_b=W^{b,0}\chi_\tau+b^{b,0}$ at the start.
+The hidden layers of $\tilde\psi$ are drawn from
+$\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input size of the layer.
+We write $\theta^{b,0}_{\mathrm{enc}}$ for this start of
+$\theta^b_{\mathrm{enc}}$, which consists of $W^b$, the hidden layers of
+$\tilde\psi$ and its physical output rows, and use it to start training.
 $\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
 using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
-$\mathcal D$ is the set of samples $\tau$ in the training
-records for which a complete window is available.
-\revnote{Final runs: $\mathcal D$ holds every 10th $\tau$, the training
-stride (Table~\ref{tab:hyper}). Proposed: ``$\mathcal D$ is the set of window
-ends $\tau$ at the training stride of 10 samples.'' The rest keeps $\tau$.}
+$\mathcal D$ is the set of window ends $\tau$ at the training stride of
+10 samples.
 We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the 
 recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.
 The fitting loss in \eqref{eq:aug_enc_fit} and $\theta^{b,0}_{\mathrm{enc}}$
@@ -589,27 +599,6 @@ $\theta^b_{\mathrm{enc}}$ is trained in combination with
 $\theta^a_{\mathrm{enc}}$, the network parameters $\theta_{\mathrm{aug}}$ 
 and the baseline parameters $\theta_{\mathrm{base}}$, 
 which the encoder paper keeps fixed~\cite[footnote~1]{hoekstra2026encoder}.
-\todo{Fix before the final run (\texttt{FINAL-RUN-FIXES.md} item~1): $W^b$ is built from the nominal parameters, which equal those of the simulated truth, while $\theta_{\mathrm{base}}$ starts detuned. The final runs build $W^b$ at the start $\theta^0_{\mathrm{base}}$; the text then states that.}
-\revnote{The current results build $W^b$ from the true parameters of the
-simulated system, while $\theta_{\mathrm{base}}$ starts detuned. The final
-runs will simulate the baseline at the start $\theta^0_{\mathrm{base}}$ as
-described here.}
-\revnote{The current results initialise only $W^b$, with the model-based
-reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
-baseline linearised at rest at $Y=0$, and start
-the whole output layer of $\tilde\psi$ at zero. The final runs will fit the
-physical rows as described here (D-251).}
-\revnote{Final runs (D-271, 2026-10-17), replaces the gradient fit from
-$\mathcal U(-1/\sqrt m,1/\sqrt m)$ above: $W^b$ and an intercept are the
-least-squares map of~\cite[Eq.~(33)]{hoekstra2026encoder} on the windows of
-\eqref{eq:aug_enc_sim}, a linear restriction of the data-based
-initialisation (our adaptation: the paper proposes Eq.~(33) for LTI baselines
-and Eq.~(35) for nonlinear ones). The physical output rows of $\tilde\psi$
-start with zero weights and a bias that carries the intercept; the hidden
-layers keep their random draw; no gradient fit before training. Reason: 20
-Adam epochs from the random start stopped at a state error of
-$1.5\times10^{-1}$ against $2.1\times10^{-8}$ for least squares (normalised
-states), and the PS opening fell back in every run with that start.}
 
 
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
@@ -927,9 +916,6 @@ reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
 baseline linearised at rest at $Y=0$, and the whole output layer of
 $\tilde\psi$ at zero. The final runs will start the physical encoder rows from
 $\theta^{b,0}_{\mathrm{enc}}$ of \eqref{eq:aug_enc_fit} as described here.}
-\revnote{Final runs (D-271): $\theta^{b,0}_{\mathrm{enc}}$ is the
-least-squares start of Section~\ref{sec:aug_encoder}, so the physical rows of
-$W_L$ of $\tilde\psi$ are zero but its physical bias carries the intercept.}
 \revnote{The current results start with the whole output
 layer of $\phi_{\mathrm{aug}}$ at zero, so $g_{\mathrm{aug}}=0$ and the added
 states are zero after the first step. The final runs will use live

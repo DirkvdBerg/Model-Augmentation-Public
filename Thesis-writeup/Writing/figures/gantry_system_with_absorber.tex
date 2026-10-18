@@ -177,11 +177,13 @@
     \draw[->] (\s*\xM,\y+\Mw/2+30) -- (\s*\xM,\y+\Mw/2);
     \node[anchor=south] at (\s*\xM,\y+\Mw/2+31) {$F_{X\i}$};
 
-    % measured position X_i (red)
-    \pgfmathsetmacro\xr{\s*(\xM+\Mw/2+23.5)}  % clear of the wall hatching
-    \draw[red] (\xr,\y+4.5) -- (\xr,\y-4.5)  (\xr,\y) -- (\xr+\s*5,\y);
-    \draw[red,->] (\xr+\s*5,\y) -- (\xr+\s*5,\y-26);
-    \node[red, anchor=north] at (\xr+\s*5,\y-27) {$X_\i$};
+    % measured position X_i (red), drawn from the carriage so that it does
+    % not start at the fixed world (feedback Js24, 2026-10-18); was a tick
+    % and arrow outside the wall hatching
+    \pgfmathsetmacro\xr{\s*(\xM+\Mw/2-1.5)}   % outer edge of the carriage,
+                                              % clear of the k_b, c_b labels
+    \draw[red,->] (\xr,\y-\Mw/2) -- (\xr,\y-\Mw/2-22);
+    \node[red, anchor=north] at (\xr,\y-\Mw/2-23) {$X_\i$};
   }
 
   % ===================== inertial frame (top view) =====================

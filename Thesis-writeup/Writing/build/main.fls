@@ -299,8 +299,14 @@ INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\epstopdf-pkg\eps
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\00miktex\epstopdf-sys.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\00miktex\epstopdf-sys.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\00miktex\epstopdf-sys.cfg
-OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\microtype\mt-ptm.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\microtype\mt-ptm.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\microtype\mt-ptm.cfg
@@ -437,11 +443,13 @@ INPUT .\sections\02_system_baseline.tex
 INPUT .\sections\02_system_baseline.tex
 INPUT .\sections\02_system_baseline.tex
 INPUT sections\02_system_baseline.tex
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr7t.tfm
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT figures\gantry_system_with_absorber.tex
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT .\figures\lfr_loop.tex
@@ -449,7 +457,6 @@ INPUT .\figures\lfr_loop.tex
 INPUT .\figures\lfr_loop.tex
 INPUT .\figures\lfr_loop.tex
 INPUT figures\lfr_loop.tex
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
 INPUT .\sections\03_augmentation.tex
 INPUT .\sections\03_augmentation.tex
 INPUT .\sections\03_augmentation.tex
@@ -460,12 +467,12 @@ INPUT .\figures\tex\augmentation_structure.tex
 INPUT .\figures\tex\augmentation_structure.tex
 INPUT .\figures\tex\augmentation_structure.tex
 INPUT figures\tex\augmentation_structure.tex
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\courier\pcrr7t.tfm
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\courier\pcrr7t.vf
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\courier\pcrr8r.tfm
 INPUT .\figures\closed_loop_same_reference.pdf
@@ -520,3 +527,179 @@ INPUT .\sections\06_results.tex
 INPUT .\sections\06_results.tex
 INPUT .\sections\06_results.tex
 INPUT sections\06_results.tex
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT .\tables\res_structure.tex
+INPUT .\tables\res_structure.tex
+INPUT .\tables\res_structure.tex
+INPUT .\tables\res_structure.tex
+INPUT tables\res_structure.tex
+INPUT .\figures\res_time_trace.pdf
+INPUT .\figures\res_time_trace.pdf
+INPUT .\figures\res_time_trace.pdf
+INPUT .\figures\res_time_trace.pdf
+INPUT .\figures\res_time_trace.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT .\tables\res_obc_combinations.tex
+INPUT .\tables\res_obc_combinations.tex
+INPUT .\tables\res_obc_combinations.tex
+INPUT .\tables\res_obc_combinations.tex
+INPUT tables\res_obc_combinations.tex
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT .\figures\res_generalisation.pdf
+INPUT .\figures\res_generalisation.pdf
+INPUT .\figures\res_generalisation.pdf
+INPUT .\figures\res_generalisation.pdf
+INPUT .\figures\res_generalisation.pdf
+INPUT .\sections\07_discussion.tex
+INPUT .\sections\07_discussion.tex
+INPUT .\sections\07_discussion.tex
+INPUT .\sections\07_discussion.tex
+INPUT sections\07_discussion.tex
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT .\sections\08_conclusion.tex
+INPUT .\sections\08_conclusion.tex
+INPUT .\sections\08_conclusion.tex
+INPUT .\sections\08_conclusion.tex
+INPUT sections\08_conclusion.tex
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmri7t.vf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmri8r.tfm
+INPUT .\sections\99_appendix.tex
+INPUT .\sections\99_appendix.tex
+INPUT .\sections\99_appendix.tex
+INPUT .\sections\99_appendix.tex
+INPUT sections\99_appendix.tex
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\tables\res_all_splits.tex
+INPUT .\tables\res_all_splits.tex
+INPUT .\tables\res_all_splits.tex
+INPUT .\tables\res_all_splits.tex
+INPUT tables\res_all_splits.tex
+INPUT .\figures\res_lpv_lti.pdf
+INPUT .\figures\res_lpv_lti.pdf
+INPUT .\figures\res_lpv_lti.pdf
+INPUT .\figures\res_lpv_lti.pdf
+INPUT .\figures\res_lpv_lti.pdf
+INPUT .\tables\res_structure_val.tex
+INPUT .\tables\res_structure_val.tex
+INPUT .\tables\res_structure_val.tex
+INPUT .\tables\res_structure_val.tex
+INPUT tables\res_structure_val.tex
+INPUT .\figures\res_ps_spectrum.pdf
+INPUT .\figures\res_ps_spectrum.pdf
+INPUT .\figures\res_ps_spectrum.pdf
+INPUT .\figures\res_ps_spectrum.pdf
+INPUT .\figures\res_ps_spectrum.pdf
+INPUT .\tables\res_obc_combinations_test.tex
+INPUT .\tables\res_obc_combinations_test.tex
+INPUT .\tables\res_obc_combinations_test.tex
+INPUT .\tables\res_obc_combinations_test.tex
+INPUT tables\res_obc_combinations_test.tex
+INPUT .\tables\res_obc_na0.tex
+INPUT .\tables\res_obc_na0.tex
+INPUT .\tables\res_obc_na0.tex
+INPUT .\tables\res_obc_na0.tex
+INPUT tables\res_obc_na0.tex
+INPUT .\tables\res_bb_selection.tex
+INPUT .\tables\res_bb_selection.tex
+INPUT .\tables\res_bb_selection.tex
+INPUT .\tables\res_bb_selection.tex
+INPUT tables\res_bb_selection.tex
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmb7t.vf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmb8r.tfm
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmbx10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmbx10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmbx12.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmbx12.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmex10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmex10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cmextra\cmex8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cmextra\cmex8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi5.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi5.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi6.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi6.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi7.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi7.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi9.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmi9.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmib10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmmib10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr12.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr12.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr5.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr5.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr6.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr6.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr7.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr7.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy5.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy5.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy6.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy6.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy7.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy7.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy8.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\symbols\msam10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\symbols\msam10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\symbols\msbm10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\symbols\msbm10.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\courier\ucrr8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\courier\ucrr8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmb8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmb8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmbi8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmbi8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmr8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmr8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmri8a.pfb
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\urw\times\utmri8a.pfb

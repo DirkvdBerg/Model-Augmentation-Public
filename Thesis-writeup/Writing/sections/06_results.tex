@@ -50,12 +50,6 @@
 \end{itemize}
 \end{wip}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{res_lpv_lti.pdf}
-  \caption{Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}
-  \label{fig:res_lpv_lti}
-\end{figure}
 \todo{The LPV-versus-frozen-LTI comparison is required by the plan but may not yet have a final matched result; run it or narrow Aspect 1 explicitly.}
 
 \subsection{Augmentation structure}
@@ -85,17 +79,10 @@
 
 \begin{table}[t]
   \centering
-  \caption{Simulation error RMS per axis, mean over test records I1 to I6.}
+  \caption{$\mathrm{NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine.}
   \label{tab:res_structure}
   \input{tables/res_structure}
 \end{table}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{res_ps_spectrum.pdf}
-  \caption{Amplitude spectral density of the $Y$ simulation error on test records I1 and I2. Shaded: multisine band. Dotted: absorber pole.}
-  \label{fig:res_ps_spectrum}
-\end{figure}
 
 \begin{figure}[t]
   \centering
@@ -117,7 +104,7 @@
 \item Criterion: OBC drifts less than the unconstrained arm at equal test RMS (Table~\ref{tab:res_obc})
 \item Not met: the parameters drift in both arms, OBC not less
 \item OBC keeps the learned term out of the parameter directions: overlap 0.12 to 0.13 against 0.91 to 0.99
-\item Cause: 59\,\% of the missing dynamics lies in the parameter directions
+\item The discrepancy overlaps substantially with the parameter-sensitivity space ($\rho(\Xi)=0.59$), consistent with a limit on parameter recovery
 \end{outline}
 \begin{wip}
 \begin{itemize}
@@ -138,16 +125,26 @@
 
 \begin{table}[t]
   \centering
-  \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start.}
+  \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned start.}
   \label{tab:res_obc}
   \input{tables/res_obc_combinations}
 \end{table}
-\revnote{Possibly drop the ``OBC pred.'' columns of Table~\ref{tab:res_obc}.
-The prediction of \eqref{eq:obc_recovery} holds for the one-step
-least-squares fit at $\bar x=0$, while training minimises the closed-loop
-loss with active added states, so a mismatch with the observed error does
-not test the theory. Alternative: keep them as an illustration of the
-mechanism, without an agreement claim (Dirk 2026-10-18, undecided).}
+\revnote{The ``OBC pred.'' columns are dropped (Dirk 2026-10-18). The
+first-order bias of \eqref{eq:obc_recovery} is 100 to 1300\,\% against
+observed errors of a few to 30\,\%: outside the range of the expansion, and
+it holds for the one-step least-squares fit at $\bar x=0$, not the
+closed-loop training with active added states. The truth overlap row keeps
+the argument why OBC cannot recover the true parameters; the text that
+compares predicted and observed $\delta_j$ (05\_setup, end of the metric
+paragraph) still needs to go.}
+\revnote{Request (2026-10-18): add a row ``difference between starts'' to
+Table~\ref{tab:res_obc}, the norm of $\delta_j$ from the detuned start minus
+$\delta_j$ from the correct start, per arm. Section~\ref{sec:intro} defines
+interpretability as a unique estimate, and this row tests uniqueness; the
+norm to the truth tests recovery. From
+Table~\ref{tab:app_obc_full} by hand (R1, R2 preliminary): 36.4\,\%
+unconstrained, 25.1\,\% OBC. To be computed by
+\texttt{Code/Figures/res\_obc\_combinations.py} after the final R1/R2 rerun.}
 \todo{Should the incomplete affine arm be retained, rerun to a matched budget, or reported only as exploratory evidence?}
 
 \subsection{Generalisation}

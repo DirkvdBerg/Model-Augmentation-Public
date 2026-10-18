@@ -13,6 +13,43 @@
 % Section is finished when: Every appendix item is referenced from the main paper and necessary for verification or reproducibility.
 \section{Supporting derivations}
 
+% FEEDBACK v1 (2026-10-18): subsections reordered to the order of first
+%   reference in Section II (Q25, Js32): parameters, LFR realization,
+%   positive definiteness, identifiable combinations.
+\subsection{Nominal physical parameters}\label{app:params}
+\mv[Q25, Js32]{A-C}Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
+They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
+\cite[Table~I]{garcia2013model}. 
+%Here $\theta$ collects the fourteen table entries other than the fixed length $L_b$.
+The lower block holds the parameters of the simulated system that the
+baseline lacks (Section~\ref{sec:setup_system}).
+\begin{table}[t]
+\caption{Nominal baseline parameters and, in the lower block, the
+parameters of the simulated system only.}
+\label{tab:nominal_parameters}
+\centering
+\footnotesize
+\begin{tabular}{@{}ll@{\qquad}ll@{}}
+\toprule
+Parameter & Value & Parameter & Value \\
+\midrule
+$m_1$ & $10.2\,\mathrm{kg}$ & $m_2$ & $10.7\,\mathrm{kg}$ \\
+$m_b$ & $22.8\,\mathrm{kg}$ & $m_h$ & $10.1\,\mathrm{kg}$ \\
+$J_b$ & $1.00\,\mathrm{kg\,m^2}$ & $J_h$ & $0.05\,\mathrm{kg\,m^2}$ \\
+$c_{g1}$ & $14.5\,\mathrm{N\,s/m}$ & $c_{g2}$ & $20.3\,\mathrm{N\,s/m}$ \\
+$c_y$ & $10.0\,\mathrm{N\,s/m}$ & $d$ & $0.10\,\mathrm{m}$ \\
+$c_{b1}$ & $9.0\,\mathrm{N\,m\,s/rad}$ & $c_{b2}$ & $9.0\,\mathrm{N\,m\,s/rad}$ \\
+$k_{b1}$ & $1987.5\,\mathrm{N\,m/rad}$ & $k_{b2}$ & $1987.5\,\mathrm{N\,m/rad}$ \\
+$L_b$ & $0.725\,\mathrm{m}$ & & \\
+\midrule
+$c_{c,X_1}$ & $16.80\,\mathrm{N}$ & $c_{c,X_2}$ & $18.35\,\mathrm{N}$ \\
+$c_{c,Y}$ & $11.60\,\mathrm{N}$ & $v_{\mathrm{fr}}$ & $\SetupFricVzero\,\mathrm{mm/s}$ \\
+$m_a$ & $0.5\,m_h$ & $L_0$ & $0.10\,\mathrm{m}$ \\
+$f_a$ & $150\,\mathrm{Hz}$ & $\zeta_a$ & $0.03$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Explicit LPV-LFR realization}\label{app:lfr-details}
 In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
 \begin{equation*}
@@ -21,8 +58,8 @@ In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
 \end{equation*}
 With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, solving
 $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
-$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=\col(\dot q,\ddot q)$,
-$z=\col(\ddot q,a_1)$, and $w=\col(a_1,a_2)$, the LTI part $G$ of
+$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With \chg[Js45]{$\dot{\tilde x}=\col(\dot q,\ddot q)$}{$\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$},
+\chg[Js45]{$z=\col(\ddot q,a_1)$, and $w=\col(a_1,a_2)$}{$z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$}, the LTI part $G$ of
 \eqref{eq:lfr_G}, partitioned as in \cite[Eq.~(6)]{drenth2025lpvlfr}, is
 \begin{equation}
  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
@@ -86,67 +123,9 @@ in $Y$.
 The implementation evaluates both polynomials with Horner's scheme.
 \todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
 
-\subsection{Identifiable combinations}\label{app:combos}
-For $m_h>0$, the ten distinct entries of $M_0$, $C$ and $K$ determine
-$\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
-\begin{equation*}
-\begin{aligned}
- m_h&=M_{0,33}, & d&=-M_{0,23}/m_h, & m_\Sigma&=M_{0,11}-m_h,\\
- m_\Delta&=2M_{0,12}/L_b, & J_{\mathrm{eff}}&=M_{0,22}-m_hd^2, & k_{b,\Sigma}&=K_{22},\\
- c_{g1}&=\tfrac12C_{11}+C_{12}/L_b, & c_{g2}&=\tfrac12C_{11}-C_{12}/L_b, & c_y&=C_{33},\\
- c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}C_{11}. & &
-\end{aligned}
-\end{equation*}
-Conversely, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
-give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to-one.
-
-\begin{wip}
-\todo{Remarks cut from Section~II-B; keep here or drop?}
-\begin{itemize}
-\item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
-\item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}
-\item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
-\item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
-\end{itemize}
-\end{wip}
-
-\subsection{Nominal physical parameters}\label{app:params}
-Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
-They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
-\cite[Table~I]{garcia2013model}. 
-%Here $\theta$ collects the fourteen table entries other than the fixed length $L_b$.
-The lower block holds the parameters of the simulated system that the
-baseline lacks (Section~\ref{sec:setup_system}).
-\begin{table}[t]
-\caption{Nominal baseline parameters and, in the lower block, the
-parameters of the simulated system only.}
-\label{tab:nominal_parameters}
-\centering
-\footnotesize
-\begin{tabular}{@{}ll@{\qquad}ll@{}}
-\toprule
-Parameter & Value & Parameter & Value \\
-\midrule
-$m_1$ & $10.2\,\mathrm{kg}$ & $m_2$ & $10.7\,\mathrm{kg}$ \\
-$m_b$ & $22.8\,\mathrm{kg}$ & $m_h$ & $10.1\,\mathrm{kg}$ \\
-$J_b$ & $1.00\,\mathrm{kg\,m^2}$ & $J_h$ & $0.05\,\mathrm{kg\,m^2}$ \\
-$c_{g1}$ & $14.5\,\mathrm{N\,s/m}$ & $c_{g2}$ & $20.3\,\mathrm{N\,s/m}$ \\
-$c_y$ & $10.0\,\mathrm{N\,s/m}$ & $d$ & $0.10\,\mathrm{m}$ \\
-$c_{b1}$ & $9.0\,\mathrm{N\,m\,s/rad}$ & $c_{b2}$ & $9.0\,\mathrm{N\,m\,s/rad}$ \\
-$k_{b1}$ & $1987.5\,\mathrm{N\,m/rad}$ & $k_{b2}$ & $1987.5\,\mathrm{N\,m/rad}$ \\
-$L_b$ & $0.725\,\mathrm{m}$ & & \\
-\midrule
-$c_{c,X_1}$ & $16.80\,\mathrm{N}$ & $c_{c,X_2}$ & $18.35\,\mathrm{N}$ \\
-$c_{c,Y}$ & $11.60\,\mathrm{N}$ & $v_{\mathrm{fr}}$ & $\SetupFricVzero\,\mathrm{mm/s}$ \\
-$m_a$ & $0.5\,m_h$ & $L_0$ & $0.10\,\mathrm{m}$ \\
-$f_a$ & $150\,\mathrm{Hz}$ & $\zeta_a$ & $0.03$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \subsection{Positive definiteness of the inertia matrix}
 \label{app:lfr-wellposed}
-With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
+\mv[Q25]{A-D}With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
 \begin{equation*}
 \begin{aligned}
   \frac{\det M(Y)}{m_h}
@@ -189,6 +168,30 @@ coordinate numerically inert. The exact inverse used for reporting is
  \beta_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
 \end{equation*}
 
+\subsection{Identifiable combinations}\label{app:combos}
+For $m_h>0$, the ten distinct entries of $M_0$, $C$ and $K$ determine
+$\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
+\begin{equation*}
+\begin{aligned}
+ m_h&=M_{0,33}, & d&=-M_{0,23}/m_h, & m_\Sigma&=M_{0,11}-m_h,\\
+ m_\Delta&=2M_{0,12}/L_b, & J_{\mathrm{eff}}&=M_{0,22}-m_hd^2, & k_{b,\Sigma}&=K_{22},\\
+ c_{g1}&=\tfrac12C_{11}+C_{12}/L_b, & c_{g2}&=\tfrac12C_{11}-C_{12}/L_b, & c_y&=C_{33},\\
+ c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}C_{11}. & &
+\end{aligned}
+\end{equation*}
+Conversely, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
+give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to-one.
+
+\begin{wip}
+\todo{Remarks cut from Section~II-B; keep here or drop?}
+\begin{itemize}
+\item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
+\item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}
+\item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+\item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
+\end{itemize}
+\end{wip}
+
 \subsection{PS stopping rule}\label{app:ps_stop}
 The unexplained fraction $\nu$ of \eqref{eq:ps2_nu} is evaluated after every
 $i_c$th update of $V$, with $\nu_i$ its value after update $i$.
@@ -227,6 +230,65 @@ Fig.~\ref{fig:res_frf}, with the same linearisation and positions.
   \caption{Bode magnitude from the stage forces (columns) to the stage positions (rows), linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
   \label{fig:res_frf_full}
 \end{figure*}
+
+\section{Training, validation and test results}\label{app:splits}
+% D-269: every result for every split (Dirk 2026-10-18); Code/Figures/res_all_splits.py.
+Table~\ref{tab:app_splits} gives the models of Section~\ref{sec:results} on
+the training, validation and test records.
+\begin{table}[t]
+  \centering
+  \caption{$\mathrm{NRMS}_e$ per axis on the training, validation and test records, mean over each set, with and without multisine. Physical part: the trained model with the learned block switched off.}
+  \label{tab:app_splits}
+  \input{tables/res_all_splits}
+\end{table}
+
+\section{Design choices}\label{app:choices}
+% Results that justify a choice (THESIS-RESULTS presentation 2026-10-16; Dirk 2026-10-18).
+% Choices are compared on the validation records; Code/Figures writes the training, test and twin
+% versions beside them (tables/res_structure_<split>.tex, res_obc_combinations_<stack>.tex).
+This appendix gives the results behind the choices of the baseline form,
+the augmentation structure, the start of the added states and the black
+box.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_lpv_lti.pdf}
+  \caption{Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}
+  \label{fig:res_lpv_lti}
+\end{figure}
+\begin{table*}[t]
+  \centering
+  \caption{$\mathrm{NRMS}_e$ per axis of every model, mean over the validation records, with and without multisine.}
+  \label{tab:app_structure}
+  \input{tables/res_structure_val}
+\end{table*}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_ps_spectrum.pdf}
+  \caption{Amplitude spectral density of the $Y$ simulation error on the validation records with multisine. Shaded: multisine band. Dotted: absorber pole.}
+  \label{fig:res_ps_spectrum}
+\end{figure}
+\begin{table*}[t]
+  \centering
+  \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start.}
+  \label{tab:app_obc_full}
+  \input{tables/res_obc_combinations_test}
+\end{table*}
+\begin{table}[t]
+  \centering
+  \caption{Relative error of the ten combinations without added states ($n_a=0$), unconstrained and OBC, from the detuned start.}
+  \label{tab:app_obc_na0}
+  \input{tables/res_obc_na0}
+\end{table}
+\begin{table}[t]
+  \centering
+  \caption{Black-box search: the 11 configurations and their best validation $\mathrm{NRMS}_e$.}
+  \label{tab:app_bb_search}
+  \input{tables/res_bb_selection}
+\end{table}
+\revnote{Add the validation curves here: validation $\mathrm{NRMS}_e$
+against the optimiser updates for every grey-box run and the selected black
+box, from the runs' \texttt{val\_hist.npz} on the server; to be produced
+once R1 and R2 have finished.}
 
 \section{Experiment design details}\label{app:setup}
 This appendix gives the details of Section~\ref{sec:setup} and the checks
@@ -368,10 +430,9 @@ amplitude for I6 and E4.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{setup_coverage.pdf}
-  \caption{Range of $Y$ of each record against its largest acceleration
-  (top) and velocity (bottom), in \% of the machine limits. Dashed: training
-  range. Test records at the same level are offset by 4\,\% for
-  legibility.}
+  \caption{Coverage of each record: range of $Y$ (left), largest acceleration
+  (middle) and largest velocity (right), in \% of the machine limits.
+  Shaded: range of the training records.}
   \label{fig:setup_coverage}
 \end{figure}
 \subsection{Processing and checks}\label{app:setup_checks}

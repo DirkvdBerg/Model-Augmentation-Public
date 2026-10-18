@@ -10,8 +10,9 @@ Replaces the run plan of `RESULTS-DESIGN.md` sections 4 and 8 and `TRAINING-DESI
 > improving prediction accuracy across operating points and motion profiles while preserving the physical
 > interpretability of its parameters?
 
-1. In what form should the baseline be represented for subsequent augmentation, and does a position-dependent (LPV)
-   formulation improve prediction compared to position-independent (LTI) alternatives?
+1. ~~In what form should the baseline be represented for subsequent augmentation, and does a position-dependent (LPV)
+   formulation improve prediction compared to position-independent (LTI) alternatives?~~ REMOVED as an aspect (Dirk
+   2026-10-18); LPV vs LTI is kept as the appendix result that justifies the LPV baseline
 2. What augmentation structure can effectively capture dynamics not modeled in the physics-based baseline model?
 3. How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained
    approaches?
@@ -58,7 +59,7 @@ derivation (Sections II and IV); their runs illustrate.
 The order builds the final model step by step. The run order on the server is different (section 4): n_a = 2 and PS2
 are fixed in advance, so all runs start together.
 
-### Step 1. Baseline form: LPV vs LTI (Aspect 1)
+### Step 1. Baseline form: LPV vs LTI (appendix since 2026-10-18; Aspect 1 removed)
 - Shows: explicit Y scheduling lowers the prediction error, increasingly away from the frozen Y of the LTI model
 - Runs: none. LPV baseline and frozen-LTI baseline (mid-stroke), both at the true parameters, no training
 - Test records: I2 / E1 (standstill, Y -0.225 / -0.39), I3 / E2 (moving, stops up to -0.33 / +0.39)
@@ -153,7 +154,7 @@ start, settings, black-box size) goes to the appendix. Metric NRMS_e (D-256) wit
 with and without multisine reported separately; no oracle row; no "error removed" percentage (factors in the prose).
 Main-text models (five): M_LPV and M_LTI (true parameters, untrained), M_U (R4: U, PS, n_a 2, detuned start), the final
 model M_OBC (R1: OBC, PS, n_a 2, detuned start), the black box M_BB (R8).
-- A (Aspect 1): LPV vs LTI figure, NRMS_e on X, I2/E1 and I3/E2.
+- A (appendix since 2026-10-18, Aspect 1 removed): LPV vs LTI figure, NRMS_e on X, I2/E1 and I3/E2.
 - B (Aspect 2): baseline vs final model vs black box, NRMS_e per axis with and without multisine, floor; FRF F_Y -> Y
   (res_frf, mean over Y = -0.39 to 0.39 m) with one sentence on the spurious X-Y cross terms; I1 time trace captioned
   with its NRMS_e. Why this structure (n_a, PS) is in the appendix.
@@ -169,6 +170,18 @@ true-start runs R3, R5, R6, R7, plus the detuned n_a 0 pair), error spectrum PS 
 states (U and OBC, n_a 0, detuned start: two NEW runs, Jasper point 5), OBC vs U from the correct start (R2, R5), full
 structure table (all runs, NRMS_e and m, physical part per run), validation curves, black-box search table, full 3 x 3 FRF
 (res_frf_full), setup figures (multisine band, coverage), setup checks, hyperparameters.
+
+**Update 2026-10-18 (Dirk), supersedes the lines above where they differ.**
+- Aspect 1 is removed; the LPV vs LTI figure (res_lpv_lti, NRMS_e on X1 and X2) moves to the appendix (app:choices) as
+  the justification of the LPV baseline. Main-text models (four): M_LPV (true parameters), M_U (R4), M_OBC (R1), M_BB.
+- Main text: B = `tables/res_structure.tex`, test I1 to I6 with and without multisine, rows baseline at the true
+  parameters, final model, black box, floor; C = `tables/res_obc_combinations.tex`, detuned start only (R4 vs R1; the predicted
+  bias column is dropped, Dirk 2026-10-18: 100 to 1300 % against observed errors of a few to 30 %); D = generalisation with the baseline at the TRUE parameters, stated
+  in the legend ("true parameters theta*").
+- Appendix `app:choices` (99_appendix.tex): LPV vs LTI, full structure table on validation (res_structure_val), PS vs
+  plain spectrum on the validation multisine records, Table C with both starts (res_obc_combinations_test), n_a 0 pair
+  (res_obc_na0), black-box search (res_bb_selection). Per-split / per-stack versions are written beside them.
+- Still open for the appendix: validation curves (from the training logs, not from Code/Evaluation).
 
 ## 4. Server runs
 
