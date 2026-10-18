@@ -30,53 +30,41 @@
 %   research plan.
 % CHANGED, NEW and REMOVED compare against Background.tex, not against the
 %   previous version of this file.
-% FEEDBACK v1 (2026-10-18): changes marked with \chg, \del, \add, \mv
-%   (util/format.tex); tags are the comment ids of Feedback/v1.
-\changelegend
+% FEEDBACK v1 (2026-10-18): supervisor feedback incorporated; change marks
+%   accepted (Dirk 2026-10-18). Marked version: git history.
 % FEEDBACK: the ASMPT sentences moved to the start of Section II-A, as Jan1
 %   asks ("Ik zou dit verwerken in de volgende sectie"; Dirk 2026-10-18).
 %   Their source comments moved with them.
-\del[Jan1, moved to II-A]{ASMPT develops semiconductor assembly and
-packaging equipment, including high-precision motion systems for advanced
-packaging, which combines multiple semiconductor functions within a single
-package. Such technologies place strict demands on alignment accuracy,
-yield, and manufacturing cost \cite{irds2022,workman2021diewafer}.}
-This \chg[Q3]{paper}{thesis} focuses on a
-\chg[Js4]{dual-gantry}{dual-drive gantry} motion system in which two parallel
+This thesis focuses on a
+dual-drive gantry motion system in which two parallel
 linear actuators support a common beam carrying the payload.
 % CHANGED: project -> paper
-\add[Q7]{The gantry positions this payload at successive placement
-locations.}
-The shared beam couples \chg[Js5, Q4]{the actuator dynamics}{the dynamics of
-both actuators}, so \add[Q5]{the} motion of one actuator
+The gantry positions this payload at successive placement
+locations.
+The shared beam couples the dynamics of
+both actuators, so the motion of one actuator
 influences the other, and the system exhibits position-dependent behaviour
 \cite{garcia2013model, teo2007dynamic} and flexible dynamics
 \cite{garcia2013model}.
 % CHANGED: citation split; Teo supports coupling and position dependence,
 %   not flexibility (Garcia Sec. 2, flexible joints)
-\add[Q11]{This position dependence can be described by a linear
-parameter-varying (LPV) model.}
-\del[Dirk]{In such systems, settling behaviour is a key performance metric.
-After each motion, the system must wait for residual oscillations to decay
-before the next placement can begin \cite{lambrechts2005trajectory}, so
-settling time directly affects throughput.}
+This position dependence can be described by a linear
+parameter-varying (LPV) model.
 % FEEDBACK: settling dropped, the thesis evaluates prediction (D-241, Dirk
 %   2026-10-18)
 Furthermore, cross-coupling means that the motion of one
-\chg[Js8]{gantry}{actuator} can disturb
-the other, \chg[Dirk]{making accurate prediction relevant not only for
-settling but also for}{which affects the} tracking behaviour during
+actuator can disturb
+the other, which affects the tracking behaviour during
 simultaneous motion.
 \\
 % FEEDBACK: paragraph reordered as Jan2 asks: use (controller design, root
 %   cause analysis) first, the need for an accurate model last. Digital twin
 %   dropped (Js9, Js10, Q10).
-\mv[Jan2, Js9]{P3, sentence 2}\chg[Jan2, Js9]{Such a model can be used as a
-digital twin, for example}{A plant model can be used} to evaluate a changed
-\add[Js11]{feedback} controller before it is tested on the machine.
-\add[Q10-Jan2]{A closed-loop simulation is faster than an experiment, 
+A plant model can be used to evaluate a changed
+feedback controller before it is tested on the machine.
+A closed-loop simulation is faster than an experiment, 
 allowing multiple controller to be compared simultaneously, and without risk 
-of harming the hardware.}
+of harming the hardware.
 \todo{Link to evaluation with a changed controller in closed loop
 (Section~VI), once that result exists.}
 % NEW: controller evaluation leads (Quinten, 18 Sep); the
@@ -85,24 +73,19 @@ of harming the hardware.}
 %   controller evaluation is motivation only.
 % FEEDBACK: in-between step replacing Jan2's "digital twin method" (Dirk
 %   2026-10-18: no digital twin).
-\del[Js10, Q10]{Digital twins can support offline simulation of
-semiconductor manufacturing equipment and help optimize operating parameters
-\cite{hwang2024semiconductor}.}
 % CHANGED: "before testing changes on the real machine, reducing costly
 %   trial-and-error" dropped, not in Hwang
-\mv{P3, sentence 4}Such models are also valuable for \del[Dirk]{control
-design and for process and} root cause analysis.
+Such models are also valuable for root cause analysis.
 % CHANGED: rest of the removed sentence above; condition monitoring ->
 %   process and root cause analysis
-\mv{P3, sentence 5}This requires a model with physically meaningful
+This requires a model with physically meaningful
 parameters, because a change in machine behaviour can then be traced back to
 a physical cause, such as a change in stiffness or damping.
 % NEW: no source
 \todo{Missing: source for the root cause analysis sentence. Candidate:
 Gy\"or\"ok et al.\ Sec.~3.2 (non-unique estimate loses physical meaning) or
 Kessels Sec.~6.2 (not yet checked).}
-\mv[Jan2]{P3, sentence 1}\chg[Jan2]{Predicting this behaviour therefore
-requires}{Both uses require} an accurate representation of the underlying
+Both uses require an accurate representation of the underlying
 plant dynamics.
 % CHANGED: was "Improving settling performance"; settling stays as
 %   motivation, the paper evaluates prediction (D-241)
@@ -142,11 +125,10 @@ More accurate FP models can be developed, but this is labour-intensive
 %   \cite{garcia2013model}, which is only able to capture part of the
 %   position-dependent behaviour and cross-coupling.
 \\
-Purely data-driven (black-box) models such as \chg[Js12]{neural networks or
-Gaussian processes}{neural-network or Gaussian-process state-space models}
+Purely data-driven (black-box) models such as neural-network or Gaussian-process state-space models
 can describe measured behaviour well, but they give less physical
-insight and \chg[Js13]{are often harder to trust}{are not guaranteed to be
-accurate} at operating conditions not covered
+insight and are not guaranteed to be
+accurate at operating conditions not covered
 by the training data \cite{willard2020integrating}.
 % CHANGED: "(black-box)" added; "and" added after "insight"
 Typically these models also require large amounts of data to train
@@ -158,23 +140,21 @@ from first principles, such as the rigid-body dynamics
 \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 1
 \\
-\add[Jan3, Js14]{}Physics-informed approaches, including physics-informed neural networks
+Physics-informed approaches, including physics-informed neural networks
 (PINNs), enforce physical laws as constraints during training
 \cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}.
 However, these methods require the physics equations to be known and still
 rely on a black-box model for the entire system \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 2
-For the plant model of the \chg[Js4]{dual-gantry system}{dual-drive gantry},
+For the plant model of the dual-drive gantry,
 both predictive accuracy and
 physical interpretability are required.
-Physical interpretability means that \chg[Js15]{the estimated physical
-parameters are unique}{the identifiable combinations of the physical
-parameters (Section~\ref{sec:params}) are estimated uniquely}
+Physical interpretability means that the identifiable combinations of the physical
+parameters (Section~\ref{sec:params}) are estimated uniquely
 \cite{gyorok2026obc}.
-\add[Js15]{This does not guarantee identifying the true parameters, 
+This does not guarantee identifying the true parameters, 
 but a deviation from the trained model can then indicate which 
 physical parameter has changed.
-}
 % FEEDBACK: link uniqueness to root cause analysis (Dirk 2026-10-18); own
 %   reasoning, holds while the missing dynamics do not change (discussion)
 % NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses
@@ -189,9 +169,8 @@ meets both requirements on its own \cite{willard2020integrating}.
 \todo{Check source}
 % CHANGED: Noel removed; Willard Sec. 1, p. 2
 \\
-\add[Jan4]{}Grey-box modeling is the logical choice, because it is able to
-combine \chg[Dirk]{a physically meaningful baseline model needed for
-interpretation}{a baseline model with interpretable parameters} with
+Grey-box modeling is the logical choice, because it is able to
+combine a baseline model with interpretable parameters with
 data-driven flexibility needed for accurate prediction
 \cite{noel2018greybox}.
 The following grey-box approaches appear in practice: parameter
@@ -206,10 +185,10 @@ component, so that the learned component only needs to capture the dynamics
 the physics-based model cannot describe \cite{hoekstra2026lfr}.
 % NEW: wording from research plan Literature.tex l.3; Hoekstra 2026 Sec. 1,
 %   p. 2
-\add[Jan6]{Dynamic augmentation is chosen to be able to model missing dynamics, 
+Dynamic augmentation is chosen to be able to model missing dynamics, 
 such as flexible dynamics. These require additional states, which 
 parameter re-estimation 
-and static output correction cannot provide \cite{hoekstra2026lfr}.}
+and static output correction cannot provide \cite{hoekstra2026lfr}.
 However, related work at ASMPT on a wire bonder shows that preserving
 physical interpretability during model updating remains an open challenge
 \cite{kessels2025ai}.
@@ -236,9 +215,9 @@ unconstrained learned component, and a source for absorption by refitting.
 Candidate: Gy\"or\"ok et al.\ Sec.~1 and Sec.~3.2 (not yet checked).}
 \\
 Learning-based hybrid modeling has already been demonstrated on
-\chg[Js18]{real industrial systems}{an industrial robot} \cite{retzler2024}.
+an industrial robot \cite{retzler2024}.
 However, a key gap remains: there is no grey-box modeling framework for the
-\chg[Js4]{dual-gantry system}{dual-drive gantry} that simultaneously addresses coupled multi-input
+dual-drive gantry that simultaneously addresses coupled multi-input
 multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,
 and preserves physical interpretability.
 % CHANGED: "validated" dropped (simulation only); "closed-loop data," added
@@ -284,41 +263,30 @@ parameters remain interpretable.}
 % Research question in the running text and the contributions as a short list, as in
 % Hoekstra 2026 Sec. 1, p. 2. CHANGED, NEW and REMOVED compare against the research plan,
 % Documentation/Research-plan/Sections/Research_questions.tex.
-This \chg[Q3]{paper}{thesis} addresses the following research question:
+This thesis addresses the following research question:
 % NEW
-\textit{For the \chg[Js4]{dual-gantry system}{dual-drive gantry}, how should a physics-based plant model
+\textit{For the dual-drive gantry, how should a physics-based plant model
 be augmented to capture unmodelled dynamics, improving prediction accuracy
 across operating points and motion profiles while preserving the physical
 interpretability of its parameters?}
 % CHANGED: quote block and bold replaced by italics in the running text;
 %   wording is the changed research question (D-241)
-To answer this research question, the following \chg{four}{three} aspects
+To answer this research question, the following three aspects
 are investigated:
 \begin{enumerate}
-% FEEDBACK: aspect 1 removed (Dirk 2026-10-18); in the draft build it stays
-%   as a struck item, so the draft numbering is one higher than the final.
-\ifdraft
-\item \del[Js20, Q11, Q12]{In what form should the baseline model be
-represented for subsequent augmentation, and does a position-dependent (LPV)
-formulation improve prediction compared to position-independent (LTI)
-alternatives?}
-\fi
+% FEEDBACK: aspect 1 (LPV versus LTI) removed (Dirk 2026-10-18).
 % CHANGED: bold title dropped; "a" added before "position-dependent"
-\item \chg{What augmentation structure can effectively capture dynamics not
-modeled in the physics-based baseline model?}{Which augmentation structure and
+\item Which augmentation structure and
 training let the learned component capture the missing dynamics from
-closed-loop data?}
+closed-loop data?
 % CHANGED: bold title dropped; wording D-241
-\item \chg{How can parameter interpretability be maintained during
-data-driven augmentation, compared to unconstrained approaches?}{To what
+\item To what
 extent does orthogonal-by-construction augmentation keep the physical
-parameters interpretable, compared to unconstrained estimation?}
+parameters interpretable, compared to unconstrained estimation?
 % CHANGED: bold title dropped; wording D-241
-\item \chg{How well does the augmented model generalize to (i) held-out
-operating points and (ii) unseen motion profiles, and how does its
-prediction accuracy compare to a black-box state-space model?}{How does the
+\item How does the
 augmented model generalise to held-out operating points and unseen motion
-profiles, compared to a black-box model?}
+profiles, compared to a black-box model?
 % CHANGED: bold title dropped; wording D-241
 \end{enumerate}
 \revnote{Aspect 1 (LPV versus LTI) is removed: the LPV form follows from the

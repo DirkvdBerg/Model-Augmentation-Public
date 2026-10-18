@@ -17,6 +17,7 @@ lists every model on every split (train, val, test, twins; D-269) from the preds
 Usage: python Thesis-writeup/Code/Evaluation/make_results.py [stem ...]   (default: all)
 """
 import csv
+import functools
 import json
 import sys
 
@@ -29,6 +30,7 @@ RESULTS = TW / 'Results'
 INTERP = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6']
 
 
+@functools.lru_cache(maxsize=12)          # each file is read and decompressed once, not once per table row
 def cache(name):
     d = dict(np.load(CACHE / ('preds_%s.npz' % name), allow_pickle=True))
     check_identity(name, d)                                 # never mix campaigns (audit 2026-10-16)
