@@ -44,8 +44,8 @@
 \item Test records, $\mathrm{NRMS}_e$ with the noise floor; training and validation in the appendix (D-269)
 \end{itemize}
 \fi
-All errors are $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms} on the test
-records, read against the noise floor.
+All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
+against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
 
 \subsection{Augmentation structure}
@@ -56,16 +56,16 @@ Appendix~\ref{app:splits} gives the training and validation records.
 \item PS start and added states compared on validation in the appendix
 \end{itemize}
 \fi
-Table~\ref{tab:res_structure} compares the final model with the baseline at
+Table~\ref{tab:res_structure} compares the final grey box model with the baseline at
 the true parameters and with the black box (Aspect~1).
-On the records with multisine, the final model lowers the $Y$ error by more
+For the data with multisine, the final model lowers the error on $Y$ by more 
 than an order of magnitude and halves the error on $X_1$ and $X_2$.
-On the records without multisine, it is at the level of the baseline.
+For the data without multisine both models achieve similar results.
 Fig.~\ref{fig:res_time_trace} shows this on record I1, and
-Fig.~\ref{fig:res_frf} shows that the final model has the resonance of the
-system, which the baseline lacks.
-Appendix~\ref{app:choices} compares the choices behind the final model on
-the validation records.
+Fig.~\ref{fig:res_frf} shows that the final model is able to capture the resonance
+of the system, which is not modeled in the baseline.
+\kw{Appendix~\ref{app:choices} compares the final model on the validation records 
+with plain training of the added states and with zero and eight added states.}
 
 \begin{table}[t]
   \centering
@@ -98,16 +98,17 @@ the validation records.
 \fi
 Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with
 $\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2).
-Both models end further from the true combinations than they started, and
-$\mathcal M_{\mathrm U}$ almost twice as far as $\mathcal M_{\mathrm{OBC}}$.
-The damping combinations move most, while the mass combinations stay close
-to their true values.
-The full models, and also their physical parts alone, are equally accurate
-within one point.
-$\mathcal M_{\mathrm{OBC}}$ has the lower network overlap.
-The truth overlap is 0.59.
-Appendix~\ref{app:choices} gives the correct start and the models without
-added states, where the order of the parameter errors reverses.
+Both models have deviated further from the true combinations, than their intial values.
+$\mathcal M_{\mathrm U}$ close to double that of $\mathcal M_{\mathrm{OBC}}$.
+The combinations describing the damping deviate the most, 
+while the mass combinations stay close to their true values.
+The final model with the orthogonality constraint and the unconstrained model
+perform equally well. 
+\kw{OBC keeps the network out of the parameter directions: its network overlap is 
+much lower than that of $\mathcal M_{\mathrm U}$.
+The missing dynamics are not orthogonal to these directions, their overlap is 0.59.
+From the correct start, OBC also ends closer to the true values (Appendix~\ref{app:choices}).
+Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
 
 \begin{table}[t]
   \centering
@@ -123,15 +124,16 @@ added states, where the order of the parameter errors reverses.
 \item Multisine twins of the records without multisine
 \end{itemize}
 \fi
-Fig.~\ref{fig:res_generalisation} gives the error per test record, with
-each E record beside its I record (Aspect~3).
-The final model has about the same error on each E record as on its I
-record.
-Without multisine it is at or slightly above the baseline.
+The error per test record are shown in Fig.~\ref{fig:res_generalisation}, 
+for extrapolation (E) and interpolation (I) (Aspect~3).
+Without multisine the model performs as well or slightly above the baseline.
 The black box has 74 to 193\,\% on the records without multisine, and it is
 below the final model only on I2 $X_2$.
-On the multisine twins, the final model stays below 10\,\% on $Y$, while the
+On the \kw{multisine twins}, the final model stays below 10\,\% on $Y$, while the
 baseline and the black box are above 47\,\%.
+\revnote{Should I drop Fig.~\ref{fig:res_generalisation} and put it in a table instead,
+also due to the noise floor i think it undersells the results compared to 
+Fig.~\ref{fig:res_time_trace}.}
 
 \begin{figure*}[t]
   \centering
