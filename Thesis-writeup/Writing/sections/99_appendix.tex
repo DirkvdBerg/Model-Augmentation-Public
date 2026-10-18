@@ -17,7 +17,7 @@
 %   reference in Section II (Q25, Js32): parameters, LFR realization,
 %   positive definiteness, identifiable combinations.
 \subsection{Nominal physical parameters}\label{app:params}
-\mv[Q25, Js32]{A-C}Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
+Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
 They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
 \cite[Table~I]{garcia2013model}. 
 %Here $\theta$ collects the fourteen table entries other than the fixed length $L_b$.
@@ -58,8 +58,8 @@ In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
 \end{equation*}
 With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, solving
 $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
-$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With \chg[Js45]{$\dot{\tilde x}=\col(\dot q,\ddot q)$}{$\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$},
-\chg[Js45]{$z=\col(\ddot q,a_1)$, and $w=\col(a_1,a_2)$}{$z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$}, the LTI part $G$ of
+$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
+$z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
 \eqref{eq:lfr_G}, partitioned as in \cite[Eq.~(6)]{drenth2025lpvlfr}, is
 \begin{equation}
  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
@@ -125,7 +125,7 @@ The implementation evaluates both polynomials with Horner's scheme.
 
 \subsection{Positive definiteness of the inertia matrix}
 \label{app:lfr-wellposed}
-\mv[Q25]{A-D}With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
+With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
 \begin{equation*}
 \begin{aligned}
   \frac{\det M(Y)}{m_h}

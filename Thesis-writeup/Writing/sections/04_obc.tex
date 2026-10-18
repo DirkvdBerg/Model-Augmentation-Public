@@ -206,15 +206,16 @@ The offset does not change the first-order estimate \eqref{eq:obc_recovery}.
 \kw{It does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
 the neural network cancels part of the baseline response, because only the
 part of the network along the stacked baseline response is excluded.}
-\\
-\revnote{Orthogonality here is to the stacked Jacobian and offset
-$\Phi_\Gamma$ on the tuples (Gy\"or\"ok et al.\ 2026, Lemma~3, with the
-regressor taken as $[\varphi\ \gamma]$, the offset as in Gy\"or\"ok et al.\
-2025, Eq.~(18)). To first order the estimate of $\beta$ does not depend on
-the network, with or without $\Gamma$; not shown for the nonlinear
-closed-loop optimum. The current results are without $\Gamma$; the final
-runs include it.}
-\\
+% \\
+% \revnote{Orthogonality here is to the stacked Jacobian and offset
+% $\Phi_\Gamma$ on the tuples (Gy\"or\"ok et al.\ 2026, Lemma~3, with the
+% regressor taken as $[\varphi\ \gamma]$, the offset as in Gy\"or\"ok et al.\
+% 2025, Eq.~(18)). To first order the estimate of $\beta$ does not depend on
+% the network, with or without $\Gamma$; not shown for the nonlinear
+% closed-loop optimum. The current results are without $\Gamma$; the final
+% % runs include it.}
+% \\
+
 The Jacobian also depends on the state, while the regressor of
 Gy\"or\"ok et al.\ uses only measured inputs and
 outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.

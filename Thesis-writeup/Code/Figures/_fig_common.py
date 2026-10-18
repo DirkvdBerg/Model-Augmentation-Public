@@ -85,7 +85,7 @@ def mark_preliminary(fig, statuses, who):
     """Stamp a figure whose numbers come from a run that has not finished; nothing when all final."""
     labs = preliminary(statuses)
     if labs:
-        fig.text(0.995, 0.0, "%s: %s" % (who, "; ".join(labs)), ha="right", va="top",
+        fig.text(0.995, -0.04, "%s: %s" % (who, "; ".join(labs)), ha="right", va="top",   # below the x label
                  fontsize=6, color="#d62728")
 
 

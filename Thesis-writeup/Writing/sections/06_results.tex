@@ -21,56 +21,51 @@
 %   Numbers come from Thesis-writeup/Results/18-10-2026/CSV (res_structure, res_obc_combinations, res_generalisation,
 %   res_frf_modes) and the tables generated from them.
 % MUST ESTABLISH (agreed with Dirk 2026-10-18; handoff 2026-10-18-results-section-content and the session after it)
-%   Form: no subsections; an opening and one paragraph per aspect, numbered as in the Introduction (1 structure and
-%   training, 2 OBC, 3 generalisation). Each paragraph names its float and reads it in one or two sentences against the
-%   baseline, black-box and floor rows (Hoekstra 2025 Sec. 4.3, Hoekstra 2026 Sec. 6.3, Gyorok 2025 Sec. 5.4).
-%   No verdicts against criteria and no mechanisms: those are in the Discussion (Section 08). Definitions stay in
-%   Section V. Choices are in Appendix app:choices, pointed to once.
-%   1. With multisine the final model lowers the Y error from 116.6 to 6.2 %; without it, it is up to 0.4 points above
-%      the baseline; the black box is at 36 to 48 % and 97 to 128 %. The final model has the resonance near
-%      2.12 f_b that the baseline lacks. The PS start and the added states: validation numbers in the appendix.
-%   2. From the detuned start the combination-error norm grows to 83.1 % (U) and 47.7 % (OBC) at equal accuracy of
-%      the full model and of the physical part; truth overlap 0.59; reversed without added states (appendix).
-%   3. The final model stays within 2 points of its I record on every E record; without multisine up to 1.2 points
-%      above the baseline; the black box is 74 to 193 % without multisine and below the final model only on I2 X2.
+%   Form (revised 2026-10-18 after "too messy"): an opening and three short subsections, one per aspect, numbered as
+%   in the Introduction (1 structure and training, 2 OBC, 3 generalisation). Each subsection names its float and reads
+%   it in two to four sentences in words; digits stay in the floats, at most one or two in the text where the float
+%   cannot show them (Hoekstra 2025 Sec. 4.3, Hoekstra 2026 Sec. 6.3, Gyorok 2025 Sec. 5.4). Floats after the text of
+%   their subsection; todos and revnotes at the end of the section. No verdicts against criteria and no mechanisms:
+%   those are in the Discussion (Section 08). Definitions stay in Section V. Choices in Appendix app:choices.
+%   1. With multisine the final model lowers the Y error by more than an order of magnitude (116.6 to 6.2 %) and halves
+%      X; without it, it is at the baseline level (0.2 to 0.4 points above). The final model has the resonance of the
+%      system (2.12 f_b) that the baseline lacks. PS and added states: validation results in the appendix.
+%   2. From the detuned start U ends almost twice as far from the truth as OBC (83.1 vs 47.7 %, start 30.0 %), at equal
+%      accuracy within one point; dampers move most, masses stay within 3.4 %; truth overlap 0.59; reversed without
+%      added states (appendix).
+%   3. The final model has about the same error on each E record as on its I record (within 2.0 points); without
+%      multisine at or slightly above the baseline (up to 1.2 points); the black box 74 to 193 % without multisine,
+%      below the final model only on I2 X2; twins: final below 10 % on Y, baseline and black box above 47 %.
 %   Moved out: verdicts, mechanisms, the black-box explanation (Quinten p9), the n_a = 0 reversal as an argument
-%   (Discussion); the "difference between starts" row (revnote request under Table C).
+%   (Discussion); the "difference between starts" row (revnote request at the end).
 \section{Results}\label{sec:results}
 \ifdraft
 \begin{itemize}
 \item Test records, $\mathrm{NRMS}_e$ with the noise floor; training and validation in the appendix (D-269)
-\item Aspect 1: final model against the baseline and the black box, with and without multisine; resonance of the final model; PS and added states in the appendix (Table~\ref{tab:res_structure}, Figs.~\ref{fig:res_time_trace}, \ref{fig:res_frf})
-\item Aspect 2: combination errors, full model, physical part and overlaps, $\mathcal M_{\mathrm U}$ against $\mathcal M_{\mathrm{OBC}}$ from the detuned start (Table~\ref{tab:res_obc})
-\item Aspect 3: final model, baseline and black box on the I/E pairs and the multisine twins (Fig.~\ref{fig:res_generalisation})
-\item Uniqueness from the two starts (?: row requested under Table~\ref{tab:res_obc})
 \end{itemize}
 \fi
 All errors are $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms} on the test
 records, read against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
-\todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section
-are preliminary (update 19500 of 33400). Candidate: update them after the
-final R1/R2 rerun (basis: handoff 2026-10-18, Sec.~3).}
 
+\subsection{Augmentation structure}
+\ifdraft
+\begin{itemize}
+\item Final model against the baseline and the black box, with and without multisine (Table~\ref{tab:res_structure}, Fig.~\ref{fig:res_time_trace})
+\item The final model has the resonance of the system, the baseline none (Fig.~\ref{fig:res_frf})
+\item PS start and added states compared on validation in the appendix
+\end{itemize}
+\fi
 Table~\ref{tab:res_structure} compares the final model with the baseline at
-the true parameters and with the black box on I1 to I6 (Aspect~1).
-On the records with multisine, the final model lowers the $Y$ error from
-116.6 to 6.2\,\% and halves the error on $X_1$ and $X_2$.
-On the records without multisine, it is 0.2 to 0.4 points above the
-baseline.
-The black box is at 36 to 48\,\% with multisine and 97 to 128\,\%
-without.
-Fig.~\ref{fig:res_time_trace} shows record I1, where the final model has
-6.3\,\% on $Y$ against 101.6\,\% for the baseline.
-In the response from $F_Y$ to $Y$ (Fig.~\ref{fig:res_frf}), the final model
-has a resonance at 2.11 to 2.13\,$f_b$ over $Y$, with damping ratio 0.036
-to 0.080.
-The system has it at 2.12\,$f_b$ with damping ratio 0.043.
-The baseline has none.
-Appendix~\ref{app:choices} gives the choices behind the final model on the
-validation records.
-With multisine, the $Y$ error is 6.4\,\% with the PS start, against
-78.1\,\% with plain training and 86.5\,\% without added states.
+the true parameters and with the black box (Aspect~1).
+On the records with multisine, the final model lowers the $Y$ error by more
+than an order of magnitude and halves the error on $X_1$ and $X_2$.
+On the records without multisine, it is at the level of the baseline.
+Fig.~\ref{fig:res_time_trace} shows this on record I1, and
+Fig.~\ref{fig:res_frf} shows that the final model has the resonance of the
+system, which the baseline lacks.
+Appendix~\ref{app:choices} compares the choices behind the final model on
+the validation records.
 
 \begin{table}[t]
   \centering
@@ -92,28 +87,27 @@ With multisine, the $Y$ error is 6.4\,\% with the PS start, against
   \caption{Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
   \label{fig:res_frf}
 \end{figure}
-\todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
 
+\subsection{Interpretability}
+\ifdraft
+\begin{itemize}
+\item Combination errors, full model, physical part and overlaps, $\mathcal M_{\mathrm U}$ against $\mathcal M_{\mathrm{OBC}}$ from the detuned start (Table~\ref{tab:res_obc})
+\item Correct start and the models without added states in the appendix
+\item Uniqueness from the two starts (?: row requested, revnote at the end)
+\end{itemize}
+\fi
 Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with
 $\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2).
-The norm of the combination errors grows from 30.0\,\% at the start to
-83.1\,\% for $\mathcal M_{\mathrm U}$ and 47.7\,\% for
-$\mathcal M_{\mathrm{OBC}}$.
-In both models the damping combinations $c_{g1}$, $c_{g2}$ and $c_y$ move
-furthest, and the mass combinations stay within 3.4\,\% of the true values.
-The full models differ by at most 0.8 points.
-Their physical parts differ by at most 0.9 points.
-The network overlap of $\mathcal M_{\mathrm{OBC}}$ is lower than the 0.84 of
-$\mathcal M_{\mathrm U}$.
+Both models end further from the true combinations than they started, and
+$\mathcal M_{\mathrm U}$ almost twice as far as $\mathcal M_{\mathrm{OBC}}$.
+The damping combinations move most, while the mass combinations stay close
+to their true values.
+The full models, and also their physical parts alone, are equally accurate
+within one point.
+$\mathcal M_{\mathrm{OBC}}$ has the lower network overlap.
 The truth overlap is 0.59.
-Without added states the order of the norms reverses, with 48.8\,\% for
-$\mathcal M_{\mathrm U}$ against 68.4\,\% for $\mathcal M_{\mathrm{OBC}}$
-(Appendix~\ref{app:choices}).
-The appendix also gives the comparison from the correct start.
-\todo{Missing: the network overlap of $\mathcal M_{\mathrm{OBC}}$ in
-Table~\ref{tab:res_obc} comes from update 18200 while labelled 19500, so the
-text gives no number for it. Candidate: state it after the final R1 rerun
-(basis: handoff 2026-10-18, Sec.~12).}
+Appendix~\ref{app:choices} gives the correct start and the models without
+added states, where the order of the parameter errors reverses.
 
 \begin{table}[t]
   \centering
@@ -121,34 +115,23 @@ text gives no number for it. Candidate: state it after the final R1 rerun
   \label{tab:res_obc}
   \input{tables/res_obc_combinations}
 \end{table}
-\revnote{The ``OBC pred.'' columns are dropped (Dirk 2026-10-18). The
-first-order bias of \eqref{eq:obc_recovery} is 100 to 1300\,\% against
-observed errors of a few to 30\,\%: outside the range of the expansion, and
-it holds for the one-step least-squares fit at $\bar x=0$, not the
-closed-loop training with active added states. The truth overlap row keeps
-the argument why OBC cannot recover the true parameters; the text that
-compares predicted and observed $\delta_j$ (05\_setup, end of the metric
-paragraph) still needs to go.}
-\revnote{Request (2026-10-18): add a row ``difference between starts'' to
-Table~\ref{tab:res_obc}, the norm of $\delta_j$ from the detuned start minus
-$\delta_j$ from the correct start, per arm. Section~\ref{sec:intro} defines
-interpretability as a unique estimate, and this row tests uniqueness; the
-norm to the truth tests recovery. From
-Table~\ref{tab:app_obc_full} by hand (R1, R2 preliminary): 36.4\,\%
-unconstrained, 25.1\,\% OBC. To be computed by
-\texttt{Code/Figures/res\_obc\_combinations.py} after the final R1/R2 rerun.}
 
+\subsection{Generalisation}
+\ifdraft
+\begin{itemize}
+\item Final model, baseline and black box per test record, each E record beside its I record (Fig.~\ref{fig:res_generalisation})
+\item Multisine twins of the records without multisine
+\end{itemize}
+\fi
 Fig.~\ref{fig:res_generalisation} gives the error per test record, with
 each E record beside its I record (Aspect~3).
-The final model is at 6.2 to 14.1\,\% on the records with multisine and
-2.5 to 6.2\,\% on the others.
-On every E record it stays within 2.0 points of its I record.
-Without multisine it is up to 1.2 points above the baseline, most on E4 and
-I6.
-The black box is at 74 to 193\,\% on every record without multisine.
-It is below the final model only on I2 $X_2$, with 10.2 against 11.4\,\%.
-On the multisine twins, the final model is at 4.9 to 8.8\,\% on $Y$,
-against 48 to 87\,\% for the baseline and 75 to 112\,\% for the black box.
+The final model has about the same error on each E record as on its I
+record.
+Without multisine it is at or slightly above the baseline.
+The black box has 74 to 193\,\% on the records without multisine, and it is
+below the final model only on I2 $X_2$.
+On the multisine twins, the final model stays below 10\,\% on $Y$, while the
+baseline and the black box are above 47\,\%.
 
 \begin{figure*}[t]
   \centering
@@ -156,7 +139,33 @@ against 48 to 87\,\% for the baseline and 75 to 112\,\% for the black box.
   \caption{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}
   \label{fig:res_generalisation}
 \end{figure*}
+
+% Open points of this section (kept together so the text reads without interruption).
+\todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section
+are preliminary (update 19500 of 33400). Candidate: update them after the
+final R1/R2 rerun (basis: handoff 2026-10-18, Sec.~3).}
+\todo{Missing: the network overlap of $\mathcal M_{\mathrm{OBC}}$ in
+Table~\ref{tab:res_obc} comes from update 18200 while labelled 19500, so the
+text gives no number for it. Candidate: recheck after the final R1 rerun
+(basis: handoff 2026-10-18, Sec.~12).}
 \todo{Missing: the caption of Fig.~\ref{fig:res_generalisation} says ``RMS,
 mean over $X_1$, $X_2$, $Y$'', while the text reads $\mathrm{NRMS}_e$ per
 axis. Candidate: check the figure and update the caption (Jasper p9: say
 error of what with respect to what).}
+\todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
+% \revnote{The ``OBC pred.'' columns are dropped (Dirk 2026-10-18). The
+% first-order bias of \eqref{eq:obc_recovery} is 100 to 1300\,\% against
+% observed errors of a few to 30\,\%: outside the range of the expansion, and
+% it holds for the one-step least-squares fit at $\bar x=0$, not the
+% closed-loop training with active added states. The truth overlap row keeps
+% the argument why OBC cannot recover the true parameters; the text that
+% compares predicted and observed $\delta_j$ (05\_setup, end of the metric
+% paragraph) still needs to go.}
+% \revnote{Request (2026-10-18): add a row ``difference between starts'' to
+% Table~\ref{tab:res_obc}, the norm of $\delta_j$ from the detuned start minus
+% $\delta_j$ from the correct start, per arm. Section~\ref{sec:intro} defines
+% interpretability as a unique estimate, and this row tests uniqueness; the
+% norm to the truth tests recovery. From
+% Table~\ref{tab:app_obc_full} by hand (R1, R2 preliminary): 36.4\,\%
+% unconstrained, 25.1\,\% OBC. To be computed by
+% \texttt{Code/Figures/res\_obc\_combinations.py} after the final R1/R2 rerun.}

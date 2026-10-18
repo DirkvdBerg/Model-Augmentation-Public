@@ -73,18 +73,6 @@ A.~Retzler, R.~T{\'o}th, M.~Schoukens, G.~I. Beintema, J.~Weigand, J.-P.
   physics-based models: an industrial robot use case,'' \emph{Data-Centric
   Engineering}, vol.~5, p. e12, 2024.
 
-\bibitem{irds2022}
-{International Roadmap for Devices and Systems (IRDS)}, ``International roadmap
-  for devices and systems: 2022 edition executive summary,'' IEEE, Tech. Rep.,
-  2022.
-
-\bibitem{workman2021diewafer}
-T.~Workman, L.~Mirkarimi, J.~Theil, G.~Fountain, K.~M. Bang, B.~Lee, C.~Uzoh,
-  D.~Suwito, G.~Gao, and P.~Mrozek, ``Die to wafer hybrid bonding and fine
-  pitch considerations,'' in \emph{2021 IEEE 71st Electronic Components and
-  Technology Conference (ECTC)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE,
-  2021, pp. 2071--2077.
-
 \bibitem{toth2010modeling}
 R.~T{\'o}th, \emph{Modeling and Identification of Linear Parameter-Varying
   Systems}, ser. Lecture Notes in Control and Information Sciences.\hskip 1em

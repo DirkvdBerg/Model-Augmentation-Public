@@ -857,14 +857,15 @@ complete validation records and axes,
 simulated in closed loop with the initial state estimated
 once by the encoder and $x^c=0$.
 We only keep the polish if it lowers the validation error.
-\revnote{Final runs (2026-10-18): the polish ran out of GPU memory on the
-11~GB cards and aborted with the Adam result kept in R3, R5, R6 and R14
-(the OBC polish of R13 peaked at 27.9~GB). Where it ran, it changed little:
-rolled back in R4 and R7 (no improvement), accepted in R13 with validation
-NRMS$_e$ $0.2927\to0.2926$. R1 and R2 run on 24~GB cards: check for an
-aborted polish and, if so, repeat only the polish on an 80~GB card from the
-saved pre-polish checkpoint.}
-\\
+% \revnote{Final runs (2026-10-18): the polish ran out of GPU memory on the
+% 11~GB cards and aborted with the Adam result kept in R3, R5, R6 and R14
+% (the OBC polish of R13 peaked at 27.9~GB). Where it ran, it changed little:
+% rolled back in R4 and R7 (no improvement), accepted in R13 with validation
+% NRMS$_e$ $0.2927\to0.2926$. R1 and R2 run on 24~GB cards: check for an
+% aborted polish and, if so, repeat only the polish on an 80~GB card from the
+% saved pre-polish checkpoint.}
+% \\
+
 We start training with the augmented model giving the same
 output as the baseline model from the same initial state, as required
 by~\cite[Eq.~(29)]{hoekstra2026lfr}. \revnote{I use the encoder 

@@ -42,18 +42,20 @@ def main():
     a1.grid(False, which="minor")
 
     tz = (t[z] - t[z][0]) * 1e3
-    a2.plot(tz, (y - r)[z], color="k", lw=1.0, zorder=2)
+    # solid in both panels (Dirk 2026-10-18): a thin model line on top of a thicker system line,
+    # so the system stays visible underneath where the two coincide
+    a2.plot(tz, (y - r)[z], color="k", lw=1.6, zorder=2)
     a2.plot(tz, (b - r)[z], color=COLOR["baseline"], lw=0.7, zorder=1)
-    a2.plot(tz, (m - r)[z], color=COLOR["ps"], lw=1.3, ls=DOT, dash_capstyle="round", zorder=3)
+    a2.plot(tz, (m - r)[z], color=COLOR["ps"], lw=0.7, zorder=3)
     a2.set_xlim(tz[0], tz[-1])
     a2.set_xlabel("Time in shaded window (ms)")
     a2.set_ylabel("Servo error (m)")
     a2.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
     a2.yaxis.get_offset_text().set_fontsize(7)
 
-    handles = [plt.Line2D([], [], color="k", lw=1.0, label="System"),
+    handles = [plt.Line2D([], [], color="k", lw=1.6, label="System"),
                plt.Line2D([], [], color=COLOR["baseline"], lw=0.7, label="Baseline model"),
-               plt.Line2D([], [], color=COLOR["ps"], lw=1.3, ls=DOT, dash_capstyle="round", label="Augmented model")]
+               plt.Line2D([], [], color=COLOR["ps"], lw=0.8, label="Augmented model")]
     a1.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False,
               handlelength=1.8, borderaxespad=0.1)
     fig.align_ylabels((a1, a2))
