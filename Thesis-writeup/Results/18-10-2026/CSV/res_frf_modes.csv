@@ -1,0 +1,29 @@
+run,Y,system,f_Hz,zeta,status
+R1,-0.39,model,4.196,0.0746,"preliminary, update 19500 of 33400"
+R1,-0.39,model,211.158,0.0798,"preliminary, update 19500 of 33400"
+R1,-0.39,truth,4.567,0.0835,
+R1,-0.39,truth,211.938,0.0428,
+R1,-0.3,model,4.442,0.0827,"preliminary, update 19500 of 33400"
+R1,-0.3,model,211.393,0.0758,"preliminary, update 19500 of 33400"
+R1,-0.3,truth,4.792,0.0872,
+R1,-0.3,truth,211.938,0.0428,
+R1,-0.15,model,4.764,0.0925,"preliminary, update 19500 of 33400"
+R1,-0.15,model,211.804,0.0687,"preliminary, update 19500 of 33400"
+R1,-0.15,truth,5.053,0.0912,
+R1,-0.15,truth,211.938,0.0428,
+R1,0.0,model,4.894,0.0954,"preliminary, update 19500 of 33400"
+R1,0.0,model,212.234,0.0609,"preliminary, update 19500 of 33400"
+R1,0.0,truth,5.100,0.0916,
+R1,0.0,truth,211.938,0.0428,
+R1,0.15,model,4.789,0.0897,"preliminary, update 19500 of 33400"
+R1,0.15,model,212.673,0.0522,"preliminary, update 19500 of 33400"
+R1,0.15,truth,4.915,0.0880,
+R1,0.15,truth,211.938,0.0428,
+R1,0.3,model,4.490,0.0767,"preliminary, update 19500 of 33400"
+R1,0.3,model,213.114,0.0427,"preliminary, update 19500 of 33400"
+R1,0.3,truth,4.564,0.0816,
+R1,0.3,truth,211.938,0.0428,
+R1,0.39,model,4.256,0.0665,"preliminary, update 19500 of 33400"
+R1,0.39,model,213.376,0.0364,"preliminary, update 19500 of 33400"
+R1,0.39,truth,4.313,0.0772,
+R1,0.39,truth,211.938,0.0428,

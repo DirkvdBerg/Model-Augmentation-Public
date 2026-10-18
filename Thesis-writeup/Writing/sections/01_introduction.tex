@@ -126,12 +126,12 @@ More accurate FP models can be developed, but this is labour-intensive
 %   position-dependent behaviour and cross-coupling.
 \\
 Purely data-driven (black-box) models such as neural-network or Gaussian-process state-space models
-can describe measured behaviour well, but they give less physical
+can describe measured behaviour well, but can offer limited physical
 insight and are not guaranteed to be
 accurate at operating conditions not covered
-by the training data \cite{willard2020integrating}.
+by the training data \cite{willard2020integrating, hoekstra2026lfr}.
 % CHANGED: "(black-box)" added; "and" added after "insight"
-Typically these models also require large amounts of data to train
+These models can also require large amounts of data to train
 \cite{willard2020integrating, karniadakis2021physicsinformed}.
 % CHANGED: "and significant computational power" dropped (no source); cited
 %   Willard Sec. 1, Karniadakis abstract
@@ -141,7 +141,7 @@ from first principles, such as the rigid-body dynamics
 % NEW: Hoekstra 2026 Sec. 1, p. 1
 \\
 Physics-informed approaches, including physics-informed neural networks
-(PINNs), enforce physical laws as constraints during training
+(PINNs), incorporate physical laws as constraints during training
 \cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}.
 However, these methods require the physics equations to be known and still
 rely on a black-box model for the entire system \cite{hoekstra2026lfr}.
@@ -163,17 +163,15 @@ physical parameter has changed.
 %   they equal their true values." removed (Dirk 2026-10-18)
 % NEW: the recovery condition depends on the excitation and on the missing
 %   dynamics, so it is stated in Section IV-C only
-However, neither a purely physics-based nor a purely
-data-driven model
-meets both requirements on its own \cite{willard2020integrating}.
-\todo{Check source}
+However, purely physics-based and purely data-driven models can each have
+limitations in meeting both requirements \cite{willard2020integrating}.
 % CHANGED: Noel removed; Willard Sec. 1, p. 2
 \\
 Grey-box modeling is the logical choice, because it is able to
 combine a baseline model with interpretable parameters with
 data-driven flexibility needed for accurate prediction
 \cite{noel2018greybox}.
-The following grey-box approaches appear in practice: parameter
+Grey-box approaches include parameter
 re-estimation within the physics model structure, static residual
 correction on the model output, and dynamic augmentation that extends the
 baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
@@ -214,8 +212,8 @@ the baseline already describes \cite{gyorok2026obc}.
 unconstrained learned component, and a source for absorption by refitting.
 Candidate: Gy\"or\"ok et al.\ Sec.~1 and Sec.~3.2 (not yet checked).}
 \\
-Learning-based hybrid modeling has already been demonstrated on
-an industrial robot \cite{retzler2024}.
+Learning-based hybrid modeling has already been demonstrated using
+measurements from an industrial robot \cite{retzler2024}.
 However, a key gap remains: there is no grey-box modeling framework for the
 dual-drive gantry that simultaneously addresses coupled multi-input
 multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,

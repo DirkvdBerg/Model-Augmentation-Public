@@ -1,21 +1,27 @@
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{l r r r}
+% validation records
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l r r r r r r}
 \toprule
-Model & $X_1$ (m) & $X_2$ (m) & $Y$ (m)\\
+ & \multicolumn{3}{c}{Multisine} & \multicolumn{3}{c}{No multisine}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+$\mathrm{NRMS}_e$ (\%) & $X_1$ & $X_2$ & $Y$ & $X_1$ & $X_2$ & $Y$\\
 \midrule
-Baseline, true $\theta$ & $1.64\cdot10^{-6}$ & $1.97\cdot10^{-6}$ & $1.31\cdot10^{-5}$\\
-Baseline, detuned $\theta$ & $2.99\cdot10^{-6}$ & $2.28\cdot10^{-6}$ & $1.56\cdot10^{-5}$\\
-Static parallel, $n_a{=}0$ & $1.33\cdot10^{-6}$ & $1.42\cdot10^{-6}$ & $1.24\cdot10^{-5}$\\
-Plain training, $n_a{=}2$ & $1.18\cdot10^{-6}$ & $1.26\cdot10^{-6}$ & $1.06\cdot10^{-5}$\\
-PS init., $n_a{=}2$ & $1.09\cdot10^{-6}$ & $1.21\cdot10^{-6}$ & $1.39\cdot10^{-6}$\\
-PS init., baseline part only & $1.94\cdot10^{-6}$ & $1.77\cdot10^{-6}$ & $1.35\cdot10^{-5}$\\
-PS init., $n_a{=}8$ & $1.04\cdot10^{-6}$ & $1.19\cdot10^{-6}$ & $1.44\cdot10^{-6}$\\
-PS init., detuned $\theta$ & $1.08\cdot10^{-6}$ & $1.20\cdot10^{-6}$ & $1.44\cdot10^{-6}$\\
+Baseline, true $\theta$ & $23.0$ & $24.9$ & $121.8$ & $4.7$ & $4.9$ & $3.7$\\
+Baseline, detuned $\theta$$^\dagger$ & $30.6$ & $34.0$ & $131.2$ & $10.2$ & $5.5$ & $11.4$\\
+Static parallel, $n_a{=}0$ & $14.3$ & $14.3$ & $86.5$ & $4.9$ & $4.6$ & $18.4$\\
+Static parallel, $n_a{=}0$, detuned $\theta$ & $14.2$ & $14.2$ & $86.5$ & $5.0$ & $4.7$ & $18.7$\\
+Static parallel (OBC), $n_a{=}0$, detuned $\theta$ & $14.9$ & $14.9$ & $86.6$ & $5.5$ & $5.2$ & $19.7$\\
+Plain training, $n_a{=}2$ & $11.6$ & $12.0$ & $78.1$ & $4.5$ & $4.6$ & $14.6$\\
+PS init., $n_a{=}2$ & $9.9$ & $10.5$ & $6.4$ & $4.1$ & $4.3$ & $4.3$\\
+PS init., baseline part only & $21.1$ & $21.6$ & $120.5$ & $5.5$ & $4.3$ & $3.7$\\
+PS init., $n_a{=}8$ & $9.5$ & $9.9$ & $6.3$ & $4.1$ & $4.2$ & $4.3$\\
+PS init., detuned $\theta$ & $9.9$ & $10.2$ & $6.6$ & $4.1$ & $4.2$ & $4.3$\\
 \midrule
-Augmented (OBC), detuned $\theta$ & $1.14\cdot10^{-6}$ & $1.29\cdot10^{-6}$ & $1.49\cdot10^{-6}$\\
+Augmented (OBC), detuned $\theta$$^\dagger$ & $11.0$ & $11.1$ & $7.1$ & $4.6$ & $4.9$ & $4.1$\\
 \midrule
-Black-box model & $1.85\cdot10^{-5}$ & $2.11\cdot10^{-5}$ & $2.33\cdot10^{-5}$\\
+Black-box model & $31.6$ & $33.6$ & $23.8$ & $75.6$ & $76.9$ & $103.3$\\
 \midrule
-Noise floor & $9.00\cdot10^{-9}$ & $9.63\cdot10^{-9}$ & $3.19\cdot10^{-9}$\\
+Noise floor & $0.06$ & $0.07$ & $0.01$ & $0.04$ & $0.04$ & $0.01$\\
 \bottomrule
+\multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\
 \end{tabular}

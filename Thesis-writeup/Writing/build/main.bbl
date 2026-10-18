@@ -21,18 +21,6 @@
 \providecommand{\BIBdecl}{\relax}
 \BIBdecl
 
-\bibitem{irds2022}
-{International Roadmap for Devices and Systems (IRDS)}, ``International roadmap
-  for devices and systems: 2022 edition executive summary,'' IEEE, Tech. Rep.,
-  2022.
-
-\bibitem{workman2021diewafer}
-T.~Workman, L.~Mirkarimi, J.~Theil, G.~Fountain, K.~M. Bang, B.~Lee, C.~Uzoh,
-  D.~Suwito, G.~Gao, and P.~Mrozek, ``Die to wafer hybrid bonding and fine
-  pitch considerations,'' in \emph{2021 IEEE 71st Electronic Components and
-  Technology Conference (ECTC)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE,
-  2021, pp. 2071--2077.
-
 \bibitem{garcia2013model}
 I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J. Barre,
   ``Model-based decoupling control method for dual-drive gantry stages: A case
@@ -43,16 +31,6 @@ I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J. Barre,
 C.~S. Teo, K.~K. Tan, S.~Y. Lim, S.~Huang, and E.~B. Tay, ``Dynamic modeling
   and adaptive control of a h-type gantry stage,'' \emph{Mechatronics},
   vol.~17, no.~7, pp. 361--367, 2007.
-
-\bibitem{lambrechts2005trajectory}
-P.~Lambrechts, M.~Boerlage, and M.~Steinbuch, ``Trajectory planning and
-  feedforward design for electromechanical motion systems,'' \emph{Control
-  Engineering Practice}, vol.~13, no.~2, pp. 145--157, 2005.
-
-\bibitem{hwang2024semiconductor}
-J.~Hwang and S.~D. Noh, ``Digital twin-based optimization of operational
-  parameters for cluster tools in semiconductor manufacturing,'' \emph{IEEE
-  Access}, vol.~12, pp. 122\,078--122\,100, 2024.
 
 \bibitem{willard2020integrating}
 J.~Willard, X.~Jia, S.~Xu, M.~Steinbach, and V.~Kumar, ``Integrating scientific
@@ -94,6 +72,18 @@ A.~Retzler, R.~T{\'o}th, M.~Schoukens, G.~I. Beintema, J.~Weigand, J.-P.
   No{\"e}l, Z.~Koll{\'a}r, and J.~Swevers, ``Learning-based augmentation of
   physics-based models: an industrial robot use case,'' \emph{Data-Centric
   Engineering}, vol.~5, p. e12, 2024.
+
+\bibitem{irds2022}
+{International Roadmap for Devices and Systems (IRDS)}, ``International roadmap
+  for devices and systems: 2022 edition executive summary,'' IEEE, Tech. Rep.,
+  2022.
+
+\bibitem{workman2021diewafer}
+T.~Workman, L.~Mirkarimi, J.~Theil, G.~Fountain, K.~M. Bang, B.~Lee, C.~Uzoh,
+  D.~Suwito, G.~Gao, and P.~Mrozek, ``Die to wafer hybrid bonding and fine
+  pitch considerations,'' in \emph{2021 IEEE 71st Electronic Components and
+  Technology Conference (ECTC)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE,
+  2021, pp. 2071--2077.
 
 \bibitem{toth2010modeling}
 R.~T{\'o}th, \emph{Modeling and Identification of Linear Parameter-Varying

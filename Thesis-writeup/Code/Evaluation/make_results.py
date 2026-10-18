@@ -294,7 +294,8 @@ def time_trace():
     eb = base - y
     a, b = max(segs, key=lambda ab: np.sqrt(np.mean(eb[ab[0]:min(ab[1] + int(0.05 * FS), len(y))] ** 2)))
     b = min(b + int(0.05 * FS), len(y))
-    rows = [['%.6f' % t[k], f(r[k]), f(y[k]), f(base[k]), f(final[k]), int(a <= k < b), status('R1')]
+    st = status('R1')                                       # once, not per sample
+    rows = [['%.6f' % t[k], f(r[k]), f(y[k]), f(base[k]), f(final[k]), int(a <= k < b), st]
             for k in range(len(y))]
     write('res_time_trace', ['t_s', 'r_Y', 'y_Y', 'baseline_Y', 'final_Y', 'zoom', 'status_final'], rows)
 

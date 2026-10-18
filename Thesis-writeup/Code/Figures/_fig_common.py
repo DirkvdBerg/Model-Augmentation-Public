@@ -8,13 +8,14 @@ Every figure in the paper is therefore traceable to exactly one script and one
 result file. Scripts never write anywhere else inside Writing/.
 """
 
+import os
 from pathlib import Path
 
 import matplotlib as mpl
 
 _HERE = Path(__file__).resolve().parent
 ROOT = _HERE.parents[1]                 # Thesis-writeup/
-RESULTS_DIR = ROOT / "Results"
+RESULTS_DIR = Path(os.environ.get("THESIS_RESULTS_DIR", ROOT / "Results"))   # e.g. Results/18-10-2026/CSV
 DATA_DIR = ROOT / "Data"
 FIG_DIR = ROOT / "Writing" / "figures"
 TAB_DIR = ROOT / "Writing" / "tables"
