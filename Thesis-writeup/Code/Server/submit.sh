@@ -84,7 +84,7 @@ case "$TIER" in
     echo "evaluation array ${JID}"
     sbatch -J final-results -p kauai,molokai,lanai -c 2 --mem=8gb -t 01:00:00 --dependency=afterok:${JID} \
       -o "${LOG_DIR}/%x_%j.out" --export=ALL,THESIS_BB_DIR=${THESIS_BB_DIR} \
-      --wrap "source \$HOME/miniconda3/etc/profile.d/conda.sh && conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject && cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation && THESIS_EVAL=final python -u Thesis-writeup/Code/Evaluation/make_results.py"
+      --wrap ". \$HOME/miniconda3/etc/profile.d/conda.sh && conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject && cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation && THESIS_EVAL=final python -u Thesis-writeup/Code/Evaluation/make_results.py"
     exit 0 ;;
   final-all)
     # Main results first (R1, R4, R8), then the appendix runs; each tier as below.
