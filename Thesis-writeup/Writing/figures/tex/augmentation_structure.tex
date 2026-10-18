@@ -81,9 +81,7 @@
 
   % encoder
   \draw[->, dashed] (enc.north) -- (z.south)
-       node[pos=0.5, right, inner sep=1.5pt] {$\hat x_{k|k}$};
-  \draw[<-] (enc.west |- 0,\yE+0.3) -- ++(-0.4,0)
-       node[anchor=east, inner sep=1.5pt] {$y_{k-n_a}^{k-1}$};
-  \draw[<-] (enc.west |- 0,\yE-0.3) -- ++(-0.4,0)
-       node[anchor=east, inner sep=1.5pt] {$u_{k-n_b}^{k-1}$};
+       node[pos=0.5, right, inner sep=1.5pt] {$\hat x_{\tau|\tau}$};
+  \draw[<-] (enc.west) -- ++(-0.4,0)
+       node[anchor=east, inner sep=1.5pt] {$\chi_\tau$};
 \end{tikzpicture}
