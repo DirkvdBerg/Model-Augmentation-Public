@@ -266,6 +266,9 @@ rather than treated as a free model parameter.
 %   L_b is kept fixed.
 Moving the payload position $Y$ changes the mass distribution of the gantry and therefore its inertia matrix $M(Y)$.
 This position dependence is included by representing the baseline in linear parameter-varying (LPV) form, with the measured payload position \(Y\) as scheduling variable \cite{toth2010modeling}.
+\kwtwo{Freezing $M(Y)$ at $Y=0$ increases the simulation error on $X$ by
+up to a factor 3.7 (Fig.~\ref{fig:res_lpv_lti} in
+Appendix~\ref{app:choices}).}
 \todo{Determine and justify the operating range of $Y$; distinguish the
 mechanical stroke, simulated-data range, and range covered by the measured
 ILC records.}

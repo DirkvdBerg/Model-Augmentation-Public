@@ -198,7 +198,8 @@ each training position.
 \\
 We use 18 records for training, 6 for validation and 11 for testing
 (Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).
-\revnote{11? and the multinse doubles?}
+\kwtwo{Seven of the test records without multisine are also evaluated with the
+training multisine added.}
 Training and validation include all five motion types, with
 $\lvert Y\rvert\le Y_{\mathrm{tr}}$, up to \SetupTrainAcc\,\% of the
 acceleration limit and \SetupTrainVel\,\% of the velocity limit.
@@ -229,16 +230,14 @@ checks in Table~\ref{tab:setup_checks}.
 \fi
 The models of Table~\ref{tab:setup_models} are compared in pairs,
 each answering one aspect of the research question.
-The pairs are $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$
-for the baseline, the final model $\mathcal M_{\mathrm{OBC}}$ with
-$\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{BB}}$ for the
-augmentation, and $\mathcal M_{\mathrm{OBC}}$ with $\mathcal M_{\mathrm U}$
-for the orthogonal construction.
+\kwtwo{The pairs are the final model $\mathcal M_{\mathrm{OBC}}$ with the
+baseline $\mathcal M_{\mathrm{LPV}}$ and the black box
+$\mathcal M_{\mathrm{BB}}$ for the augmentation, and
+$\mathcal M_{\mathrm{OBC}}$ with $\mathcal M_{\mathrm U}$ for the
+orthogonal construction.}
 The extrapolation records compare the final model with the black box
 (Aspect~4).
-$\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$ are the baseline
-at the true parameters, with $M(Y)$ taken at $Y=0$ for
-$\mathcal M_{\mathrm{LTI}}$.
+\kwtwo{$\mathcal M_{\mathrm{LPV}}$ is the baseline at the true parameters.}
 \begin{table}[t]
 \caption{Compared models. Start: the ten combinations at the start of
 training; final model: $\mathcal M_{\mathrm{OBC}}$.}
@@ -250,7 +249,6 @@ training; final model: $\mathcal M_{\mathrm{OBC}}$.}
 Model & Added states & OBC & Start\\
 \midrule
 $\mathcal M_{\mathrm{LPV}}$ & 0 & no & true, untrained\\
-$\mathcal M_{\mathrm{LTI}}$ & 0 & no & true, untrained\\
 $\mathcal M_{\mathrm{U}}$ & 2 & no & 10\,\% detuned\\
 $\mathcal M_{\mathrm{OBC}}$ & 2 & yes & 10\,\% detuned\\
 $\mathcal M_{\mathrm{BB}}$ & black box & no & no physics\\
