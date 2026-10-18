@@ -4,7 +4,7 @@
 % Sources: README "Source map per subsection", rows the V rows (data-generating system, data, controller, compared models, metrics, hyperparameters); mandatory papers and the reference gate as in the README.
 % Research-plan anchor: Preserve the planned interpolation, generalisation, and black-box questions; update datasets, horizons, excitation, and preprocessing to what was actually used.
 % Current decisions: Independent phases, held-out positions, multisine-free motion, truth-only friction or absorber variants, matched budgets, and long-horizon evaluation.
-% Choices to justify: Operating-point grid, ASMPT motion profiles, frequency bands, amplitudes, phase realizations, crest-factor selection, record length, sample rate, split sizes, window sampling, settling interval, primary metric, seed policy, comparator capacity, noise status, and all tuned hyperparameters.
+% Choices to justify: Operating-point grid, ASMPT motion profiles, frequency bands, amplitudes, phase realisations, crest-factor selection, record length, sample rate, split sizes, window sampling, settling interval, primary metric, seed policy, comparator capacity, noise status, and all tuned hyperparameters.
 % Hyperparameter check: Classify each important setting as physics-derived, inherited, validation-tuned, safety-constrained, or compute-constrained; give a sensitivity result for settings that could change the conclusion.
 % Cautions: Plans are not evidence; use the corrected matched friction dataset only; do not call a generated profile ASMPT-relevant until its motion parameters are confirmed; keep oracle states outside the trainable pipeline.
 % Planned figures: Reuse the training-horizon strip and show a 2D train, validation, and test operating-point coverage map; use 3D only if the third coordinate communicates additional coverage rather than visual clutter.
@@ -69,7 +69,7 @@ The first is Coulomb friction at the actuators $X_1$, $X_2$ and $Y$, as
 modelled by Garc\'ia-Herreros et al.~\cite{garcia2013model}.
 We deliberately left it out of the baseline, to add nonlinear unmodelled
 dynamics to the system. The friction works as a force against each actuator 
-force, this is modeled as a term entering \eqref{eq:eom} through the input.
+force, this is modelled as a term entering \eqref{eq:eom} through the input.
 For the second addition, we split the payload mass $m_h$ into
 $m_a$ and $m_{h,r}=m_h-m_a$, with $m_a$ connected to $m_{h,r}$
 by a spring and damper in the $Y$ direction
@@ -81,7 +81,7 @@ baseline model is not able to represent with its states.
   \resizebox{\columnwidth}{!}{\input{figures/gantry_system_with_absorber}}
   \caption{\todo{Simulated gantry with a flexibly mounted part $m_a$ of the
   payload mass $m_h$; the rest of the payload is $m_{h,r}=m_h-m_a$. The
-  light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}}
+  light-grey elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}}
   \label{fig:gantry_absorber}
 \end{figure}
 With the friction acting against each actuator force on the input, 
@@ -182,7 +182,7 @@ The data is divided into five types of motion profiles and each record is 12~s
 (Appendix~\ref{app:setup_records}).
 The motion profiles excite the low frequencies up till the loop crossover, 
 for at least \SetupGapSnrMinMotion~dB above the noise.
-A multisine force is added to each of the generalized channels $X$,
+A multisine force is added to each of the generalised channels $X$,
 $\Theta$, $Y$, except in records with an operational motion profile.
 The force is applied to the actuators through $P^{-1}$.
 The multisine band starts at the highest loop crossover 

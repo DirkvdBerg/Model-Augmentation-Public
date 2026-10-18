@@ -13,7 +13,7 @@
 % Sources: README "Source map per subsection", rows II-A, II-B, II-C and II Frozen-LTI baseline; mandatory papers and the reference gate as in the README.
 % Research-plan anchor: Preserve Aspect 1's explicit position dependence; update the original discretisation wording to the final method.
 % Current decisions: Continuous-time physics, endogenous scheduler Y, fixed-step RK4, and identifiable parameter combinations.
-% Choices to justify: Coordinate frame, Y as scheduler, continuous-time formulation, RK4 step and substeps, full six-channel LFR realization, and reduced physical parameterization. Give the physical or numerical reason for each choice, not only its definition.
+% Choices to justify: Coordinate frame, Y as scheduler, continuous-time formulation, RK4 step and substeps, full six-channel LFR realisation, and reduced physical parametrisation. Give the physical or numerical reason for each choice, not only its definition.
 % Cautions: The final pipeline uses the full six-channel scheduling loop, not the experimental six-to-four SVD reduction. Resolve the supervisor comment about dual-gantry terminology; do not copy unverified bibliography entries.
 % Planned figures: Physical coordinate schematic and compact interconnection between G and Delta(Y).
 % Section is finished when: The LFR collapses to the original model, well-posedness assumptions are stated, and notation matches Section 03.
@@ -24,7 +24,7 @@
 % 3. Construct the LFR directly from the polynomial mass equation:
 %       a1=Y qdd, a2=Y a1, M0 qdd + M1 a1 + M2 a2 = f_net,
 %       z=[qdd; a1], w=[a1; a2] (stepwise latent names; qdd is not renamed to a).
-% 4. Collect w=Delta(Y)z with Delta(Y)=Y I6 and give the constant block-level G realization with all signal dimensions.
+% 4. Collect w=Delta(Y)z with Delta(Y)=Y I6 and give the constant block-level G realisation with all signal dimensions.
 % 5. Eliminate w and z in a short exactness check to recover the original equation of motion.
 % 6. State the well-posedness condition over the complete scheduling range and relate it to invertibility of M(Y); place the longer proof outside the main text.
 % 7. Only after the conceptual construction, mention that the implementation
@@ -107,7 +107,7 @@ third actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}
   Lumped-parameter model of the Dual-drive gantry stage, adapted from   
   \cite{garcia2013model}. 
   \kw{Red labels denote actuator coordinates}
-  and blue labels generalized coordinates.}
+  and blue labels generalised coordinates.}
   % FEEDBACK: caption taken out of its \todo, "Still need to add springs to
   %   the current torsion." removed from the caption (Js23, Js25); no marks
   %   in captions (fragile argument). X1, X2 arrows moved off the fixed
@@ -116,7 +116,7 @@ third actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}
   \label{fig:gantry_system}
 \end{figure}
 % In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
-% the simulated ground-truth system additionally includes the light-gray absorber.
+% the simulated ground-truth system additionally includes the light-grey absorber.
 The actuator forces are defined as
 $\uact=[F_{X1}\;F_{X2}\;F_Y]^\top$ and the measured positions
 $\qact=[X_1\;X_2\;Y]^\top$.
@@ -161,12 +161,12 @@ The physics baseline of the gantry system used in this thesis
 is the lumped-parameter model of the
 dual-drive gantry of Garc\'ia-Herreros et al.~\cite{garcia2013model}.
 Let \(L_b\) denote the cross-arm length between the two flexible joints.
-The generalized coordinates  $q=[X\;\Theta\;Y]^\top$ are defined as $X=(X_1+X_2)/2$ and $\Theta=(X_1-X_2)/L_b$, the position and yaw angle of the cross-arm, while $Y$ is
+The generalised coordinates  $q=[X\;\Theta\;Y]^\top$ are defined as $X=(X_1+X_2)/2$ and $\Theta=(X_1-X_2)/L_b$, the position and yaw angle of the cross-arm, while $Y$ is
 unchanged. These coordinates avoid
 a closed kinematic-chain description and make the coupling 
 associated with the
 nonuniform load distribution explicit \cite{garcia2013model}.
-\todo{This needs to make clear why we choose for this realization.}
+\todo{This needs to make clear why we choose for this realisation.}
 \todo{How to connect, nonunfirom ... moving payload position}
 % FEEDBACK: the green words were Dirk's own, inside the \todo, so the review
 %   PDF read "These coordinates avoid [3]." (Jan12, Js26, Q19). Garcia Sec. 2.2
@@ -186,7 +186,7 @@ The coordinate and force transformations are
 \end{aligned}
 \label{eq:Ptransform}
 \end{equation}
-where $u$ denotes the generalized force.
+where $u$ denotes the generalised force.
 
 % Here $X=(X_1+X_2)/2$ is the translation of the cross-arm centre, $\Theta=(X_1-X_2)/L_b$ its yaw angle, and $Y$ is unchanged. These coordinates avoid a closed kinematic-chain description \cite{garcia2013model}.
 % Then, after the matrices:
@@ -274,7 +274,7 @@ ILC records.}
 \ifdraft
 \begin{itemize}
 \item $Y$ is a state and the scheduling variable; $M(Y)^{-1}$ makes the model rational in $Y$ (Drenth)
-\item $M(Y)=M_0+YM_1+Y^2M_2$; $Y$ enters only through $Y\ddot q$ and $Y^2\ddot q$, realized by repeating $Y$ (this work)
+\item $M(Y)=M_0+YM_1+Y^2M_2$; $Y$ enters only through $Y\ddot q$ and $Y^2\ddot q$, realised by repeating $Y$ (this work)
 \item Latent variables $z,w$ and Delta-block $\Dsch(Y)=YI_6$; not claimed minimal (this work)
 \item LTI part $G$ in a continuous-time adaptation of Drenth Eq.~(2); its first block row is the state equation
 \item Closing the algebraic loop gives back \eqref{eq:eom} exactly (this work)
@@ -359,10 +359,10 @@ The first block row is the \kw{state equation}, with $\ddot q$ obtained from
 \\
 \kw{Conversely,} closing the \kw{algebraic loop} with \eqref{eq:delta} results in
 $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
-into \eqref{eq:eom}. The LFR is therefore an exact realization of the baseline.
+into \eqref{eq:eom}. The LFR is therefore an exact realisation of the baseline.
 The LFR is \kw{well posed} if the \kw{algebraic loop} has a unique solution for
 every $Y$ \cite[Def.~1]{drenth2025lpvlfr}. 
-For the gantry realization we show that this condition holds
+For the gantry realisation we show that this condition holds
 when $M(Y)$ is nonsingular (Appendix~\ref{app:lfr-details}).
 For positive \kw{masses} and \kw{inertias}, $M(Y)\succ0$ for every $Y\in\R$
 (Appendix~\ref{app:lfr-wellposed}). Therefore the \kw{LFR} is well posed over the
@@ -461,7 +461,7 @@ $m_h>0$, $m_\Sigma>0$ and $J_{\mathrm{eff}}>0$, $M(Y)\succ0$ for every $Y$ if an
 \end{equation}
 (Appendix~\ref{app:lfr-wellposed}). 
 To ensure that well-posedness and \eqref{eq:lfr_admissibility} 
-hold during training, we use a logarithmic parameterization for 
+hold during training, we use a logarithmic parametrisation for 
 the nine positive combinations and a $\tanh$-bounded $m_\Delta$
 (Section~\ref{sec:aug_closed_loop}).
 % Training therefore uses logarithmic

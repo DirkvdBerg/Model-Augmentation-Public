@@ -167,7 +167,7 @@ However, purely physics-based and purely data-driven models can each have
 limitations in meeting both requirements \cite{willard2020integrating}.
 % CHANGED: Noel removed; Willard Sec. 1, p. 2
 \\
-Grey-box modeling is the logical choice, because it is able to
+Grey-box modelling is the logical choice, because it is able to
 combine a baseline model with interpretable parameters with
 data-driven flexibility needed for accurate prediction
 \cite{noel2018greybox}.
@@ -176,7 +176,7 @@ re-estimation within the physics model structure, static residual
 correction on the model output, and dynamic augmentation that extends the
 baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
 % NEW: research plan Literature.tex l.1 word for word, citation changed;
-%   Willard Secs. 2.3, 3.4.1 (calibration, residual modeling), Hoekstra
+%   Willard Secs. 2.3, 3.4.1 (calibration, residual modelling), Hoekstra
 %   2026 Sec. 2 (static vs dynamic)
 Model augmentation combines a physics-based baseline model with a learned
 component, so that the learned component only needs to capture the dynamics
@@ -212,9 +212,9 @@ the baseline already describes \cite{gyorok2026obc}.
 unconstrained learned component, and a source for absorption by refitting.
 Candidate: Gy\"or\"ok et al.\ Sec.~1 and Sec.~3.2 (not yet checked).}
 \\
-Learning-based hybrid modeling has already been demonstrated using
+Learning-based hybrid modelling has already been demonstrated using
 measurements from an industrial robot \cite{retzler2024}.
-However, a key gap remains: there is no grey-box modeling framework for the
+However, a key gap remains: there is no grey-box modelling framework for the
 dual-drive gantry that simultaneously addresses coupled multi-input
 multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,
 and preserves physical interpretability.
@@ -325,14 +325,14 @@ Shall I remove the aspects, or shorten the introduction?}
 \todo{changed rq and polished aspects}
 \noindent To answer this research question, the following four aspects are investigated:
 \begin{enumerate}
-    \item \textbf{Position-dependent baseline modeling} \\
+    \item \textbf{Position-dependent baseline modelling} \\
     In what form should the baseline model be represented for subsequent augmentation, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives? \todo{LPV versus frozen LTI exists only as a baseline check (lpv\_lfr\_baseline/scripts/validate\_lfr.py), not in the final evaluation; Quinten wants LTI as second baseline.}
     \item \textbf{Augmentation structure} \\
-    What augmentation structure can effectively capture dynamics not modeled in the physics-based baseline model?
+    What augmentation structure can effectively capture dynamics not modelled in the physics-based baseline model?
     \item \textbf{Interpretability preservation} \\
     How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained approaches?
-    \item \textbf{Model generalization} \\
-    How well does the augmented model generalize to (i) held-out operating points and (ii) unseen motion profiles, and how does its prediction accuracy compare to a black-box state-space model? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}
+    \item \textbf{Model generalisation} \\
+    How well does the augmented model generalise to (i) held-out operating points and (ii) unseen motion profiles, and how does its prediction accuracy compare to a black-box state-space model? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}
 \end{enumerate}
 \fi
 

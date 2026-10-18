@@ -14,7 +14,7 @@
 \section{Supporting derivations}
 
 % FEEDBACK v1 (2026-10-18): subsections reordered to the order of first
-%   reference in Section II (Q25, Js32): parameters, LFR realization,
+%   reference in Section II (Q25, Js32): parameters, LFR realisation,
 %   positive definiteness, identifiable combinations.
 \subsection{Nominal physical parameters}\label{app:params}
 Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
@@ -50,7 +50,7 @@ $f_a$ & $150\,\mathrm{Hz}$ & $\zeta_a$ & $0.03$ \\
 \end{tabular}
 \end{table}
 
-\subsection{Explicit LPV-LFR realization}\label{app:lfr-details}
+\subsection{Explicit LPV-LFR realisation}\label{app:lfr-details}
 In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
 \begin{equation*}
  M_1=\begin{bmatrix}0&-m_h&0\\-m_h&0&0\\0&0&0\end{bmatrix},\qquad
@@ -142,7 +142,7 @@ $m_\Sigma+m_h$. Sylvester's criterion therefore reduces positive definiteness
 to positivity of the completed-square expression for every $Y$. Hence, for
 positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$, $M(Y)\succ0$ for all
 $Y\in\R$ if and only if \eqref{eq:lfr_admissibility} holds.
-For the physical parameterization, the difference between the two sides is
+For the physical parametrisation, the difference between the two sides is
 \begin{equation*}
 \begin{aligned}
   m_\Sigma J_{\mathrm{eff}}-\frac{L_b^2}{4}m_\Delta^2
@@ -186,7 +186,7 @@ give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to
 \begin{wip}
 \todo{Remarks cut from Section~II-B; keep here or drop?}
 \begin{itemize}
-\item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
+\item $Y^2$ is realised by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
 \item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}
 \item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
 \item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
