@@ -198,25 +198,18 @@
 \item Contribution share: the realisation on the self-scheduled gantry baseline with joint estimation of $\theta_{\mathrm{base}}$, its identification in closed loop with the known controller, and the PS initialisation of the added states (MUST ESTABLISH)
 \end{itemize}
 \fi
-\changelegend
 
 The dynamics of the system that are not captured by the baseline model
 defined in Section~\ref{sec:lfr} will be identified from input-output data
 measured in closed-loop.
 The baseline model will be augmented to represent these missing dynamics.
 A correction to the states of the baseline model alone is not sufficient,
-\add[Jan22]{because missing dynamics need states the baseline does not have
+\kwtwo{because missing dynamics need states the baseline does not have
 (Section~\ref{sec:aug_structure}),}
 so additional states are introduced.
-We make use of \chg[Q36]{a neural network}{a feedforward neural network} to model both the changes for the baseline states
+We make use of \kwtwo{a feedforward neural network} to model both the changes for the baseline states
 and the additional states.
 \\
-\del[Jan23]{The model is trained using short windows of the closed-loop data, where each
-window is simulated with the known controller.
-The initial states are estimated by an encoder, including the additional
-states.
-During training, the physical parameters $\theta_{\mathrm{base}}$ are also
-estimated, using the combinations defined in Section~\ref{sec:params}.}
 % We first define the augmented model (Section~\ref{sec:aug_structure}).
 % Because the open-loop gantry drifts on $X$ and $Y$ and the records are
 % measured under feedback, the model is simulated inside the known feedback
@@ -227,7 +220,7 @@ estimated, using the combinations defined in Section~\ref{sec:params}.}
 % (Section~\ref{sec:aug_closed_loop}).
 % Training starts from the baseline (Section~\ref{sec:aug_encoder}), and the
 % added states get a data-driven start (Section~\ref{sec:aug_ps2}).
-\add[Jan23]{\kw{We define the augmented model (Section~\ref{sec:aug_structure}),
+\kwtwo{\kw{We define the augmented model (Section~\ref{sec:aug_structure}),
 simulate it inside the known feedback loop (Section~\ref{sec:aug_loop}),
 estimate it jointly with $\theta_{\mathrm{base}}$
 (Section~\ref{sec:aug_closed_loop}), and start the training from the
@@ -269,37 +262,25 @@ added states (Section~\ref{sec:aug_ps2}).}}
 To represent additional dynamics such as a flexible mode,
 refitting $\theta_{\mathrm{base}}$ or correcting the baseline states with 
 a static augmentation
-\add[Js58]{, where the learned correction is only added to the physical states,
+\kwtwo{, where the learned correction is only added to the physical states,
 % a learned correction without states of its own,
 } is not sufficient.
-Both these methods \chg[Jan24]{\todo{only retain}}{only retain} the original states of the baseline,
+Both these methods \kwtwo{only retain} the original states of the baseline,
 while missing dynamics require
 states the baseline does not include~\cite[Sec.~2]{hoekstra2026lfr}.
 A dynamic augmentation therefore adds states $\bar x$ to model these
-missing dynamics\del[Js60]{~\mbox{\fbcite[Sec.~2]{hoekstra2026lfr}}}.
+missing dynamics.
 The augmented model updates these states using the full state
 and input~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
 \\
-\add[Jan26]{We use the dynamic parallel structure of Hoekstra et
+\kwtwo{We use the dynamic parallel structure of Hoekstra et
 al. \todo{~\cite[Table~1]{hoekstra2026lfr}} (Fig.~\ref{fig:aug_structure}), 
 here a neural network adds it correction on the same state as the 
 baseline model in \kw{parallel}.
 besides the baseline model on the same state.}
-\del[Jan26]{The LFR-based augmentation structure of Hoekstra et al. is used,
-an interconnection matrix connects a baseline block and a learning
-block~\mbox{\fbcite[Sec.~3.1]{hoekstra2026lfr}}.}
 The learning components are a neural network consisting of $f_{\mathrm{aug}}$
 and $g_{\mathrm{aug}}$.
-\del[Jan26]{\todo{constant block is not really constant} Similar to the LFR in Section~\ref{sec:lfr} (Fig.~\ref{fig:lfr}),
-a constant matrix connects the two blocks through latent variables.
-The self-scheduled LFR
-The baseline block for this is the self-scheduled LFR of Section~\ref{sec:lfr},
-this is a nonlinear
-\todo{Check can i state nonlinear here}
-map of the state and the input~\mbox{\fbcite[Sec.~2.4]{drenth2025thesis}}.
-The augmented model is thus an LFR whose baseline block is itself an LFR
-in~$Y$.}
-\mv[Jan25]{III-A P5}The model is defined in \chg[Js66]{discrite}{discrete} time with the augmentation added to
+The model is defined in \kwtwo{discrete} time with the augmentation added to
 the state update of the baseline~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
 This gives us
 \begin{equation}
@@ -313,12 +294,12 @@ This gives us
 \end{aligned}
 \label{eq:aug_transition}
 \end{equation}
-where \chg[JsM1]{$\tilde x_k=\col(q_k,\dot q_k)\in\R^6$}{$\tilde x_k=[q_k^\top\;\dot q_k^\top]^\top\in\R^6$} is the physical state of
+where \kwtwo{$\tilde x_k=[q_k^\top\;\dot q_k^\top]^\top\in\R^6$} is the physical state of
 \eqref{eq:lfr_G}, $\bar x_k\in\R^{n_{\bar x}}$ the added state,
-\add[Jan28]{the augmented state} \chg[JsM1]{$\hat x_k=\col(\tilde x_k,\bar x_k)$}{$\hat x_k=[\tilde x_k^\top\;\bar x_k^\top]^\top$}, \add[Js68]{$f_{\mathrm{base}}$ the baseline state update,}
+\kwtwo{the augmented state} \kwtwo{$\hat x_k=[\tilde x_k^\top\;\bar x_k^\top]^\top$}, \kwtwo{$f_{\mathrm{base}}$ the baseline state update,}
 $u_{\mathrm{act},k}\in\R^3$ the actuator
 forces, $\hat y_k\in\R^3$ the predicted actuator positions,
-and \chg[Jan29]{$y_k = q_{\mathrm{act},k}$ the measured positions}{$y_k$ the measured positions of \eqref{eq:system}},
+and \kwtwo{$y_k$ the measured positions of \eqref{eq:system}},
 $\theta_{\mathrm{base}}\in\R^{10}$ the combinations \eqref{eq:phi},
 and \todo{using theta might be confusing with baseline} $\theta_{\mathrm{aug}}\in\R^{n_{\mathrm{aug}}}$ the network parameters.
 The added states are updated by $g_{\mathrm{aug}}$ without any predetermined 
@@ -327,16 +308,14 @@ the positions are measured.
 \\
 The dynamic-parallel augmentation structure is chosen, because the 
 orthogonal-by-construction parametrisation that Section~\ref{sec:obc} builds upon 
-is defined for \chg[Js64]{the additive structure}{this additive structure}~\cite{gyorok2026obc}.
+is defined for \kwtwo{this additive structure}~\cite{gyorok2026obc}.
 \\
-The output map is not augmented \chg[Js65]{(no $h_{\mathrm{aug}}$)}{($h_{\mathrm{aug}}=0$ in Fig.~\ref{fig:aug_structure})}, because \eqref{eq:Ptransform} gives the exact
+The output map is not augmented \kwtwo{($h_{\mathrm{aug}}=0$ in Fig.~\ref{fig:aug_structure})}, because \eqref{eq:Ptransform} gives the exact
 relation between the states and the measured outputs
-\add[Jan27]{, as in Kessels~\cite[Remark~5.3]{kessels2025ai}}.
+\kwtwo{, as in Kessels~\cite[Remark~5.3]{kessels2025ai}}.
 This is also done to ensure that $q$ still represents the physical positions.
 With a learned correction to the output map the states could stop
 representing the actual positions.
-\del[Jan27]{Kessels also leaves the output map unchanged when it is
-already accurate~\mbox{\fbcite[Remark~5.3]{kessels2025ai}}.}
 \todo{not an LPV-LFR
 with a learned scheduling map as in the augmentation of
 Drenth~\cite[Eq.~(5.2)]{drenth2025thesis}.}
@@ -350,7 +329,7 @@ result is kept as is; (b) the research question asks only
  with a decision entry.}
 \\
 The baseline is evaluated over one sample period $T_s$.
-Writing \eqref{eq:eom} in state-space form gives\add[Jan30]{ the state derivative $F$}
+Writing \eqref{eq:eom} in state-space form gives\kwtwo{ the state derivative $F$}
 \begin{equation}
  \dot{\tilde x}=F(\tilde x,u)=\begin{bmatrix}\dot q\\
   M(Y)^{-1}\bigl(u-C\dot q-Kq\bigr)\end{bmatrix},
@@ -362,8 +341,8 @@ through \eqref{eq:phi}, and $M(Y)^{-1}$ is the closed loop of the LFR of
 Section~\ref{sec:lfr}.
 $f_{\mathrm{base}}$ is calculated using one fourth-order
 Runge-Kutta (RK4) step of $F$ over $T_s$, with the input
-\chg[Js73]{kept constant}{held constant (zero-order hold)} during the step.
-For each of the four RK4 \chg[Jan31]{steps}{sub-steps} $M(Y)$ is evaluated 
+\kwtwo{held constant (zero-order hold)} during the step.
+For each of the four RK4 \kwtwo{sub-steps} $M(Y)$ is evaluated 
 using the value of $Y$ from its intermediate state.
 
 \todo{
@@ -382,7 +361,7 @@ For the baseline states the measured positions are converted to their generalize
 positions, for which the velocities can be estimated from their 
 finite difference by dividing with $T_s$. 
 This ensures that the positions and outputs are scaled with the same 
-measurements\del[Js76]{: keeping the scales consistent}. This also makes sure that 
+measurements. This also makes sure that 
 all models independent of its initial parameters use the same scale, 
 \begin{equation}
  \tilde x^{\mathrm n}=T_x(\tilde x-\mu_x),\quad
@@ -400,10 +379,9 @@ initialisation and the normalised input data,}
 \todo{The additional states $\bar x$ are not normalised separately.
 Their scale is learned by the encoder and the added-state
 transition network, operating on normalised physical signals.}
-so \chg[JsM1]{$\hat x^{\mathrm n}=\col(\tilde x^{\mathrm n},\bar x)$}{$\hat x^{\mathrm n}=[\tilde x^{\mathrm n\top}\;\bar x^\top]^\top$}.
+so \kwtwo{$\hat x^{\mathrm n}=[\tilde x^{\mathrm n\top}\;\bar x^\top]^\top$}.
 \\
 After normalisation the model equations become
-\del[Jan33]{$f^{\mathrm n}_{\mathrm{aug}}=T_xf_{\mathrm{aug}},\ g^{\mathrm n}_{\mathrm{aug}}=g_{\mathrm{aug}}$}
 \begin{equation}
 \begin{aligned}
  f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n},u^{\mathrm n})
@@ -419,34 +397,31 @@ After normalisation the model equations become
 \end{equation}
 where $\tilde x$ and $u_{\mathrm{act}}$ follow from $\tilde x^{\mathrm n}$ and
 $u^{\mathrm n}$ by inverting \eqref{eq:aug_norm}, so RK4 uses the
-states and inputs in \chg[Js78]{physical units}{SI units}.
-\del[Jan34]{The correction represents a change in the states itself and not the full state
-itself, and therefore we only scale it.}
-\add[Jan34]{Because $f_{\mathrm{aug}}$ is added to $f_{\mathrm{base}}$, whose mean
+states and inputs in \kwtwo{SI units}.
+\kwtwo{Because $f_{\mathrm{aug}}$ is added to $f_{\mathrm{base}}$, whose mean
 $\mu_x$ is already subtracted in $f^{\mathrm n}_{\mathrm{base}}$, the correction is
 only scaled by $T_x$.}
 \todo{The correction changes the predicted state, so its normalised
 form is $f_{\mathrm{aug}}^{\mathrm n}=T_xf_{\mathrm{aug}}$,
 without subtracting $\mu_x$. In the implementation, the
 network directly outputs $f_{\mathrm{aug}}^{\mathrm n}$.}
-The output map remains linear\add[Jan35]{ without offset} because the mean of the
-positions\add[Jan35]{ in $\mu_x$} is calculated from the output mean as
+The output map remains linear\kwtwo{ without offset} because the mean of the
+positions\kwtwo{ in $\mu_x$} is calculated from the output mean as
 $P^{-\top}\mu_y$.
 \\
 A multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh activation
 functions for the hidden layers and a linear output layer is used
 for both $f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$:
-\del[JsM1]{$\col(f^{\mathrm n}_{\mathrm{aug}},g^{\mathrm n}_{\mathrm{aug}})$}
 \[
 \bigl[f^{\mathrm n\top}_{\mathrm{aug}}\;\,g^{\mathrm n\top}_{\mathrm{aug}}\bigr]^\top
 =\phi_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n}_k,u^{\mathrm n}_k).
 \]
-The inputs to the neural network are the \chg[Jan36]{$6+n_{\bar x}$ states}{six baseline states and $n_{\bar x}$ added states}
-and the \chg[Jan37]{three actuator forces}{$n_u=3$ actuator forces}.
+The inputs to the neural network are the \kwtwo{six baseline states and $n_{\bar x}$ added states}
+and the \kwtwo{$n_u=3$ actuator forces}.
 The first six outputs $f^{\mathrm n}_{\mathrm{aug}}$ update the six
 physical states and the remaining $n_{\bar x}$ outputs
-$g^{\mathrm n}_{\mathrm{aug}}$ \del[Jan38]{and}
-\chg[Jan38]{equals}{equal} the \del[Jan39]{next} additional states $\bar x_{k+1}$ (Fig.~\ref{fig:aug_structure}).
+$g^{\mathrm n}_{\mathrm{aug}}$ 
+\kwtwo{equal} the  additional states $\bar x_{k+1}$ (Fig.~\ref{fig:aug_structure}).
 \kw{These corrections act on all six physical states, the positions included,
 as in the dynamic-parallel structure~\cite[Table~1]{hoekstra2026lfr}.}
 The positions are also corrected because within one sample period 
@@ -454,15 +429,15 @@ an unmodelled force would change both the velocity and position,
 correcting only for the velocities would not be able to capture this.
 Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload 
 position $Y$ through $\tilde x_k$, enabling the neural network to learn
-\del[Js79]{model} position-dependent effects.
+ position-dependent effects.
 \\
-The gantry baseline model has two \del[Js82]{free} axes, $X$ and $Y$, without stiffness
-\add[Js82]{to ground }in \eqref{eq:damping_stiffness_matrices}, which are also
+The gantry baseline model has two  axes, $X$ and $Y$, without stiffness
+\kwtwo{to ground }in \eqref{eq:damping_stiffness_matrices}, which are also
 affected by the learned correction.
-\chg[Js83]{The discretized baseline model}{The linearised RK4 step} has a pole at $z=1$ on each of these \del[Js82]{stiffness free}
-axes, making it marginally stable\add[Js84]{: stable, but not asymptotically stable}.
-Therefore these axes act as integrators: a \chg[Js85]{consant}{constant} error in the correction
-keeps \chg[Js86]{accumalating}{accumulating} in the position.
+\kwtwo{The linearised RK4 step} has a pole at $z=1$ on each of these 
+axes, making it marginally stable\kwtwo{: stable, but not asymptotically stable}.
+Therefore these axes act as integrators: a \kwtwo{constant} error in the correction
+keeps \kwtwo{accumulating} in the position.
 The alternative to only correct the velocities would not prevent the integrator 
 issue, because an error in the velocity also accumulates in the position. 
 The feedback controller is able to correct this drift, which is why we have 
@@ -497,15 +472,15 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
 \item The output error re-enters the model input, so part of it is corrected within the window; error before $\tau$ is not carried in, the free-run validation carries it
 \end{itemize}
 \fi
-\mv[Jan44]{III-C}The data is measured in closed-loop, and the model is simulated in 
+The data is measured in closed-loop, and the model is simulated in 
 closed-loop. 
 Instead of using the recorded input as
 in~\cite[Eq.~(22)]{hoekstra2026lfr}, we include the
-feedback controller in the simulation for \chg[Jan48]{the following reasons}{two reasons}.
-\mv[Jan50]{III-C P3}\chg[Jan50]{Also, as has been established in}{First, as established in} Section~\ref{sec:aug_structure}:
-the \del[Js82]{free} axes $X$ and $Y$\add[Js82]{ without stiffness} make the open-loop gantry
+feedback controller in the simulation for \kwtwo{two reasons}.
+\kwtwo{First, as established in} Section~\ref{sec:aug_structure}:
+the  axes $X$ and $Y$\kwtwo{ without stiffness} make the open-loop gantry
 marginally stable.
-SUBNET\add[Js94]{, the encoder-based identification method of Beintema
+SUBNET\kwtwo{, the encoder-based identification method of Beintema
 et al.~\cite{beintema2023subnet},} assumes that the system that generates the data is
 incrementally exponentially output
 stable~\cite[Cond.~1]{beintema2023subnet}.
@@ -515,14 +490,14 @@ The open-loop gantry system does not satisfy this assumption:
 a mismatch in the initial velocity will create a permanent position offset.
 In closed-loop the feedback controller is able to correct this offset.
 
-\chg[Jan48]{The feedback}{Second, the feedback} controller causes a correlation between
+\kwtwo{Second, the feedback} controller causes a correlation between
 the recorded input and the measurement noise.
 Kessels was not able to identify an open-loop SUBNET model
 using closed-loop data from a wire bonder.
 Kessels cites earlier work suggesting that this could be explained by noise-induced bias
 due to this correlation and the integral term 
 of the controller~\cite[Remark~5.6]{kessels2025ai}.
-\chg[Jan49]{The indirect approach}{This bias is avoided in the indirect approach} for linear systems with a known controller\chg[Jan49]{ fits}{, which fits} the closed-loop model using the reference.
+\kwtwo{This bias is avoided in the indirect approach} for linear systems with a known controller\kwtwo{, which fits} the closed-loop model using the reference.
 Because the reference is uncorrelated with the noise, the model 
 can be identified from the output error~\cite[Sec.~5.2.1]{forssell1999revisited}.
 \todo{output prediction error??}
@@ -531,9 +506,9 @@ They do not prove that our estimate is consistent. \todo{?}
 \todo{Missing: D-140 (Ruled out (4)) bars Kessels' Remark~5.6 as an argument because the records were then noise free. The thesis records are noisy, so the ban appears lapsed. Candidate: keep the sentence and amend D-140 (basis: noisy thesis records, Section~\ref{sec:setup}).}
 \todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
 \\
-Every training window is simulated in closed-loop with the \chg[Jan51]{known}{assumed known} controller,
+Every training window is simulated in closed-loop with the \kwtwo{assumed known} controller,
 as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}.
-\chg[Js95]{The controller}{The feedback controller} is linear and time invariant, the model output is used to
+\kwtwo{The feedback controller} is linear and time invariant, the model output is used to
 calculate the position error in actuator coordinates\todo{qact?}.
 The controller calculates the actuator forces from this error.
 The system and model use the same reference $r$ and feedforward
@@ -552,7 +527,6 @@ states $x^{\mathrm{fb}}$ and $\hat x^{\mathrm{fb}}$
 where $(A_{\mathrm{fb}},B_{\mathrm{fb}},C_{\mathrm{fb}},D_{\mathrm{fb}})$
 are the state-space matrices of the controller discretised
 with sampling time $T_s$.
-\del[Jan52]{We assume that the system uses the same controller.}
 Both $r_k$ and $u^{\mathrm{ff}}_k$ are in actuator coordinates.
 The model uses the calculated actuator force $\hat u_{\mathrm{act},k}$
 instead of the recorded $u_{\mathrm{act},k}$
@@ -595,7 +569,7 @@ by construction and checks nothing.
 Related: \texttt{FINAL-RUN-FIXES.md} item~3, 
 the D-232 leak check on the lowpass data, passed (0.22 to 0.50~nm).}
 \\
-The model output\add[Js98]{ $\hat y_k$} depends only on the state\add[Js98]{ $\tilde x_k$,
+The model output\kwtwo{ $\hat y_k$} depends only on the state\kwtwo{ $\tilde x_k$,
 not on the input $\hat u_k$}.
 For each sample we first calculate the output and then
 the error and model input before updating the states.
@@ -626,8 +600,6 @@ is calculated using \eqref{eq:aug_norm_maps}
 with input $\hat u^{\mathrm n}_{k|\tau}$.
 Each window starts from the encoder state in
 \eqref{eq:aug_encoder}.
-\del[Jan53]{The output error $\varepsilon_{k|\tau}=y_k-\hat y_{k|\tau}$
-is in metres.}
 \\
 The controller uses the output error to correct the model input
 within the training window, as in the closed loop system.

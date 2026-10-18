@@ -69,11 +69,7 @@
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
-\citation{hoekstra2026lfr}
-\citation{drenth2025thesis}
-\citation{hoekstra2026lfr}
 \citation{gyorok2026obc}
-\citation{kessels2025ai}
 \citation{kessels2025ai}
 \citation{drenth2025thesis}
 \newlabel{eq:lfr_admissibility}{{13}{5}{Physical parameters and identifiable combinations}{equation.13}{}}
@@ -88,6 +84,8 @@
 \newlabel{eq:aug_ct}{{15}{6}{Augmented model}{equation.15}{}}
 \newlabel{eq:aug_norm}{{16}{6}{Augmented model}{equation.16}{}}
 \newlabel{eq:aug_norm_maps}{{17}{6}{Augmented model}{equation.17}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Closed-loop simulation}{6}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:aug_loop}{{\mbox  {III-B}}{6}{Closed-loop simulation}{subsection.3.2}{}}
 \citation{hoekstra2026lfr}
 \citation{beintema2023subnet}
 \citation{beintema2023subnet}
@@ -96,28 +94,27 @@
 \citation{kessels2025ai}
 \citation{forssell1999revisited}
 \citation{kessels2025ai}
+\citation{kessels2025ai}
+\citation{kessels2025ai}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Augmented model. The physics step $f_{\mathrm  {base}}$ and the network $\phi _{\mathrm  {aug}}$ act in parallel on $\hat  x_k$. $\phi _{\mathrm  {aug}}$ gives $f_{\mathrm  {aug}}$ and $g_{\mathrm  {aug}}$, and the output map is not learned. The encoder $\psi $ sets $\hat  x$ at each window start. $f_{\mathrm  {base}}$ and $h_{\mathrm  {base}}$ use the physical part $\tilde  x_k$ of $\hat  x_k$.During training, the input is the closed-loop input of Section~\ref {sec:aug_loop}. \textcolor {red}{[\textbf  {TODO:} No setpoint generator currently for the inputs; layout cramped at one column width.]} }}{7}{figure.caption.3}\protected@file@percent }
 \newlabel{fig:aug_structure}{{3}{7}{Augmented model. The physics step $f_{\mathrm {base}}$ and the network $\phi _{\mathrm {aug}}$ act in parallel on $\hat x_k$. $\phi _{\mathrm {aug}}$ gives $f_{\mathrm {aug}}$ and $g_{\mathrm {aug}}$, and the output map is not learned. The encoder $\psi $ sets $\hat x$ at each window start. $f_{\mathrm {base}}$ and $h_{\mathrm {base}}$ use the physical part $\tilde x_k$ of $\hat x_k$.During training, the input is the closed-loop input of Section~\ref {sec:aug_loop}. \todo {No setpoint generator currently for the inputs; layout cramped at one column width.}}{figure.caption.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Closed-loop simulation}{7}{subsection.3.2}\protected@file@percent }
-\newlabel{sec:aug_loop}{{\mbox  {III-B}}{7}{Closed-loop simulation}{subsection.3.2}{}}
-\citation{kessels2025ai}
-\citation{kessels2025ai}
+\newlabel{eq:aug_two_loops}{{18}{7}{Closed-loop simulation}{equation.18}{}}
+\newlabel{eq:aug_residual_loop}{{19}{7}{Closed-loop simulation}{equation.19}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026lfr}
-\newlabel{eq:aug_two_loops}{{18}{8}{Closed-loop simulation}{equation.18}{}}
-\newlabel{eq:aug_residual_loop}{{19}{8}{Closed-loop simulation}{equation.19}{}}
-\newlabel{eq:aug_cl_step}{{20}{8}{Closed-loop simulation}{equation.20}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm  {ff}}$. The model output is calculated before the input updates the model state. }}{8}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:aug_closed_loop}{{4}{8}{Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Identification}{8}{subsection.3.3}\protected@file@percent }
-\newlabel{sec:aug_closed_loop}{{\mbox  {III-C}}{8}{Identification}{subsection.3.3}{}}
-\newlabel{eq:mdelta_map}{{21}{8}{Identification}{equation.21}{}}
 \citation{beintema2023subnet}
 \citation{beintema2023subnet}
 \citation{beintema2023subnet}
 \citation{beintema2023subnet}
 \citation{hoekstra2026lfr}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm  {ff}}$. The model output is calculated before the input updates the model state. }}{8}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:aug_closed_loop}{{4}{8}{Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.4}{}}
+\newlabel{eq:aug_cl_step}{{20}{8}{Closed-loop simulation}{equation.20}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Identification}{8}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:aug_closed_loop}{{\mbox  {III-C}}{8}{Identification}{subsection.3.3}{}}
+\newlabel{eq:mdelta_map}{{21}{8}{Identification}{equation.21}{}}
+\newlabel{eq:aug_loss}{{22}{8}{Identification}{equation.22}{}}
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026lfr}
 \citation{drenth2025lpvlfr}
@@ -125,67 +122,69 @@
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026lfr}
-\newlabel{eq:aug_loss}{{22}{9}{Identification}{equation.22}{}}
+\citation{hoekstra2026encoder}
+\citation{hoekstra2026encoder}
+\citation{hoekstra2026lfr}
 \newlabel{eq:aug_encoder}{{23}{9}{Identification}{equation.23}{}}
 \newlabel{eq:aug_enc_lin}{{24}{9}{Identification}{equation.24}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Initialisation}{9}{subsection.3.4}\protected@file@percent }
 \newlabel{sec:aug_encoder}{{\mbox  {III-D}}{9}{Initialisation}{subsection.3.4}{}}
-\citation{hoekstra2026encoder}
-\citation{hoekstra2026encoder}
+\newlabel{eq:aug_enc_sim}{{25}{9}{Initialisation}{equation.25}{}}
+\newlabel{eq:aug_enc_fit}{{26}{9}{Initialisation}{equation.26}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
-\citation{hoekstra2026lfr}
-\newlabel{eq:aug_enc_sim}{{25}{10}{Initialisation}{equation.25}{}}
-\newlabel{eq:aug_enc_fit}{{26}{10}{Initialisation}{equation.26}{}}
+\citation{hefny2015supervised}
+\citation{downey2017psrnn}
+\citation{hefny2015supervised}
+\citation{downey2017psrnn}
+\citation{hefny2015supervised}
+\citation{hefny2015supervised}
 \newlabel{eq:aug_init}{{27}{10}{Initialisation}{equation.27}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Added-state initialisation}{10}{subsection.3.5}\protected@file@percent }
 \newlabel{sec:aug_ps2}{{\mbox  {III-E}}{10}{Added-state initialisation}{subsection.3.5}{}}
 \citation{hefny2015supervised}
-\citation{downey2017psrnn}
-\citation{hefny2015supervised}
-\citation{downey2017psrnn}
-\citation{hefny2015supervised}
-\citation{hefny2015supervised}
-\citation{hefny2015supervised}
 \citation{hefny2015supervised}
 \citation{venkatraman2017psd}
+\citation{hefny2015supervised}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Windows of PS on one record, layout adapted from~\cite  [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat  x^{\mathrm  n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar  x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $H$ samples \eqref  {eq:ps2_s1}. S2 (bottom): $g_{\mathrm  {aug}}$ maps $\hat  x^{\mathrm  n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref  {eq:ps2_s2}.}}{11}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:ps2_windows}{{5}{11}{Windows of PS on one record, layout adapted from~\cite [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat x^{\mathrm n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $H$ samples \eqref {eq:ps2_s1}. S2 (bottom): $g_{\mathrm {aug}}$ maps $\hat x^{\mathrm n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref {eq:ps2_s2}}{figure.caption.5}{}}
 \newlabel{eq:ps2_s1}{{28}{11}{Added-state initialisation}{equation.28}{}}
 \newlabel{eq:ps2_nu}{{29}{11}{Added-state initialisation}{equation.29}{}}
-\citation{hefny2015supervised}
+\newlabel{eq:ps2_s2}{{30}{11}{Added-state initialisation}{equation.30}{}}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
-\newlabel{eq:ps2_s2}{{30}{12}{Added-state initialisation}{equation.30}{}}
+\citation{gyorok2026obc}
+\citation{gyorok2026obc}
+\citation{gyorok2026obc}
+\citation{gyorok2026obc}
+\citation{gyorok2026obc}
+\citation{gyorok2026obc}
 \newlabel{eq:ps2_handover}{{31}{12}{Added-state initialisation}{equation.31}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Interpretability by Orthogonal Construction}{12}{section.4}\protected@file@percent }
 \newlabel{sec:obc}{{IV}{12}{Interpretability by Orthogonal Construction}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Orthogonal-by-construction parametrisation}{12}{subsection.4.1}\protected@file@percent }
 \newlabel{sec:obc_construction}{{\mbox  {IV-A}}{12}{Orthogonal-by-construction parametrisation}{subsection.4.1}{}}
-\citation{gyorok2026obc}
-\citation{gyorok2026obc}
-\citation{gyorok2026obc}
-\citation{gyorok2026obc}
-\citation{gyorok2026obc}
-\citation{gyorok2026obc}
+\newlabel{eq:obc_gyorok}{{32}{12}{Orthogonal-by-construction parametrisation}{equation.32}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Extension to the gantry}{12}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:obc_map}{{\mbox  {IV-B}}{12}{Extension to the gantry}{subsection.4.2}{}}
 \citation{gyorok2025l4dc}
 \citation{gyorok2025l4dc}
 \citation{gyorok2025l4dc}
 \citation{kessels2025ai}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
-\newlabel{eq:obc_gyorok}{{32}{13}{Orthogonal-by-construction parametrisation}{equation.32}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Extension to the gantry}{13}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:obc_map}{{\mbox  {IV-B}}{13}{Extension to the gantry}{subsection.4.2}{}}
+\citation{gyorok2026obc}
 \newlabel{eq:obc_sens}{{33}{13}{Extension to the gantry}{equation.33}{}}
 \newlabel{eq:obc_offset}{{34}{13}{Extension to the gantry}{equation.34}{}}
 \newlabel{eq:obc_tuples}{{35}{13}{Extension to the gantry}{equation.35}{}}
 \newlabel{eq:obc_coef}{{36}{13}{Extension to the gantry}{equation.36}{}}
-\citation{gyorok2026obc}
+\newlabel{eq:obc_corr}{{37}{13}{Extension to the gantry}{equation.37}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Identification and recovery}{13}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:obc_ident}{{\mbox  {IV-C}}{13}{Identification and recovery}{subsection.4.3}{}}
 \citation{gyorok2025l4dc}
 \citation{gyorok2025l4dc}
 \citation{gyorok2025l4dc}
@@ -193,47 +192,44 @@
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
-\newlabel{eq:obc_corr}{{37}{14}{Extension to the gantry}{equation.37}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Identification and recovery}{14}{subsection.4.3}\protected@file@percent }
-\newlabel{sec:obc_ident}{{\mbox  {IV-C}}{14}{Identification and recovery}{subsection.4.3}{}}
 \newlabel{eq:obc_eps}{{38}{14}{Identification and recovery}{equation.38}{}}
 \newlabel{eq:obc_recovery}{{39}{14}{Identification and recovery}{equation.39}{}}
 \newlabel{eq:obc_overlap}{{40}{14}{Identification and recovery}{equation.40}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Experiment design}{14}{section.5}\protected@file@percent }
+\newlabel{sec:setup}{{V}{14}{Experiment design}{section.5}{}}
 \citation{garcia2013model}
 \citation{garcia2013model}
 \citation{garcia2013model}
-\@writefile{toc}{\contentsline {section}{\numberline {V}Experiment design}{15}{section.5}\protected@file@percent }
-\newlabel{sec:setup}{{V}{15}{Experiment design}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Simulated system}{15}{subsection.5.1}\protected@file@percent }
-\newlabel{sec:setup_system}{{\mbox  {V-A}}{15}{Simulated system}{subsection.5.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textcolor {red}{[\textbf  {TODO:} Simulated gantry with a flexibly mounted part $m_a$ of the payload mass $m_h$; the rest of the payload is $m_{h,r}=m_h-m_a$. The light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.]}}}{15}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:gantry_absorber}{{6}{15}{\todo {Simulated gantry with a flexibly mounted part $m_a$ of the payload mass $m_h$; the rest of the payload is $m_{h,r}=m_h-m_a$. The light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Simulated system}{15}{subsection.5.1}\protected@file@percent }
+\newlabel{sec:setup_system}{{\mbox  {V-A}}{15}{Simulated system}{subsection.5.1}{}}
 \newlabel{eq:setup_truth}{{41}{15}{Simulated system}{equation.41}{}}
 \newlabel{eq:setup_fric}{{41a}{15}{Simulated system}{equation.41a}{}}
 \newlabel{eq:setup_abs}{{41b}{15}{Simulated system}{equation.41b}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Records}{15}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:setup_data}{{\mbox  {V-B}}{15}{Records}{subsection.5.2}{}}
 \citation{beintema2023subnet}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Records}{16}{subsection.5.2}\protected@file@percent }
-\newlabel{sec:setup_data}{{\mbox  {V-B}}{16}{Records}{subsection.5.2}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Compared models. Start: the ten combinations at the start of training; final model: $\mathcal  M_{\mathrm  {OBC}}$.}}{16}{table.caption.7}\protected@file@percent }
-\newlabel{tab:setup_models}{{I}{16}{Compared models. Start: the ten combinations at the start of training; final model: $\mathcal M_{\mathrm {OBC}}$}{table.caption.7}{}}
+\citation{beintema2023subnet}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Compared models}{16}{subsection.5.3}\protected@file@percent }
 \newlabel{sec:setup_models}{{\mbox  {V-C}}{16}{Compared models}{subsection.5.3}{}}
-\citation{beintema2023subnet}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Metrics}{17}{subsection.5.4}\protected@file@percent }
-\newlabel{sec:setup_metrics}{{\mbox  {V-D}}{17}{Metrics}{subsection.5.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Compared models. Start: the ten combinations at the start of training; final model: $\mathcal  M_{\mathrm  {OBC}}$.}}{16}{table.caption.7}\protected@file@percent }
+\newlabel{tab:setup_models}{{I}{16}{Compared models. Start: the ten combinations at the start of training; final model: $\mathcal M_{\mathrm {OBC}}$}{table.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Metrics}{16}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:setup_metrics}{{\mbox  {V-D}}{16}{Metrics}{subsection.5.4}{}}
 \newlabel{eq:setup_rms}{{42}{17}{Metrics}{equation.42}{}}
 \newlabel{eq:setup_delta}{{43}{17}{Metrics}{equation.43}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces $\mathrm  {NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine.}}{17}{table.caption.8}\protected@file@percent }
-\newlabel{tab:res_structure}{{II}{17}{$\mathrm {NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine}{table.caption.8}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Results}{17}{section.6}\protected@file@percent }
 \newlabel{sec:results}{{VI}{17}{Results}{section.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Augmentation structure}{17}{subsection.6.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces $\mathrm  {NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine.}}{17}{table.caption.8}\protected@file@percent }
+\newlabel{tab:res_structure}{{II}{17}{$\mathrm {NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine}{table.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}}{17}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:res_time_trace}{{7}{17}{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window}{figure.caption.9}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Interpretability}{17}{subsection.6.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}}{18}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:res_time_trace}{{7}{18}{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Generalisation}{17}{subsection.6.3}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}}{18}{figure.caption.10}\protected@file@percent }
 \newlabel{fig:res_frf}{{8}{18}{Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$}{figure.caption.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Generalisation}{18}{subsection.6.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Relative error of the ten combinations, unconstrained and OBC, from the detuned start.}}{18}{table.caption.11}\protected@file@percent }
 \newlabel{tab:res_obc}{{III}{18}{Relative error of the ten combinations, unconstrained and OBC, from the detuned start}{table.caption.11}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {VII}Discussion and Conclusion}{18}{section.7}\protected@file@percent }
@@ -244,6 +240,7 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-B}}Interpretability}{19}{subsection.7.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}Generalisation}{20}{subsection.7.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-D}}Limits and departures from the research plan}{20}{subsection.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-E}}Conclusion}{20}{subsection.7.5}\protected@file@percent }
 \bibstyle{IEEEtran}
 \bibdata{IEEEabrv,refs}
 \bibcite{garcia2013model}{1}
@@ -268,7 +265,6 @@
 \bibcite{downey2017psrnn}{20}
 \bibcite{venkatraman2017psd}{21}
 \bibcite{gyorok2025l4dc}{22}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-E}}Conclusion}{21}{subsection.7.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{References}{21}{section*.13}\protected@file@percent }
 \citation{garcia2013model}
 \citation{drenth2025lpvlfr}
