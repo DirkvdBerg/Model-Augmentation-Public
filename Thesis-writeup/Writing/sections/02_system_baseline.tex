@@ -294,9 +294,9 @@ ILC records.}
 \fi
 The measured payload position $Y$ is both a state and the scheduling variable,
 making the baseline a self-scheduled LPV model.\todo{source, or do i state it earlier..?}
-\add[Js36]{The model is therefore nonlinear in its state.
-The LPV form represents it exactly and needs no assumption on how fast $Y$
-changes.}
+\add[Js36]{\kw{Because the scheduling variable is the state $Y$ itself, 
+this LPV form coincides with (2) for every motion of $Y$ and needs 
+no assumption on $\dot Y$.}}
 Solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$, so the model
 is rationally dependent on $Y$. \chg[Js37, Q26-Q31]{An Linear Fractional Representation}{A linear fractional representation} (LFR) is introduced to separate this rational scheduling dependence.
 We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$, 
@@ -345,7 +345,7 @@ becomes
   \label{eq:lfr_constant}
 \end{equation}
 which contains no $Y$.
-\add[Js43]{This is allowed, because the Delta-block below imposes
+\add[Js43]{This is allowed, because the Delta-block below \kw{imposes}
 $a_1=Y\ddot q$ and $a_2=Ya_1$ again.}
 The \kw{latent variables} are \chg[Js45]{$z=\col(\ddot q,a_1)$ and $w=\col(a_1,a_2)$}{$z=[\ddot q^\top\;a_1^\top]^\top$ and $w=[a_1^\top\;a_2^\top]^\top$},
 with the \kw{Delta-block} mapping $z$ to $w$\chg[Jan18]{.}{,}
@@ -369,7 +369,7 @@ where \chg[Js45]{$\tilde x=\col(q,\dot q)$}{$\tilde x=[q^\top\;\dot q^\top]^\top
 The first block row is the \kw{state equation}, with $\ddot q$ obtained from
 \eqref{eq:lfr_constant} by multiplying with $M_0^{-1}$. For the blocks of $G$\add[Js48, Q33, Jan20]{, see} Appendix~\ref{app:lfr-details}.
 \\
-\add[Js49]{Conversely,} \chg[Js49]{Closing}{closing} the \kw{algebraic loop} with \eqref{eq:delta} results in
+\add[Js49]{\kw{Conversely,}} \chg[Js49]{Closing}{closing} the \kw{algebraic loop} with \eqref{eq:delta} results in
 $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
 into \eqref{eq:eom}. The LFR is therefore an exact realization of the baseline.
 The LFR is \kw{well posed} if the \kw{algebraic loop} has a unique solution for
@@ -402,9 +402,13 @@ $q$ through \eqref{eq:Ptransform}, and the forces $u$ are known \chg[Js51]{in ne
 \mv[Jan21]{II-C P2}With unconstrained initial conditions and full actuation,
 any acceleration $\ddot q$ can be reached at any state within
 the operating range.
-\add[Js53]{The state $(q,\dot q)$ is observable, because $q$ is measured, and
-the gantry is fully actuated, because $P$ is invertible, so every coordinate
-of $q$ has its own force.}
+\add[Js53]{\kw{With unconstrained initial conditions and full actuation ($P$ invertible), 
+any acceleration $\ddot q$ can be reached at any state within the operating range.
+Since $q$ is measured, the state $(q,\dot q)$ is observable.}
+% The state $(q,\dot q)$ is observable, because $q$ is measured, and
+% the gantry is fully actuated, because $P$ is invertible, so every coordinate
+% of $q$ has its own force.
+}
 Two parameter sets $\theta$ and $\theta'$ that produce the same
 motion for every input force satisfy
 \begin{equation*}
@@ -452,16 +456,6 @@ For $m_h>0$, $\theta_{\mathrm{base}}$ can be uniquely determined from
 the ten entries (Appendix~\ref{app:combos}).
 We therefore estimate $\theta_{\mathrm{base}}$ instead of $\theta$,
 presented in the results.\todo{Section~\ref{sec}}
-\add[Js15]{The four directions of $\theta$ that cannot be identified are
-$k_{b1}-k_{b2}$, $c_{b1}-c_{b2}$, $J_b-J_h$, and an equal mass transfer from
-the two X actuators to the cross-arm with the change of $J_b+J_h$ that keeps
-$J_{\mathrm{eff}}$ fixed.
-Parameters that act on the gantry only through the same combination are thus
-lumped, and the combination is estimated uniquely.}
-% FEEDBACK: Js15 (Section I) "2 parameters affect the system in the same way
-%   ... interpretable but not unique"; answered here, since Section I now
-%   defines interpretability through these combinations. Lost directions from
-%   the commented draft below (2026-10-09).
 % For $m_h>0$,
 % $\theta_{\mathrm{base}}$ is a one-to-one function of the ten entries
 % (Appendix~\ref{app:lfr-details}), so it is identifiable at every admissible

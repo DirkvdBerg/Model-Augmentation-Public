@@ -18,64 +18,59 @@
 %   Report records with multisine (I1, I2, E1) and without (I3 to I6, E2 to E6) separately; never one mean over I1 to I6
 %   (it hides where the gain is). State both sides: the gain is in the excited absorber band; on the records without
 %   multisine the augmentation is equal to or slightly worse than the baseline.
-%   Numbers come from Code/Evaluation/make_results.py, never typed. TO DO there: an NRMS_e column per model, axis and
-%   record group in res_structure and res_generalisation, RMS(y - r) from Results/thesis-eval/preds_BB.npz (y, r from k0).
-% CURRENT-RUN OBSERVATIONS (2026-10-11 runs R1 to R8; to be rerun, so expectations for the final runs, not results;
-%   scratch computation 2026-10-15 from the runs' cl_test_rms and preds_BB.npz):
-%   final model (R1, OBC, detuned) 3 to 8 % on every test record and axis, also E1 to E4, E6 (Y: 2.7 % on E3 to 8.2 % on E1);
-%   mean over I1 to I6 [X1, X2, Y] in %: baseline true 9.3/10.0/41.2, PS n_a=2 5.9/5.7/4.6, final 6.2/6.1/5.0,
-%   black box 85.2/84.9/79.1, floor 0.05/0.05/0.01;
-%   baseline (true parameters) on Y: 102 % on I1, 132 % on I2, 131 % on E1 (worse than y_hat = r), 2 to 4 % without multisine;
-%   augmentation on the records without multisine: equal to or up to about 1.3 points worse than the baseline;
-%   black box about 100 % on every record without multisine (no better than y_hat = r); 8 % on I2 and E1, 64 % on I1.
-%   I1 time trace (fig:res_time_trace): final 6.9 % against baseline 102 % on Y; the linear servo-error panel hides an
-%   error of 3 % of the peak, which is why the figure reads better than the table in m.
+%   Numbers come from Thesis-writeup/Results/18-10-2026/CSV (res_structure, res_obc_combinations, res_generalisation,
+%   res_frf_modes) and the tables generated from them.
+% MUST ESTABLISH (agreed with Dirk 2026-10-18; handoff 2026-10-18-results-section-content and the session after it)
+%   Form: no subsections; an opening and one paragraph per aspect, numbered as in the Introduction (1 structure and
+%   training, 2 OBC, 3 generalisation). Each paragraph names its float and reads it in one or two sentences against the
+%   baseline, black-box and floor rows (Hoekstra 2025 Sec. 4.3, Hoekstra 2026 Sec. 6.3, Gyorok 2025 Sec. 5.4).
+%   No verdicts against criteria and no mechanisms: those are in the Discussion (Section 08). Definitions stay in
+%   Section V. Choices are in Appendix app:choices, pointed to once.
+%   1. With multisine the final model lowers the Y error from 116.6 to 6.2 %; without it, it is up to 0.4 points above
+%      the baseline; the black box is at 36 to 48 % and 97 to 128 %. The final model has the resonance near
+%      2.12 f_b that the baseline lacks. The PS start and the added states: validation numbers in the appendix.
+%   2. From the detuned start the combination-error norm grows to 83.1 % (U) and 47.7 % (OBC) at equal accuracy of
+%      the full model and of the physical part; truth overlap 0.59; reversed without added states (appendix).
+%   3. The final model stays within 2 points of its I record on every E record; without multisine up to 1.2 points
+%      above the baseline; the black box is 74 to 193 % without multisine and below the final model only on I2 X2.
+%   Moved out: verdicts, mechanisms, the black-box explanation (Quinten p9), the n_a = 0 reversal as an argument
+%   (Discussion); the "difference between starts" row (revnote request under Table C).
 \section{Results}\label{sec:results}
-
-\subsection{Baseline form}
-\begin{outline}
-\item Criterion: LPV error flat over $Y$, LTI error growing away from $Y=0$ (Fig.~\ref{fig:res_lpv_lti})
-\item On $X$ the LTI error is 1.5 to 3.7 times the LPV error, growing with $|Y|$; on $Y$ both are equal
-\item $Y$ scheduling is needed for the $X$ axes
-\end{outline}
-\begin{wip}
+\ifdraft
 \begin{itemize}
-\item Expectation and criterion: the LPV-LFR and original physics equations agree numerically across the payload range before model-error comparisons are meaningful
-\item Verdict and reason: report inertia invertibility, LFR/RK4 equivalence, and the remaining baseline error caused by the truth-only absorber
-\item Figure: baseline and oracle output errors versus time for representative payload positions; supports the claim that the omitted mode is systematic and position dependent
-\item Table: baseline free-run physical RMS for LPV and frozen-LTI models across held-out $Y$; tests the research plan's Aspect 1 rather than assuming LPV superiority
-\item Expectation and criterion: direct and residual closed-loop forms match at numerical precision when controller assumptions hold
-\item Evidence for Section~III-C (moved 2026-10-06): on the thesis data, open-loop rollouts accumulate position error on the free axes $X$ and $Y$, closed-loop rollouts do not; re-measure, do not reuse the older D-142 numbers
-\item Figure: recorded input, controller correction, and model error over one rollout; supports the interpretation that feedback can suppress visible output error while the open-loop model remains wrong
+\item Test records, $\mathrm{NRMS}_e$ with the noise floor; training and validation in the appendix (D-269)
+\item Aspect 1: final model against the baseline and the black box, with and without multisine; resonance of the final model; PS and added states in the appendix (Table~\ref{tab:res_structure}, Figs.~\ref{fig:res_time_trace}, \ref{fig:res_frf})
+\item Aspect 2: combination errors, full model, physical part and overlaps, $\mathcal M_{\mathrm U}$ against $\mathcal M_{\mathrm{OBC}}$ from the detuned start (Table~\ref{tab:res_obc})
+\item Aspect 3: final model, baseline and black box on the I/E pairs and the multisine twins (Fig.~\ref{fig:res_generalisation})
+\item Uniqueness from the two starts (?: row requested under Table~\ref{tab:res_obc})
 \end{itemize}
-\end{wip}
+\fi
+All errors are $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms} on the test
+records, read against the noise floor.
+Appendix~\ref{app:splits} gives the training and validation records.
+\todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section
+are preliminary (update 19500 of 33400). Candidate: update them after the
+final R1/R2 rerun (basis: handoff 2026-10-18, Sec.~3).}
 
-\todo{The LPV-versus-frozen-LTI comparison is required by the plan but may not yet have a final matched result; run it or narrow Aspect 1 explicitly.}
-
-\subsection{Augmentation structure}
-\begin{outline}
-\item Criterion: error below the baseline and below the model without added states (Table~\ref{tab:res_structure})
-\item PS initialisation lowers the $Y$ error about 9 times; plain training and $n_a=0$ stay near the baseline
-\item The error in the multisine band disappears with PS initialisation, not with plain training (Fig.~\ref{fig:res_ps_spectrum})
-\item The learned pole is at 212~Hz, the absorber pole of the system at 212~Hz; $n_a=8$ adds nothing
-\item The final model learned the absorber as plant dynamics: its open-loop response $F_Y\to Y$, linearised at rest and averaged over $Y=-0.39$ to $0.39$~m, reproduces the anti-resonance and the coupled mode of the system, which the baseline lacks (Fig.~\ref{fig:res_frf}; full $3\times3$ in Appendix~\ref{app:frf}); mode 212.0 to 212.2~Hz, $\zeta\approx0.06$, against the system's 211.9~Hz, $\zeta=0.043$ (\texttt{Results/res\_frf\_modes.csv}, numbers to macros)
-\item Without added states ($n_a=0$) the $Y$ error stays at the baseline level
-\item Time trace of the augmented model and the system (Fig.~\ref{fig:res_time_trace})
-\item Metric (header, D-256): Table~\ref{tab:res_structure} reports $\mathrm{NRMS}_e$ per axis, records with and without multisine separately, beside the RMS in m and the floor
-\item The gain is in the excited absorber band; without multisine the augmentation is equal to or slightly worse than the baseline (state it)
-\item The time trace is read with its $\mathrm{NRMS}_e$ on I1 (final model against baseline)
-\end{outline}
-\begin{wip}
-\begin{itemize}
-\item Expectation and criterion: augmentation must reduce held-out long-horizon error, not only the short training loss, relative to the same encoder-initialised baseline
-\item Verdict and reason: report the best validated improvement and the gap between window fit and free-run accuracy caused by integrated velocity bias
-\item Figure: validation RMS against optimiser updates for baseline and augmented arms, with window and 12 s metrics; supports or rejects objective alignment
-\item Figure: error spectra before and after augmentation with absorber pole and anti-resonance marked; tests whether the learned correction targets the missing band
-\item Figure: clamp each additional state and the full added-state vector to zero during rollout; quantifies what the trained latent dynamics add or harm
-\item Table: standard model, no-added-state ablation, zero-initialised latent path, and longer encoder history; connects structure changes to predictive benefit
-\item State the observed weak or harmful added-state contribution as a result if the final run does not reverse it, rather than inferring usefulness from state magnitude
-\end{itemize}
-\end{wip}
+Table~\ref{tab:res_structure} compares the final model with the baseline at
+the true parameters and with the black box on I1 to I6 (Aspect~1).
+On the records with multisine, the final model lowers the $Y$ error from
+116.6 to 6.2\,\% and halves the error on $X_1$ and $X_2$.
+On the records without multisine, it is 0.2 to 0.4 points above the
+baseline.
+The black box is at 36 to 48\,\% with multisine and 97 to 128\,\%
+without.
+Fig.~\ref{fig:res_time_trace} shows record I1, where the final model has
+6.3\,\% on $Y$ against 101.6\,\% for the baseline.
+In the response from $F_Y$ to $Y$ (Fig.~\ref{fig:res_frf}), the final model
+has a resonance at 2.11 to 2.13\,$f_b$ over $Y$, with damping ratio 0.036
+to 0.080.
+The system has it at 2.12\,$f_b$ with damping ratio 0.043.
+The baseline has none.
+Appendix~\ref{app:choices} gives the choices behind the final model on the
+validation records.
+With multisine, the $Y$ error is 6.4\,\% with the PS start, against
+78.1\,\% with plain training and 86.5\,\% without added states.
 
 \begin{table}[t]
   \centering
@@ -99,29 +94,26 @@
 \end{figure}
 \todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
 
-\subsection{Interpretability}
-\begin{outline}
-\item Criterion: OBC drifts less than the unconstrained arm at equal test RMS (Table~\ref{tab:res_obc})
-\item Not met: the parameters drift in both arms, OBC not less
-\item OBC keeps the learned term out of the parameter directions: overlap 0.12 to 0.13 against 0.91 to 0.99
-\item The discrepancy overlaps substantially with the parameter-sensitivity space ($\rho(\Xi)=0.59$), consistent with a limit on parameter recovery
-\end{outline}
-\begin{wip}
-\begin{itemize}
-\item Evaluation on the validation-selected best checkpoints of R1/R2 (OBC, detuned/correct start) and R4/R5 (unconstrained, detuned/correct start): the following diagnostics require no additional training runs; all reported predictive scores use the test set.
-\item Report normalised inner products with the baseline sensitivity space and the baseline-output overlap $\rho_f$ (Eq.~\eqref{eq:obc_overlap}), both on the $x_a=0$ reference slice and with active added states along held-out test rollouts. Use the same normalised coordinates and stacking convention, and distinguish reference-slice orthogonality from observed overlap away from that slice.
-\item Report the ten physical combination errors relative to truth, their aggregate relative-error norm, and displacement from each start; compare OBC with unconstrained estimation for both starts.
-\item Report full augmented-model and standalone-baseline test prediction RMS using each checkpoint's fitted physical parameters, against the per-record noise floor, to assess physical-model usefulness alongside predictive accuracy.
-\item Interpret overlap and agreement between the two starts as empirical diagnostics of the decomposition. They do not prove uniqueness or true-parameter recovery; any uniqueness statement must retain the assumptions and scope of the derivation in Section~\ref{sec:obc_map}.
-\item Expectation and criterion: OBC should reduce physical combination error without materially worsening held-out predictive fit relative to unconstrained joint estimation
-\item Verdict and reason: the completed arms reach 7.20\% no projection, 7.69\% tangent OBC, and 8.47\% unfinished affine OBC from a common 9.49\% start, so aggregate recovery does not establish OBC superiority
-\item Figure: validation fit versus combination error over training for all three arms; supports the claim that near-equal fit permits materially different physical parameters
-\item Figure: per-parameter error at matched budget; shows which combinations projection protects and which near-flat directions redistribute error
-\item Table: basis rank, condition, overlap, final and minimum parameter error, and validation RMS; links algorithm health to the recovery verdict
-\item Figure: $\rho^*$ and predicted versus observed parameter bias by singular direction; supports the conditional result that true recovery is limited by non-orthogonal missing physics
-\item Explain why the 4.96\% predicted floor accounts for part of the residual squared error but does not match the observed per-parameter pattern or prove convergence
-\end{itemize}
-\end{wip}
+Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with
+$\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2).
+The norm of the combination errors grows from 30.0\,\% at the start to
+83.1\,\% for $\mathcal M_{\mathrm U}$ and 47.7\,\% for
+$\mathcal M_{\mathrm{OBC}}$.
+In both models the damping combinations $c_{g1}$, $c_{g2}$ and $c_y$ move
+furthest, and the mass combinations stay within 3.4\,\% of the true values.
+The full models differ by at most 0.8 points.
+Their physical parts differ by at most 0.9 points.
+The network overlap of $\mathcal M_{\mathrm{OBC}}$ is lower than the 0.84 of
+$\mathcal M_{\mathrm U}$.
+The truth overlap is 0.59.
+Without added states the order of the norms reverses, with 48.8\,\% for
+$\mathcal M_{\mathrm U}$ against 68.4\,\% for $\mathcal M_{\mathrm{OBC}}$
+(Appendix~\ref{app:choices}).
+The appendix also gives the comparison from the correct start.
+\todo{Missing: the network overlap of $\mathcal M_{\mathrm{OBC}}$ in
+Table~\ref{tab:res_obc} comes from update 18200 while labelled 19500, so the
+text gives no number for it. Candidate: state it after the final R1 rerun
+(basis: handoff 2026-10-18, Sec.~12).}
 
 \begin{table}[t]
   \centering
@@ -145,28 +137,18 @@ norm to the truth tests recovery. From
 Table~\ref{tab:app_obc_full} by hand (R1, R2 preliminary): 36.4\,\%
 unconstrained, 25.1\,\% OBC. To be computed by
 \texttt{Code/Figures/res\_obc\_combinations.py} after the final R1/R2 rerun.}
-\todo{Should the incomplete affine arm be retained, rerun to a matched budget, or reported only as exploratory evidence?}
 
-\subsection{Generalisation}
-\begin{outline}
-\item Criterion: at least as good as the black-box model on I, better on E (Fig.~\ref{fig:res_generalisation})
-\item Met: the augmented model is below the detuned baseline on all records, and 10 to 30 times below the black-box model on I and E
-\item During motion about $10^{-6}$~m remains, 100 times above the noise floor
-\item Metric (header, D-256): $\mathrm{NRMS}_e$ per I/E pair and axis, beside the RMS in m and the floor
-\item The black box is near 100\,\% on every record without multisine, no better than $\hat y=r$ (2026-10-11 runs; state it if the final runs confirm)
-\end{outline}
-\begin{wip}
-\begin{itemize}
-\item Expectation and criterion: improvement must progress from held-out position/phase interpolation to ASMPT-relevant motion, controller transfer, and quantified operating-range extrapolation without retuning
-\item Verdict and reason: separate completed simulation evidence from pending Telica results and explain any failure by excitation coverage, initialisation, or objective mismatch
-\item Figure: tracking overview plus a dedicated 200--400 ms settling zoom for baseline, augmented model, and black box on an approved operational trajectory
-\item Table: primary RMS, fixed-window settling RMS, parameter availability, and training data for baseline, augmented, and black-box models on every completed validation rung
-\item Figure or table: train with one controller and evaluate the frozen models with a credible changed controller; pair this with a plant-domain check for feedback masking
-\item Figure: error versus multisine amplitude, stroke, acceleration, scheduling position, or state-input distance from the training set; quantify extrapolation rather than calling all held-out data extrapolation
-\item Report the black box's early improvement and later free-run degradation as a negative comparator result if no stable matched run supersedes it
-\item Aggregate the final learned-model comparison across neural initialization seeds and show a representative, not best, time trace; report phase realizations separately
-\end{itemize}
-\end{wip}
+Fig.~\ref{fig:res_generalisation} gives the error per test record, with
+each E record beside its I record (Aspect~3).
+The final model is at 6.2 to 14.1\,\% on the records with multisine and
+2.5 to 6.2\,\% on the others.
+On every E record it stays within 2.0 points of its I record.
+Without multisine it is up to 1.2 points above the baseline, most on E4 and
+I6.
+The black box is at 74 to 193\,\% on every record without multisine.
+It is below the final model only on I2 $X_2$, with 10.2 against 11.4\,\%.
+On the multisine twins, the final model is at 4.9 to 8.8\,\% on $Y$,
+against 48 to 87\,\% for the baseline and 75 to 112\,\% for the black box.
 
 \begin{figure*}[t]
   \centering
@@ -174,4 +156,7 @@ unconstrained, 25.1\,\% OBC. To be computed by
   \caption{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}
   \label{fig:res_generalisation}
 \end{figure*}
-\todo{Freeze which validation rungs are complete enough for a final claim; omit rather than speculate about unfinished controller, noise, or hardware experiments.}
+\todo{Missing: the caption of Fig.~\ref{fig:res_generalisation} says ``RMS,
+mean over $X_1$, $X_2$, $Y$'', while the text reads $\mathrm{NRMS}_e$ per
+axis. Candidate: check the figure and update the caption (Jasper p9: say
+error of what with respect to what).}
