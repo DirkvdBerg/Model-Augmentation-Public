@@ -72,3 +72,22 @@ def save_table(body, stem):
     out.write_text(body, encoding="utf-8")
     print(f"wrote {out}")
     return out
+
+
+def preliminary(statuses):
+    """The distinct "preliminary, update <n> of <N>" labels among `statuses` (runs evaluated before
+    they finished, Code/Evaluation/eval_common.checkpoint_status)."""
+    return sorted({s for s in statuses if s and s.startswith("preliminary")})
+
+
+def mark_preliminary(fig, statuses, who):
+    """Stamp a figure whose numbers come from a run that has not finished; nothing when all final."""
+    labs = preliminary(statuses)
+    if labs:
+        fig.text(0.995, 0.0, "%s: %s" % (who, "; ".join(labs)), ha="right", va="top",
+                 fontsize=6, color="#d62728")
+
+
+def nrms_pct(x):
+    """NRMS_e as a fraction -> percent (05_setup eq:setup_rms reports it in %)."""
+    return 100.0 * float(x)

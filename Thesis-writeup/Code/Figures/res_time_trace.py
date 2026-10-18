@@ -12,7 +12,7 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 
-from _fig_common import COL_WIDTH, COLOR, RESULTS_DIR, save, use_paper_style
+from _fig_common import COL_WIDTH, COLOR, RESULTS_DIR, mark_preliminary, save, use_paper_style
 
 STEM = "res_time_trace"
 FS = 4000.0
@@ -57,6 +57,7 @@ def main():
     a1.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False,
               handlelength=1.8, borderaxespad=0.1)
     fig.align_ylabels((a1, a2))
+    mark_preliminary(fig, [r_.get("status_final", "") for r_ in rows[:1]], "augmented model (R1)")
     save(fig, STEM)
 
 

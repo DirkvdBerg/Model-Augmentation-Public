@@ -85,6 +85,39 @@ else:
 # One prediction cache per campaign, so the two can never be mixed (audit 2026-10-16); readers
 # check the stored identity with check_identity.
 CACHE = TW / 'Results' / 'thesis-eval' / (('final-' + RUNS_DIR.name) if _FINAL else '')   # one cache per campaign (D-271)
+# deepSI's own checkpoint folder of the grey-box runs (`get_work_dirs()['checkpoints']`: ~/.deepSI/checkpoints
+# on the server), where a run that has not finished keeps its best validated model as `<Class>_<id>_best.pth`
+DEEPSI_CKPT = Path(os.environ.get('THESIS_DEEPSI_CKPT', Path.home() / '.deepSI' / 'checkpoints'))
+
+
+def checkpoint_status(rid):
+    """The checkpoint the evaluation loads for grey-box job `rid`, and the label of its numbers.
+
+    final        `gantry_ckpt_<rid>` (written at the end of training, after the polish); reference
+                 score = its recorded `bestfit` (the score of the saved model, D-267 'final' event)
+    preliminary  the run has not finished: deepSI's `_best.pth`, the best validated model so far;
+                 labelled "preliminary, update <n> of <N>" (n = its batch counter, N = the planned
+                 updates, n / epoch_counter * EPOCHS); reference score = its `bestfit`
+    Rerunning after the run finished picks the final checkpoint with no code change.
+    """
+    import json
+    import torch
+    run_dir = RUNS_DIR / str(rid)
+    base = run_dir / ('gantry_ckpt_%d' % rid)
+    if Path(str(base) + '.pt').exists() and Path(str(base) + '.npz').exists():
+        meta = np.load(str(base) + '.npz', allow_pickle=True)
+        return dict(path=str(base), final=True, label='final', update=-1, total=-1,
+                    ref_score=float(meta['bestfit']))
+    hits = sorted(DEEPSI_CKPT.glob('*_%d_best.pth' % rid))
+    if len(hits) != 1:
+        raise FileNotFoundError('job %d: no gantry_ckpt_%d in %s and %d `*_%d_best.pth` in %s'
+                                % (rid, rid, run_dir, len(hits), rid, DEEPSI_CKPT))
+    d = torch.load(hits[0], map_location='cpu', weights_only=False)
+    n, ep = int(d['batch_counter']), float(d['epoch_counter'])
+    epochs = int(json.load(open(run_dir / 'config.json', encoding='utf-8'))['EPOCHS'])
+    total = int(round(n / ep * epochs))
+    return dict(path=str(hits[0]), final=False, label='preliminary, update %d of %d' % (n, total),
+                update=n, total=total, ref_score=float(d['bestfit']))
 
 
 def check_identity(name, d):

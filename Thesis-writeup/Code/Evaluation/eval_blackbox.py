@@ -1,4 +1,4 @@
-"""Test-set predictions of the selected black box (R8, 88757 index 3, nx16_w08) and the floors.
+"""Predictions of the selected black box (R8) and the floors on every split.
 
 Black box: deepSI `SS_encoder_general_hf` on the closed-loop map (r, f) -> e = y - r, loaded from
 its `_best.pth` (the checkpoint selected on validation), fed exactly as in its training script
@@ -11,6 +11,8 @@ Floor per record of every split: the noisy record minus its noise-free twin, bot
 lowpass-mode loader (D-232 decimation and trim), from k0 (THESIS-RESULTS section 2).
 Also stored per record: sigma_e, the servo-error std over the same samples, for NRMS_e (D-262).
 Output: preds_BB.npz (test, the name the figures read) and preds_BB_<split>.npz.
+Selection (final campaign, THESIS_BB_DIR set): the grid's rule is applied to every configuration of
+the grid job first (select_bb); a THESIS_BB_DIR other than the selected one stops the evaluation.
 
 Usage: python Thesis-writeup/Code/Evaluation/eval_blackbox.py
 """
@@ -18,12 +20,13 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
 from scipy.io import loadmat
 
-from eval_common import (REPO, BB_CKPT, BB_CODE, BB_RESULT, CACHE, DATA_NF, TWINS_NOISY, TWINS_NF,
+from eval_common import (REPO, TW, BB_CKPT, BB_CODE, BB_RESULT, CACHE, DATA_NF, TWINS_NOISY, TWINS_NF,
                          SPLITS, record_name, twin_files)
 
 sys.path.insert(0, str(REPO / 'scripts' / 'gantry' / 'blackbox-cl-trainable' / 'bbcl'))
@@ -47,11 +50,65 @@ def load_records(cfg, files, folder=None):
     return out
 
 
+def select_bb(bb_dir):
+    """The R8 selection rule (thesis_r8_grid.conf FINAL FORM, D-264), applied to every configuration
+    of the grid job that `bb_dir` belongs to (sibling folders `<index>_<name>_n<its>_<job>`): lowest
+    best-validation NRMS_e (mean over the validation records and axes of the reloaded best
+    checkpoint, result.json `nrms_e_per_record`); within 2 % of it, the configuration with fewer
+    parameters (counted in its `_best.pth`). Writes Results/res_bb_selection.csv (the appendix search
+    table) and refuses a THESIS_BB_DIR that is not the selected configuration."""
+    bb_dir = Path(bb_dir).resolve()
+    job = bb_dir.name.rsplit('_', 1)[-1]
+    rows = []
+    for d in sorted(bb_dir.parent.glob('*_%s' % job), key=lambda p: int(p.name.split('_')[0])):
+        if not (d / 'result.json').exists():
+            print('[BB select] %s: no result.json, left out' % d.name, flush=True)
+            continue
+        res = json.load(open(d / 'result.json'))
+        score = float(np.mean(res['nrms_e_per_record']))
+        hist = [h['nrms_e'] for h in res.get('val_rms_hist') or [] if np.isfinite(h['nrms_e'])]
+        ckd = d / 'localappdata' / 'deepSI' / 'checkpoints'
+        # result.json names the file since 2026-10-16; earlier searches hold one `_best.pth`
+        ck = ckd / res['checkpoint'] if 'checkpoint' in res else next(iter(sorted(ckd.glob('*_best.pth'))), ckd)
+        n_par = np.nan
+        if ck.is_file():
+            sd = torch.load(ck, map_location='cpu', weights_only=False)
+            n_par = sum(p.numel() for m in sd.values() if isinstance(m, torch.nn.Module) for p in m.parameters())
+        parts = d.name.split('_')
+        a = res['args']
+        rows.append(dict(index=int(parts[0]), name='_'.join(parts[1:-2]), dir=d, nx=a['nx'], width=a['fh_width'],
+                         lr=a['lr'], score=score, hist_min=min(hist) if hist else np.nan, n_par=n_par,
+                         best_update=res.get('best_update'), status=res.get('status', '')))
+    ok = [r for r in rows if np.isfinite(r['score'])]
+    best = min(r['score'] for r in ok)
+    # HEURISTIC: the grid's stated rule (thesis_r8_grid.conf SELECTION, D-264), 2 % band
+    near = [r for r in ok if r['score'] <= 1.02 * best]
+    sel = min(near, key=lambda r: (r['n_par'] if np.isfinite(r['n_par']) else np.inf, r['score']))
+    for r in rows:
+        print('[BB select] %2d %-16s nx %2d w %2d lr %.0e | best val NRMS_e %.4f (history min %.4f) | %s params | '
+              'update %s | %s%s' % (r['index'], r['name'], r['nx'], r['width'], r['lr'], r['score'], r['hist_min'],
+                                    r['n_par'], r['best_update'], r['status'], '  <- SELECTED' if r is sel else ''),
+              flush=True)
+    path = TW / 'Results' / 'res_bb_selection.csv'
+    with open(path, 'w') as fh:
+        fh.write('index,name,nx,width,lr,best_val_nrms_e,n_params,best_update,status,within_2pct,selected\n')
+        for r in rows:
+            fh.write('%d,%s,%d,%d,%.0e,%.6f,%s,%s,%s,%d,%d\n' % (
+                r['index'], r['name'], r['nx'], r['width'], r['lr'], r['score'], r['n_par'], r['best_update'],
+                r['status'], int(r in near), int(r is sel)))
+    print('wrote', path)
+    if sel['dir'] != bb_dir:
+        raise ValueError('THESIS_BB_DIR is %s, the selection rule picks %s' % (bb_dir.name, sel['dir'].name))
+    print('[BB select] THESIS_BB_DIR %s is the selected configuration' % bb_dir.name, flush=True)
+
+
 def main():
     import deepSI
     from deepSI.fit_systems.encoders import SS_encoder_general_hf
     from setup import cfg_for
     from gantry_dynamic.data import record_files
+    if os.environ.get('THESIS_BB_DIR'):
+        select_bb(os.environ['THESIS_BB_DIR'])
     t0 = time.time()
     from gantry_dynamic.data import servo_sigma
     cfg = cfg_for('lowpass', 1, local=True)

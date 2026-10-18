@@ -22,7 +22,8 @@ inner product, eq. aug_norm). Pi is the orthogonal projection onto ran Phi, solv
 
 Usage: python Thesis-writeup/Code/Evaluation/eval_overlap.py R4 R1 R5 R2
 Output: Results/res_obc_overlap.csv (per run and stack) and Results/res_obc_bias.csv (per run,
-stack and combination).
+stack and combination), each row with the checkpoint label (final, or "preliminary, update <n>
+of <N>" for a run that has not finished, eval_common.checkpoint_status).
 """
 import sys
 import time
@@ -30,7 +31,7 @@ import time
 import numpy as np
 import torch
 
-from eval_common import RUNS, RUNS_DIR, TW, record_name
+from eval_common import RUNS, RUNS_DIR, TW, record_name, checkpoint_status
 from eval_greybox import run_config, build
 
 INTERP = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6']
@@ -70,11 +71,12 @@ def evaluate(run):
     from model_augmentation.fit_systems.blocks import Static_ANN_Block
 
     rid = RUNS[run]
+    st = checkpoint_status(rid)                    # final, or the best so far of a running run
     t0 = time.time()
     cfg = run_config(RUNS_DIR / str(rid))
     data, norm, fs = build(cfg)
-    load_checkpoint(fs, str(RUNS_DIR / str(rid) / ('gantry_ckpt_%d' % rid)), joint_estimation=True,
-                    start_phase='lbfgs')
+    load_checkpoint(fs, st['path'], joint_estimation=True, start_phase='lbfgs')
+    print('[%s %d] %s (%s)' % (run, rid, st['label'], st['path']), flush=True)
     # keep the SAVED OBC correction (vbar, theta_frozen are checkpoint buffers); a re-sync would rebuild the basis
     blocks = list(fs.hfn.connected_blocks)
     phy = next(b for b in blocks if hasattr(b, 'free_params'))
@@ -129,17 +131,20 @@ def evaluate(run):
               % (run, rid, stack, 'OBC' if cfg.obc else 'U', ref.n, net, tru, time.time() - t0),
               flush=True)
         over.append(dict(run=run, job=rid, arm='obc' if cfg.obc else 'u', stack=stack,
-                         n_tuples=ref.n, network_overlap=net, truth_overlap=tru))
+                         n_tuples=ref.n, network_overlap=net, truth_overlap=tru, status=st['label']))
         for n, p_, o in zip(phy.COMBO_NAMES, predicted.tolist(), observed.tolist()):
-            bias.append((run, rid, stack, n, p_, o))
+            bias.append((run, rid, stack, n, p_, o, st['label']))
         del J, Js, Phi
 
     # learned added-state mode: eigenvalues of d x_a+ / d x_a at 24 encoder states of validation
     # windows (inspect_checkpoint.added_poles; eigenvalues do not depend on the x_a coordinates)
     from inspect_checkpoint import added_poles
-    dom, share, fr, zeta = added_poles(fs, data, cfg.nx_phys, cfg.nx_ann)
-    print('  added-state mode: %.1f Hz, zeta %.4f, complex at %.0f %% of points, dominant |z| %.4f'
-          % (fr, zeta, 100 * share, dom), flush=True)
+    if cfg.nx_ann:
+        dom, share, fr, zeta = added_poles(fs, data, cfg.nx_phys, cfg.nx_ann)
+        print('  added-state mode: %.1f Hz, zeta %.4f, complex at %.0f %% of points, dominant |z| %.4f'
+              % (fr, zeta, 100 * share, dom), flush=True)
+    else:                                   # n_a = 0 (R13, R14): no added states, no learned mode
+        dom, share, fr, zeta = np.nan, np.nan, np.nan, np.nan
     for o in over:
         o.update(mode_hz=fr, mode_zeta=zeta, complex_share=share)
     return over, bias
@@ -154,15 +159,15 @@ if __name__ == '__main__':
         bias += b
     path = TW / 'Results' / 'res_obc_overlap.csv'
     with open(path, 'w') as fh:
-        fh.write('run,job,arm,stack,n_tuples,network_overlap,truth_overlap,mode_hz,mode_zeta,complex_share\n')
+        fh.write('run,job,arm,stack,n_tuples,network_overlap,truth_overlap,mode_hz,mode_zeta,complex_share,status\n')
         for o in over:
-            fh.write('%s,%d,%s,%s,%d,%.6e,%.6e,%.3f,%.5f,%.3f\n' % (
+            fh.write('%s,%d,%s,%s,%d,%.6e,%.6e,%.3f,%.5f,%.3f,%s\n' % (
                 o['run'], o['job'], o['arm'], o['stack'], o['n_tuples'], o['network_overlap'],
-                o['truth_overlap'], o['mode_hz'], o['mode_zeta'], o['complex_share']))
+                o['truth_overlap'], o['mode_hz'], o['mode_zeta'], o['complex_share'], o['status']))
     print('wrote', path)
     path = TW / 'Results' / 'res_obc_bias.csv'
     with open(path, 'w') as fh:
-        fh.write('run,job,stack,combination,predicted_rel,observed_rel\n')
+        fh.write('run,job,stack,combination,predicted_rel,observed_rel,status\n')
         for row in bias:
-            fh.write('%s,%d,%s,%s,%.6e,%.6e\n' % row)
+            fh.write('%s,%d,%s,%s,%.6e,%.6e,%s\n' % row)
     print('wrote', path)

@@ -8,11 +8,14 @@ network writes, Phi at the trained physical coordinate (vbar of the correction i
           (the transition rows, i.e. the offset column Gamma of Gyorok 2025 Eq. 18)
   F_aug   network physical-row output as the model applies it (minus the deployed OBC correction,
           [Phi] or [Phi F_base] times theta_frozen, D-257)
-  c_neg   <F_aug, F_base> / (||F_aug|| ||F_base||); near 0 no negation, near -1 cancellation
+  c_neg   cosine of F_aug with the baseline one-step INCREMENT F_base - x~ (the definition of
+          04_obc.tex, FINAL-RUN-FIXES item 19); near 0 no negation, near -1 cancellation
+  c_next  cosine of F_aug with the full next state F_base (the earlier printout, kept beside it)
   c_perp  cosine of F_aug with (I - Pi) F_base, Pi the projection onto ran Phi (pooled stack)
-  c_inc   cosine of F_aug with the baseline one-step increment F_base - x~ (FINAL-RUN-FIXES item 19)
 
-Per record and pooled. Evaluation only, nothing is trained or modified.
+Per record and pooled, on the training, validation and test (I1 to I6) stacks.
+Output: Results/res_negation.csv (run, stack, record, the cosines, ||F_aug||/||F_base||, checkpoint label).
+Evaluation only, nothing is trained or modified.
 
 Usage: python Thesis-writeup/Code/Evaluation/eval_negation.py R1 R4   (all three stacks)
 """
@@ -21,7 +24,7 @@ import time
 
 import torch
 
-from eval_common import RUNS, RUNS_DIR, record_name
+from eval_common import RUNS, RUNS_DIR, TW, record_name, checkpoint_status
 from eval_greybox import run_config, build
 from eval_overlap import deployed_basis, STACKS
 
@@ -39,11 +42,12 @@ def evaluate(run):
     from model_augmentation.fit_systems.blocks import Static_ANN_Block
 
     rid = RUNS[run]
+    st = checkpoint_status(rid)                    # final, or the best so far of a running run
     t0 = time.time()
     cfg = run_config(RUNS_DIR / str(rid))
     data, norm, fs = build(cfg)
-    load_checkpoint(fs, str(RUNS_DIR / str(rid) / ('gantry_ckpt_%d' % rid)), joint_estimation=True,
-                    start_phase='lbfgs')
+    load_checkpoint(fs, st['path'], joint_estimation=True, start_phase='lbfgs')
+    print('[%s %d] %s (%s)' % (run, rid, st['label'], st['path']), flush=True)
     # keep the SAVED OBC correction (vbar, theta_frozen are checkpoint buffers); a re-sync would rebuild the basis
     blocks = list(fs.hfn.connected_blocks)
     phy = next(b for b in blocks if hasattr(b, 'free_params'))
@@ -80,21 +84,27 @@ def evaluate(run):
         rows = []
         for r, nm in enumerate(names):
             m = rec == r
-            rows.append((nm, cos(F[m], Fb[m]), cos(F[m], Fp[m]),
-                         float(torch.linalg.norm(F[m]) / torch.linalg.norm(Fb[m])), cos(F[m], Fi[m])))
-        rows.append(('pooled', cos(F, Fb), cos(F, Fp), float(torch.linalg.norm(F) / torch.linalg.norm(Fb)),
-                     cos(F, Fi)))
+            rows.append((nm, cos(F[m], Fi[m]), cos(F[m], Fb[m]), cos(F[m], Fp[m]),
+                         float(torch.linalg.norm(F[m]) / torch.linalg.norm(Fb[m]))))
+        rows.append(('pooled', cos(F, Fi), cos(F, Fb), cos(F, Fp), float(torch.linalg.norm(F) / torch.linalg.norm(Fb))))
         print('[%s %d] %s %s | %d tuples | ||(I-Pi)F_base||/||F_base|| %.3e | %.0f s'
               % (run, rid, stack, 'OBC' if corr is not None else 'U', ref.n,
                  float(torch.linalg.norm(Fp) / torch.linalg.norm(Fb)), time.time() - t0), flush=True)
-        for nm, a, b, q, d in rows:
-            print('  %-6s c_neg %+.3e | cos(F_aug,(I-Pi)F_base) %+.3e | ||F_aug||/||F_base|| %.3e | '
-                  'cos(F_aug,F_base-x) %+.3e' % (nm, a, b, q, d), flush=True)
-        out[stack] = rows
+        for nm, a, b, c, q in rows:
+            print('  %-6s c_neg %+.3e | cos(F_aug,F_base) %+.3e | cos(F_aug,(I-Pi)F_base) %+.3e | '
+                  '||F_aug||/||F_base|| %.3e' % (nm, a, b, c, q), flush=True)
+        out[stack] = [(run, rid, 'obc' if corr is not None else 'u', stack) + r + (st['label'],) for r in rows]
     return out
 
 
 if __name__ == '__main__':
     torch.set_num_threads(4)
+    rows = []
     for r in sys.argv[1:]:
-        evaluate(r)
+        rows += [row for stack_rows in evaluate(r).values() for row in stack_rows]
+    path = TW / 'Results' / 'res_negation.csv'
+    with open(path, 'w') as fh:
+        fh.write('run,job,arm,stack,record,c_neg,c_next,c_perp,norm_ratio,status\n')
+        for row in rows:
+            fh.write('%s,%d,%s,%s,%s,%.6e,%.6e,%.6e,%.6e,%s\n' % row)
+    print('wrote', path)

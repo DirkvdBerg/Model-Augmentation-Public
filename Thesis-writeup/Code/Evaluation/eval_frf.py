@@ -22,7 +22,7 @@ import sys
 import numpy as np
 import torch
 
-from eval_common import RUNS, RUNS_DIR, TW
+from eval_common import RUNS, RUNS_DIR, TW, checkpoint_status
 from eval_greybox import run_config, build
 
 sys.path.insert(0, str(TW / 'Code' / 'Setup'))
@@ -78,10 +78,11 @@ def main():
     sys.path.insert(0, str(TW / 'Code' / 'Setup'))
     from loop_memory import plant_ss
     rid = RUNS[run]
+    st = checkpoint_status(rid)                    # final, or the best so far of a running run
     cfg = run_config(RUNS_DIR / str(rid))
     data, norm, fs = build(cfg)
-    load_checkpoint(fs, str(RUNS_DIR / str(rid) / ('gantry_ckpt_%d' % rid)), joint_estimation=True,
-                    start_phase='lbfgs')
+    load_checkpoint(fs, st['path'], joint_estimation=True, start_phase='lbfgs')
+    print('[%s %d] %s (%s)' % (run, rid, st['label'], st['path']), flush=True)
     T = sc.truth_params(sc.DEFAULT_DATASET)
     ystd = np.asarray(norm.ystd, float).ravel()
     su = np.asarray(norm.std_u, float).ravel()
@@ -93,12 +94,12 @@ def main():
         Gb = sc.frf_stage(T, Y, F_HZ, truth=False)
         for i, f in enumerate(F_HZ):
             rows.append([run, Y, f] + ['%.6e' % abs(G[i, j, l]) for G in (Gm, Gt, Gb)
-                                       for j in range(3) for l in range(3)])
+                                       for j in range(3) for l in range(3)] + [st['label']])
         mm = modes(np.linalg.eigvals(A), True)
         mt = modes(np.linalg.eigvals(plant_ss(T, Y)[0]), False)
         for name, ms in (('model', mm), ('truth', mt)):
             for fr, z in ms:
-                mrows.append([run, Y, name, '%.3f' % fr, '%.4f' % z])
+                mrows.append([run, Y, name, '%.3f' % fr, '%.4f' % z, st['label'] if name == 'model' else ''])
         print('[%s] Y %+.2f  model modes %s  truth modes %s  rest drift %.1e'
               % (run, Y, [(round(a, 1), round(b, 3)) for a, b in mm],
                  [(round(a, 1), round(b, 3)) for a, b in mt], drift))
@@ -108,20 +109,20 @@ def main():
     out = TW / 'Results' / 'res_frf_full.csv'
     with open(out, 'w', newline='') as fh:
         w = csv.writer(fh)
-        w.writerow(['run', 'Y', 'f_Hz'] + head)
+        w.writerow(['run', 'Y', 'f_Hz'] + head + ['status'])
         w.writerows(rows)
     print('wrote', out)
     keep = [3 + head.index('%s_Y_Y' % m) for m in ('model', 'truth', 'base')]
     out = TW / 'Results' / 'res_frf.csv'
     with open(out, 'w', newline='') as fh:
         w = csv.writer(fh)
-        w.writerow(['run', 'Y', 'f_Hz', 'model_Y_Y', 'truth_Y_Y', 'base_Y_Y'])
-        w.writerows([r[:3] + [r[k] for k in keep] for r in rows])
+        w.writerow(['run', 'Y', 'f_Hz', 'model_Y_Y', 'truth_Y_Y', 'base_Y_Y', 'status'])
+        w.writerows([r[:3] + [r[k] for k in keep] + [r[-1]] for r in rows])
     print('wrote', out)
     out = TW / 'Results' / 'res_frf_modes.csv'
     with open(out, 'w', newline='') as fh:
         w = csv.writer(fh)
-        w.writerow(['run', 'Y', 'system', 'f_Hz', 'zeta'])
+        w.writerow(['run', 'Y', 'system', 'f_Hz', 'zeta', 'status'])
         w.writerows(mrows)
     print('wrote', out)
 

@@ -1,7 +1,8 @@
 """Step 3 (THESIS-RESULTS): amplitude spectrum of the Y prediction error, baseline vs plain vs PS.
 
-Reads Results/res_ps_spectrum.csv (Code/Evaluation/make_results.py), writes
-Writing/figures/res_ps_spectrum.pdf.
+Reads Results/res_ps_spectrum.csv (Code/Evaluation/make_results.py), one spectrum per split over
+its multisine records (test: I1, I2). Writes Writing/figures/res_ps_spectrum.pdf (validation, where
+the PS vs plain choice is decided, D-269) and res_ps_spectrum_<split>.pdf for the other splits.
 """
 import csv
 
@@ -11,6 +12,7 @@ import numpy as np
 from _fig_common import COL_WIDTH, COLOR, FLOOR, RESULTS_DIR, save, use_paper_style
 
 STEM = "res_ps_spectrum"
+MAIN_SPLIT = "val"
 F_POLE = 212.13          # truth absorber pole, meta.truth.f_pole of every record
 MS_BAND = (106.0, 297.0)  # multisine band of I1 and I2, meta.band_Hz
 
@@ -18,7 +20,12 @@ MS_BAND = (106.0, 297.0)  # multisine band of I1 and I2, meta.band_Hz
 def main():
     use_paper_style()
     with open(RESULTS_DIR / f"{STEM}.csv", newline="") as fh:
-        rows = list(csv.DictReader(fh))
+        allrows = list(csv.DictReader(fh))
+    for split in dict.fromkeys(r["split"] for r in allrows):
+        figure([r for r in allrows if r["split"] == split], STEM if split == MAIN_SPLIT else "%s_%s" % (STEM, split))
+
+
+def figure(rows, stem):
     f = np.array([float(r["f_Hz"]) for r in rows])
     col = lambda k: np.array([float(r[k]) for r in rows])        # noqa: E731
     m = (f >= 5) & (f <= 1500)
@@ -37,7 +44,8 @@ def main():
     ax.grid(False, which="minor")
     ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=4, frameon=False, handlelength=1.4,
               columnspacing=0.9, handletextpad=0.4, borderaxespad=0.1)
-    save(fig, STEM)
+    save(fig, stem)
+    plt.close(fig)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 """Closed-loop test-set predictions of one grey-box run (THESIS-RESULTS section 5).
 
 For run R (job id from eval_common.RUNS) it loads the final model (`gantry_ckpt_<id>`, the model
-the run's own report scored), rebuilds the K1 controller bank for the records of one split (train,
+the run's own report scored) or, while the run has not finished, its best validated model so far
+(deepSI `_best.pth`, labelled "preliminary, update <n> of <N>"; eval_common.checkpoint_status), rebuilds the K1 controller bank for the records of one split (train,
 val, test or the multisine twins, D-269; E5 is refused by the scorer, D-227), and stores per record,
 from the model's own k0 = max(na, nb):
   y         the measured (noisy) output
@@ -11,18 +12,24 @@ from the model's own k0 = max(na, nb):
   base_true the physics block at the true combinations, learned block off (report row 4)
   clamped   the model with every output to an added state disabled (only when n_a > 0)
   sigma_e   the servo-error std per record and axis over the same samples (D-262), for NRMS_e
-Check: on test and val every row the report has must reproduce the run's saved `cl_<split>_rms`.
+Check: on test and val every row the report has must reproduce the run's saved `cl_<split>_rms`
+(final checkpoint only; a running run has no report). On val, the model's mean NRMS_e over records
+and axes (the selection measure sim-NRMSe, D-262) is compared with the checkpoint's own recorded
+score, which is the best validation sim-NRMSe of the training log (acceptance: relative 1e-3).
+Also stored: the label, the identifiable combinations at the start and as learned (the report's
+params_init / params_learned) and the run's config, so make_results.py needs no run report.
 
 Usage: python Thesis-writeup/Code/Evaluation/eval_greybox.py R5:physics,base_start,base_true,clamped [R3 ...]
        [--split=train,val,test,twins]      (default split: test; a run without ':' rolls out the model only)
 """
+import json
 import sys
 import time
 
 import numpy as np
 import torch
 
-from eval_common import RUNS, RUNS_DIR, CACHE, TWINS_NOISY, record_name, twin_files
+from eval_common import RUNS, RUNS_DIR, CACHE, TWINS_NOISY, record_name, twin_files, checkpoint_status
 
 
 def run_config(run_dir):
@@ -40,6 +47,11 @@ def run_config(run_dir):
     opts.update(device='cpu', compile_mode=None, truncate_s=None,
                 na_nb_override=int(meta['NA_NB']), nf_override=int(meta['NF']))
     return RunConfig(**opts)
+
+
+def cfg_json(rid):
+    """The run's config.json as written by training (OBC, COMBO_INIT_DETUNE, ...)."""
+    return json.load(open(RUNS_DIR / str(rid) / 'config.json', encoding='utf-8'))
 
 
 def build(cfg):
@@ -98,13 +110,14 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped'), split='test'):
     from gantry_dynamic.data import servo_sigma
 
     rid = RUNS[run]
-    base = str(RUNS_DIR / str(rid) / ('gantry_ckpt_%d' % rid))
+    st = checkpoint_status(rid)
     t0 = time.time()
     cfg = run_config(RUNS_DIR / str(rid))
     data, norm, fs = build(cfg)
-    load_checkpoint(fs, base, joint_estimation=True, start_phase='lbfgs')
+    load_checkpoint(fs, st['path'], joint_estimation=True, start_phase='lbfgs')
     # keep the SAVED OBC correction (vbar, theta_frozen are checkpoint buffers); a re-sync would rebuild the basis
-    print('[%s %d] built and loaded in %.0f s' % (run, rid, time.time() - t0), flush=True)
+    print('[%s %d] %s (%s): built and loaded in %.0f s' % (run, rid, st['label'], st['path'], time.time() - t0),
+          flush=True)
 
     files, sdl, es = [], [], []
     for f, sd, e in zip(*split_records(data, cfg, split)):
@@ -121,6 +134,9 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped'), split='test'):
     k0 = max(fs.na, fs.nb)                                  # the model's own scored interval (D-250)
 
     phy = next(b for b in fs.hfn.connected_blocks if hasattr(b, 'free_params'))
+    # the report's combination table (evaluation.report_joint_estimation): start and learned
+    with torch.no_grad():
+        p_names, p_init, p_learned, _ = phy.estimation_parameters()
     if lti_only:
         prev = dict(np.load(cache_path(run, split), allow_pickle=True))
         systems = {'base_lti': frozen_y(_without_learned(fs, _true_free(phy)))}
@@ -158,8 +174,11 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped'), split='test'):
 
     # check against the run's own report (row 0 model, row 3 baseline true); the report scores
     # the validation and test records only
-    saved = np.load(RUNS_DIR / str(rid) / ('gantry_results_%d.npz' % rid), allow_pickle=True)
-    if split in ('test', 'val'):
+    report = RUNS_DIR / str(rid) / ('gantry_results_%d.npz' % rid)
+    if split in ('test', 'val') and not (st['final'] and report.exists()):
+        print('  check against the run report skipped: %s has no report' % st['label'], flush=True)
+    if split in ('test', 'val') and st['final'] and report.exists():
+        saved = np.load(report, allow_pickle=True)
         names = [record_name(f) for f in saved['cl_%s_files' % split]]
         for tag, row in (('model', 0), ('physics', 1), ('base_start', 2), ('base_true', 3)):
             if tag not in out:
@@ -169,9 +188,23 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped'), split='test'):
             rel = np.max(np.abs(mine - ref) / ref)
             print('  check %-9s max rel. difference to the run report %.1e' % (tag, rel), flush=True)
             assert rel < 1e-6, 'does not reproduce the run report'
+    val_score = np.nan
+    if split == 'val':
+        # acceptance (handoff 2026-10-18 section 10): the selection measure of training, sim-NRMSe
+        # = mean over the validation records and axes of RMS / sigma_e (D-262), against the score
+        # the loaded checkpoint recorded; a larger gap means another checkpoint or another measure
+        val_score = float(np.mean(np.sqrt(np.mean((out['model'] - out['y']) ** 2, axis=1)) / out['sigma_e']))
+        rel = abs(val_score - st['ref_score']) / st['ref_score']
+        print('  check validation sim-NRMSe %.6f against the checkpoint score %.6f: rel. difference %.1e %s'
+              % (val_score, st['ref_score'], rel, 'OK' if rel < 1e-3 else 'FAILED (above 1e-3)'), flush=True)
     CACHE.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(cache_path(run, split), run=run, job=rid, nx_ann=cfg.nx_ann,
-                        obc=cfg.obc, ps2=bool(getattr(cfg, 'ps2', False)), **out)
+                        obc=cfg.obc, ps2=bool(getattr(cfg, 'ps2', False)),
+                        status=st['label'], final=st['final'], update=st['update'], total=st['total'],
+                        ref_score=st['ref_score'], val_score=val_score, config=json.dumps(cfg_json(rid)),
+                        param_names=np.asarray([str(n) for n in p_names]),
+                        params_init=np.asarray(p_init.cpu(), float), params_learned=np.asarray(p_learned.cpu(), float),
+                        **out)
     print('[%s %d] %s done in %.0f s' % (run, rid, split, time.time() - t0), flush=True)
 
 

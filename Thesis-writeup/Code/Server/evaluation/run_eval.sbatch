@@ -16,6 +16,8 @@
 #   tasks 0-8  grey box R1 R2 R3 R4 R5 R6 R7 R13 R14: predictions on train, val, test, twins
 #   task  9    black box: predictions on train, val, test, twins
 #   task  10   overlaps, predicted bias (eval_overlap) and negation (eval_negation), OBC/U pairs
+#              and the FRF of the final model R1 (eval_frf). A run that has not finished is evaluated
+#              at its best validated model so far, labelled preliminary (eval_common.checkpoint_status)
 
 set -eo pipefail
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
@@ -33,7 +35,9 @@ echo "task=${T} bb_dir=${THESIS_BB_DIR:-<unset>} node=${SLURM_JOB_NODELIST}"; da
 case "$T" in
   BB)  python -u $EV/eval_blackbox.py ;;
   OBC) python -u $EV/eval_overlap.py R4 R1 R5 R2 R14 R13
-       python -u $EV/eval_negation.py R4 R1 R14 R13 ;;
+       python -u $EV/eval_negation.py R4 R1 R14 R13
+       # result B: open-loop FRF F_Y -> Y of the final model over Y (res_frf, res_frf_full, res_frf_modes)
+       python -u $EV/eval_frf.py R1 ;;
   *)   python -u $EV/eval_greybox.py "${T}:physics,base_start,base_true,clamped" --split=train,val,test,twins
        # the frozen-Y LTI baseline of Fig. 1 (step 1) is added to R5's test predictions
        if [ "$T" = R5 ]; then python -u $EV/eval_greybox.py R5 --lti; fi ;;
