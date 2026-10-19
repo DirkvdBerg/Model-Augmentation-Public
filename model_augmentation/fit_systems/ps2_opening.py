@@ -230,7 +230,9 @@ class PS2Opening:
         g = torch.Generator(device='cpu').manual_seed(sp.seed)
         with torch.no_grad():
             r0 = float(ee(Xc, Uc, Tc))
-        best, state, checks, s = r0, None, [r0], 0
+        # D-274: the start is a candidate too, so S2 never ends worse than it began on the
+        # calibration pairs (thesis: the parameters with the lowest held-out cost are kept).
+        best, state, checks, s = r0, [p.detach().clone() for p in params], [r0], 0
         for s in range(1, sp.s2_cap + 1):
             j = torch.randint(len(Xf), (sp.s2_batch,), generator=g).to(Xf.device)
             opt.zero_grad(set_to_none=True)

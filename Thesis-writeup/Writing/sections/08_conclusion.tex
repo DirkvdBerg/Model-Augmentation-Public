@@ -20,14 +20,20 @@
 %   Checked 2026-10-18: the final runs build the encoder from data (D-271, logs thesis-results-4), so the old
 %   "encoder from true parameters" point is no limitation; the K1-rate point of 07 is a diagnostic only (D-265);
 %   the axis weighting point of 07 is resolved by W_r and NRMS_e selection (03, eq:aug_loss).
-\section{Discussion and Conclusion}\label{sec:conclusion}
+% RESTRUCTURE (2026-10-19, Maarten p15): title was "Discussion and Conclusion"; the
+%   discussion is now a subsection of the Results. Titles take no change marks.
+\section{Conclusion}\label{sec:conclusion}
 \ifdraft
 \begin{itemize}
 \item Discussion per aspect: explanation, limit and test of each result; then the limits and departures that bound all three (handoff 2026-10-18)
 \item Conclusion: the answer per aspect and to the research question, the central limit, one recommendation
 \end{itemize}
 \fi
-The improvement on the multisine records comes mainly from the
+\changelegend
+% RESTRUCTURE (2026-10-19, Maarten p15: "This discussion should not be mixed
+%   with the conclusion. Make it a separate subsection of the results."):
+%   the discussion moved to Section VII-D (sec:discussion); struck here.
+\delmv[M-p15]{VII-D}{The improvement on the multisine records comes mainly from the
 learned absorber mode (Fig.~\ref{fig:res_frf}).
 The results in Table~\ref{tab:app_structure} (Appendix~\ref{app:choices})
 show that both the added states and their PS initialisation are needed
@@ -36,9 +42,8 @@ Without multisine, the final model performs slightly worse than
 the baseline.
 The baseline is already accurate on these records, so the learned
 correction might overfit on the multisine records
-and introduce small errors on the records without multisine.
-\\
-OBC reduces the final combination error compared with the
+and introduce small errors on the records without multisine.}
+\delmv[M-p15]{VII-D}{OBC reduces the final combination error compared with the
 unconstrained model (47.7 against 83.1\,\%), but the parameters
 still end up further from the truth than at their initial values
 (Table~\ref{tab:res_obc}).
@@ -47,7 +52,6 @@ parameter directions.
 The truth overlap of 0.59 means $\Phi^\top\Xi\neq0$, so the recovery
 condition of Section~\ref{sec:obc_ident} is not met and OBC is not
 expected to recover the true values.
-\todo{Use this?}
 The orthogonality holds only to first order and at $\bar x=0$.
 During training, the added states enter the physical states through
 $f_{\mathrm{aug}}$ without projection.
@@ -55,28 +59,21 @@ This is a limitation of imposing the constraint at $\bar x=0$.
 With OBC the estimates from the true and detuned starts are closer together, 
 but still differ (Table~\ref{tab:app_obc_full}).
 The results therefore show less dependence on initialisation,
-but does not establish uniqueness.
-\\
-The black box model performs poorly on its training records and
+but does not establish uniqueness.}
+\delmv[M-p15]{VII-D}{The black box model performs poorly on its training records and
 had not converged within the available budget
 (Table~\ref{tab:app_bb_search}).
-% The final model maintains its accuracy on all extrapolation
-% records (Fig.~\ref{fig:res_generalisation}).
-% However, each record extends beyond the training range in only
-% one direction, so the results do not establish how the model
-% behaves further outside this range.
 The black box model is also randomly initialised and not trained 
 with the known controller.
-Having a disadvantages starting position. t
-\\
-The results are limited to simulation with one seed and the
+Having a disadvantages starting position. t}
+\delmv[M-p15]{VII-D}{The results are limited to simulation with one seed and the
 same controller used to generate the data.
 Training and evaluation are both performed in closed loop,
 where the controller can suppress errors in the plant model.
 It remains unclear whether the improvements would hold with
-a different controller or on measured data.
+a different controller or on measured data.}
 
-\subsection{Conclusion}
+% RESTRUCTURE (2026-10-19): subsection heading "Conclusion" removed, the section is the conclusion.
 A parallel augmentation with added states, initialised by PS and trained
 in closed loop, learns the missing dynamics and lowers the $Y$ error on
 the records with multisine from 116.6 to 6.2\,\% (Aspect~1).

@@ -66,12 +66,14 @@
 %   \chg[tag]{old}{new}   word-level fix: old struck grey, new green
 %   \del[tag]{text}       deleted text: struck grey
 %   \add[tag]{text}       new text: green
-%   \mv[tag]{P3}          before a moved sentence: grey tag "P3" (paragraph it came from)
+%   \mv[tag]{P3}{text}    moved text, blue, grey "from P3" before and "end" after
+%   \delmv[tag]{IV-C}{text} old place of moved text: struck, grey "moved to IV-C"
 %   \changelegend         one-line legend, put once at the top of a revised section
 % \showdeletionsfalse hides the struck text to read the revised flow.
 \newif\ifshowdeletions
 \showdeletionstrue
 \definecolor{chgnew}{rgb}{0,0.45,0.15}
+\definecolor{mvtext}{rgb}{0,0.25,0.65}
 \newcommand{\fbtag}[1]{\if\relax\detokenize{#1}\relax\else\textsuperscript{\tiny\color{gray}#1}\fi}
 % \fbsout: grey strikethrough; boxes \cite, which \sout cannot break into
 \newcommand{\fbsout}[1]{{\color{gray}\let\fbcite\cite\def\cite##1{\mbox{\fbcite{##1}}}\sout{#1}}}
@@ -79,15 +81,22 @@
   \newcommand{\chg}[3][]{\ifshowdeletions\fbsout{#2}\ \fi{\color{chgnew}#3}\fbtag{#1}}
   \newcommand{\del}[2][]{\ifshowdeletions\fbsout{#2}\fbtag{#1}\fi}
   \newcommand{\add}[2][]{{\color{chgnew}#2}\fbtag{#1}}
-  \newcommand{\mv}[2][]{\textsuperscript{\tiny\color{gray}from #2\if\relax\detokenize{#1}\relax\else, #1\fi}\,}
+  % \mv[tag]{from}{text}: Dirk's sentences in a new place, whole block in
+  %   mvtext blue between "from <place>" and "end" (Dirk 2026-10-19); edits
+  %   inside keep their own marks. \delmv[tag]{to}{text}: the old place of a
+  %   moved block, struck, with "moved to <place>".
+  \newcommand{\mv}[3][]{\textsuperscript{\tiny\color{gray}from #2\if\relax\detokenize{#1}\relax\else, #1\fi}\,{\color{mvtext}#3}\textsuperscript{\tiny\color{gray}\,end}}
+  \newcommand{\delmv}[3][]{\ifshowdeletions\fbsout{#3}\textsuperscript{\tiny\color{gray}moved to #2\if\relax\detokenize{#1}\relax\else, #1\fi}\fi}
   \newcommand{\changelegend}{{\footnotesize\color{gray}[Changes: black = original,
-    {\color{chgnew}green} = changed or new, \sout{struck} = deleted,
-    \textsuperscript{\tiny from P3} = moved from paragraph 3, superscript = comment id.]}\par}
+    {\color{mvtext}blue} = original, moved here (from \dots\ end),
+    {\color{chgnew}green} = changed or new, \sout{struck} = deleted
+    (``moved to'' = moved, not deleted), superscript = comment id.]}\par}
 \else
   \newcommand{\chg}[3][]{#3}
   \newcommand{\del}[2][]{}
   \newcommand{\add}[2][]{#2}
-  \newcommand{\mv}[2][]{}
+  \newcommand{\mv}[3][]{#3}
+  \newcommand{\delmv}[3][]{}
   \newcommand{\changelegend}{}
 \fi
 

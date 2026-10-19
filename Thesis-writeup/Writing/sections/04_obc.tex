@@ -79,6 +79,7 @@
 \item Contribution: the extension Gy\"or\"ok 2026 Sec.~6 leaves open: a state-space baseline without full-state measurement, here nonlinear in its parameters and identified in closed loop (this work)
 \end{itemize}
 \fi
+\changelegend
 
 The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
 minimising the loss function of Section~\ref{sec:aug_closed_loop} can be non-unique:
@@ -194,8 +195,10 @@ include all components of the baseline model in the
 orthogonality~\cite[Eq.~(18)]{gyorok2025l4dc}.
 We include it as well, so the neural network has no component along the
 stacked next states predicted by the baseline.}
-The offset does not change the first-order estimate \eqref{eq:obc_recovery}.
-\kw{It does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
+% RESTRUCTURE (2026-10-19, Maarten mail): moved below eq:obc_recovery, which
+%   it used before its definition.
+\delmv[M-mail]{V-C}{The offset does not change the first-order estimate \eqref{eq:obc_recovery}.}
+\chg[M-mail]{\kw{It}}{\kwtwo{The offset}} \kw{does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
 the neural network cancels part of the baseline response, because only the
 part of the network along the stacked baseline response is excluded.}
 % \\
@@ -313,13 +316,14 @@ which requires rebuilding $\Phi_\Gamma$ at each evaluation
 of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to 
 keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters, 
 assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.
-Training as stated in Section~\ref{sec:setup} starts from detuned parameters,
+\chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{Since training may start} from detuned parameters,
 we instead adapt their recomputation 
 at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
 We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.
 The polish minimises the same projected objective, with $\Phi_\Gamma$ held
 fixed at this $\beta$.
 The polish is only kept if its validation error is lower.
+\todo{Clarify (D-274): "lower" means lower than the validation error of the best checkpoint; if the polish is not kept, the model with the rebuilt $\Phi_\Gamma$ is kept, whose validation error can differ slightly from that of the checkpoint (run 229: $2.926741\times10^{-1}$ vs $2.926736\times10^{-1}$).}
 
 
 The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
@@ -348,6 +352,7 @@ $\tilde F^{\mathrm n}_{\mathrm{aug}}$, which gives $\hat\beta_{\mathrm{np}}$:
 \end{equation}
 With the projection, $\hat\beta$ does not depend on the network output,
 since $\Phi^\top\tilde F^{\mathrm n}_{\mathrm{aug}}=0$ by \eqref{eq:obc_coef}.
+\mv[M-mail]{V-B}{The offset does not change the first-order estimate \eqref{eq:obc_recovery}.}
 Without the projection, $\Phi^\top F^{\mathrm n}_{\mathrm{aug}}$
 is still in the estimate $\hat\beta_{\mathrm{np}}$.
 The expression for $\hat\beta-\beta^\star$ has the same form as

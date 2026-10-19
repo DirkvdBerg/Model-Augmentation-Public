@@ -44,6 +44,7 @@
 \item Test records, $\mathrm{NRMS}_e$ with the noise floor; training and validation in the appendix (D-269)
 \end{itemize}
 \fi
+\changelegend
 All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
 against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
@@ -141,6 +142,58 @@ Fig.~\ref{fig:res_time_trace}.}
   \caption{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}
   \label{fig:res_generalisation}
 \end{figure*}
+
+
+\subsection{Discussion}\label{sec:discussion}
+% RESTRUCTURE (2026-10-19, Maarten p15): moved here from Section VIII (sec:conclusion), word for word.
+\mv[M-p15]{VIII}{The improvement on the multisine records comes mainly from the
+learned absorber mode (Fig.~\ref{fig:res_frf}).
+The results in Table~\ref{tab:app_structure} (Appendix~\ref{app:choices})
+show that both the added states and their PS initialisation are needed
+to obtain this improvement.
+Without multisine, the final model performs slightly worse than
+the baseline.
+The baseline is already accurate on these records, so the learned
+correction might overfit on the multisine records
+and introduce small errors on the records without multisine.
+\\
+OBC reduces the final combination error compared with the
+unconstrained model (47.7 against 83.1\,\%), but the parameters
+still end up further from the truth than at their initial values
+(Table~\ref{tab:res_obc}).
+The missing dynamics have a truth overlap of 0.59 with the
+parameter directions.
+The truth overlap of 0.59 means $\Phi^\top\Xi\neq0$, so the recovery
+condition of Section~\ref{sec:obc_ident} is not met and OBC is not
+expected to recover the true values.
+\todo{Use this?}
+The orthogonality holds only to first order and at $\bar x=0$.
+During training, the added states enter the physical states through
+$f_{\mathrm{aug}}$ without projection.
+This is a limitation of imposing the constraint at $\bar x=0$.
+With OBC the estimates from the true and detuned starts are closer together, 
+but still differ (Table~\ref{tab:app_obc_full}).
+The results therefore show less dependence on initialisation,
+but does not establish uniqueness.
+\\
+The black box model performs poorly on its training records and
+had not converged within the available budget
+(Table~\ref{tab:app_bb_search}).
+% The final model maintains its accuracy on all extrapolation
+% records (Fig.~\ref{fig:res_generalisation}).
+% However, each record extends beyond the training range in only
+% one direction, so the results do not establish how the model
+% behaves further outside this range.
+The black box model is also randomly initialised and not trained 
+with the known controller.
+Having a disadvantages starting position. t
+\\
+The results are limited to simulation with one seed and the
+same controller used to generate the data.
+Training and evaluation are both performed in closed loop,
+where the controller can suppress errors in the plant model.
+It remains unclear whether the improvements would hold with
+a different controller or on measured data.}
 
 % Open points of this section (kept together so the text reads without interruption).
 \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section

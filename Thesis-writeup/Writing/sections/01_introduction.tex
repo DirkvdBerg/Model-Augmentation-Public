@@ -147,10 +147,10 @@ However, these methods require the physics equations to be known and still
 rely on a black-box model for the entire system \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 2
 For the plant model of the dual-drive gantry,
-both predictive accuracy and
-physical interpretability are required.
-Physical interpretability means that the identifiable combinations of the physical
-parameters (Section~\ref{sec:params}) are estimated uniquely
+\kw{both predictive accuracy and
+physical interpretability are required.}
+Physical interpretability means that Physical interpretability means that the identifiable combinations of the physical
+parameters\del[M-mail]{ (Section~\ref{sec:params})} are estimated uniquely
 \cite{gyorok2026obc}.
 This does not guarantee identifying the true parameters, 
 but a deviation from the trained model can then indicate which 
@@ -287,8 +287,22 @@ augmented model generalise to held-out operating points and unseen motion
 profiles, compared to a black-box model?
 % CHANGED: bold title dropped; wording D-241
 \end{enumerate}
+% RESTRUCTURE (2026-10-19, Maarten p3: "provide a short outline of the paper
+%   at the end of the introduction."): new text.
+\changelegend
+\add[M-p3]{
+\kwtwo{The paper is organised as follows: first, the identification problem is
+stated in Section~\ref{sec:problem}, followed by the physics baseline in
+Section~\ref{sec:physics}.
+Then, Section~\ref{sec:augmentation} introduces the augmented model and its
+identification in closed loop, and Section~\ref{sec:obc} the orthogonal
+construction.
+The experiment design is described in Section~\ref{sec:setup}, and the results
+are given and discussed in Section~\ref{sec:results}.
+The conclusions are given in Section~\ref{sec:conclusion}.}
+}
 \revnote{Aspect 1 (LPV versus LTI) is removed: the LPV form follows from the
-equations of motion (Section~II), so it is a modelling choice rather than a
+equations of motion (Section~\ref{sec:baseline}), so it is a modelling choice rather than a
 research result. The LTI comparison (on $X$ the LTI error is 1.5 to 3.7 times
 the LPV error) moves to the appendix. Aspects 2 to 4 are reworded to the
 final method.}

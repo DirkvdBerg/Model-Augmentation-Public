@@ -781,15 +781,19 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
         # fragmentation-driven OOM that would otherwise land at the END of a training run.
         torch.cuda.empty_cache()
     try:
-        # D-253: with OBC, fit() rebuilt the basis at the restored parameters after selecting the
-        # checkpoint, so `bestfit` scored a different model. Measure the rebuilt one, once, here.
+        # D-274 (replaces the D-253 comparison): the polish must beat the selected checkpoint's
+        # score `bestfit`, for OBC as well. With OBC, fit() rebuilt the basis at the restored
+        # parameters, so the rebuilt model scores slightly differently; it is measured once for the
+        # log and the history, and it is the model kept when the polish is rejected.
         val_before = (bestfit if (np.isfinite(bestfit) and cfg.start_phase != 'lbfgs') else None)
         if cfg.obc:
-            val_before = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
+            val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
             print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
-                  % (cfg.validation_measure, val_before, bestfit))
+                  % (cfg.validation_measure, val_rebuilt, bestfit))
             if history is not None:
-                history.record('rebuilt', fit_sys, val_before)
+                history.record('rebuilt', fit_sys, val_rebuilt)
+            if val_before is None:
+                val_before = val_rebuilt
         out = lbfgs_polish(
             fit_sys, data.train_data,
             loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride}, spec=spec,

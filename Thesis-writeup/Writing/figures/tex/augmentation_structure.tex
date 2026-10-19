@@ -29,6 +29,8 @@
   \node[blk, minimum width=27mm] (hb) at (\xB,\yO)
        {$h_{\mathrm{base}}$\\[-1pt] {\scriptsize output map}};
   \node[blk, minimum width=8mm, minimum height=7mm] (z) at (\xS,\yR) {$z^{-1}$};
+  % RESTORED (2026-10-19, Dirk): encoder block back; the caption points to
+  % Section IV-C, where it is introduced.
   \node[blk, minimum width=11mm, minimum height=11mm] (enc) at (\xS,\yE)
        {$\psi$\\[-1pt] {\scriptsize encoder}};
 
@@ -80,8 +82,11 @@
   \draw[->] (s2.east) -- ++(0.55,0) node[anchor=west, inner sep=1.5pt] {$\hat y_k$};
 
   % encoder
+  % Arrow label was \hat x_{\tau|\tau}; Maarten p6: "this notation, is
+  % different than the rest of the notation in the loop. make it consistent."
+  % Now \hat x_\tau, the loop state \hat x_k at the window start k = tau.
   \draw[->, dashed] (enc.north) -- (z.south)
-       node[pos=0.5, right, inner sep=1.5pt] {$\hat x_{\tau|\tau}$};
+       node[pos=0.5, right, inner sep=1.5pt] {$\hat x_{\tau}$};
   \draw[<-] (enc.west) -- ++(-0.4,0)
        node[anchor=east, inner sep=1.5pt] {$\chi_\tau$};
 \end{tikzpicture}

@@ -121,7 +121,7 @@ $\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with
 \end{equation*}
 where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic
 in $Y$.
-The implementation evaluates both polynomials with Horner's scheme.
+The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term by term.
 \todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
 
 \subsection{Positive definiteness of the inertia matrix}
@@ -250,6 +250,11 @@ the training, validation and test records.
 This appendix gives the results behind the choices of the baseline form,
 the augmentation structure, the start of the added states and the black
 box.
+% RESTRUCTURE (2026-10-19, Dirk): the figure was only referenced from the
+%   dropped factor-3.7 sentence in Section III; this sentence keeps it
+%   referenced.
+\kwtwo{Fig.~\ref{fig:res_lpv_lti} compares the LPV baseline with the LTI
+baseline frozen at $Y=0$.}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_lpv_lti.pdf}
@@ -452,8 +457,15 @@ reduced to $T_s$ by
  y_k=r(5k)+\bigl(\mathcal B\ast(y-r)\bigr)(5k),
  \label{eq:setup_decim}
 \end{equation}
-where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at
-1.6~kHz.
+where $\mathcal B$ is an eighth-order Butterworth low-pass at
+1.6~kHz, applied forward and backward.
+\todo{Changed from: where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at 1.6~kHz.}
+\revnote{Noise-free twins: a noise-free TRAINING run point-samples y, $y_k=y(5k)$
+(config.py:33, data.py:175-176), but the evaluation loads the twins for the
+noise floor with the lowpass configuration (eval\_blackbox.py:117, 156-158), so
+every reported floor uses \eqref{eq:setup_decim} as written. No final run used
+noise-free training data. Add a point-sampling sentence only if a noise-free
+training run is reported.}
 The block mean is the exact input of a zero-order-hold model at $T_s$.
 The filter acts on the servo error only, so the reference passes unchanged.
 It changes the noise-free output by at most $\SetupFiltDist$~m RMS.

@@ -84,7 +84,9 @@ def record_files(cfg: RunConfig):
     with open(os.path.join(traj_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
         for row in csv.DictReader(fh):
             split = _THESIS_SPLIT.get(row['block'])
-            if split is not None:
+            # D-274: only K1 records (thesis: every record is generated with K1); drops E5 (K2-g+),
+            # which was loaded but never scored (D-227).
+            if split is not None and row['controller'] == 'K1':
                 out[split].append('%s/%s.mat' % (row['folder'], row['file']))
     return out['train'], out['val'], out['test']
 
