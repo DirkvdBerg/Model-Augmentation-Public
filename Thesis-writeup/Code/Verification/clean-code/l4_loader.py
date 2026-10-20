@@ -46,6 +46,20 @@ H.select_side(args.side)
 import numpy as np
 import torch
 
+# The default CPU least-squares driver is pinned to gelsd in this process (both sides, and the
+# unmodified evaluation that --eval-check calls): torch's default gelsy is not repeatable from call to
+# call at one thread (local test 2026-10-20: up to 3e-13 relative on the same tensors, also under
+# MKL_CBWR), gelsd is. The training path already passes driver='gelsd' (gantry_dynamic/model.py).
+LSTSQ_DRIVER = 'gelsd'
+_lstsq = torch.linalg.lstsq
+
+
+def _lstsq_pinned(A, B, rcond=None, *, driver=None):
+    return _lstsq(A, B, rcond=rcond, driver=driver or (LSTSQ_DRIVER if A.device.type == 'cpu' else None))
+
+
+torch.linalg.lstsq = _lstsq_pinned
+
 FINAL_DESIGN = {'R1': (True, 2, True, True), 'R2': (True, 2, False, True), 'R3': (False, 2, False, False),
                 'R4': (False, 2, True, True), 'R5': (False, 2, False, True), 'R6': (False, 0, False, False),
                 'R7': (False, 8, False, True), 'R13': (True, 0, True, False), 'R14': (False, 0, True, False)}
@@ -353,7 +367,18 @@ def main():
     H.assert_roots()
     runs = discover(STAGING)
     parts = args.parts.split(',')
-    summary = {'side': args.side, 'staging': STAGING, 'runs': runs, 'checks': {}, 'eval_check': {}}
+    if args.eval_check and args.truncate_s is not None:
+        # LOCAL SCRIPT TEST ONLY: the evaluation at the loader's short records (its run_config forces
+        # full length; the staged configs must then record TRUNCATE_S null, as eval_common requires)
+        from dataclasses import replace
+        import eval_greybox
+        import eval_overlap
+        import eval_negation
+        full = eval_greybox.run_config
+        for m in (eval_greybox, eval_overlap, eval_negation):
+            m.run_config = lambda run_dir: replace(full(run_dir), truncate_s=args.truncate_s)
+    summary = {'side': args.side, 'staging': STAGING, 'runs': runs, 'lstsq_driver': LSTSQ_DRIVER,
+               'checks': {}, 'eval_check': {}}
     for run in args.runs.split(','):
         rid = runs[run]
         run_dir = os.path.join(STAGING, str(rid))

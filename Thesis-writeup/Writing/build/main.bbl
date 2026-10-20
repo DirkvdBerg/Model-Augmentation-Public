@@ -21,6 +21,23 @@
 \providecommand{\BIBdecl}{\relax}
 \BIBdecl
 
+\bibitem{hwang2024semiconductor}
+J.~Hwang and S.~D. Noh, ``Digital twin-based optimization of operational
+  parameters for cluster tools in semiconductor manufacturing,'' \emph{IEEE
+  Access}, vol.~12, pp. 122\,078--122\,100, 2024.
+
+\bibitem{irds2022}
+{International Roadmap for Devices and Systems (IRDS)}, ``International roadmap
+  for devices and systems: 2022 edition executive summary,'' IEEE, Tech. Rep.,
+  2022.
+
+\bibitem{workman2021diewafer}
+T.~Workman, L.~Mirkarimi, J.~Theil, G.~Fountain, K.~M. Bang, B.~Lee, C.~Uzoh,
+  D.~Suwito, G.~Gao, and P.~Mrozek, ``Die to wafer hybrid bonding and fine
+  pitch considerations,'' in \emph{2021 IEEE 71st Electronic Components and
+  Technology Conference (ECTC)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE,
+  2021, pp. 2071--2077.
+
 \bibitem{garcia2013model}
 I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J. Barre,
   ``Model-based decoupling control method for dual-drive gantry stages: A case
@@ -31,6 +48,12 @@ I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J. Barre,
 C.~S. Teo, K.~K. Tan, S.~Y. Lim, S.~Huang, and E.~B. Tay, ``Dynamic modeling
   and adaptive control of a h-type gantry stage,'' \emph{Mechatronics},
   vol.~17, no.~7, pp. 361--367, 2007.
+
+\bibitem{gyorok2026obc}
+B.~M. Gy{\"o}r{\"o}k, M.~Schoukens, T.~P{\'e}ni, and R.~T{\'o}th,
+  ``Orthogonal-by-construction augmentation of physics-based input-output
+  models,'' \emph{IFAC Journal of Systems and Control}, vol.~35, p. 100376,
+  2026.
 
 \bibitem{willard2020integrating}
 J.~Willard, X.~Jia, S.~Xu, M.~Steinbach, and V.~Kumar, ``Integrating scientific
@@ -51,12 +74,6 @@ G.~E. Karniadakis, I.~G. Kevrekidis, L.~Lu, P.~Perdikaris, S.~Wang, and
 M.~Raissi, P.~Perdikaris, and G.~E. Karniadakis, ``Physics informed deep
   learning (part i): Data-driven solutions of nonlinear partial differential
   equations,'' \emph{arXiv preprint arXiv:1711.10561}, 2017.
-
-\bibitem{gyorok2026obc}
-B.~M. Gy{\"o}r{\"o}k, M.~Schoukens, T.~P{\'e}ni, and R.~T{\'o}th,
-  ``Orthogonal-by-construction augmentation of physics-based input-output
-  models,'' \emph{IFAC Journal of Systems and Control}, vol.~35, p. 100376,
-  2026.
 
 \bibitem{noel2018greybox}
 J.~P. Noël and J.~Schoukens, ``Grey-box state-space identification of

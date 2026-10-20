@@ -1,7 +1,8 @@
 # Implementation report: clean minimal code (step 4)
 
 2026-10-20. Handoff `tasks/handoffs/2026-10-20-clean-code-implementation.md`; design `tasks/clean-code/design.md`
-(revised) with D-274, D-275 and its amendments 1 to 4. DRAFT: results below are filled in as the layers finish.
+(revised) with D-274, D-275 and its amendments 1 to 4. All local layers pass bitwise on CPU; layers 4,
+4b and the 6.4 GPU smokes run on the server (commands at the end).
 
 ## Result per layer
 
@@ -9,14 +10,15 @@
 |-|-|-|-|
 | static: pyflakes | 24 files | PASS: 0 undefined names (pyflakes 3.0.1, base env; nothing installed) | seconds |
 | static: imports | 24 modules, only `Clean/` on the path | PASS: all under `Clean/` | seconds |
-| 1 construction + forward | 16 | (pending) | 32 to 112 s / (pending) |
-| 2 loss + gradients | 16 | (pending) | in the layer-1 process |
-| 3 short training | 5 | (pending) | 940 s (221-lowpass) / (pending) |
-| 3b polish rejection | 2 | (pending) | |
-| 3c reruns | 5 | (pending) | |
-| smoke `R6 lowpass --cpu --smoke` | 1 | (pending) | |
-| 4, 4b | server | scripts ready (section 5) | |
-| 6.4 (a), (b) | server | scripts ready (section 5) | |
+| 1 construction + forward | 16 (8 models x lowpass, noisefree) | PASS 16/16, bitwise: 259 to 302 items per case (data, normalisation, sigmas, windows, bank, OBC reference set, state after build and after the pre-fit with key/shape lists, LS rank and singular values, first OBC basis, encoder x0, pass_mats, OBC coefficient and tangent pair, 400-step closed-loop prediction, validation score) | 32 to 112 s / 35 to 177 s |
+| 2 loss + gradients | 16 | PASS 16/16, bitwise: weighted loss and the gradient of every parameter in `parameters_with_names` order | in the layer-1 process |
+| 3 short training | 5: 221-lowpass, 229-noisefree, 224-noisefree, 226-lowpass, 227-lowpass | PASS 5/5, bitwise, no fallback: both checkpoint pairs (hfn, encoder, Adam `step`/`exp_avg`/`exp_avg_sq`), `.npz` (incl. `bestfit`, `ps2_summary`, `lbfgs_outcome` with `reason`), `val_hist.npz`, config.json on the shared keys. 18 Adam updates, 4 validations, OBC epoch refreshes, PS2 S1/S2 on the PS2 rows; all five polishes accepted. Also the with/without check of the periodic `_last.pth` (D-275 amendment 2) | 935, 1202, 207, 216, 285 s / 741, 967, 317, 230, 343 s |
+| 3b polish rejection | 2: 221-lowpass, 226-lowpass | PASS 2/2: the golden `_pre_lbfgs` pair in a freshly built model, `lbfgs_polish(..., val_before=0.0)`; both sides ROLLED BACK with the same reason, parameters equal to the start state (asserted in each run), outcome fields and the full state after restore and `_resync` bitwise equal | 290, 74 s / 243, 79 s |
+| 3c reruns | 5: 226-lowpass (i) `_best`, (ii) polish-only, (iii) `_last`; 221-lowpass (i), (ii) | PASS 5/5, each code from its own layer-3 golden: both pairs' state_dicts and Adam entries, `.npz` (except `elapsed`, `orig_run_id`; `resumed_from` by file name), `lbfgs_outcome`, val_hist. Both codes restore the Adam moments from the deepSI dumps (amendment 3; log: "Adam moment estimates restored", resume at 2 done/2 remaining from `_best`, 3 done/1 remaining from `_last`). Clean-only asserts hold in all five: previous files byte-identical in `previous/<rerun_id>/` (dumps included for i, iii), config.json changed only by one `RESUMES` entry | 193, 73, 132, 612, 247 s / 199, 71, 116, 546, 234 s |
+| acceptance `python Clean/gantry_interconnect_dynamic.py R6 lowpass --cpu --smoke` | 1 | PASS, runs to the end (rc 0): initial validation sim-NRMSe 0.3949, 4 Adam updates, polish ACCEPTED, best validation sim-NRMSe 0.359563; config.json, both checkpoint pairs, val_hist.npz and the deepSI `_best`/`_last` dumps written (out root and LOCALAPPDATA redirected to `simulations/clean-golden/smoke/`) | 249 s |
+| 4, 4b | server | pending; scripts ready, see "Server commands". Local script test of the loader: LOADER_RESULT | |
+| 6.4 (a), (b) | server | pending; scripts ready, see "Server commands" | |
+
 ## The folder
 
 `Clean/`: the 24 files of design section 1, each a copy-and-trim of the mainline file with the same
@@ -103,7 +105,17 @@ None changes a number on the CPU path; layers 1 to 3c are the evidence.
    (c) layer-1 arrays above 8 MB (OBC basis U, training windows uf and yf) are stored as a SHA256 of
    their bytes plus sum and max, compared by hash; `capture_l12.py --full` stores them whole when a
    mismatch must be localised; (d) the mainline side is given `THESIS_SMOKE=1` for the PS2 smoke spec
-   only, its `EP.CFG` replaced by the budget (6.2).
+   only, its `EP.CFG` replaced by the budget (6.2); (e) the layer-4 loader pins the default CPU
+   least-squares driver to `gelsd` in its process (both sides, and the unmodified evaluation its
+   `--eval-check` calls). Cause, found by the local loader test: the overlap, bias and negation rows
+   of R1 and R4 differed between the codes by up to 3e-13 relative while the lstsq inputs (J, F_b,
+   Z_step) were bitwise equal; torch's default driver `gelsy` returns different last bits from call
+   to call on the same tensors at one thread (also under `MKL_CBWR=COMPATIBLE` or `AUTO,STRICT`),
+   while `gelsd` and `gels` are repeatable. Training already passes `driver='gelsd'`
+   (`gantry_dynamic/model.py`), so layers 1 to 3c are unaffected. Consequence outside this task: the
+   thesis overlap, bias and negation numbers (`eval_overlap.py`, `eval_negation.py`, default
+   driver) are repeatable to about 1e-13 relative only, far below their printed precision; the
+   evaluation scripts were not edited.
 
 ## Server commands for Dirk (layers 4, 4b and the 6.4 GPU smokes)
 
@@ -145,3 +157,12 @@ sides and the mainline loader equal to the unmodified evaluation) and `COMPARE_G
 ran, no "skipping cudagraphs", initial validation and the four Adam losses within 1e-9 relative, (b)
 same deterministic and used_compiled, loss_first within 1e-9 relative). Send back the two
 compare-*.json files and the loader `summary.json` files.
+
+## Local leftovers for Dirk
+
+- `C:\Users\20203253\AppData\Local\anaconda3\Library\c\` is a stray folder from my first smoke launch
+  (a wrong path conversion; it holds only that failed run's config.json and val_hist.npz). Deleting it
+  was refused by the permission check; please delete it by hand.
+- `simulations/clean-golden/smoke/` (the acceptance run) and `simulations/clean-golden/L4-localtest/`
+  (the loader script test on 0.6 s records built from the layer-3 goldens, not a layer-4 result) can be
+  deleted; the goldens `L1` to `L3c` and `_clean` are the evidence and stay.

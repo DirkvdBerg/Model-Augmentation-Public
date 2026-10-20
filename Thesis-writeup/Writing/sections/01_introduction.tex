@@ -35,38 +35,78 @@
 % FEEDBACK: the ASMPT sentences moved to the start of Section II-A, as Jan1
 %   asks ("Ik zou dit verwerken in de volgende sectie"; Dirk 2026-10-18).
 %   Their source comments moved with them.
-This thesis focuses on a
-dual-drive gantry motion system in which two parallel
+% FEEDBACK v2 (2026-10-20): Maarten's introduction comments, tags M-p2a to
+%   M-p3b; own = own finding. Legend moved to the top of the section. Cuts
+%   only where a supervisor comment asks for them; M-p3b (total length)
+%   only for a sentence that repeats another (Dirk 2026-10-20).
+\changelegend
+% FEEDBACK v2: societal opening (M-p2b): why such systems, and why model
+%   augmentation (end of this paragraph). Kept general, no specific ASMPT
+%   system (ASMPT supervisor 2026-10-20: ASMPT uses gantries in some of its
+%   products, do not name a system). Sources: Hwang p. 1 (semiconductors
+%   indispensable for 5G, autonomous vehicles, AI; shortage affects
+%   industries and national security); "strict demands" sentence is Dirk's
+%   (research plan Background.tex), Workman p. 1 (alignment accuracy,
+%   high-yield high-throughput bonding, cost); Teo p. 1 (H-type gantry
+%   stages in flat panel display, PCB manufacturing, precision metrology,
+%   circuit assembly).
+\add[M-p2b]{\kwtwo{
+Semiconductor devices are \chg[M-p2b]{used in technologies}{essential for applications} such as artificial
+intelligence, 5G and autonomous vehicles.
+Shortages can affect entire industries and national security
+\cite{hwang2024semiconductor}.
+Manufacturing these devices requires high-precision motion systems,
+with strict requirements on alignment accuracy, yield, throughput
+and cost~\cite{irds2022,workman2021diewafer}.
+% This thesis is done in collaboration with ASMPT, which makes use of
+% dual-drive gantries as high-precision motion systems in some of its
+% products.
+}}
+This thesis focuses on \chg[own]{a dual-drive gantry motion system}{one
+such motion system: a dual-drive gantry} in which two parallel
 linear actuators support a common beam carrying the payload.
 % CHANGED: project -> paper
-The gantry positions this payload at successive placement
-locations.
+\del[own]{The gantry positions this payload at \kw{successive} placement
+locations.}
 The shared beam couples the dynamics of
 both actuators, so the motion of one actuator
-influences the other, and the system exhibits position-dependent behaviour
-\cite{garcia2013model, teo2007dynamic} and flexible dynamics
+influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
+The system} exhibits position-dependent behaviour
+\del[own]{\cite{garcia2013model, teo2007dynamic} }and flexible dynamics
 \cite{garcia2013model}.
 % CHANGED: citation split; Teo supports coupling and position dependence,
 %   not flexibility (Garcia Sec. 2, flexible joints)
-This position dependence can be described by a linear
-parameter-varying (LPV) model.
+% FEEDBACK v2: LPV sentence struck (Dirk 2026-10-20): added for Q11 while
+%   aspect 1 compared LPV with LTI; the introduction no longer uses LPV.
+%   Section III-B now spells out and defines LPV and says why it is the
+%   logical choice.
+\del[Dirk]{This position dependence can be described by a linear
+parameter-varying (LPV) model.}
 % FEEDBACK: settling dropped, the thesis evaluates prediction (D-241, Dirk
 %   2026-10-18)
-Furthermore, cross-coupling means that the motion of one
+% FEEDBACK v2: struck (M-p3b, repeat of the coupling sentence, Dirk
+%   2026-10-20); its link to the accuracy demand of the opening (M-p2b) is
+%   now in the coupling sentence ("and affects its tracking accuracy").
+\del[M-p3b]{Furthermore, cross-coupling means that the motion of one
 actuator can disturb
 the other, which affects the tracking behaviour during
-simultaneous motion.
+simultaneous motion.}
+% FEEDBACK v2 (structure, Dirk 2026-10-20): one job per paragraph. P1 why
+%   such systems and this gantry; P2 why a model and what it must be; P3 and
+%   P4 why physics alone and data alone fall short; P5 augmentation; P6 gap.
 \\
 % FEEDBACK: paragraph reordered as Jan2 asks: use (controller design, root
 %   cause analysis) first, the need for an accurate model last. Digital twin
 %   dropped (Js9, Js10, Q10).
 A plant model can be used to evaluate a changed
 feedback controller before it is tested on the machine.
-A closed-loop simulation is faster than an experiment, 
-allowing multiple controller to be compared simultaneously, and without risk 
+% FEEDBACK v2: todo "Link to evaluation with a changed controller" removed
+%   (own): that result is not in the final results, see below. Clause on
+%   comparing controllers kept (Dirk 2026-10-20), "controller" ->
+%   "controllers" (own).
+A closed-loop simulation is faster than an experiment,
+allowing multiple \chg[own]{controller}{controllers} to be compared simultaneously, and without risk
 of harming the hardware.
-\todo{Link to evaluation with a changed controller in closed loop
-(Section~VI), once that result exists.}
 % NEW: controller evaluation leads (Quinten, 18 Sep); the
 %   changed-controller test record E5 tests it
 %   FEEDBACK (2026-10-18): outdated, E5 is not in the final results, so
@@ -78,15 +118,40 @@ of harming the hardware.
 Such models are also valuable for root cause analysis.
 % CHANGED: rest of the removed sentence above; condition monitoring ->
 %   process and root cause analysis
-This requires a model with physically meaningful
+% FEEDBACK v2: sentence struck (M-p2c): the requirement sentence below
+%   states it, and the last sentence of the moved block gives its reason.
+\del[M-p2c]{This requires a model with physically meaningful
 parameters, because a change in machine behaviour can then be traced back to
-a physical cause, such as a change in stiffness or damping.
+a physical cause, such as a change in stiffness or damping.}
 % NEW: no source
 \todo{Missing: source for the root cause analysis sentence. Candidate:
 Gy\"or\"ok et al.\ Sec.~3.2 (non-unique estimate loses physical meaning) or
-Kessels Sec.~6.2 (not yet checked).}
-Both uses require an accurate representation of the underlying
-plant dynamics.
+Kessels Sec.~6.2 (not yet checked). Checked 2026-10-20: Kessels PDF p.~41
+supports physical parameters for health monitoring, not root cause analysis.}
+% FEEDBACK v2 (own, structure): requirement and interpretability definition
+%   moved here from the physics-informed paragraph, in their own order; the
+%   definition now comes before P3 uses "interpretable", and its last sentence
+%   gives the root cause reason struck above.
+\mv[own]{P4}{For the plant model of the dual-drive gantry,
+\kw{both predictive accuracy and
+physical interpretability are required.}
+\del[own]{Physical interpretability means that }Physical interpretability means that the identifiable combinations of the physical
+parameters\del[M-mail]{ (Section~\ref{sec:params})} are estimated uniquely
+\cite{gyorok2026obc}.
+This does not guarantee identifying the true parameters,
+but a deviation from the trained model can then indicate which
+physical parameter has changed.}
+% FEEDBACK: link uniqueness to root cause analysis (Dirk 2026-10-18); own
+%   reasoning, holds while the missing dynamics do not change (discussion)
+% NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses
+%   physical meaning)
+% FEEDBACK: \todo "Leave out?: Section IV-C gives the conditions under which
+%   they equal their true values." removed (Dirk 2026-10-18)
+% NEW: the recovery condition depends on the excitation and on the missing
+%   dynamics, so it is stated in Section IV-C only
+% FEEDBACK v2: struck (M-p2c), the requirement sentence above says it.
+\del[M-p2c]{Both uses require an accurate representation of the underlying
+plant dynamics.}
 % CHANGED: was "Improving settling performance"; settling stays as
 %   motivation, the paper evaluates prediction (D-241)
 % REMOVED: ASMPT currently captures part of the position dependence of the
@@ -124,15 +189,18 @@ More accurate FP models can be developed, but this is labour-intensive
 %   the first-principles model structure of Garc\'ia-Herreros et al.
 %   \cite{garcia2013model}, which is only able to capture part of the
 %   position-dependent behaviour and cross-coupling.
-\\
-Purely data-driven (black-box) models such as neural-network or Gaussian-process state-space models
+% FEEDBACK v2: white-box and black-box paragraphs merged into one (M-p2d);
+%   the paragraph break was here.
+\add[M-p2d]{}Purely data-driven (black-box) models such as neural-network or Gaussian-process state-space models
 can describe measured behaviour well, but can offer limited physical
 insight and are not guaranteed to be
 accurate at operating conditions not covered
 by the training data \cite{willard2020integrating, hoekstra2026lfr}.
 % CHANGED: "(black-box)" added; "and" added after "insight"
-These models can also require large amounts of data to train
-\cite{willard2020integrating, karniadakis2021physicsinformed}.
+% FEEDBACK v2: data-amount sentence struck (M-p2d, shorten); the rigid-body
+%   argument below is the one that leads to augmentation.
+\del[M-p2d]{These models can also require large amounts of data to train
+\cite{willard2020integrating, karniadakis2021physicsinformed}.}
 % CHANGED: "and significant computational power" dropped (no source); cited
 %   Willard Sec. 1, Karniadakis abstract
 In addition, these models need to learn behaviour that is already known
@@ -140,30 +208,31 @@ from first principles, such as the rigid-body dynamics
 \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 1
 \\
+% FEEDBACK v2: more than PINNs, more compact (M-p2e). Willard Sec. 3.1,
+%   pp. 10-11 (physics-guided loss, Karpatne's PGNN) and p. 18
+%   (physics-guided Gaussian process regression). "laws as constraints" ->
+%   "knowledge": GP methods put the physics in the prior (kernel).
+%   "require the physics equations to be known" kept: augmentation needs only
+%   a partial baseline (Hoekstra 2026 Sec. 1, p. 2).
 Physics-informed approaches, including physics-informed neural networks
-(PINNs), incorporate physical laws as constraints during training
-\cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}.
+(PINNs)\add[M-p2e]{\kwtwo{, physics-guided neural networks (PGNNs) and
+Gaussian-process-based methods}}, incorporate physical \chg[M-p2e]{laws as constraints}{knowledge} during training
+\cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}\add[M-p2e]{,
+\cite{willard2020integrating}}.
 However, these methods require the physics equations to be known and still
 rely on a black-box model for the entire system \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 2
-For the plant model of the dual-drive gantry,
-\kw{both predictive accuracy and
-physical interpretability are required.}
-Physical interpretability means that Physical interpretability means that the identifiable combinations of the physical
-parameters\del[M-mail]{ (Section~\ref{sec:params})} are estimated uniquely
-\cite{gyorok2026obc}.
-This does not guarantee identifying the true parameters, 
-but a deviation from the trained model can then indicate which 
-physical parameter has changed.
-% FEEDBACK: link uniqueness to root cause analysis (Dirk 2026-10-18); own
-%   reasoning, holds while the missing dynamics do not change (discussion)
-% NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses
-%   physical meaning)
-% FEEDBACK: \todo "Leave out?: Section IV-C gives the conditions under which
-%   they equal their true values." removed (Dirk 2026-10-18)
-% NEW: the recovery condition depends on the excitation and on the missing
-%   dynamics, so it is stated in Section IV-C only
-However, purely physics-based and purely data-driven models can each have
+\delmv[own]{P2}{For the plant model of the dual-drive gantry, both predictive
+accuracy and physical interpretability are required.
+Physical interpretability means that the identifiable combinations of the
+physical parameters are estimated uniquely \cite{gyorok2026obc}.
+This does not guarantee identifying the true parameters, but a deviation
+from the trained model can then indicate which physical parameter has
+changed.}
+% FEEDBACK v2: summary sentence back in its own place and wording; "both
+%   requirements" now refers to P2. "However," struck (own): the sentence
+%   before already starts with "However".
+\del[own]{However, }\chg[own]{purely}{Purely} physics-based and purely data-driven models can each have
 limitations in meeting both requirements \cite{willard2020integrating}.
 % CHANGED: Noel removed; Willard Sec. 1, p. 2
 \\
@@ -190,9 +259,13 @@ and static output correction cannot provide \cite{hoekstra2026lfr}.
 However, related work at ASMPT on a wire bonder shows that preserving
 physical interpretability during model updating remains an open challenge
 \cite{kessels2025ai}.
-Refitting the physical parameters allows them to absorbs unmodelled dynamics, 
-and an unconstrained learning component is able to absorb dynamics 
+Refitting the physical parameters allows them to \chg[own]{absorbs}{absorb} unmodelled dynamics,
+and an unconstrained \chg[own]{learning}{learned} component is able to absorb dynamics
 the baseline already describes \cite{gyorok2026obc}.
+% FEEDBACK v2 (own): source checked 2026-10-20, todo removed. Gyorok Sec. 1,
+%   p. 2 (the ANN learns relations the FP model can represent, baseline
+%   parameters tuned to unrealistic values) and Sec. 4.2 with Eq. (21)
+%   (bias (Phi'Phi)^-1 Phi' Delta of the refitted parameters).
 % CHANGED: "at ASMPT" -> "on an ASMPT wire bonder"; Kessels Sec. 5.3.2 (PDF
 %   p. 194), Sec. 6.2 (PDF p. 222)
 % FEEDBACK: new paragraph, system-specific challenges (Dirk 2026-10-18).
@@ -208,9 +281,6 @@ the baseline already describes \cite{gyorok2026obc}.
 % describes \cite{gyorok2026obc}.}
 % FEEDBACK: concise version (Dirk 2026-10-18); root cause tie-back left out,
 %   the sentence after the interpretability definition carries it.
-\todo{Missing: check that Gy\"or\"ok et al.\ supports the absorption by an
-unconstrained learned component, and a source for absorption by refitting.
-Candidate: Gy\"or\"ok et al.\ Sec.~1 and Sec.~3.2 (not yet checked).}
 \\
 Learning-based hybrid modelling has already been demonstrated using
 measurements from an industrial robot \cite{retzler2024}.
@@ -234,10 +304,12 @@ estimates are unique \cite{gyorok2026obc}. This has currently only been
 formulated for discrete-time input-output models, and not for state-space models.
 % NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10
 %   (state-space form named as future research)
-\kw{This thesis therefore develops such a framework and evaluates it in simulation. 
-The augmented model should predict more accurately than the physics-based 
-baseline across operating points and motion profiles, while its physical 
-parameters remain interpretable.}
+% FEEDBACK v2: last sentence struck (M-p3b, total length); the research
+%   question right below says the same.
+\kw{This thesis therefore develops such a framework and evaluates it in simulation.
+\del[M-p3b]{The augmented model should predict more accurately than the physics-based
+baseline across operating points and motion profiles, while its physical
+parameters remain interpretable.}}
 % FEEDBACK: one term after the definition, "interpretable" (Dirk
 %   2026-10-18); l.96 keeps "physically meaningful" (before the definition,
 %   explained by its own sentence), the OBC sentence keeps Gyorok's wording.
@@ -284,12 +356,11 @@ parameters interpretable, compared to unconstrained estimation?
 % CHANGED: bold title dropped; wording D-241
 \item How does the
 augmented model generalise to held-out operating points and unseen motion
-profiles, compared to a black-box model?
+profiles, compared to \chg[Q13]{a}{the physics baseline and a} black-box model?
 % CHANGED: bold title dropped; wording D-241
 \end{enumerate}
 % RESTRUCTURE (2026-10-19, Maarten p3: "provide a short outline of the paper
 %   at the end of the introduction."): new text.
-\changelegend
 \add[M-p3]{
 \kwtwo{The paper is organised as follows: first, the identification problem is
 stated in Section~\ref{sec:problem}, followed by the physics baseline in
@@ -306,8 +377,9 @@ equations of motion (Section~\ref{sec:baseline}), so it is a modelling choice ra
 research result. The LTI comparison (on $X$ the LTI error is 1.5 to 3.7 times
 the LPV error) moves to the appendix. Aspects 2 to 4 are reworded to the
 final method.}
-\revnote{The current introduction is quite long, also the rq with aspects is quite long.
-Shall I remove the aspects, or shorten the introduction?}
+% REMOVED (own, 2026-10-20): revnote "The current introduction is quite
+%   long ... Shall I remove the aspects, or shorten the introduction?",
+%   answered by Maarten (p3: shorten, introduction + abstract ~1.25 page).
 
 % The main contributions are summarised as:
 % % NEW: phrasing of Hoekstra 2026 Sec. 1, p. 2
@@ -350,4 +422,6 @@ Shall I remove the aspects, or shorten the introduction?}
 \end{enumerate}
 \fi
 
-\todo{Confirm whether references and appendices are excluded from the 12-page IEEE limit and whether TU/e requires front matter beyond the IEEE paper.}
+% REMOVED (own, 2026-10-20): todo on the 12-page limit and front matter.
+%   Maarten's mail: 12 pages is not a requirement; the cover page exists
+%   (frontmatter/cover.tex).
