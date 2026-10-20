@@ -75,15 +75,14 @@
 \newlabel{eq:phi}{{13}{5}{Physical parameters and identifiable combinations}{equation.13}{}}
 \newlabel{eq:lfr_admissibility}{{14}{5}{Physical parameters and identifiable combinations}{equation.14}{}}
 \newlabel{eq:mdelta_map}{{15}{5}{Physical parameters and identifiable combinations}{equation.15}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Dynamic Augmentation of the LPV-LFR Baseline}{5}{section.4}\protected@file@percent }
-\newlabel{sec:augmentation}{{IV}{5}{Dynamic Augmentation of the LPV-LFR Baseline}{section.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Dynamic Augmentation of the Physics Baseline}{5}{section.4}\protected@file@percent }
+\newlabel{sec:augmentation}{{IV}{5}{Dynamic Augmentation of the Physics Baseline}{section.4}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{gyorok2026obc}
 \citation{kessels2025ai}
-\citation{drenth2025thesis}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Augmented model}{6}{subsection.4.1}\protected@file@percent }
@@ -91,17 +90,17 @@
 \newlabel{eq:aug_transition}{{16}{6}{Augmented model}{equation.16}{}}
 \newlabel{eq:aug_ct}{{17}{6}{Augmented model}{equation.17}{}}
 \citation{hoekstra2026lfr}
+\citation{hoekstra2026lfr}
+\citation{beintema2023subnet}
+\citation{beintema2023subnet}
+\citation{hoekstra2026lfr}
+\citation{hoekstra2026lfr}
 \newlabel{eq:aug_norm}{{18}{7}{Augmented model}{equation.18}{}}
 \newlabel{eq:aug_norm_maps}{{19}{7}{Augmented model}{equation.19}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Augmented model. The physics step $f_{\mathrm  {base}}$ and the network $\phi _{\mathrm  {aug}}$ act in parallel on $\hat  x_k$. $\phi _{\mathrm  {aug}}$ gives $f_{\mathrm  {aug}}$ and $g_{\mathrm  {aug}}$, and the output map is not learned. \textcolor {red}{The encoder $\psi $, introduced in Section~\ref {sec:aug_closed_loop}, sets $\hat  x_\tau $ at the start $k=\tau $ of each window.} $f_{\mathrm  {base}}$ and $h_{\mathrm  {base}}$ use the physical part $\tilde  x_k$ of $\hat  x_k$.\textcolor {red}{[\textbf  {TODO:} No setpoint generator currently for the inputs; layout cramped at one column width.]} }}{7}{figure.caption.4}\protected@file@percent }
 \newlabel{fig:aug_structure}{{4}{7}{Augmented model. The physics step $f_{\mathrm {base}}$ and the network $\phi _{\mathrm {aug}}$ act in parallel on $\hat x_k$. $\phi _{\mathrm {aug}}$ gives $f_{\mathrm {aug}}$ and $g_{\mathrm {aug}}$, and the output map is not learned. \kwtwo {The encoder $\psi $, introduced in Section~\ref {sec:aug_closed_loop}, sets $\hat x_\tau $ at the start $k=\tau $ of each window.} $f_{\mathrm {base}}$ and $h_{\mathrm {base}}$ use the physical part $\tilde x_k$ of $\hat x_k$.\todo {No setpoint generator currently for the inputs; layout cramped at one column width.}}{figure.caption.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Closed-loop simulation}{7}{subsection.4.2}\protected@file@percent }
 \newlabel{sec:aug_loop}{{\mbox  {IV-B}}{7}{Closed-loop simulation}{subsection.4.2}{}}
-\citation{hoekstra2026lfr}
-\citation{beintema2023subnet}
-\citation{beintema2023subnet}
-\citation{hoekstra2026lfr}
-\citation{hoekstra2026lfr}
 \citation{kessels2025ai}
 \citation{forssell1999revisited}
 \citation{kessels2025ai}
@@ -110,6 +109,8 @@
 \newlabel{eq:aug_two_loops}{{20}{8}{Closed-loop simulation}{equation.20}{}}
 \newlabel{eq:aug_residual_loop}{{21}{8}{Closed-loop simulation}{equation.21}{}}
 \newlabel{eq:aug_cl_step}{{22}{8}{Closed-loop simulation}{equation.22}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Identification}{8}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:aug_closed_loop}{{\mbox  {IV-C}}{8}{Identification}{subsection.4.3}{}}
 \citation{beintema2023subnet}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
@@ -124,8 +125,6 @@
 \citation{hoekstra2026lfr}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces  Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm  {ff}}$. The model output is calculated before the input updates the model state. }}{9}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:aug_closed_loop}{{5}{9}{Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Identification}{9}{subsection.4.3}\protected@file@percent }
-\newlabel{sec:aug_closed_loop}{{\mbox  {IV-C}}{9}{Identification}{subsection.4.3}{}}
 \newlabel{eq:aug_loss}{{23}{9}{Identification}{equation.23}{}}
 \citation{hoekstra2026encoder}
 \citation{beintema2023subnet}
@@ -139,23 +138,23 @@
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026lfr}
+\citation{hoekstra2026encoder}
 \newlabel{eq:aug_encoder}{{24}{10}{Identification}{equation.24}{}}
 \newlabel{eq:aug_enc_lin}{{25}{10}{Identification}{equation.25}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Initialisation}{10}{subsection.4.4}\protected@file@percent }
 \newlabel{sec:aug_encoder}{{\mbox  {IV-D}}{10}{Initialisation}{subsection.4.4}{}}
+\newlabel{eq:aug_enc_sim}{{26}{10}{Initialisation}{equation.26}{}}
 \citation{hoekstra2026encoder}
-\citation{hoekstra2026encoder}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
-\newlabel{eq:aug_enc_sim}{{26}{11}{Initialisation}{equation.26}{}}
+\citation{hefny2015supervised}
+\citation{downey2017psrnn}
 \newlabel{eq:aug_enc_fit}{{27}{11}{Initialisation}{equation.27}{}}
 \newlabel{eq:aug_init}{{28}{11}{Initialisation}{equation.28}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Added-state initialisation}{11}{subsection.4.5}\protected@file@percent }
 \newlabel{sec:aug_ps2}{{\mbox  {IV-E}}{11}{Added-state initialisation}{subsection.4.5}{}}
-\citation{hefny2015supervised}
-\citation{downey2017psrnn}
 \citation{hefny2015supervised}
 \citation{downey2017psrnn}
 \citation{hefny2015supervised}
@@ -272,14 +271,13 @@
 \bibcite{drenth2025lpvlfr}{12}
 \bibcite{ovchinnikov2021computing}{13}
 \bibcite{gautier1990minimum}{14}
-\bibcite{drenth2025thesis}{15}
-\bibcite{beintema2023subnet}{16}
-\bibcite{forssell1999revisited}{17}
-\bibcite{hoekstra2026encoder}{18}
-\bibcite{hefny2015supervised}{19}
-\bibcite{downey2017psrnn}{20}
-\bibcite{venkatraman2017psd}{21}
-\bibcite{gyorok2025l4dc}{22}
+\bibcite{beintema2023subnet}{15}
+\bibcite{forssell1999revisited}{16}
+\bibcite{hoekstra2026encoder}{17}
+\bibcite{hefny2015supervised}{18}
+\bibcite{downey2017psrnn}{19}
+\bibcite{venkatraman2017psd}{20}
+\bibcite{gyorok2025l4dc}{21}
 \@writefile{toc}{\contentsline {section}{References}{21}{section*.14}\protected@file@percent }
 \citation{garcia2013model}
 \citation{drenth2025lpvlfr}

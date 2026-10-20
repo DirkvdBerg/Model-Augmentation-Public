@@ -48,8 +48,12 @@
 All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
 against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
+% RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III to VI.
+\kwtwo{Sections~\ref{sec:res_structure} to~\ref{sec:res_generalisation} give the
+results for the three aspects of Section~\ref{sec:intro} in order, and
+Section~\ref{sec:discussion} discusses them.}
 
-\subsection{Augmentation structure}
+\subsection{Augmentation structure}\label{sec:res_structure}
 \ifdraft
 \begin{itemize}
 \item Final model against the baseline and the black box, with and without multisine (Table~\ref{tab:res_structure}, Fig.~\ref{fig:res_time_trace})
@@ -89,7 +93,7 @@ with plain training of the added states and with zero and eight added states.}
   \label{fig:res_frf}
 \end{figure}
 
-\subsection{Interpretability}
+\subsection{Interpretability}\label{sec:res_obc}
 \ifdraft
 \begin{itemize}
 \item Combination errors, full model, physical part and overlaps, $\mathcal M_{\mathrm U}$ against $\mathcal M_{\mathrm{OBC}}$ from the detuned start (Table~\ref{tab:res_obc})
@@ -118,7 +122,7 @@ Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
   \input{tables/res_obc_combinations}
 \end{table}
 
-\subsection{Generalisation}
+\subsection{Generalisation}\label{sec:res_generalisation}
 \ifdraft
 \begin{itemize}
 \item Final model, baseline and black box per test record, each E record beside its I record (Fig.~\ref{fig:res_generalisation})
@@ -145,6 +149,7 @@ Fig.~\ref{fig:res_time_trace}.}
 
 
 \subsection{Discussion}\label{sec:discussion}
+\todo{Should this be a separate subsection? Didnt Maarten state to include it in the text itself...?}
 % RESTRUCTURE (2026-10-19, Maarten p15): moved here from Section VIII (sec:conclusion), word for word.
 \mv[M-p15]{VIII}{The improvement on the multisine records comes mainly from the
 learned absorber mode (Fig.~\ref{fig:res_frf}).
@@ -188,6 +193,17 @@ The black box model is also randomly initialised and not trained
 with the known controller.
 Having a disadvantages starting position. t
 \\
+% NEW (2026-10-20, Dirk; LFR audit): role of the LPV-LFR, in the text so it
+%   survives submission (the revnote does not).
+\kwtwo{The baseline is represented as an LPV-LFR (Section~\ref{sec:lfr}),
+which is well posed for admissible physical parameters.
+The implementation resolves its loop analytically, and the learned correction
+is added to the resulting discrete-time state update.
+The augmentation therefore uses the baseline transition, but does not connect
+to the latent signals of the LFR.
+The augmented model is evaluated in closed-loop simulation; LPV controller
+synthesis with this model is outside the scope of this work.}
+\\
 The results are limited to simulation with one seed and the
 same controller used to generate the data.
 Training and evaluation are both performed in closed loop,
@@ -199,15 +215,10 @@ a different controller or on measured data.}
 % REVNOTE (2026-10-20, Dirk): role of the LFR; checked against
 %   blocks.py Gantry_State_Block (closed-form loop, then G and Delta) and
 %   Drenth 2025 (paper Sec. 1, thesis Ch. 1: LPV-LFR for controller synthesis).
-\revnote{The baseline has a physics-derived LPV-LFR structure
-(Section~\ref{sec:lfr}) whose matrices depend on the estimated
-$\theta_{\mathrm{base}}$. Its loop is resolved analytically inside the
-baseline block, and the parametrisation of Section~\ref{sec:params} keeps it
-well posed during estimation. The network correction acts outside this block,
-so the augmented model is not in LPV-LFR form: it can be used to evaluate a
-controller in simulation, while LPV controller synthesis remains a possible
-later use of the baseline only. Should III-B stay as a compact section in the
-main text?}
+% The explanation is now in the paragraph above (2026-10-20); the revnote
+%   keeps only the question.
+\revnote{Should the LPV-LFR derivation (Section~\ref{sec:lfr}) stay as a
+compact subsection in the main text?}
 
 % Open points of this section (kept together so the text reads without interruption).
 \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section

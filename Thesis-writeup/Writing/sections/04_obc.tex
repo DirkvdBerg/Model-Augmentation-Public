@@ -99,6 +99,13 @@ Gy\"or\"ok et al.\ have constructed this for input-output baseline models that
 are linear in their parameters~\cite{gyorok2026obc}.
 We extend this to state-space models nonlinear in their parameters,
 specifically for our gantry system.
+% RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III and IV.
+\kwtwo{In this section, we first give the orthogonal-by-construction
+parametrisation of Gy\"or\"ok et al.\ (Section~\ref{sec:obc_construction}),
+then extend it to the gantry (Section~\ref{sec:obc_map}), state how the
+augmented model is identified with it and when the true parameters are
+recovered (Section~\ref{sec:obc_ident}), and finally how orthogonality is
+measured (Section~\ref{sec:obc_measures}).}
 \subsection{Orthogonal-by-construction parametrisation}\label{sec:obc_construction}
 \ifdraft
 \begin{itemize}
@@ -157,7 +164,7 @@ $\varphi(\cdot)\theta_{\mathrm b}$.
 \fi
 Our baseline violates three requirements of the projection in
 \eqref{eq:obc_gyorok}.
-Its state update is nonlinear in the parameters, because
+\chg{Its}{\kwtwo{First, its}} state update is nonlinear in the parameters, because
 the next state update depends on $M(Y)^{-1}$ in \eqref{eq:aug_ct}, 
 violating the linear requirement for the regressor.
 Instead of the regressor the Jacobian of the baseline state update is taken 
@@ -211,7 +218,7 @@ part of the network along the stacked baseline response is excluded.}
 % % runs include it.}
 % \\
 
-The Jacobian also depends on the state, while the regressor of
+\chg{The}{\kwtwo{Second, the}} Jacobian also depends on the state, while the regressor of
 Gy\"or\"ok et al.\ uses only measured inputs and
 outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.
 Since only the positions are measured, we evaluate the Jacobian at these
@@ -258,7 +265,7 @@ has no component along any column of $\kw{\Phi_\Gamma}$, which satisfies our ort
 definition at the start of this section.
 This holds for the stacked tuples at $\bar x=0$, not for each tuple separately.
 \\
-We use a state-space model predicting the next state instead of the output.
+\chg{We}{\kwtwo{Third, we}} use a state-space model predicting the next state instead of the output.
 The fitted part is removed from the neural network correction of the
 physical state at every step in the closed-loop simulation.
 At each step, we subtract the Jacobian \kw{and offset} multiplied by
@@ -368,6 +375,9 @@ problem on the fixed reference slice $\bar x=0$; it does not
 predict the parameter bias from minimising the closed-loop
 loss \eqref{eq:aug_loss} with active added states.
 \\
+% RESTRUCTURE (2026-10-20, Dirk): the measures get their own subsection; the
+%   text below is unchanged. New heading shown in kwtwo so it is visible.
+\subsection{\texorpdfstring{\kwtwo{Orthogonality measures}}{Orthogonality measures}}\label{sec:obc_measures}
 We measure orthogonality using the normalised inner product,
 with the physical state normalised using \eqref{eq:aug_norm}:
 \begin{equation}

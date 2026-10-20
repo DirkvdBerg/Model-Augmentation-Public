@@ -112,7 +112,9 @@ def resolve_checkpoint(base_path):
         # dict at all", which is simply wrong: `d['optimizer']` is an optimizer, and asking it
         # for a state dict is all that was ever needed. The consequence of that mistake was that
         # resuming Adam from a `_best.pth` silently restarted with zeroed moments (D-173).
-        _opt = d.get('optimizer')
+        # D-275: since the `optimizer` property (SSE_Interconnect_Composed) a dump stores Adam
+        # under `_optimizer`; reading only `optimizer` brought the D-173 zeroed-moments bug back.
+        _opt = d.get('optimizer') or d.get('_optimizer')
         _opt_sd = _opt.state_dict() if _opt is not None and hasattr(_opt, 'state_dict') else None
         return d['hfn'].state_dict(), d['encoder'].state_dict(), _opt_sd, meta, 'whole'
 

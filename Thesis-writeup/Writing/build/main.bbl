@@ -93,11 +93,6 @@ M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
   parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
   Automation}, vol.~6, no.~3, pp. 368--373, 1990.
 
-\bibitem{drenth2025thesis}
-R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
-  fractional representation,'' Master's thesis, Eindhoven University of
-  Technology, 2025.
-
 \bibitem{beintema2023subnet}
 G.~I. Beintema, M.~Schoukens, and R.~T{\'o}th, ``Deep subspace encoders for
   nonlinear system identification,'' \emph{Automatica}, vol. 156, p. 111210,

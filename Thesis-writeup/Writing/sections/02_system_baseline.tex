@@ -255,7 +255,8 @@ parameters are uniquely estimated\del[M-mail]{ (Section~\ref{sec:params})}.
 \kwtwo{In this section, we give the equations of motion of the baseline
 (Section~\ref{sec:baseline}), its LPV-LFR representation
 (Section~\ref{sec:lfr}), and the identifiable combinations of its physical
-parameters (Section~\ref{sec:params}).}
+parameters with their parametrisation for estimation
+(Section~\ref{sec:params}).}
 \subsection{Equations of motion}\label{sec:baseline}
 \todo{state we leave out coulomb friction and that we will use for the
 experiment in the simulation in section V}
@@ -402,7 +403,8 @@ no assumption on $\dot Y$.}
 \revnote{Make clear that the acceleration is obtainted from the formulas.
 Maarten also had a comment about this.}
 Solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$, so the model
-is rationally dependent on $Y$. A linear fractional representation (LFR) is introduced to separate this rational scheduling dependence.
+is rationally dependent on $Y$. A linear fractional representation (LFR) is introduced to separate this rational scheduling dependence\kwtwo{ exactly, with an LTI part whose
+matrices do not depend on $Y$}.
 We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$, 
 with the scheduling being connected in feedback 
 with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2025lpvlfr,hoekstra2026lfr}.
@@ -457,7 +459,8 @@ with the \kw{Delta-block} mapping $z$ to $w$,
    =\Dsch(Y)z.
   \label{eq:delta}
 \end{equation}
-\todo{I have an SVD reduction add this in the appendix or not?}
+% TODO closed (2026-10-20, Dirk): the SVD reduction is not added; it does
+%   not change the model used here.
 We write the LTI part $G$ of the LFR in continuous time, adapting the
 discrete-time block structure of~\cite[Eq.~(2)]{drenth2025lpvlfr}:
 \todo{Check this}
@@ -478,11 +481,18 @@ $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
 into \eqref{eq:eom}. The LFR is therefore an exact realisation of the baseline.
 The LFR is \kw{well posed} if the \kw{algebraic loop} has a unique solution for
 every $Y$ \cite[Def.~1]{drenth2025lpvlfr}. 
-For the gantry realisation we show that this condition holds
+% REVISED (2026-10-20, Dirk; LFR audit): the well-posedness sentences
+%   combined; positive raw masses give M(Y) > 0, the estimated combinations
+%   are handled in III-C.
+\chg{For the gantry realisation we show that this condition holds
 when $M(Y)$ is nonsingular (Appendix~\ref{app:lfr-details}).
-For positive \kw{masses} and \kw{inertias}, $M(Y)\succ0$ for every $Y\in\R$
-(Appendix~\ref{app:lfr-wellposed}). Therefore the \kw{LFR} is well posed over the
-whole operating range of $Y$. \todo{Connect the two sentences better?}
+For positive masses and inertias, $M(Y)\succ0$ for every $Y\in\R$
+(Appendix~\ref{app:lfr-wellposed}). Therefore the LFR is well posed over the
+whole operating range of $Y$.}{\kwtwo{For this realisation, well-posedness is
+equivalent to nonsingularity of $M(Y)$ (Appendix~\ref{app:lfr-details}).
+Positive component masses and inertias give $M(Y)\succ0$ for every $Y\in\R$
+(Appendix~\ref{app:lfr-wellposed}), so the baseline LFR is well posed
+throughout the operating range.}}
 
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \ifdraft

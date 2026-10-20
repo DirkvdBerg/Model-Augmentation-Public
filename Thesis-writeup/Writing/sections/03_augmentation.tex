@@ -191,7 +191,10 @@
 % No model name in III-D (amends item 15's "do not call Section III the unconstrained arm"): the labels
 %   (Aug-U, U = unconstrained, Aug-PS, Aug-OBC) are defined in the compared-models table of Experiment design.
 %   Gyorok Sec. 3 is not cited here.
-\section{Dynamic Augmentation of the LPV-LFR Baseline}\label{sec:augmentation}
+% TITLE (2026-10-20, Dirk): was "Dynamic Augmentation of the LPV-LFR
+%   Baseline"; the learned correction is added outside the resolved baseline
+%   loop (LFR audit). Titles take no change marks.
+\section{Dynamic Augmentation of the Physics Baseline}\label{sec:augmentation}
 \ifdraft
 \begin{itemize}
 \item The section extends the baseline with learned dynamics and identifies the result from closed-loop records; it names its five subsections (style profile)
@@ -327,17 +330,13 @@ relation between the states and the measured outputs
 This is also done to ensure that $q$ still represents the physical positions.
 With a learned correction to the output map the states could stop
 representing the actual positions.
-\todo{not an LPV-LFR
-with a learned scheduling map as in the augmentation of
-Drenth~\cite[Eq.~(5.2)]{drenth2025thesis}.}
-\todo{Missing: reason for a network as learning block rather 
-than Drenth's LPV-LFR augmentation. The research plan (Aspect~2) extends 
-the structure ``to the LPV setting following'' Drenth and leaves 
-``the specific parameterization to be established''. 
-Candidates: (a) Hoekstra's framework with its zero start and well-posedness 
-result is kept as is; (b) the research question asks only
- for a structure that captures the omitted dynamics. Close D-017 
- with a decision entry.}
+% TODOS closed (2026-10-20, Dirk; LFR audit): "not an LPV-LFR with a
+%   learned scheduling map as in Drenth" and "reason for a network rather
+%   than Drenth's LPV-LFR augmentation". Answered by the existing sentence
+%   above: the dynamic-parallel (additive) structure is chosen because the
+%   orthogonal-by-construction augmentation is defined for it. The learned
+%   correction is added outside the resolved baseline LFR loop. D-017 still
+%   to be closed with a decision entry.
 \\
 The baseline is evaluated over one sample period $T_s$.
 Writing \eqref{eq:eom} in state-space form gives\kwtwo{ the state derivative $F$}
@@ -348,8 +347,10 @@ Writing \eqref{eq:eom} in state-space form gives\kwtwo{ the state derivative $F$
 \end{equation}
 where $u=Pu_{\mathrm{act}}$ is the generalised force
 \eqref{eq:Ptransform}, $M$, $C$ and $K$ depend on $\theta_{\mathrm{base}}$
-through \eqref{eq:phi}, and $M(Y)^{-1}$ is the closed loop of the LFR of
-Section~\ref{sec:lfr}.
+through \eqref{eq:phi}, and \chg{$M(Y)^{-1}$ is the closed loop of the LFR of
+Section~\ref{sec:lfr}}{\kwtwo{the expression for $M(Y)^{-1}$ follows from
+analytically resolving the baseline LFR loop
+(Appendix~\ref{app:lfr-details})}}.
 $f_{\mathrm{base}}$ is calculated using one fourth-order
 Runge-Kutta (RK4) step of $F$ over $T_s$, with the input
 \kwtwo{held constant (zero-order hold)} during the step.

@@ -50,6 +50,10 @@ Frequencies are therefore given relative to the controller bandwidth
 $f_b$, positions relative to the training range, and velocities and
 accelerations relative to the machine limits.
 The design details and their checks are in Appendix~\ref{app:setup}.
+% RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III to V.
+\kwtwo{Section~\ref{sec:setup_system} describes the simulated system,
+Section~\ref{sec:setup_data} the records, Section~\ref{sec:setup_models} the
+compared models and Section~\ref{sec:setup_metrics} the metrics.}
 
 \subsection{Simulated system}\label{sec:setup_system}
 % Sources: D-204, D-224 (truth), D-188 (absorber), D-223, D-226 (friction gain), D-221 (K1),
@@ -319,6 +323,18 @@ $y_j-r_j$ over the same samples.
 An NRMS of 100\,\% means the model performs no better than predicting the mean servo error.
 The noise floor is the RMS difference between the measured and noise-free
 outputs.
+% REVNOTE (2026-10-20, Dirk): origin of the floor. D-078 (Jan's MSD
+%   convention: noise added after an open-loop simulation, floor = RMS of
+%   that noise); kept when the noise moved into the loop (D-212, D-225,
+%   D-238); D-227 / anti-alias Q4 has the residual-form oracle floor; D-256
+%   kept RMS(y - y_noisefree) as a secondary reference.
+\revnote{The noise is fed back by the controller, so $y-y^\circ$ contains
+the noise and the response of the loop to it. This floor is the lower bound
+for a model driven only by $r$ and $u^{\mathrm{ff}}$, such as the black box.
+The grey-box models are simulated with the recorded $u_{\mathrm{act}}$ and
+$y$, which already contain the noise, so their lower bound differs; the true
+system simulated in the same residual form would give it. Which floor should
+be reported, and should it be shown in Fig.~\ref{fig:res_generalisation}?}
 \\
 The parameter error of combination $j$ is
 \begin{equation}

@@ -37,6 +37,11 @@ session into `critique-merged.md`, which is the authority for this revision. No 
   and write into the same folder under the same run id; the previous outcome (final pair, `.npz`, `val_hist.npz`)
   first moves to `<run_dir>/previous/<rerun_id>/`; `config.json` gets a `RESUMES` list (time, type, source
   checkpoint, code); the evaluation is unchanged. The CLI of merged item B22 takes run folders for both flags.
+- D-275 amendment 2 (Dirk 2026-10-20): the clean code also saves `_last.pth` at every validation, so a run stopped
+  by the time limit continues from where it stopped (`--resume <run_dir> --from last`; the default stays `_best`).
+  An addition beyond mainline: the design states where the save sits, shows from the code that it changes no
+  training state (no basis sync, no RNG, no optimizer change), and the equivalence plan adds a layer-3 check with and
+  without the save. Mainline only writes `_last.pth` at the end of `fit` (`interconnect.py:1122`).
 
 ## 5. Assumed but not verified
 - The optimizer pickling detail behind D1 (`interconnect.py:1287, 1521-1524, 1605-1627`, deepSI `fit_system.py:496`):
