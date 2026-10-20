@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex build/main"] 1792422619.40584 "build/main.aux" "build/main.bbl" "build/main" 1792422625.42751 0
+["bibtex build/main"] 1792484029.69958 "build/main.aux" "build/main.bbl" "build/main" 1792484039.89535 0
   "./IEEEabrv.bib" 1789999553 17841 5f68ac6bd88a4483a55f39046634d899 ""
   "./IEEEtran.bst" 1789999553 61632 bc5380b3434a66b895bbc75d3d380540 ""
   "./refs.bib" 1792354516 22074 b16c7f4385910cf6097c18874b0a3eae ""
-  "build/main.aux" 1792422624 32246 db338b0d8f3d0039b6eaa36a6e9d299f "pdflatex"
+  "build/main.aux" 1792484038 32246 b63912daab8c33c2a95f4e528029735b "pdflatex"
   (generated)
   "build/main.bbl"
   "build/main.blg"
   (rewritten before read)
-["pdflatex"] 1792422619.78969 "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" "build/main.pdf" "main" 1792422625.42872 0
+["pdflatex"] 1792484030.46047 "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" "build/main.pdf" "main" 1792484039.89644 0
   "C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1792324820 122874 9195f0588e30cb644cb9f8108da0b71a ""
   "C:/Users/20203253/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774359590 13335301 4af29fd5c72fbf51e4db50c9b05a27bf ""
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -238,10 +238,10 @@
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "IEEEtran.cls" 1789999553 288304 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "build/comment.cut" 1792422624 731 2e7c88f9928588c97ea582908529dc78 "pdflatex"
-  "build/main.aux" 1792422624 32246 db338b0d8f3d0039b6eaa36a6e9d299f "pdflatex"
-  "build/main.bbl" 1792422619 6291 2c56daf783465eb722284d7a7e1d2750 "bibtex build/main"
-  "build/main.out" 1792422624 7859 b669e091ce3430c891749606683fcc5f "pdflatex"
+  "build/comment.cut" 1792484038 731 2e7c88f9928588c97ea582908529dc78 "pdflatex"
+  "build/main.aux" 1792484038 32246 b63912daab8c33c2a95f4e528029735b "pdflatex"
+  "build/main.bbl" 1792484030 6291 2c56daf783465eb722284d7a7e1d2750 "bibtex build/main"
+  "build/main.out" 1792484038 7859 b669e091ce3430c891749606683fcc5f "pdflatex"
   "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" 1792323903 2325 65d815df3ccea82386b5a81ea786cede ""
   "figures/closed_loop_same_reference.pdf" 1791203554 74979 2316253766c7759f2aaf91b01039a7c2 ""
   "figures/gantry_system_with_absorber.tex" 1792339779 9980 232db0889f842bc46caa4c3c3ea584b9 ""
@@ -262,11 +262,11 @@
   "main.tex" 1792323903 2325 65d815df3ccea82386b5a81ea786cede ""
   "sections/00_abstract.tex" 1791745505 2698 460cc99527539b948998833df61bca50 ""
   "sections/01_introduction.tex" 1792416300 23071 4a8ace3a166187d736b2e8e7f7b36dc0 ""
-  "sections/02_system_baseline.tex" 1792422151 37517 88e4ab262d9f0c54625d1d7a8b0c2856 ""
-  "sections/03_augmentation.tex" 1792422612 88630 61873bad405caf87eb309df50fc2ebf4 ""
+  "sections/02_system_baseline.tex" 1792484020 38048 d7a08ac5a6fa1ee41ef124bc355081e1 ""
+  "sections/03_augmentation.tex" 1792482762 88699 08d8f38cd136816f492bcb5827e8d95f ""
   "sections/04_obc.tex" 1792415547 30557 3265d50169724160034a9b967ec68779 ""
   "sections/05_setup.tex" 1792415264 20768 2896b8e4948f125e4a937f9879cf5f87 ""
-  "sections/06_results.tex" 1792410858 14272 009eae5e3c1c64516859e97b20fb9b72 ""
+  "sections/06_results.tex" 1792423178 14414 701e6ae10e5dda83a7893314db0efd96 ""
   "sections/07_discussion.tex" 1792354308 7165 4213cf2bbbc3c0fe629f1b488985fb34 ""
   "sections/08_conclusion.tex" 1792410858 10594 6ff118c5fc26609e241b9c5e42f29ab3 ""
   "sections/99_appendix.tex" 1792420400 31768 0e5dd88b6a5df85a207e662d4a55f6e0 ""

@@ -138,16 +138,19 @@ described \chg{as,}{by}
   \dot x(t)=f\bigl(x(t),\uact(t)\bigr),\qquad y_k=\qact(kT_s)+v_k,
   \label{eq:system}
 \end{equation}
-where the state $x$ contains $\qact$, $y_k$ are the measured positions at
-sample $k$ with sampling time $T_s$, and $v_k$ is \add[M-p3]{zero-mean,
-coloured} measurement noise.
+where the \kw{state $x$ is unknown, except that it contains the actuator
+positions $\qact$}, $y_k$ are the measured positions at sample $k$ with
+sampling time $T_s$, and $v_k$ is zero-mean, coloured measurement noise.
 The state-transition function $f$ is unknown.
 The system runs in closed loop with an assumed known
 linear time-invariant feedback controller\del[M-p3]{ (Section~\ref{sec:aug_loop})},
 which gives the data set $\mathcal D_N=\{u_{\mathrm{act},k},y_k\}_{k=1}^N$.
-\add[M-p3]{The controller computes the actuator forces from the reference
-$r_k$ and the measured positions, and a feedforward $u^{\mathrm{ff}}_k$ is
-added (Fig.~\ref{fig:system_loop}):}
+% \add[M-p3]{The controller computes the actuator forces from the reference
+% $r_k$ and the measured positions, and a feedforward $u^{\mathrm{ff}}_k$ is
+% added (Fig.~\ref{fig:system_loop}):}
+\add[M-p3]{The controller computes the actuator forces from the position
+error $r_k-y_k$ \kwtwo{between} the reference $r_k$ and the measured positions,
+and a feedforward $u^{\mathrm{ff}}_k$ is added (Fig.~\ref{fig:system_loop}):}
 \begin{equation}
 \begin{aligned}
  x^{\mathrm{fb}}_{k+1}&=A_{\mathrm{fb}}x^{\mathrm{fb}}_k+B_{\mathrm{fb}}(r_k-y_k),\\
@@ -249,6 +252,10 @@ parameters are uniquely estimated\del[M-mail]{ (Section~\ref{sec:params})}.
 %   without "System" (the system is now Section II). Subsection A renamed
 %   from "Physics baseline", which repeated the section title. Titles carry
 %   no change marks (fragile argument).
+\kwtwo{In this section, we give the equations of motion of the baseline
+(Section~\ref{sec:baseline}), its LPV-LFR representation
+(Section~\ref{sec:lfr}), and the identifiable combinations of its physical
+parameters (Section~\ref{sec:params}).}
 \subsection{Equations of motion}\label{sec:baseline}
 \todo{state we leave out coulomb friction and that we will use for the
 experiment in the simulation in section V}

@@ -222,15 +222,15 @@ and the additional states.}
 % (Section~\ref{sec:aug_closed_loop}).
 % Training starts from the baseline (Section~\ref{sec:aug_encoder}), and the
 % added states get a data-driven start (Section~\ref{sec:aug_ps2}).
-\kwtwo{To capture the missing dynamics of Section~\ref{sec:problem} from the
-closed-loop data,}
-\kwtwo{\kw{\chg{We}{we} define the augmented model (Section~\ref{sec:aug_structure}),
+\kwtwo{In this section, the baseline model of Section~\ref{sec:physics} is
+augmented to represent the missing dynamics introduced in
+Section~\ref{sec:problem}.} 
+\kwtwo{\kw{We define the augmented model (Section~\ref{sec:aug_structure}),
 simulate it inside the known feedback loop (Section~\ref{sec:aug_loop}),
 estimate it jointly with $\theta_{\mathrm{base}}$
 (Section~\ref{sec:aug_closed_loop}), and start the training from the
-baseline (Section~\ref{sec:aug_encoder}) with a data-driven initialisation for the
-added states (Section~\ref{sec:aug_ps2}).}}
-
+baseline (Section~\ref{sec:aug_encoder}) with a data-driven initialisation for 
+the added states (Section~\ref{sec:aug_ps2}).}}
 % For the system data will be generated in simulation, see Section \todo{section label}. 
 % Given the baseline of Section~\ref{sec:lfr}, our goal is a model that
 % also captures the dynamics the baseline omits, identified from records
@@ -493,7 +493,10 @@ The data is measured in closed-loop, and the model is simulated in
 closed-loop. 
 Instead of using the recorded input as
 in~\cite[Eq.~(22)]{hoekstra2026lfr}, we include the
-feedback controller in the simulation for \kwtwo{two reasons}.
+feedback controller in the simulation\del[Jan49]{ for two reasons}.
+% RESTRUCTURE (2026-10-19, Dirk): one reason, marginal stability (Jan50
+%   "the main reason"); the noise-correlation reason struck (Jan49 "Is this
+%   a reason?", Maarten p6); consistency moved to the Discussion.
 % RESTRUCTURE (2026-10-19, Maarten p6: "Focus more on the closed loop
 %   simulation and less on the identification method (SUBNET), explain the
 %   SUBNET method in more detail next."): reason 1 is now the IV-A
@@ -502,7 +505,7 @@ feedback controller in the simulation for \kwtwo{two reasons}.
 \del[M-p6]{First, as established in Section~\ref{sec:aug_structure}:
 the  axes $X$ and $Y$ without stiffness make the open-loop gantry
 marginally stable.}
-\mv[M-p6]{IV-A}{\chg[M-p6]{The}{First, the} gantry baseline model has two  axes, $X$ and $Y$, without stiffness
+\mv[M-p6]{IV-A}{The gantry baseline model has two  axes, $X$ and $Y$, without stiffness
 \kwtwo{to ground }in \eqref{eq:damping_stiffness_matrices}, which are also
 affected by the learned correction.
 \kwtwo{The linearised RK4 step} has a pole at $z=1$ on each of these
@@ -523,21 +526,22 @@ The open-loop gantry system does not satisfy this assumption:
 a mismatch in the initial velocity will create a permanent position offset.
 In closed-loop the feedback controller is able to correct this offset.}
 
-\kwtwo{Second, the feedback} controller causes a correlation between
-the recorded input and the measurement noise\add[M-p6]{ (Section~\ref{sec:problem})}.
-Kessels was not able to identify an open-loop \del[M-p6]{SUBNET }model
+\del[Jan49]{Second, the feedback controller causes a correlation between
+the recorded input and the measurement noise.
+Kessels was not able to identify an open-loop SUBNET model
 using closed-loop data from a wire bonder.
 Kessels cites earlier work suggesting that this could be explained by noise-induced bias
 due to this correlation and the integral term
-of the controller~\cite[Remark~5.6]{kessels2025ai}.
+of the controller~\cite{kessels2025ai}.}
 % RESTRUCTURE (2026-10-19, Maarten p6: "I don't see how this part of the
 %   discussion is relevant for your approach."): indirect approach struck.
 \del[M-p6]{This bias is avoided in the indirect approach for linear systems with a known controller, which fits the closed-loop model using the reference.
 Because the reference is uncorrelated with the noise, the model
 can be identified from the output error~\cite{forssell1999revisited}.}
-These reasons motivate the choice for simulating in closed-loop.
-They do not prove that our estimate is consistent. \todo{?}
-\todo{Missing: D-140 (Ruled out (4)) bars Kessels' Remark~5.6 as an argument because the records were then noise free. The thesis records are noisy, so the ban appears lapsed. Candidate: keep the sentence and amend D-140 (basis: noisy thesis records, Section~\ref{sec:setup}).}
+\chg[Jan49]{These reasons motivate}{This motivates} the choice for simulating in closed-loop.
+\del[Jan49]{They do not prove that our estimate is consistent.}
+% RESTRUCTURE (2026-10-19): the D-140 todo on Kessels' Remark 5.6 removed;
+%   the argument is no longer in the text.
 \todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
 \\
 \chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with the \kwtwo{assumed known} controller,

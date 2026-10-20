@@ -192,8 +192,22 @@ The results are limited to simulation with one seed and the
 same controller used to generate the data.
 Training and evaluation are both performed in closed loop,
 where the controller can suppress errors in the plant model.
+\kwtwo{Through the feedback, the recorded input is correlated with the
+measurement noise, so the consistency of the estimate is not shown.}
 It remains unclear whether the improvements would hold with
 a different controller or on measured data.}
+% REVNOTE (2026-10-20, Dirk): role of the LFR; checked against
+%   blocks.py Gantry_State_Block (closed-form loop, then G and Delta) and
+%   Drenth 2025 (paper Sec. 1, thesis Ch. 1: LPV-LFR for controller synthesis).
+\revnote{The baseline has a physics-derived LPV-LFR structure
+(Section~\ref{sec:lfr}) whose matrices depend on the estimated
+$\theta_{\mathrm{base}}$. Its loop is resolved analytically inside the
+baseline block, and the parametrisation of Section~\ref{sec:params} keeps it
+well posed during estimation. The network correction acts outside this block,
+so the augmented model is not in LPV-LFR form: it can be used to evaluate a
+controller in simulation, while LPV controller synthesis remains a possible
+later use of the baseline only. Should III-B stay as a compact section in the
+main text?}
 
 % Open points of this section (kept together so the text reads without interruption).
 \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section
