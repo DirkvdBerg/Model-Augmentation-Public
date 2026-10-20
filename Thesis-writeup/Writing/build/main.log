@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  20 OCT 2026 17:36
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  20 OCT 2026 19:38
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -632,7 +632,7 @@ Package: ulem 2019/11/18
  Excluding comment 'comment') Include comment 'wip') (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count351
-) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
+) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 22.
@@ -678,7 +678,7 @@ Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring OFF on input line 22.
- (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out)
+ (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.out) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.out)
 \@outlinefile=\write5
 \openout5 = `main.out'.
 
@@ -751,28 +751,89 @@ Overfull \hbox (2.1133pt too wide) in paragraph at lines 53--77
 {C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./frontmatter/asmpt_logo.png> <./frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png>]) (sections/00_abstract.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)) (sections/01_introduction.tex
-Underfull \hbox (badness 3291) in paragraph at lines 64--319
-|   []   |   []   |   []   |   []   |   []   |   []   |   []
+ Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut)) (sections/01_introduction.tex
+Underfull \hbox (badness 2662) in paragraph at lines 64--383
+\OT1/ptm/m/n/10 (+20) Physics-informed ap-proaches, []|   []   |   []
+ []
+
+
+Underfull \hbox (badness 3240) in paragraph at lines 64--383
+|   []   |   []   |   [][] [][]\OT1/ptm/m/n/10 (+20) such as physics-informed or
+ []
+
+
+Underfull \hbox (badness 7814) in paragraph at lines 64--383
+\OT1/ptm/m/n/10 (+20) physics-guided neu-ral net-works and Gaussian-process-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 64--383
+[]|   []   |   []   |   []   |   []   |   []   |   []
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 64--383
+|   []   |   []   |   []   |   []   |   []   |   []
+ []
+
+
+Underfull \hbox (badness 3281) in paragraph at lines 64--383
+|   []   |   []   |   []   |   []   |   [][]$[]$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 64--383
+|   [][] []\OT1/ptm/m/n/10 (+20) Dy-namic aug-men-ta-tion[]$[]$ has al-ready been
+ []
+
+
+Underfull \hbox (badness 3128) in paragraph at lines 64--383
+\OT1/ptm/m/n/10 (+20) demon-strated, but not for position-dependent base-lines
+ []
+
+
+Underfull \hbox (badness 3209) in paragraph at lines 64--383
+\OT1/ptm/m/n/10 (+20) aug-men-ta-tion keeps the learned com-po-nent or-thog-o-nal
+ []
+
+
+Underfull \hbox (badness 1466) in paragraph at lines 64--383
+\OT1/ptm/m/n/10 (+20) to the base-line pa-ram-e-ters, so that their es-ti-mates are
  []
 
 [1{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 
-]) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex) [2]
+]
+Underfull \hbox (badness 1769) in paragraph at lines 441--458
+|   []   |   []   |   []   |   []   |   []   |   []   |   []
+ []
+
+
+Underfull \hbox (badness 1681) in paragraph at lines 441--458
+|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
+ []
+
+) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex) [2]
 Overfull \hbox (5.86552pt too wide) in paragraph at lines 197--200
  [][] 
  []
 
-[3] (figures/lfr_loop.tex) [4]) (sections/03_augmentation.tex [5]
+[3] (figures/lfr_loop.tex)
+Underfull \vbox (badness 2486) has occurred while \output is active []
+
+ [4] [5]) (sections/03_augmentation.tex
 Underfull \hbox (badness 3009) in paragraph at lines 211--254
 []|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[6] (figures/tex/augmentation_structure.tex) [7]
+[6]
+Underfull \vbox (badness 1092) has occurred while \output is active []
+
+ (figures/tex/augmentation_structure.tex) [7]
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 546.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
@@ -781,11 +842,8 @@ Underfull \hbox (badness 3009) in paragraph at lines 536--562
 []|   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-
-Underfull \vbox (badness 4543) has occurred while \output is active []
-
- [8]
-<figures/closed_loop_same_reference.pdf, id=488, 281.74458pt x 103.98448pt>
+[8]
+<figures/closed_loop_same_reference.pdf, id=497, 281.74458pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
 Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 657.
@@ -823,42 +881,39 @@ Overfull \hbox (0.61876pt too wide) detected at line 1146
 [][][][][]
  []
 
+[12]) (sections/04_obc.tex [13]
+Underfull \vbox (badness 1062) has occurred while \output is active []
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [12]) (sections/04_obc.tex [13] [14]
+ [14] [15]
 Underfull \hbox (badness 10000) in paragraph at lines 359--380
 
  []
 
-[15]
+
 Overfull \hbox (16.96844pt too wide) detected at line 393
 [][][][][]
  []
 
-) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [16]
+) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [16] [17]
 LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 264.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 264.
- [17]
-Underfull \vbox (badness 1776) has occurred while \output is active []
-
-) (sections/06_results.tex (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=841, 254.3515pt x 207.31088pt>
+) (sections/06_results.tex [18] (tables/res_structure.tex)
+<figures/res_time_trace.pdf, id=858, 254.3515pt x 207.31088pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 84.
 (pdftex.def)             Requested size: 252.0pt x 205.39972pt.
-<figures/res_frf.pdf, id=842, 238.08197pt x 151.69862pt>
+<figures/res_frf.pdf, id=859, 238.08197pt x 151.69862pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 91.
 (pdftex.def)             Requested size: 252.0pt x 160.56828pt.
- [18] (tables/res_obc_combinations.tex)
-<figures/res_generalisation.pdf, id=861, 485.19507pt x 324.09154pt>
+ (tables/res_obc_combinations.tex)
+<figures/res_generalisation.pdf, id=867, 485.19507pt x 324.09154pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 145.
@@ -879,7 +934,7 @@ Underfull \hbox (badness 2158) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl [21]) [22
+) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [21]) [22
 
 ] (sections/99_appendix.tex
 Overfull \hbox (47.02722pt too wide) detected at line 182
@@ -891,7 +946,7 @@ Overfull \hbox (47.02722pt too wide) detected at line 182
 ] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)
+ Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut)
 Underfull \hbox (badness 10000) in paragraph at lines 221--222
 []\OT1/ptm/m/n/10 (+20) Full $\OT1/cmr/m/n/10 3 \OMS/cmsy/m/n/10 ^^B \OT1/cmr/m/n/10 3$ \OT1/ptm/m/n/10 (+20) re-sponse of Fig. []9[]: same
  []
@@ -901,19 +956,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 221--222
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
-<figures/res_frf_full.pdf, id=992, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=1002, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
 Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 230.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
 (tables/res_all_splits.tex)
-<figures/res_lpv_lti.pdf, id=996, 228.03192pt x 208.10849pt>
+<figures/res_lpv_lti.pdf, id=1006, 228.03192pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 260.
 (pdftex.def)             Requested size: 252.0pt x 229.98064pt.
  (tables/res_structure_val.tex)
-<figures/res_ps_spectrum.pdf, id=997, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=1007, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 272.
@@ -924,13 +979,13 @@ Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--293
  []
 
 [24]
-<figures/setup_band.pdf, id=1011, 239.52798pt x 194.67302pt>
+<figures/setup_band.pdf, id=1021, 239.52798pt x 194.67302pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
 Package pdftex.def Info: figures/setup_band.pdf  used on input line 379.
 (pdftex.def)             Requested size: 252.0pt x 204.81667pt.
  [25 <./figures/res_frf_full.pdf>]
-<figures/setup_coverage.pdf, id=1050, 216.95761pt x 300.7344pt>
+<figures/setup_coverage.pdf, id=1060, 216.95761pt x 300.7344pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
 Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 437.
@@ -949,7 +1004,7 @@ Overfull \hbox (101.11467pt too wide) in paragraph at lines 551--599
 Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+ Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut
 Underfull \hbox (badness 10000) in paragraph at lines 6--7
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
  []
@@ -966,7 +1021,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[29] (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
+[29] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -975,17 +1030,17 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 8913C76DF126318F6AB56CBD14713BCC;8030.
  ) 
 Here is how much of TeX's memory you used:
- 28194 strings out of 467867
- 541423 string characters out of 5416882
- 1015618 words of memory out of 5000000
+ 28193 strings out of 467867
+ 540346 string characters out of 5416882
+ 1026364 words of memory out of 5000000
  56009 multiletter control sequences out of 15000+600000
- 693273 words of font info for 368 fonts, out of 8000000 for 9000
+ 693210 words of font info for 367 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (30 pages, 1476810 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (30 pages, 1484765 bytes).
 PDF statistics:
- 1309 PDF objects out of 1440 (max. 8388607)
+ 1319 PDF objects out of 1440 (max. 8388607)
  189 named destinations out of 1000 (max. 500000)
  64428 words of extra memory for PDF output out of 74296 (max. 10000000)
 

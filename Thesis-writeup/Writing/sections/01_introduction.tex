@@ -62,6 +62,13 @@ and cost~\cite{irds2022,workman2021diewafer}.
 % dual-drive gantries as high-precision motion systems in some of its
 % products.
 }}
+% FEEDBACK v2 (M-p2b, second question "why model augmentation", Dirk
+%   2026-10-20): link from the requirements to the need for a model. Kessels
+%   PDF p. 31 (rising demands on accuracy and throughput of high-performance
+%   motion stages call for accurate nonlinear models); Hoekstra 2026 Sec. 1,
+%   p. 1 (rising performance requirements call for accurate models).
+\add[M-p2b]{\kwtwo{Accurate plant models help to meet these
+requirements~\cite{kessels2025ai,hoekstra2026lfr}.}}
 This thesis focuses on \chg[own]{a dual-drive gantry motion system}{one
 such motion system: a dual-drive gantry} in which two parallel
 linear actuators support a common beam carrying the payload.
@@ -115,7 +122,9 @@ of harming the hardware.
 %   2026-10-18: no digital twin).
 % CHANGED: "before testing changes on the real machine, reducing costly
 %   trial-and-error" dropped, not in Hwang
-Such models are also valuable for root cause analysis.
+% FEEDBACK v2 (Dirk 2026-10-20): moved to the end of this paragraph, after
+%   its justification (deviation indicates which parameter has changed).
+\delmv[Dirk]{end of P2}{Such models are also valuable for root cause analysis.}
 % CHANGED: rest of the removed sentence above; condition monitoring ->
 %   process and root cause analysis
 % FEEDBACK v2: sentence struck (M-p2c): the requirement sentence below
@@ -139,8 +148,12 @@ physical interpretability are required.}
 parameters\del[M-mail]{ (Section~\ref{sec:params})} are estimated uniquely
 \cite{gyorok2026obc}.
 This does not guarantee identifying the true parameters,
-but a deviation from the trained model can then indicate which
-physical parameter has changed.}
+but a deviation\del[M-p2c]{ from the trained model} can then indicate which
+physical parameter has changed\chg[M-p2c]{.}{,}}
+% FEEDBACK v2 (M-p2c, Dirk 2026-10-20): last two sentences joined, "from the
+%   trained model" struck (the sentence before is about the estimates).
+\mv[Dirk]{above}{\chg[M-p2c]{Such models are therefore also}{making such
+models} valuable for root cause analysis. \todo{Source for root cause analysis.}}
 % FEEDBACK: link uniqueness to root cause analysis (Dirk 2026-10-18); own
 %   reasoning, holds while the missing dynamics do not change (discussion)
 % NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses
@@ -212,15 +225,21 @@ from first principles, such as the rigid-body dynamics
 %   pp. 10-11 (physics-guided loss, Karpatne's PGNN) and p. 18
 %   (physics-guided Gaussian process regression). "laws as constraints" ->
 %   "knowledge": GP methods put the physics in the prior (kernel).
-%   "require the physics equations to be known" kept: augmentation needs only
-%   a partial baseline (Hoekstra 2026 Sec. 1, p. 2).
-Physics-informed approaches, including physics-informed neural networks
-(PINNs)\add[M-p2e]{\kwtwo{, physics-guided neural networks (PGNNs) and
-Gaussian-process-based methods}}, incorporate physical \chg[M-p2e]{laws as constraints}{knowledge} during training
+% FEEDBACK v2 (M-p2e "more compact", Dirk 2026-10-20): two sentences joined;
+%   "require the physics equations to be known" struck: Hoekstra states it
+%   for PINNs and PGNNs only (Willard PDF p. 18: equations in the kernel are
+%   "one way" for GP methods), and only the black-box clause has a
+%   counterpart later (P5, the learned component captures only what the
+%   baseline cannot describe). Acronyms dropped, not used afterwards.
+Physics-informed approaches, \chg[M-p2e]{including physics-informed neural
+networks (PINNs)}{\kwtwo{such as physics-informed or physics-guided 
+neural networks and Gaussian-process-based methods}}, incorporate physical
+\chg[M-p2e]{laws as constraints}{knowledge} during training
 \cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}\add[M-p2e]{,
-\cite{willard2020integrating}}.
-However, these methods require the physics equations to be known and still
-rely on a black-box model for the entire system \cite{hoekstra2026lfr}.
+\cite{willard2020integrating}}\chg[M-p2e]{.
+However, these methods require the physics equations to be known
+and}{, but} still rely on a black-box model for the entire system
+\cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 2
 \delmv[own]{P2}{For the plant model of the dual-drive gantry, both predictive
 accuracy and physical interpretability are required.
@@ -232,13 +251,18 @@ changed.}
 % FEEDBACK v2: summary sentence back in its own place and wording; "both
 %   requirements" now refers to P2. "However," struck (own): the sentence
 %   before already starts with "However".
-\del[own]{However, }\chg[own]{purely}{Purely} physics-based and purely data-driven models can each have
-limitations in meeting both requirements \cite{willard2020integrating}.
+% FEEDBACK v2: struck (M-p2e, Dirk 2026-10-20): repeats P3 (white-box
+%   misses behaviour, black-box limited insight), and physics-informed
+%   approaches are neither purely physics-based nor purely data-driven.
+\del[M-p2e]{However, purely physics-based and purely data-driven models can
+each have limitations in meeting both requirements
+\cite{willard2020integrating}.}
 % CHANGED: Noel removed; Willard Sec. 1, p. 2
 \\
 Grey-box modelling is the logical choice, because it is able to
-combine a baseline model with interpretable parameters with
-data-driven flexibility needed for accurate prediction
+combine a baseline model with interpretable parameters
+\chg[Dirk]{with data-driven flexibility needed}{and a data-driven model}
+for accurate prediction
 \cite{noel2018greybox}.
 Grey-box approaches include parameter
 re-estimation within the physics model structure, static residual
@@ -249,14 +273,25 @@ baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
 %   2026 Sec. 2 (static vs dynamic)
 Model augmentation combines a physics-based baseline model with a learned
 component, so that the learned component only needs to capture the dynamics
-the physics-based model cannot describe \cite{hoekstra2026lfr}.
+the physics-based model cannot describe \cite{hoekstra2026lfr}\add[own]{,
+\cite{retzler2024}}.
 % NEW: wording from research plan Literature.tex l.3; Hoekstra 2026 Sec. 1,
 %   p. 2
-Dynamic augmentation is chosen to be able to model missing dynamics, 
-such as flexible dynamics. These require additional states, which 
-parameter re-estimation 
+% FEEDBACK v2 (own, Dirk 2026-10-20): Retzler cited here, its sentence in P6
+%   struck; title and abstract (PDF p. 2): physics-based model augmented with
+%   neural networks.
+% FEEDBACK v2 (own, Dirk 2026-10-20): two sentences joined, example
+%   "flexible dynamics" dropped: P1 says the system exhibits flexible
+%   dynamics and the baseline models the flexible joints (Fig. 1).
+Dynamic augmentation is chosen\chg[own]{ to be able to model missing
+dynamics, such as flexible dynamics. These}{, because missing dynamics}
+require additional states, which
+parameter re-estimation
 and static output correction cannot provide \cite{hoekstra2026lfr}.
-However, related work at ASMPT on a wire bonder shows that preserving
+% FEEDBACK v2 (Jan1, Dirk 2026-10-20): ASMPT dropped here and in the gap
+%   paragraph; the introduction no longer introduces ASMPT, and the work is
+%   relevant as model updating of an industrial machine, not by company.
+However, related work\del[Jan1]{ at ASMPT} on \chg[Jan1]{a}{an industrial} wire bonder shows that preserving
 physical interpretability during model updating remains an open challenge
 \cite{kessels2025ai}.
 Refitting the physical parameters allows them to \chg[own]{absorbs}{absorb} unmodelled dynamics,
@@ -282,19 +317,43 @@ the baseline already describes \cite{gyorok2026obc}.
 % FEEDBACK: concise version (Dirk 2026-10-18); root cause tie-back left out,
 %   the sentence after the interpretability definition carries it.
 \\
-Learning-based hybrid modelling has already been demonstrated using
-measurements from an industrial robot \cite{retzler2024}.
-However, a key gap remains: there is no grey-box modelling framework for the
+% FEEDBACK v2 (own, structure, Dirk 2026-10-20): every related work now
+%   names what it lacks, the gap sentence comes last (after its evidence),
+%   and the gantry moves to the thesis sentence (the gap is the method, not
+%   the system).
+% FEEDBACK v2 (own, Dirk 2026-10-20): Retzler sentence struck; the
+%   wire-bonder sentence already shows augmentation on an industrial
+%   machine. Retzler is now cited in P5 (model augmentation sentence).
+\del[own]{Learning-based hybrid modelling has already been demonstrated using
+measurements from an industrial robot \cite{retzler2024}.}
+\delmv[own]{end of P6}{However, a key gap remains: there is no grey-box modelling framework for the
 dual-drive gantry that simultaneously addresses coupled multi-input
 multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,
-and preserves physical interpretability.
+and preserves physical interpretability.}
 % CHANGED: "validated" dropped (simulation only); "closed-loop data," added
-Model augmentation using a linear fractional representation (LFR) has
+% FEEDBACK v2 (Jan26, Dirk 2026-10-20): the augmentation is Hoekstra's
+%   dynamic parallel structure, added outside the baseline LFR loop; the LFR
+%   is only the baseline representation (II-B), so the introduction does not
+%   name LFR (Jan26: "If you only use parallel augmentation you can cut the
+%   LFR explanation").
+\chg[Jan26]{Model augmentation using a linear fractional representation (LFR)}{Dynamic augmentation} has
 already been demonstrated, but not for position-dependent baselines or
-closed-loop data \cite{hoekstra2026lfr}.
+\chg[own]{closed-loop data}{with a simulated feedback controller}
+\cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026, absence: no closed loop, LPV only in a reference
 %   title
-The related work at ASMPT uses closed-loop data, but keeps the physical
+% FEEDBACK v2 (own, Dirk 2026-10-20): checked Hoekstra 2026. Baselines: linear
+%   2-DOF MSD (Sec. 6, PDF p. 11) and F1Tenth single-track identified
+%   input-to-velocity with integrators detached (Sec. 7.4, PDF pp. 13-14), so
+%   none is position-dependent. "closed-loop data" -> "with a simulated
+%   feedback controller": the F1Tenth runs follow trajectories at reference
+%   velocities (Sec. 7.3, PDF p. 13; test environment in Floch et al. 2025,
+%   a tracking-control paper; same set-up in Gyorok 2025 L4DC Sec. 5.2), so
+%   the data were likely recorded under feedback, but no controller is in
+%   the identified model.
+% FEEDBACK v2 (Jan1): "on the wire bonder", not "This related work": the
+%   sentence before is about Hoekstra's LFR augmentation.
+The related work \chg[Jan1]{at ASMPT}{on the wire bonder} uses closed-loop data, but keeps the physical
 parameters fixed during training \cite{kessels2025ai}.
 % NEW: Kessels Sec. 5.1 (PDF p. 175, only network weights trained); wire
 %   bonder updated from closed-loop measurements (Sec. 5.3.2)
@@ -304,9 +363,14 @@ estimates are unique \cite{gyorok2026obc}. This has currently only been
 formulated for discrete-time input-output models, and not for state-space models.
 % NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10
 %   (state-space form named as future research)
+\mv[own]{above}{\chg[own]{However, a}{A} key gap remains: there is no grey-box modelling framework\del[own]{ for the
+dual-drive gantry} that simultaneously addresses coupled multi-input
+multi-output (MIMO) dynamics, position-dependent behaviour\chg[own]{, closed-loop data,
+and preserves}{ and closed-loop data while preserving} physical interpretability.}
 % FEEDBACK v2: last sentence struck (M-p3b, total length); the research
 %   question right below says the same.
-\kw{This thesis therefore develops such a framework and evaluates it in simulation.
+\kw{This thesis therefore develops such a framework \mv[own]{gap}{for the
+dual-drive gantry} and evaluates it in simulation.
 \del[M-p3b]{The augmented model should predict more accurately than the physics-based
 baseline across operating points and motion profiles, while its physical
 parameters remain interpretable.}}
@@ -347,8 +411,10 @@ are investigated:
 % FEEDBACK: aspect 1 (LPV versus LTI) removed (Dirk 2026-10-18).
 % CHANGED: bold title dropped; "a" added before "position-dependent"
 \item Which augmentation structure and
-training let the learned component capture the missing dynamics from
+training\add[own]{ method} let the learned component capture the missing dynamics from
 closed-loop data?
+% FEEDBACK v2 (own, Dirk 2026-10-20): "method" added, parallel to
+%   "structure"; "training" alone reads as the act of training.
 % CHANGED: bold title dropped; wording D-241
 \item To what
 extent does orthogonal-by-construction augmentation keep the physical
@@ -361,17 +427,26 @@ profiles, compared to \chg[Q13]{a}{the physics baseline and a} black-box model?
 \end{enumerate}
 % RESTRUCTURE (2026-10-19, Maarten p3: "provide a short outline of the paper
 %   at the end of the introduction."): new text.
-\add[M-p3]{
-\kwtwo{The paper is organised as follows: first, the identification problem is
-stated in Section~\ref{sec:problem}, followed by the physics baseline in
-Section~\ref{sec:physics}.
-Then, Section~\ref{sec:augmentation} introduces the augmented model and its
-identification in closed loop, and Section~\ref{sec:obc} the orthogonal
+% FEEDBACK v2 (M-p3 "short", M-p3b length, Dirk 2026-10-20): four sentences
+%   -> one, Hoekstra 2026 form; "paper" -> "thesis" (Q1-Q8). \mbox around
+%   \ref only protects it inside the strike-out; no effect on the output.
+\del[M-p3]{The paper is organised as follows: first, the identification problem is
+stated in \mbox{Section~\ref{sec:problem}}, followed by the physics baseline in
+\mbox{Section~\ref{sec:physics}}.
+Then, \mbox{Section~\ref{sec:augmentation}} introduces the augmented model and its
+identification in closed loop, and \mbox{Section~\ref{sec:obc}} the orthogonal
 construction.
-The experiment design is described in Section~\ref{sec:setup}, and the results
-are given and discussed in Section~\ref{sec:results}.
-The conclusions are given in Section~\ref{sec:conclusion}.}
-}
+The experiment design is described in \mbox{Section~\ref{sec:setup}}, and the results
+are given and discussed in \mbox{Section~\ref{sec:results}}.
+The conclusions are given in \mbox{Section~\ref{sec:conclusion}}.}
+\add[M-p3]{\kwtwo{The thesis is organised as follows:
+Section~\ref{sec:problem} states the identification problem,
+Section~\ref{sec:physics} the physics baseline,
+Section~\ref{sec:augmentation} the augmented model and its closed-loop
+identification, Section~\ref{sec:obc} the orthogonal construction,
+Section~\ref{sec:setup} the experiment design,
+Section~\ref{sec:results} the results and discussion,
+and Section~\ref{sec:conclusion} the conclusions.}}
 \revnote{Aspect 1 (LPV versus LTI) is removed: the LPV form follows from the
 equations of motion (Section~\ref{sec:baseline}), so it is a modelling choice rather than a
 research result. The LTI comparison (on $X$ the LTI error is 1.5 to 3.7 times

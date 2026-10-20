@@ -1,5 +1,6 @@
 {
-    "latex-workshop.latex.outDir": "%DIR%/build",
+    // Build outside OneDrive (D-277); must match $out_dir and $aux_dir in .latexmkrc.
+    "latex-workshop.latex.outDir": "C:/Users/20203253/Documents/School/AI & Engineering systems/2025-2026/Thesis/build",
     // Keep this file equivalent to the repository-root settings for users who
     // open Writing/ directly as their VS Code workspace.
     "latex-workshop.latex.autoBuild.run": "onSave",
@@ -17,12 +18,24 @@
                 "-outdir=%OUTDIR%",
                 "%DOC%"
             ]
+        },
+        {
+            // Runs only after a successful build, so a failed build leaves the
+            // last good PDF in build/.
+            "name": "copy-to-writing-build",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Copy-Item -LiteralPath '%OUTDIR%/%DOCFILE%.pdf', '%OUTDIR%/%DOCFILE%.synctex.gz', '%OUTDIR%/%DOCFILE%.log' -Destination '%DIR%/build' -Force"
+            ]
         }
     ],
     "latex-workshop.latex.recipes": [
         {
             "name": "Thesis latexmk",
-            "tools": ["thesis-latexmk"]
+            "tools": ["thesis-latexmk", "copy-to-writing-build"]
         }
     ],
     "latex-workshop.latex.recipe.default": "first",

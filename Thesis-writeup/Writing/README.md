@@ -20,6 +20,14 @@ must preserve the following workflow:
 3. The PDF is opened with LaTeX Workshop's tab viewer; double-clicking it must
    navigate back to the corresponding source line.
 
+Since D-277 latexmk builds outside OneDrive, in
+`C:/Users/20203253/Documents/School/AI & Engineering systems/2025-2026/Thesis/build`
+(both `settings.json` files and `.latexmkrc`): OneDrive locked files in the
+synced `build/` and pdflatex aborted. The recipe then copies `main.pdf`,
+`main.synctex.gz` and `main.log` to `build/`; a failed build stops before the
+copy. The other aux files in `build/` are stale. Test compiles never go to that
+folder either.
+
 Do not change the root-file pattern, output directory, recipe, SyncTeX flag, or
 viewer configuration without testing both an included-section save and reverse
 SyncTeX. Do not add per-section root directives: `main.tex` is the sole root.
@@ -41,8 +49,9 @@ on it for every save.
   editor holds unsaved changes causes a save conflict, and that save then
   triggers no rebuild.
 
-Done when: after the automatic rebuild, `build/main.log` has no line starting
-with `!`.
+Done when: after the automatic rebuild, `build/main.pdf` is newer than the edit
+and `build/main.log` has no line starting with `!`. A failed build leaves both
+at the previous build; its log is `main.log` in the D-277 folder.
 
 | Path | Role |
 |-|-|
@@ -54,7 +63,7 @@ with `!`.
 | `tables/` | generated tabular fragments, `\input` from a section. Numbers are never retyped. |
 | `refs.bib` | own entries, cite keys matching `docs/references.md`. |
 | `IEEEtran.cls`, `IEEEtran.bst`, `IEEEabrv.bib` | from the shipped IEEE template, kept at project root so the build is standalone. |
-| `build/` | aux, log and output PDF. |
+| `build/` | copies of `main.pdf`, `main.synctex.gz` and `main.log` from the D-277 build folder; other files stale. |
 | `reference/` | the original untouched IEEE template and BST distribution, for lookup only. Not part of the build. |
 
 ## Paper structure and ownership
@@ -521,8 +530,8 @@ and body font size, so no figure ever needs rescaling in LaTeX.
 submission build: every `\todo{}` and `\note{}` disappears, and every `\kw{}`
 prints as plain text.
 
-Review build (2026-10-11): `latexmk review.tex` builds `build/review.pdf` for supervisors without
-touching the switch. It removes todos, notes and every `\begin{wip}...\end{wip}` block (old
+Review build (2026-10-11): `latexmk review.tex` builds `review.pdf` for supervisors without
+touching the switch. Since D-277 it lands in the D-277 build folder and is not copied to `build/`. It removes todos, notes and every `\begin{wip}...\end{wip}` block (old
 bullets, AI prose kept in the file) and shows `\begin{outline}...\end{outline}` lists (`\item`
 lines, equations allowed) as plain bullets; the editor build shows both, outlines in blue.
 `\begin{wip}` and `\end{wip}` must each stand on their own line. A `\label` inside a wip block

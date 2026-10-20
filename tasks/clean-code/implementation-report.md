@@ -16,7 +16,8 @@
 | 3b polish rejection | 2: 221-lowpass, 226-lowpass | PASS 2/2: the golden `_pre_lbfgs` pair in a freshly built model, `lbfgs_polish(..., val_before=0.0)`; both sides ROLLED BACK with the same reason, parameters equal to the start state (asserted in each run), outcome fields and the full state after restore and `_resync` bitwise equal | 290, 74 s / 243, 79 s |
 | 3c reruns | 5: 226-lowpass (i) `_best`, (ii) polish-only, (iii) `_last`; 221-lowpass (i), (ii) | PASS 5/5, each code from its own layer-3 golden: both pairs' state_dicts and Adam entries, `.npz` (except `elapsed`, `orig_run_id`; `resumed_from` by file name), `lbfgs_outcome`, val_hist. Both codes restore the Adam moments from the deepSI dumps (amendment 3; log: "Adam moment estimates restored", resume at 2 done/2 remaining from `_best`, 3 done/1 remaining from `_last`). Clean-only asserts hold in all five: previous files byte-identical in `previous/<rerun_id>/` (dumps included for i, iii), config.json changed only by one `RESUMES` entry | 193, 73, 132, 612, 247 s / 199, 71, 116, 546, 234 s |
 | acceptance `python Clean/gantry_interconnect_dynamic.py R6 lowpass --cpu --smoke` | 1 | PASS, runs to the end (rc 0): initial validation sim-NRMSe 0.3949, 4 Adam updates, polish ACCEPTED, best validation sim-NRMSe 0.359563; config.json, both checkpoint pairs, val_hist.npz and the deepSI `_best`/`_last` dumps written (out root and LOCALAPPDATA redirected to `simulations/clean-golden/smoke/`) | 249 s |
-| 4, 4b | server | pending; scripts ready, see "Server commands". Local script test of the loader: LOADER_RESULT | |
+| 4, 4b | server | pending; scripts ready, see "Server commands" | |
+| loader script test (not the layer-4 result) | R1, R4, R6 staged from the layer-3 goldens, 0.6 s records (`--truncate-s`) | PASS after deviation 7(e). Run A (default driver): every l4 array bitwise equal on all three splits, val score equal to the recorded `bestfit` (rel 0) on both sides, l4b arrays equal; l4b overlap, bias and negation rows of R1 and R4 differed at 1e-13 (cause in 7(e)). Run B (gelsd pin): all l4b rows and arrays bitwise equal. Run C, `--eval-check` on R4 (mainline): the loader equals the unmodified `eval_greybox.evaluate`, `eval_overlap.evaluate`, `eval_negation.evaluate` and `inspect_checkpoint.added_poles` in all 27 compared items | A 965 / 1036 s, B 129 / 124 s, C 335 s |
 | 6.4 (a), (b) | server | pending; scripts ready, see "Server commands" | |
 
 ## The folder
@@ -47,7 +48,7 @@ Launch: `python -u Clean/gantry_interconnect_dynamic.py [preset] [noise] [--cpu]
 | `compare.py`, `compare_l3.py`, `compare_l3bc.py` | fingerprint refresh check, then bitwise comparison; writes `compare-<layer>.json` |
 | `check_imports.py` | step 3: every module imported with only `Clean/` on the path |
 | `run_seq.sh` | runs harness jobs one after another, output streamed |
-| `l4_stage.py`, `l4_loader.py`, `compare_l4.py`, `server_l4.sbatch` | layers 4 and 4b (server) |
+| `l4_stage.py`, `l4_loader.py`, `compare_l4.py`, `server_l4.sbatch` | layers 4 and 4b (server); `l4_loader.py --truncate-s` is the local script test only |
 | `gpu_smoke.py`, `compare_gpu.py`, `server_gpu_smoke.sbatch` | 6.4 (a) and (b) (server) |
 
 Goldens: `simulations/clean-golden/L<n>/<case>/` (mainline), clean outputs in
@@ -122,7 +123,8 @@ None changes a number on the CPU path; layers 1 to 3c are the evidence.
 All files are in `Thesis-writeup/Code/Verification/clean-code/`; `Clean/` and that folder must be on the
 server checkout (`/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation`). Logs go to
 `/home/dirk_van_den_berg/logs/augmentation/clean-code/` (create it once). Nothing below writes into
-`Thesis-writeup/Results/`, the server run folders or `~/.deepSI/checkpoints`.
+`Thesis-writeup/Results/`, the server run folders or `~/.deepSI/checkpoints`. Every command runs
+from the harness folder (step 2 changes into it; the batch files change into it themselves).
 
 1. Read the `[lbfgs]` lines of 221 (job 89792) and 222 (job 89796) in thesis-results-4 and decide the
    staging case of 6.5: ACCEPTED with val_after below the checkpoint's bestfit, ROLLED BACK or ABORTED
@@ -138,7 +140,7 @@ server checkout (`/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation`
 3. Layers 4 and 4b (CPU array: task 0 mainline with the evaluation check, task 1 clean):
    ```
    mkdir -p /home/dirk_van_den_berg/logs/augmentation/clean-code
-   sbatch --array=0-1 Thesis-writeup/Code/Verification/clean-code/server_l4.sbatch
+   sbatch --array=0-1 server_l4.sbatch
    ```
    then, when both tasks are done:
    ```
@@ -146,7 +148,7 @@ server checkout (`/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation`
    ```
 4. GPU smokes 6.4 (a) R1 and R6, then (b) R6 (GPU array, both codes in one job per row):
    ```
-   sbatch --array=0-1 Thesis-writeup/Code/Verification/clean-code/server_gpu_smoke.sbatch
+   sbatch --array=0-1 server_gpu_smoke.sbatch
    ```
    then:
    ```
@@ -164,5 +166,5 @@ compare-*.json files and the loader `summary.json` files.
   (a wrong path conversion; it holds only that failed run's config.json and val_hist.npz). Deleting it
   was refused by the permission check; please delete it by hand.
 - `simulations/clean-golden/smoke/` (the acceptance run) and `simulations/clean-golden/L4-localtest/`
-  (the loader script test on 0.6 s records built from the layer-3 goldens, not a layer-4 result) can be
-  deleted; the goldens `L1` to `L3c` and `_clean` are the evidence and stay.
+  (the loader script test on 0.6 s records built from the layer-3 goldens, not a layer-4 result; its
+  comparison files are `compare-l4-localtest-{A,B}.json` there) can be deleted; the goldens `L1` to `L3c` and `_clean` are the evidence and stay.

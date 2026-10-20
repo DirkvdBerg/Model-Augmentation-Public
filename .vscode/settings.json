@@ -2,9 +2,13 @@
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
 
-    "latex-workshop.latex.outDir": "%DIR%/build",
+    // Build outside OneDrive (D-277): OneDrive locks files in a synced build folder
+    // while it uploads them, and pdflatex then aborts with "I can't write on file".
+    // Must match $out_dir and $aux_dir in Thesis-writeup/Writing/.latexmkrc.
+    "latex-workshop.latex.outDir": "C:/Users/20203253/Documents/School/AI & Engineering systems/2025-2026/Thesis/build",
     // Workflow invariant: every save of an included TeX file rebuilds the single
-    // root below, producing build/main.pdf and build/main.synctex.gz together.
+    // root below; the recipe then copies main.pdf, main.synctex.gz and main.log
+    // together to Thesis-writeup/Writing/build/, where the PDF is opened.
     // onSave, not onFileChange: changes written from outside the editor (AI edits,
     // OneDrive, git) started overlapping builds that aborted on a locked main.aux
     // and left no main.synctex.gz, which broke double-click.
@@ -23,12 +27,24 @@
                 "-outdir=%OUTDIR%",
                 "%DOC%"
             ]
+        },
+        {
+            // Runs only after a successful build, so a failed build leaves the
+            // last good PDF in Writing/build/.
+            "name": "copy-to-writing-build",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Copy-Item -LiteralPath '%OUTDIR%/%DOCFILE%.pdf', '%OUTDIR%/%DOCFILE%.synctex.gz', '%OUTDIR%/%DOCFILE%.log' -Destination '%DIR%/build' -Force"
+            ]
         }
     ],
     "latex-workshop.latex.recipes": [
         {
             "name": "Thesis latexmk",
-            "tools": ["thesis-latexmk"]
+            "tools": ["thesis-latexmk", "copy-to-writing-build"]
         }
     ],
     "latex-workshop.latex.recipe.default": "first",

@@ -787,7 +787,13 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
         # score `bestfit`, for OBC as well. With OBC, fit() rebuilt the basis at the restored
         # parameters, so the rebuilt model scores slightly differently; it is measured once for the
         # log and the history, and it is the model kept when the polish is rejected.
-        val_before = (bestfit if (np.isfinite(bestfit) and cfg.start_phase != 'lbfgs') else None)
+        # D-278: a polish-only start uses the selected score of its checkpoint too (Dirk:
+        # best checkpoint), no longer the start model's remeasured score.
+        val_before = (bestfit if np.isfinite(bestfit) else None)
+        if cfg.start_phase == 'lbfgs' and not cfg.obc:
+            # The remeasure the polish skips when val_before is given ran the eager forward that
+            # completes lazy initialisation before the compiled probe (lbfgs_polish `_validate`).
+            fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure)
         if cfg.obc:
             val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
             print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
@@ -890,6 +896,10 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
             # `bestfit` keeps the resumed value, so the phase's own before/after validation is
             # measured against the checkpoint that produced it.
             print('  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly')
+        elif epochs_remaining <= 0:
+            # D-278: the Adam budget is already spent; `train_model(epochs=0)` would turn the 0 into
+            # a full hp['epochs'] rerun (`epochs or hp['epochs']`, model.py). Polish directly.
+            print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, hp['epochs']))
         else:
             bestfit = train_model(fit_sys, hp, cfg, data,
                                   epochs=epochs_remaining,
