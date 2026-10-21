@@ -163,8 +163,12 @@ Both are designed to be above the crossover of the loop with $K_1$
 As a result, the feedback does not suppress them, and we can identify
 them from the data.
 All data is generated in closed loop with the controller $K_1$ of
-Appendix~\ref{app:setup_system}, which is the known controller of
-Section~\ref{sec:aug_loop}.
+Appendix~\ref{app:setup_system}\chg[own]{, which is the known controller of
+Section~\mbox{\ref{sec:aug_loop}}}{; $K_{\mathrm{fb}}$ in \eqref{eq:system_loop}
+is $K_1$ discretised at $T_s$}.
+% FEEDBACK (own, 2026-10-21): K_1 (continuous-time design) linked to K_fb
+%   (its discretisation at T_s, Section II); the 20 kHz deviation is the
+%   sentence after "The models run at T_s" (Dirk 2026-10-21).
 The only feedforward, $u^{\mathrm{ff}}$ in \eqref{eq:aug_two_loops}, is the
 injected excitation force.
 Independent coloured noise is added to the position measurements

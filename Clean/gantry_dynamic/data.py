@@ -49,12 +49,12 @@ class DataBundle:
     test_list: list
     train_data: object
     val_ckpt_data: object
-    train_files: list = None
-    val_files: list = None
-    test_files: list = None
-    e_train: list = None
-    e_val: list = None
-    e_test: list = None
+    train_files: list
+    val_files: list
+    test_files: list
+    e_train: list
+    e_val: list
+    e_test: list
 
 
 @dataclass
@@ -113,10 +113,9 @@ def _record_at_fs_new(d, cfg: RunConfig, fields=()):
     N = len(u)
     arrs = [u, _decimate_y(d, cfg)[:N]] + [np.asarray(d[k])[::D][:N] for k in fields]
     k = record_trim(cfg)
-    if k:
-        arrs = [a[k:N - k] for a in arrs]
+    arrs = [a[k:N - k] for a in arrs]
     if cfg.truncate_s is not None:
-        arrs = [a[:int(cfg.truncate_s * cfg.fs_new_hz)] for a in arrs]
+        arrs = [a[:int(cfg.truncate_s * cfg.fs_new)] for a in arrs]
     return arrs
 
 
@@ -125,8 +124,8 @@ def _load_record(filename, cfg: RunConfig, folder=None):
     on the same samples as y. `folder` overrides traj_dir(cfg), for the evaluation-only twins (D-258)."""
     d = loadmat(os.path.join(folder or traj_dir(cfg), filename), squeeze_me=True)
     _register_controller(d, filename)
-    u, y, *r = _record_at_fs_new(d, cfg, ('r_sim',))
-    e = np.asarray(y, np.float64) - np.asarray(r[0], np.float64)
+    u, y, r = _record_at_fs_new(d, cfg, ('r_sim',))
+    e = np.asarray(y, np.float64) - np.asarray(r, np.float64)
     sd = deepSI.System_data(u=u.astype(cfg.dtype_np), y=y.astype(cfg.dtype_np), dt=cfg.ts_new)
     return sd, e
 
@@ -174,17 +173,13 @@ def load_datasets(cfg: RunConfig) -> DataBundle:
 
 def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     """All NX_PHYS-dimensional normalization constants (independent of NX_ANN)."""
-    NX_PHYS, nu = cfg.nx_phys, cfg.nu
-    DTYPE_NP = cfg.dtype_np
-    train_list = data.train_list
+    u_all = np.concatenate([t.u for t in data.train_list])
+    y_all = np.concatenate([t.y for t in data.train_list])
 
-    u_all = np.concatenate([t.u for t in train_list])
-    y_all = np.concatenate([t.y for t in train_list])
-
-    fs = 1.0 / train_list[0].dt
-    P_inv_T = np.linalg.inv(P.numpy().T).astype(DTYPE_NP)
+    fs = 1.0 / data.train_list[0].dt
+    P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)
     x_logical_list = []
-    for t in train_list:
+    for t in data.train_list:
         pos_logical = (P_inv_T @ t.y.T).T
         # THEORY: var of a first difference of white noise = 2*sigma_n^2, so sigma_v = sigma_n*sqrt(2)*fs
         vel_logical = np.diff(pos_logical, axis=0) * fs
@@ -192,12 +187,12 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
         x_logical_list.append(np.hstack([pos_logical, vel_logical]))
     x_all = np.concatenate(x_logical_list)
 
-    x_mean = x_all.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)
-    std_x  = x_all.std(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP) + 1e-8
-    std_u  = u_all.std(axis=0).reshape(nu, 1).astype(DTYPE_NP) + 1e-8
-    u_mean = u_all.mean(axis=0).reshape(nu, 1).astype(DTYPE_NP)
-    ystd   = y_all.std(axis=0).astype(DTYPE_NP) + 1e-8
-    y0     = y_all.mean(axis=0).astype(DTYPE_NP)
+    x_mean = x_all.mean(axis=0).reshape(cfg.nx_phys, 1)
+    std_x  = x_all.std(axis=0).reshape(cfg.nx_phys, 1) + 1e-8
+    std_u  = u_all.std(axis=0).reshape(cfg.nu, 1) + 1e-8
+    u_mean = u_all.mean(axis=0).reshape(cfg.nu, 1)
+    ystd   = y_all.std(axis=0) + 1e-8
+    y0     = y_all.mean(axis=0)
 
     Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]
     Dd_np   = Dd.numpy()

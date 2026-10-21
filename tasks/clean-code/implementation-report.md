@@ -245,3 +245,167 @@ and the loader `summary.json` files.
   `simulations/clean-golden/L3c-preD278/` (the two pre-D-278 polish-only goldens; git shows them as
   deleted under `L3c/`) can be deleted or kept as history; `%TEMP%\clean-harness\L3c\` is the empty
   working folder of deviation 7(f).
+
+## Optimisation (D-281)
+
+2026-10-21. Handoff `tasks/handoffs/2026-10-21-clean-code-optimise-implement.md`; approved list
+`optimise-merged.md` (item texts in `optimise-claude.md` and `optimise-codex.md`); rulings D-281 and its
+amendment 1 (the implementation choices). Every accepted item is implemented, none reverted, two applied
+in part or skipped by a ruling (table below). `Clean/` is now **3,911 lines (was 4,506, -595, -13 %)**.
+pyflakes: 0 warnings; all 24 modules import with only `Clean/` on the path. Layers 1, 2, 3, 3b, 3c and the
+CLI smoke pass bitwise against the recaptured mainline goldens, with the H2 check active (every clean output
+made from the final tree; `Clean/` unchanged since).
+
+**Compiled path unproven until 6.4:** B1 (no `_cur` cache in the compiled forward), B2 (`_propagate` shared by
+`forward` and `output_only`) and B26 (no `self.nb` write in the forward) change the graph `torch.compile`
+traces. The CPU layers prove them eagerly only; the 6.4 GPU smokes decide, and these three are the first to
+revert if a smoke fails (O10). B4, B21 and B27 also change what the compiled forward contains (a module
+function instead of an instance attribute, `forward(z, None)`, no unused zero tensors); the same smokes
+cover them.
+
+### Mainline goldens recaptured (D-280)
+
+The old goldens moved to `simulations/clean-golden/pre-D280/` (L1, L2, L3, L3b, L3c). All 29 were recaptured
+from mainline with the unchanged harness before any edit reached `Clean/`; the edits were staged in a
+scratch copy meanwhile. Each new golden was compared with its pre-D-280 one through the comparison functions
+of the harness: **all identical**, including 226-lowpass-iv, the spent-budget path D-280 changes (its added
+eager validation changes no number on the CPU). The recapture times are the golden column of the result
+table below (from each golden's meta.json).
+
+### Items
+
+Every accepted item of `optimise-merged.md` is implemented as stated, except:
+
+| Item | Status | Reason |
+|-|-|-|
+| C19 | implemented as C19b | O8 takes C19b with its harness edit: `RankReport` is gone, `OBCBasis` keeps `rank`, `tol`, `n_cols` |
+| C32 | in part | `n_rows` goes; `n_cols` stays, since after C19b and C25 it is the rank test's reference |
+| C35 to C44: `deepSI_corrections.py:13` (drop the `np.copy`) | skipped | inside `fixed_System_data`, which O6 keeps as it is |
+| A44 (= Q03) | implemented, `space` constant | `nu` goes; `space` is the constant `'affine'` (the class implements only that space since F13), amendment 1(b) |
+
+Implemented, by file (call-site edits listed with the file they touch):
+- `gantry_interconnect_dynamic.py`: A1, A22, A23.
+- `gantry_dynamic/config.py`: A2 (= P04, with its reader in data.py), A40.
+- `gantry_dynamic/data.py`: A20, A35, A42, Q06.
+- `gantry_dynamic/controller.py`: A4, A9, A10, A18, A33, A34, X3, X5, B51.
+- `gantry_dynamic/model.py`: A7, A18, A19 (`on_device`, amendment 1(e)), A21 (= P16), A26, A27 (= P26), A36, A37, X4, B14, B40, C23.
+- `gantry_dynamic/obc_gantry.py`: A11, A16, A29, A30, A31 (= P28), A32, A44, A45, X4, P29, B1, C7, C8, C9, C24, C25.
+- `gantry_dynamic/training.py`: A1, A3, A8, A12, A13, A14, A15 (= P17, P27), A17, A19, A24, A25, A28, A38, A39, A43, C3, C16. `_json_safe` kept (O3).
+- `gantry_dynamic/closed_loop_report.py`: A41.
+- `fit_systems/interconnect.py`: B2 (= P02), B7 (= P05), B9, B10 and B45 (= P15), B13 (= P06), P07, B14 (= P21, Q07), B15, B16, B17 (= P09), X2, B18, B19, B20, B21, B22, B23, B24, B26, B27, B28, B29, B30, B31, B32, B34, B35 (= P14), B43, B44, B46, B47, B48, B49, B62, C15, P22, Q01, Q02, and its B52 to B71 clarity items (`Interconnect.__init__` without `*args`, `self.obc_correction`, `Signal_Connection` and `Dtype_DataLoader` without defaults, required `interconnect`, `epoch_id[-1]`, one `_epoch_index`, `pop('loss_w')`). Kept: the `optimizer` property (O1), the KeyboardInterrupt handler (O5).
+- `fit_systems/blocks.py`: B1 (= P01), B4, B7, B12, B23, B25, B36, B37 (= P13), B38, B39, B40 (= P12), B50 (= P23), and its clarity items (`Block.__init__` without `*args`, `Linear_Output_Block` without defaults, `h` hoisted in `_rk4`).
+- `fit_systems/closed_loop.py`: B3 (= P08), B5, B8, B11, B41, B42, B51, X1, X3, X5, and its clarity items (`ctrl_ix` required, `validation_error` without `validation_measure`, no `k0` argument).
+- `fit_systems/lbfgs_polish.py`: C1 (= Q04), C2, C3, C4 (= P11), C5, C6, C12, C17, C18, C29, C30, C31, C36 (O7), X1, X5, and its clarity items (`base_stride`, `want`, `_is_oom`, `_validate` before the `try`).
+- `fit_systems/obc.py`: C7, C8, C9 (= P10), C14, C15, C19b (= P03), C24, C25, C32 (in part), C33, and its clarity items (`vbar` without the second clone, `evaluate_step_rows`).
+- `fit_systems/pre_encoder.py`: C11 (= P19), C26, and its clarity items (`n_in`, `n_out` local, unused defaults).
+- `fit_systems/ps2_opening.py`: C16, C20, C21 (= P20), X1, Q05. The `.grad` save and restore kept (O4).
+- `utils/torch_nets.py`: C11 (the `@added` helper `mlp_stack`), C23, C27 (= P18).
+- `utils/utils.py`: C13 (= P24).
+- `utils/deepSI_corrections.py`: C10 (= P25) and its clarity item (import at the top, one `isinstance`). `fixed_System_data` unchanged (O6).
+- Not implemented, by ruling: O1 to O6 and O9.
+
+### Line count per file
+
+| File | Before | After | Change |
+|-|-|-|-|
+| `gantry_interconnect_dynamic.py` | 179 | 175 | -4 |
+| `gantry_dynamic/__init__.py` | 15 | 15 | 0 |
+| `gantry_dynamic/config.py` | 337 | 317 | -20 |
+| `gantry_dynamic/data.py` | 208 | 203 | -5 |
+| `gantry_dynamic/controller.py` | 211 | 178 | -33 |
+| `gantry_dynamic/model.py` | 244 | 225 | -19 |
+| `gantry_dynamic/obc_gantry.py` | 227 | 204 | -23 |
+| `gantry_dynamic/training.py` | 448 | 351 | -97 |
+| `gantry_dynamic/closed_loop_report.py` | 32 | 31 | -1 |
+| `fit_systems/interconnect.py` | 662 | 559 | -103 |
+| `fit_systems/blocks.py` | 518 | 440 | -78 |
+| `fit_systems/closed_loop.py` | 290 | 236 | -54 |
+| `fit_systems/lbfgs_polish.py` | 384 | 315 | -69 |
+| `fit_systems/obc.py` | 193 | 137 | -56 |
+| `fit_systems/pre_encoder.py` | 84 | 75 | -9 |
+| `fit_systems/ps2_opening.py` | 231 | 221 | -10 |
+| `systems/gantry_ss.py` | 119 | 119 | 0 |
+| `utils/deepSI_corrections.py` | 59 | 48 | -11 |
+| `utils/torch_nets.py` | 34 | 37 | +3 |
+| `utils/utils.py` | 31 | 25 | -6 |
+| four empty `__init__.py` | 0 | 0 | 0 |
+| **total** | **4,506** | **3,911** | **-595** |
+
+### Method and gates
+
+The edits were staged in six file groups, each with the call sites it needs (G1 the gantry_dynamic
+orchestration, G2 closed_loop, G3 obc, G4 blocks, nets, encoder, utils and norm, G5 interconnect, G6 the
+polish and PS2), and every staged diff was read against the item texts. Each group was then applied to
+`Clean/`, followed by pyflakes, the import check and layers 1+2 on 221-lowpass (OBC, PS2) and 227-lowpass
+(U, n_a = 8): **six gates, all PASS, no item reverted.** Two gates needed a harness-side variant, no `Clean/`
+change: before G2 and G3 the clean simulator still had the fields that the O8 edit of `capture_l12.py` no
+longer reads, so those gates ran scratch copies of `capture_l12.py` that keep the old reads. The first G3
+gate was invalid and is not counted: the capture failed with Errno 22 (OneDrive held the previous gate's
+`L1.npz`) after `meta.json` had already been rewritten, so `compare.py` printed PASS on the stale G2 arrays
+under the G3 manifest. Rerun with the case folders removed first, it passed.
+
+### Result per layer (final tree)
+
+| Layer | Cases | Result | Runtime (golden / clean, per case) |
+|-|-|-|-|
+| static | 24 files | pyflakes 0 warnings; all 24 modules import with only `Clean/` on the path | seconds |
+| 1, 2 | 16 | PASS 16/16 bitwise, 256 to 299 items per case in layer 1 (3 fewer than before: the O8 fields below) | 36 to 134 s / 30 to 123 s |
+| 3 | 5 | PASS 5/5 bitwise | 794, 736, 233, 207, 209 s / 638, 693, 223, 196, 222 s |
+| 3b | 2 | PASS 2/2 (forced reject, parameters restored on both sides) | 216, 71 s / 222, 72 s |
+| 3c both codes | 6 | PASS 6/6 bitwise; D-278 checks hold on both sides (ii, iv) | 180, 96, 149, 124, 543, 242 s / 181, 93, 130, 83, 596, 296 s |
+| 3c clean only | 3 | PASS 3/3: v (F1), vi (F6, F4: both refusals, nothing moved), vii (F4: resumes at 4, ends at 5) | 11, 39, 132 s |
+| acceptance `R6 lowpass --cpu --smoke` | 1 | PASS, rc 0: initial validation sim-NRMSe 0.3949, 4 Adam updates, polish ACCEPTED, best 0.359563 (as in steps 4 and 4c); config.json, both pairs, val_hist.npz, `_best`/`_last` dumps written, no `.tmp` left | 272 s |
+
+Not run: layers 4 and 4b and the GPU smokes (server, last); the local loader script test. The evaluation
+interface was checked by reading `l4_loader.py`, `l4_stage.py`, `gpu_smoke.py` and the evaluation scripts
+against every changed signature (`build_closed_loop(verbose=)`, `build_reference_set(verbose=)`,
+`make_basis_builder(space=)`, `closed_loop_free_run_rms_batch(return_pred=)`, `corr.space`, `pass_mats`,
+`N_op`/`d_op`/`Y_op`): unchanged.
+
+### Harness edits (O8) and harness findings
+
+- `capture_l12.py` (B5, B41, B51, C19b): on the clean side it reads `sim.record_weights`, `sim.val_rows` and
+  `B.tol`, and no longer reads `bank.ystd`, `bank.stdu` or the validation record names; the mainline capture
+  is unchanged. `compare.py`: `DROPPED_IN_CLEAN` skips exactly those three golden fields when the clean output
+  lacks them and lists them as `dropped` (their content stays covered by `M_state`/`M_error` and the
+  validation rows). `run_l3bc.py` (C3): `verbose=True` moves into the mainline-only arguments.
+- Found, not fixed (the handoff allows harness edits for O8 only), proposed for Dirk:
+  (a) `run_l3bc.py` keeps `z = np.load(...)` open in the D-278 block (kinds ii, iv) and in the vii chain check,
+  so a clean case folder cannot leave `%TEMP%` (WinError 5): every clean ii, iv and vii failed its final move
+  after the run and its asserts had passed. In step 4c these cases still ran in place, so it never showed.
+  These four cases (226-lowpass ii, iv, vii; 221-lowpass-ii) were rerun with a scratch copy that adds
+  `z.close()` after the last read in both blocks (two lines, nothing else); the fix belongs in the harness.
+  (b) `run_l3bc.py` does not create `_clean/L3c/` before the final move; with a fresh `_clean` the first case
+  failed its move (rerun once the folder existed). (c) `capture_l12.py` writes `meta.json` before the arrays,
+  so a failed array save leaves old arrays under a new manifest that `compare.py` accepts (the invalid G3
+  gate above); writing the arrays first closes that hole.
+- Fixed afterwards (harness only, 2026-10-21; py_compile clean, synthetic refusal test 8/8 in a scratch
+  folder, all 93 existing golden and `_clean` cases pass the new check): (c) `capture_l12.py:35` removes
+  the case's old `meta.json` first and `capture_l12.py:207-211` saves the arrays before `write_meta`;
+  `write_meta` (`hcommon.py:230`, `:255`) now records `outputs`, the SHA256 of every file in the case folder,
+  and `hcommon.py:204` `output_problems` refuses a listed file that is missing or differs (a `meta.json`
+  without that list, the current goldens: L1/L2 arrays older than `meta.json` are refused). Applied in
+  `compare.py:150` (REFUSED (outputs)), `compare_l3.py:112`, `compare_l3bc.py:39`, `:76`, `:93`;
+  `run_l3.py` and `run_l3bc.py` already wrote `meta.json` last and gain the list through `write_meta`;
+  `l4_loader.py:386`, `:407` removes `summary.json` first and lists each run's output hashes, checked by
+  `compare_l4.py:107`; `gpu_smoke.py` needs nothing (fresh folder, `result.json` last). (a) `run_l3bc.py:246`
+  (vii) and `:263`, `:271`, `:279` (ii, iv) read through `with np.load(...)`, so every handle is closed
+  before the move. (b) `run_l3bc.py:297` creates `_clean/L3c/` before the move.
+
+### Server commands (updated)
+
+As in "Server commands for Dirk" above, with step 0 now: commit and push `Clean/`, the harness folder,
+mainline `training.py` (D-280) and `docs/decisions.md` (D-281 amendment 1), then pull on the server checkout.
+The server runs come last, after the ultrareview and the comment pass; any `Clean/` change before them means
+rerunning the local layers first (H2 refuses clean outputs of another tree). If a 6.4 smoke fails, revert B1,
+B2 and B26 first (O10).
+
+### Leftovers for Dirk
+
+- The three harness findings above, with their fixes.
+- Archives that can be deleted or kept as history: `simulations/clean-golden/pre-D280/` (the pre-D-280
+  goldens, identical to the recaptured ones), `_clean-step4c/` (step-4c clean outputs), `smoke-step4c/`.
+- For the comment pass, besides the stale-text list of `optimise-claude.md`: the `init_model` docstring
+  (no device move or logging arrays any more), the `fit` docstring ("parallel validation"), the
+  `linear_encoder_init_aug` dtype comment (names the removed reconstructability map) and the
+  `gtd_build_records.m` THEORY comment of `controller.py` (names `TRAIN_FILES`).

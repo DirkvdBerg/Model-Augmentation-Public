@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  21 OCT 2026 16:13
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  21 OCT 2026 20:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -818,70 +818,70 @@ Underfull \hbox (badness 1681) in paragraph at lines 441--458
  []
 
 ) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex) [2]
-Overfull \hbox (5.86552pt too wide) in paragraph at lines 249--252
+Overfull \hbox (5.86552pt too wide) in paragraph at lines 254--257
  [][] 
  []
 
-
-Underfull \vbox (badness 1127) has occurred while \output is active []
-
- [3] (figures/lfr_loop.tex) [4] [5]) (sections/03_augmentation.tex
+[3] (figures/lfr_loop.tex) [4] [5]) (sections/03_augmentation.tex
 Underfull \hbox (badness 3009) in paragraph at lines 211--254
 []|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [6] [7] (figures/tex/augmentation_structure.tex)
+[6] (figures/tex/augmentation_structure.tex) [7]
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 546.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-Underfull \hbox (badness 3009) in paragraph at lines 536--562
+Underfull \hbox (badness 3009) in paragraph at lines 536--569
 []|   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[8]
-<figures/closed_loop_same_reference.pdf, id=501, 281.74458pt x 103.98448pt>
+
+Underfull \vbox (badness 1715) has occurred while \output is active []
+
+ [8]
+<figures/closed_loop_same_reference.pdf, id=498, 281.74458pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
-Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 665.
+Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 672.
 (pdftex.def)             Requested size: 252.0pt x 93.00919pt.
 
-Underfull \hbox (badness 2351) in paragraph at lines 689--808
-|   []   |   []   |   []   |   []   |   []   |   []
+Underfull \hbox (badness 3118) in paragraph at lines 696--815
+|   []   |   []   |   []   |   []   |   []
  []
 
 
-Underfull \hbox (badness 3849) in paragraph at lines 689--808
+Underfull \hbox (badness 3849) in paragraph at lines 696--815
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[9 <./figures/closed_loop_same_reference.pdf>]
-Overfull \hbox (4.6546pt too wide) detected at line 808
-[][][][][]
- []
 
-[10]
-Overfull \hbox (4.90492pt too wide) detected at line 1028
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [9 <./figures/closed_loop_same_reference.pdf>]
+Overfull \hbox (4.6546pt too wide) detected at line 815
 [][][][][]
  []
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [11]
-Underfull \hbox (badness 10000) in paragraph at lines 1028--1052
-
- []
-
-(figures/tex/ps2_windows.tex) [12]
-Overfull \hbox (0.61876pt too wide) detected at line 1170
+ [10]
+Overfull \hbox (4.90492pt too wide) detected at line 1035
 [][][][][]
  []
 
-[13]) (sections/04_obc.tex [14] [15]
+
+Underfull \hbox (badness 10000) in paragraph at lines 1035--1059
+
+ []
+
+[11] (figures/tex/ps2_windows.tex)
+Overfull \hbox (0.61876pt too wide) detected at line 1177
+[][][][][]
+ []
+
+[12]) (sections/04_obc.tex [13] [14] [15]
 Underfull \hbox (badness 10000) in paragraph at lines 367--396
 
  []
@@ -891,37 +891,36 @@ Overfull \hbox (16.96844pt too wide) detected at line 409
 [][][][][]
  []
 
-) (sections/05_setup.tex (tables/setup_numbers.tex) [16] (figures/gantry_system_with_absorber.tex) [17]
-LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 293.
+) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [16] [17]
+LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 297.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 293.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 297.
  [18]) (sections/06_results.tex (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=873, 254.3515pt x 207.31088pt>
+<figures/res_time_trace.pdf, id=879, 254.3515pt x 207.31088pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 91.
 (pdftex.def)             Requested size: 252.0pt x 205.39972pt.
-<figures/res_frf.pdf, id=874, 238.08197pt x 151.69862pt>
+<figures/res_frf.pdf, id=880, 238.08197pt x 151.69862pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 98.
 (pdftex.def)             Requested size: 252.0pt x 160.56828pt.
- [19] (tables/res_obc_combinations.tex)
-<figures/res_generalisation.pdf, id=894, 485.19507pt x 324.09154pt>
+ [19 <./figures/res_time_trace.pdf>] (tables/res_obc_combinations.tex)
+Underfull \vbox (badness 1694) has occurred while \output is active []
+
+<figures/res_generalisation.pdf, id=913, 485.19507pt x 324.09154pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 175.
 (pdftex.def)             Requested size: 516.0pt x 344.66783pt.
- [20 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]
+ [20 <./figures/res_frf.pdf>]) (sections/07_discussion.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [21 <./figures/res_generalisation.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
+) (sections/08_conclusion.tex
 Underfull \hbox (badness 1817) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
@@ -931,7 +930,7 @@ Underfull \hbox (badness 2158) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [22]) [23
+[21 <./figures/res_generalisation.pdf>]) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [22]) [23
 
 ] (sections/99_appendix.tex
 Overfull \hbox (47.02722pt too wide) detected at line 182
@@ -953,19 +952,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 221--222
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
-<figures/res_frf_full.pdf, id=1028, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=1032, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
 Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 230.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
 (tables/res_all_splits.tex)
-<figures/res_lpv_lti.pdf, id=1032, 228.03192pt x 208.10849pt>
+<figures/res_lpv_lti.pdf, id=1036, 228.03192pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 260.
 (pdftex.def)             Requested size: 252.0pt x 229.98064pt.
  (tables/res_structure_val.tex)
-<figures/res_ps_spectrum.pdf, id=1033, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=1037, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 272.
@@ -976,28 +975,28 @@ Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--293
  []
 
 [25]
-<figures/setup_band.pdf, id=1048, 239.52798pt x 194.67302pt>
+<figures/setup_band.pdf, id=1052, 239.52798pt x 194.67302pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
-Package pdftex.def Info: figures/setup_band.pdf  used on input line 385.
+Package pdftex.def Info: figures/setup_band.pdf  used on input line 391.
 (pdftex.def)             Requested size: 252.0pt x 204.81667pt.
  [26 <./figures/res_frf_full.pdf>]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
-<figures/setup_coverage.pdf, id=1087, 216.95761pt x 300.7344pt>
+<figures/setup_coverage.pdf, id=1091, 216.95761pt x 300.7344pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
-Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 443.
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 449.
 (pdftex.def)             Requested size: 252.0pt x 349.31104pt.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [27] [28 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>]
-Overfull \hbox (101.11467pt too wide) in paragraph at lines 563--611
+ [27] [28 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>] [29 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>]
+Overfull \hbox (101.11467pt too wide) in paragraph at lines 590--638
  [][] 
  []
 
-[29 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>] Including 'wip' comment.
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut
@@ -1026,17 +1025,17 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 8913C76DF126318F6AB56CBD14713BCC;8030.
  ) 
 Here is how much of TeX's memory you used:
- 28255 strings out of 467867
- 541508 string characters out of 5416882
- 1024967 words of memory out of 5000000
+ 28252 strings out of 467867
+ 541484 string characters out of 5416882
+ 1034450 words of memory out of 5000000
  56051 multiletter control sequences out of 15000+600000
- 693790 words of font info for 377 fonts, out of 8000000 for 9000
+ 693674 words of font info for 375 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1508286 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1512120 bytes).
 PDF statistics:
- 1356 PDF objects out of 1440 (max. 8388607)
+ 1362 PDF objects out of 1440 (max. 8388607)
  191 named destinations out of 1000 (max. 500000)
  64428 words of extra memory for PDF output out of 74296 (max. 10000000)
 

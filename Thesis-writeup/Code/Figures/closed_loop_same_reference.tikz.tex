@@ -9,12 +9,12 @@
 
 % Recorded loop: feedback stays above the row, clear of the shared sources.
 \node[sum] (ep) at (1.55,3.9) {$+$};
-\node[rblock] (cp) at (3.1,3.9) {$C_{\mathrm{fb}}$};
+\node[rblock] (cp) at (3.1,3.9) {$K_{\mathrm{fb}}$};
 \node[sum] (fp) at (4.7,3.9) {$+$};
-\node[block] (plant) at (7.05,3.9) {plant};
+\node[block] (plant) at (7.05,3.9) {gantry};
 \draw[->] (ep) -- (cp);
 \draw[->] (cp) -- (fp);
-\draw[->] (fp) -- (plant) node[midway,above,signal] {$u_k$};
+\draw[->] (fp) -- (plant) node[midway,above,signal] {$u_{\mathrm{act},k}$};
 \draw[->] (plant.east) -- (9.45,3.9) node[near end,above,signal] {$y_k$};
 \node[jn] at (8.75,3.9) {};
 \draw[->] (8.75,3.9) -- (8.75,4.65) -- (1.55,4.65) -- (ep.north);
@@ -22,12 +22,12 @@
 
 % Model loop: the same reference and feedforward, with predicted output feedback.
 \node[sum] (em) at (1.55,1.9) {$+$};
-\node[rblock] (cm) at (3.1,1.9) {$C_{\mathrm{fb}}$};
+\node[rblock] (cm) at (3.1,1.9) {$K_{\mathrm{fb}}$};
 \node[sum] (fm) at (4.7,1.9) {$+$};
 \node[block] (model) at (7.05,1.9) {augmented\\model};
 \draw[->] (em) -- (cm);
 \draw[->] (cm) -- (fm);
-\draw[->] (fm) -- (model) node[midway,above,signal] {$\hat u_k$};
+\draw[->] (fm) -- (model) node[midway,above,signal] {$\hat u_{\mathrm{act},k}$};
 \draw[->] (model.east) -- (9.45,1.9) node[near end,above,signal] {$\hat y_k$};
 \node[jn] at (8.75,1.9) {};
 \draw[->] (8.75,1.9) -- (8.75,1.15) -- (1.55,1.15) -- (em.south);

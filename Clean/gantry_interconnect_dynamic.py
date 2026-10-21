@@ -22,7 +22,7 @@ from gantry_dynamic.config import (RunConfig, PRESETS, DATA_ROOT, OUT_ROOT, save
 from gantry_dynamic.data import load_datasets, compute_normalization, traj_dir
 from gantry_dynamic.model import build_model, prefit_physical_encoder
 from gantry_dynamic.controller import build_closed_loop
-from gantry_dynamic.training import train, resolve_resume_hp, load_checkpoint
+from gantry_dynamic.training import train, load_checkpoint
 
 
 def _dumps(run_id):
@@ -33,9 +33,10 @@ def _dumps(run_id):
 
 def _rerun_source(kind, run_dir, source):
     """D-275 D6: a rerun continues inside its run folder under the folder's run id. Returns
-    (run_id, the source checkpoint in place); nothing moves here."""
+    (its config.json, run_id, the source checkpoint in place); nothing moves here."""
     with open(os.path.join(run_dir, 'config.json')) as fh:
-        run_id = str(json.load(fh)['run_id'])
+        cj = json.load(fh)
+    run_id = str(cj['run_id'])
     if kind == 'polish-only':
         src = os.path.join(run_dir, 'gantry_ckpt_%s_pre_lbfgs' % run_id)
         need = [src + '.pt', src + '.npz']
@@ -45,16 +46,13 @@ def _rerun_source(kind, run_dir, source):
     for f in need:
         if not os.path.exists(f):
             raise FileNotFoundError('rerun source checkpoint not found: %s' % f)
-    return run_id, src
+    return cj, run_id, src
 
 
-def _archive_rerun(kind, run_dir, run_id, src):
+def _archive_rerun(kind, run_dir, cj, run_id, src):
     """D-275 D6: the previous outcome (and for a resume both deepSI dumps) moves to
-    previous/<rerun_id>/, config.json gets a RESUMES entry. Called only once the source has loaded
-    (D-279 F6). Returns the source's path in the archive."""
-    cj_path = os.path.join(run_dir, 'config.json')
-    with open(cj_path) as fh:
-        meta = json.load(fh)
+    previous/<rerun_id>/, config.json (`cj`, as _rerun_source read it) gets a RESUMES entry. Called
+    only once the source has loaded (D-279 F6). Returns the source's path in the archive."""
     rerun_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
     prev = os.path.join(run_dir, 'previous', rerun_id)
     os.makedirs(prev)
@@ -66,12 +64,12 @@ def _archive_rerun(kind, run_dir, run_id, src):
             if os.path.exists(f):
                 shutil.move(f, os.path.join(prev, os.path.basename(f)))
     resume_ckpt = os.path.join(prev, os.path.basename(src))
-    meta.setdefault('RESUMES', []).append(dict(
+    cj.setdefault('RESUMES', []).append(dict(
         time=datetime.now().isoformat(timespec='seconds'), type=kind,
         source=os.path.relpath(resume_ckpt, run_dir), code='clean', git=git_provenance(),
         rerun_id=rerun_id))
-    with open(cj_path, 'w') as fh:
-        json.dump(meta, fh, indent=2)
+    with open(os.path.join(run_dir, 'config.json'), 'w') as fh:
+        json.dump(cj, fh, indent=2)
     return resume_ckpt
 
 
@@ -90,7 +88,7 @@ def main(cfg, run_id=None, rerun=None):
         src = None
     else:
         kind, sdir, source = rerun
-        run_id, src = _rerun_source(kind, sdir, source)
+        cj, run_id, src = _rerun_source(kind, sdir, source)
         if kind == 'polish-only':
             cfg = replace(cfg, start_phase='lbfgs')
     print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s%s'
@@ -104,7 +102,7 @@ def main(cfg, run_id=None, rerun=None):
     data = load_datasets(cfg)
     norm = compute_normalization(cfg, data)
 
-    hp = resolve_resume_hp(cfg, cfg.hp, src)
+    hp = cfg.hp
 
     if rerun is None:
         os.makedirs(sdir)
@@ -130,7 +128,7 @@ def main(cfg, run_id=None, rerun=None):
         # D-279 (F6): data, device and the whole checkpoint load (format, dtype, architecture, PS2 state,
         # Adam groups) succeed BEFORE anything in the run folder moves
         meta = load_checkpoint(fit_sys, src, cfg.joint_estimation, start_phase=cfg.start_phase)
-        resume = (_archive_rerun(rerun[0], sdir, run_id, src), meta)
+        resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
 
     bestfit = train(fit_sys, hp, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
     print(f"\nTraining complete. Best validation {cfg.validation_measure}: {bestfit:.6g}")
@@ -152,18 +150,16 @@ def cli():
     ap.add_argument('--data-root', default=DATA_ROOT)
     ap.add_argument('--out-root', default=OUT_ROOT)
     a = ap.parse_args()
+    if a.source is not None and not a.resume:
+        ap.error('--from applies to --resume only')
     run_dir = a.resume or a.polish_only
     if run_dir is None:
-        if a.source is not None:
-            ap.error('--from applies to --resume only')
         cfg = RunConfig(**PRESETS[a.preset or 'R1'], noise=a.noise or 'lowpass',
                         data_root=a.data_root, out_root=a.out_root)
         rerun = None
     else:
         if a.preset is not None or a.noise is not None:
             ap.error('a run folder fixes the configuration; give no preset or noise with it')
-        if a.polish_only and a.source is not None:
-            ap.error('--from applies to --resume only')
         with open(os.path.join(run_dir, 'config.json')) as fh:
             cfg = RunConfig.from_config_json(json.load(fh), data_root=a.data_root, out_root=a.out_root)
         rerun = ('resume', run_dir, a.source or 'best') if a.resume else ('polish-only', run_dir, None)

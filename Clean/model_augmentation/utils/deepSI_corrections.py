@@ -1,6 +1,6 @@
 __project_origin__ = "added"
 
-from deepSI.system_data.system_data import System_data
+from deepSI.system_data.system_data import System_data, System_data_list
 import numpy as np
 
 class fixed_System_data(System_data):
@@ -35,25 +35,14 @@ class fixed_System_data_norm(object):
         self.y0 = y0
         self.ystd = ystd
 
-    @property
-    def is_id(self):
-        return np.all(self.u0==0) and np.all(self.ustd==1) and np.all(self.y0==0) and np.all(self.ystd==1)
-
-
     def transform(self,sys_data):
-        from deepSI.system_data.system_data import System_data_list
         if isinstance(sys_data, (list, tuple, System_data_list)):
             return System_data_list([self.transform(s) for s in sys_data])
-
-        if self.is_id:
-            return fixed_System_data(u=sys_data.u,x=sys_data.x,y=sys_data.y, \
-                               cheat_n=sys_data.cheat_n,normed=True,dt=sys_data.dt)
-
-        if isinstance(sys_data,System_data) or isinstance(sys_data,fixed_System_data):
-            assert sys_data.normed==False, 'System_data is already normalized'
-            u_transformed = (sys_data.u-self.u0)/self.ustd if sys_data.u is not None else None
-            y_transformed = (sys_data.y-self.y0)/self.ystd if sys_data.y is not None else None
-            return fixed_System_data(u=u_transformed,x=sys_data.x,y=y_transformed, \
-                cheat_n=sys_data.cheat_n,normed=True,dt=sys_data.dt)
-        else:
+        if not isinstance(sys_data, System_data):
             raise NotImplementedError(f'type={type(sys_data)} cannot yet be transformed by norm')
+
+        assert sys_data.normed==False, 'System_data is already normalized'
+        u_transformed = (sys_data.u-self.u0)/self.ustd if sys_data.u is not None else None
+        y_transformed = (sys_data.y-self.y0)/self.ystd if sys_data.y is not None else None
+        return fixed_System_data(u=u_transformed,x=sys_data.x,y=y_transformed, \
+            cheat_n=sys_data.cheat_n,normed=True,dt=sys_data.dt)

@@ -9,6 +9,7 @@ import numpy as np
 import torch
 
 from .config import RunConfig
+from .model import on_device
 from model_augmentation.fit_systems.lbfgs_polish import PolishSpec, lbfgs_polish
 from model_augmentation.fit_systems.ps2_opening import PS2Opening, PS2Spec
 
@@ -26,8 +27,9 @@ def _json_safe(obj):
     return obj
 
 
-def save_checkpoint_weights(fit_sys, base_path, include_optimizer=True):
-    """Save the torch components (SSE_Interconnect is a deepSI System, no state_dict). D-070."""
+def save_checkpoint_pair(fit_sys, base_path, include_optimizer=True, **meta):
+    """Save the torch components to `.pt` (SSE_Interconnect is a deepSI System, no state_dict.
+    D-070), then `meta` to `.npz`, one array per value."""
     payload = {
         'hfn':     fit_sys.hfn.state_dict(),
         'encoder': fit_sys.encoder.state_dict(),
@@ -35,6 +37,7 @@ def save_checkpoint_weights(fit_sys, base_path, include_optimizer=True):
     if include_optimizer:
         payload['optimizer'] = fit_sys.optimizer.state_dict()
     torch.save(payload, base_path + '.pt')
+    np.savez(base_path + '.npz', **{k: np.array(v) for k, v in meta.items()})
 
 
 def resolve_checkpoint(base_path):
@@ -47,29 +50,23 @@ def resolve_checkpoint(base_path):
             meta = {k: z[k] for k in z.files}
         return ckpt['hfn'], ckpt['encoder'], ckpt.get('optimizer'), meta, 'pair'
 
-    candidates = [base_path] if base_path.endswith('.pth') else [
-        base_path + '.pth',
-        base_path + '_best.pth',
-    ]
-    whole = next((c for c in candidates if os.path.exists(c)), None)
-    if whole is not None:
-        d = torch.load(whole, map_location='cpu', weights_only=False)
-        # D-279 (F4): the count is cumulative over chained continuations (epochs_before = the
-        # count the dump's job started from); ps2_opening = (phase, updates) of the opening at
-        # these weights
-        meta = {
-            'done_epochs': np.array(int(round(float(d.get('epochs_before', 0))
-                                              + float(d.get('epoch_counter', 0))))),
-            'bestfit': np.array(float(d.get('bestfit', float('inf')))),
-            'ps2_opening': d.get('ps2_opening'),
-        }
-        _opt = d.get('optimizer') or d.get('_optimizer')
-        _opt_sd = _opt.state_dict() if _opt is not None and hasattr(_opt, 'state_dict') else None
-        return d['hfn'].state_dict(), d['encoder'].state_dict(), _opt_sd, meta, 'whole'
-
-    raise FileNotFoundError(
-        'no checkpoint at %r. Tried the pair %r + %r, and the deepSI whole-system dump(s): %s'
-        % (base_path, pair_pt, pair_npz, ', '.join(repr(c) for c in candidates)))
+    if not (base_path.endswith('.pth') and os.path.exists(base_path)):
+        raise FileNotFoundError(
+            'no checkpoint at %r. Tried the pair %r + %r, and the deepSI whole-system dump %r'
+            % (base_path, pair_pt, pair_npz, base_path))
+    d = torch.load(base_path, map_location='cpu', weights_only=False)
+    # D-279 (F4): the count is cumulative over chained continuations (epochs_before = the
+    # count the dump's job started from); ps2_opening = (phase, updates) of the opening at
+    # these weights
+    meta = {
+        'done_epochs': np.array(int(round(float(d.get('epochs_before', 0))
+                                          + float(d.get('epoch_counter', 0))))),
+        'bestfit': np.array(float(d.get('bestfit', float('inf')))),
+        'ps2_opening': d.get('ps2_opening'),
+    }
+    _opt = d.get('optimizer') or d.get('_optimizer')
+    _opt_sd = _opt.state_dict() if _opt is not None and hasattr(_opt, 'state_dict') else None
+    return d['hfn'].state_dict(), d['encoder'].state_dict(), _opt_sd, meta, 'whole'
 
 
 def load_optimizer_moments(optimizer, saved):
@@ -103,23 +100,14 @@ def _assert_same_architecture(target_sd, ckpt_sd, what):
     shape = [(k, tuple(target_sd[k].shape), tuple(ckpt_sd[k].shape))
              for k in sorted(set(target_sd) & set(ckpt_sd))
              if tuple(target_sd[k].shape) != tuple(ckpt_sd[k].shape)]
-    if not (missing or extra or shape):
-        return
-    parts = []
-    if shape:
-        parts.append('%d shape mismatch(es), first 3: %s'
-                     % (len(shape), '; '.join('%s config%s != ckpt%s' % s for s in shape[:3])))
-    if missing:
-        parts.append('%d key(s) the config expects and the checkpoint lacks, first 3: %s'
-                     % (len(missing), missing[:3]))
-    if extra:
-        parts.append('%d key(s) the checkpoint has and the config does not, first 3: %s'
-                     % (len(extra), extra[:3]))
-    raise RuntimeError(
-        'checkpoint does not match this config for %s: %s. The usual cause is a different '
-        'nx_ann / n_nodes_per_layer / n_hidden_layers or parameter coordinate than the run that '
-        'wrote it.'
-        % (what, '; '.join(parts)))
+    if missing or extra or shape:
+        raise RuntimeError(
+            'checkpoint does not match this config for %s: %d key(s) the config expects and the '
+            'checkpoint lacks %s, %d key(s) only the checkpoint has %s, %d shape mismatch(es) '
+            '(key, config, checkpoint) %s (first 3 of each). The usual cause is a different '
+            'nx_ann / n_nodes_per_layer / n_hidden_layers or parameter coordinate than the run '
+            'that wrote it.'
+            % (what, len(missing), missing[:3], len(extra), extra[:3], len(shape), shape[:3]))
 
 
 def _assert_same_dtype(fit_sys, hfn_sd):
@@ -148,13 +136,6 @@ def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
             'can neither resume nor restart the opening from it; continue from a dump written '
             'before the opening started or after it ended.' % (base_path, opening[1], opening[0]))
     _assert_same_dtype(fit_sys, hfn_sd)
-    # CHANGED (D-191): raw JE checkpoints carry log_params; reduced JE checkpoints carry
-    # free_params. The exact architecture check below rejects cross-parameterization resumes.
-    if joint_estimation and not any(
-            k.endswith(('log_params', 'free_params')) for k in hfn_sd):
-        raise RuntimeError(
-            'RESUME_CHECKPOINT points at a pre-JE checkpoint (no physical parameter vector); '
-            'JOINT_ESTIMATION runs must start from a matching JE checkpoint')
     _assert_same_architecture(fit_sys.hfn.state_dict(), hfn_sd, 'hfn')
     _assert_same_architecture(fit_sys.encoder.state_dict(), enc_sd, 'encoder')
     fit_sys.hfn.load_state_dict(hfn_sd)
@@ -164,8 +145,7 @@ def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
         print("  Adam moment estimates restored; lr/eps/betas come from this run's config.")
     print(f'  Checkpoint format: {fmt}')
     if start_phase == 'adam' and optim_sd is None:
-        _dropped = bool(meta['optimizer_state_dropped']) \
-            if 'optimizer_state_dropped' in meta else None
+        _dropped = bool(meta.get('optimizer_state_dropped', False))
         print('  NOTE: this checkpoint carries NO Adam optimizer state'
               + (' (recorded as deliberate: optimizer_state_dropped=True)' if _dropped
                  else ' (whole-system format: deepSI stores a live optimizer, not a state dict)'
@@ -187,26 +167,21 @@ class ValHistory:
         self.hist_path = hist_path
         self.val_hist = []
 
-    def record(self, event, fit_sys, score, **extra):
+    def record(self, event, fit_sys, score, row=None, **extra):
         """D-267: one history row from the simulator's LAST validation, which must be the one the
         row describes ('adam', 'rebuilt', 'polish_candidate'), or a copy of an earlier row
         ('selected', 'final', passed as `row`)."""
-        row = extra.pop('row', None)
         if row is None:
-            sim = getattr(fit_sys, 'simulator', None)
+            sim = fit_sys.simulator
             row = dict(per_channel=np.array(sim.last_per_channel, dtype=float),
                        sim_rms=float(sim.last_sim_rms), score=float(score),
                        update=int(getattr(fit_sys, 'batch_counter', -1)),
                        epoch=float(getattr(fit_sys, 'epoch_counter', float('nan'))))
         self.val_hist.append(dict(row, event=event, **extra))
-        if self.hist_path is not None:
-            np.savez(self.hist_path, **self.hist_arrays())
+        np.savez(self.hist_path, **self.hist_arrays())
 
     def hist_arrays(self):
-        """The history as arrays, one entry per row, for val_hist.npz and the results npz."""
-        if not self.val_hist:
-            return {}
-        sim = getattr(self.fit_sys, 'simulator', None)
+        """The history as arrays, one entry per row, for val_hist.npz."""
         h = self.val_hist
         return dict(
             val_hist_event=np.array([r['event'] for r in h]),
@@ -216,16 +191,14 @@ class ValHistory:
             val_hist_sim_rms=np.array([r['sim_rms'] for r in h]),
             val_hist_rms=np.stack([r['per_channel'] for r in h]),
             val_hist_accepted=np.array([r.get('accepted', np.nan) for r in h], dtype=float),
-            val_sigma_e=(np.asarray(sim.val_sigma_e) if getattr(sim, 'val_sigma_e', None) is not None
-                         else np.array([])))
+            val_sigma_e=np.asarray(self.fit_sys.simulator.val_sigma_e))
 
     def __call__(self, fit_sys, val_sys_data, value):
         """validation_probes entry: side effects only, `value` is read-only here."""
         self.record('adam', fit_sys, value)
 
 
-def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), history=None,
-                     adam_ran=True):
+def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_ran=True):
     """The D-171 phase, with the device round-trip wired in. `adam_ran`: False when this job ran no
     Adam update (polish-only, or a resume with the budget spent)."""
     print('\n[lbfgs] polish phase (D-171): Adam is done, quasi-Newton from here')
@@ -234,10 +207,9 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
         inner_iter=cfg.lbfgs_inner_iter, history_size=cfg.lbfgs_history,
         tol_grad=cfg.lbfgs_tol_grad, tol_change=cfg.lbfgs_tol_change,
         seed=cfg.seed)
-    if cfg.device == 'cuda':
-        fit_sys.cuda()
-        torch.cuda.empty_cache()
-    try:
+    with on_device(fit_sys, cfg):
+        if cfg.device == 'cuda':
+            torch.cuda.empty_cache()
         # D-274 (replaces the D-253 comparison): the polish must beat the selected checkpoint's
         # score `bestfit`, for OBC as well. With OBC, fit() rebuilt the basis at the restored
         # parameters, so the rebuilt model scores slightly differently; it is measured once for the
@@ -253,8 +225,7 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
             val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
             print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
                   % (cfg.validation_measure, val_rebuilt, bestfit))
-            if history is not None:
-                history.record('rebuilt', fit_sys, val_rebuilt)
+            history.record('rebuilt', fit_sys, val_rebuilt)
             if val_before is None:
                 val_before = val_rebuilt
         out = lbfgs_polish(
@@ -262,26 +233,20 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
             loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride}, spec=spec,
             val_sys_data=data.val_ckpt_data,
             val_before=val_before,
-            validation_measure=cfg.validation_measure,
-            verbose=True)
-        if history is not None and out.get('ran') and np.isfinite(out.get('val_after', np.nan)):
+            validation_measure=cfg.validation_measure)
+        if out.get('ran') and np.isfinite(out.get('val_after', np.nan)):
             history.record('polish_candidate', fit_sys, out['val_after'],
                            accepted=float(bool(out.get('accepted'))))
         return out
-    finally:
-        if cfg.device == 'cuda':
-            fit_sys.cpu()
 
 
-def train(fit_sys, hp, cfg: RunConfig, data, resume=None, checkpoint_dir=None, run_id=None):
+def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
     """Train for hp['epochs'] epochs with sim-NRMSe validation, then the L-BFGS polish (D-171).
     `resume` = (path, meta) of the checkpoint main() has already loaded into fit_sys (D-279 F6)."""
     done_epochs = 0
     resumed_at_epoch = -1
-    lbfgs_outcome = None
 
-    if run_id:
-        fit_sys.unique_code = str(run_id)
+    fit_sys.unique_code = str(run_id)
     bestfit = float('inf')
 
     resume_ckpt, meta = (None, None) if resume is None else resume
@@ -308,18 +273,15 @@ def train(fit_sys, hp, cfg: RunConfig, data, resume=None, checkpoint_dir=None, r
     ps2_state = None if meta is None else meta.get('ps2_opening')
     if cfg.ps2 and cfg.start_phase == 'adam' and (
             done_epochs == 0 if ps2_state is None else ps2_state[0] != 'S3'):
-        spec = PS2Spec(seed=cfg.seed)
-        if cfg.ps2_smoke:
-            spec = PS2Spec(seed=cfg.seed, eval_every=2, s1_min=0, s1_cap=4, screen_at=-1, screen_max=float('inf'),
-                           n_cal=32, n_snap=256, n_snap_cal=64, s2_batch=64, s2_check=50, s2_min=50, s2_cap=100)
-        opening = PS2Opening.for_pipeline(fit_sys, data, n_xb=cfg.nx_phys, n_a=cfg.nx_ann,
-                                          width=hp['n_nodes_per_layer'], spec=spec)
+        spec = PS2Spec(seed=cfg.seed, **(dict(
+            eval_every=2, s1_min=0, s1_cap=4, screen_at=-1, screen_max=float('inf'), n_cal=32,
+            n_snap=256, n_snap_cal=64, s2_batch=64, s2_check=50, s2_min=50, s2_cap=100) if cfg.ps2_smoke else {}))
+        opening = PS2Opening(fit_sys, data, n_xb=cfg.nx_phys, n_a=cfg.nx_ann,
+                             width=hp['n_nodes_per_layer'], spec=spec)
         fit_sys.training_phase = opening
     prev = fit_sys.validation_probes
-    probe = ValHistory(fit_sys, os.path.join(checkpoint_dir, 'val_hist.npz'))
-    fit_sys.validation_probes = tuple(prev) + (probe,)
-    _prev_probes = prev
-    history = fit_sys.validation_probes[-1]
+    history = ValHistory(fit_sys, os.path.join(checkpoint_dir, 'val_hist.npz'))
+    fit_sys.validation_probes = tuple(prev) + (history,)
     adam_ran = cfg.start_phase != 'lbfgs' and epochs_remaining > 0
     try:
         if cfg.start_phase == 'lbfgs':
@@ -329,28 +291,19 @@ def train(fit_sys, hp, cfg: RunConfig, data, resume=None, checkpoint_dir=None, r
             # directly.
             print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, hp['epochs']))
         else:
-            eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
-            if eps_values != {float(cfg.adam_eps)}:
-                raise RuntimeError(
-                    f'Adam eps mismatch before training: config={cfg.adam_eps}, '
-                    f'optimizer={sorted(eps_values)}. Resume with the checkpoint epsilon or '
-                    'start a fresh optimizer.')
-            if cfg.device == 'cuda':
-                fit_sys.cuda()
-            fit_sys.fit(
-                train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
-                batch_size=hp['batch_size'], epochs=epochs_remaining,
-                n_its=cfg.n_its,
-                its_per_val=(cfg.n_its if cfg.n_its else (cfg.its_per_val or 'epoch')),
-                loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
-                cuda=(cfg.device == 'cuda'),
-                validation_measure=cfg.validation_measure,
-            )
-            if cfg.device == 'cuda':
-                fit_sys.cpu()
+            with on_device(fit_sys, cfg):
+                fit_sys.fit(
+                    train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
+                    batch_size=hp['batch_size'], epochs=epochs_remaining,
+                    n_its=cfg.n_its,
+                    its_per_val=(cfg.n_its if cfg.n_its else cfg.its_per_val),
+                    loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
+                    cuda=(cfg.device == 'cuda'),
+                    validation_measure=cfg.validation_measure,
+                )
             bestfit = fit_sys.bestfit
     finally:
-        fit_sys.validation_probes = _prev_probes
+        fit_sys.validation_probes = prev
         fit_sys.training_phase = None
     if opening is not None:
         print('[ps2] summary: %s' % opening.summary_json(), flush=True)
@@ -358,91 +311,41 @@ def train(fit_sys, hp, cfg: RunConfig, data, resume=None, checkpoint_dir=None, r
     if cfg.start_phase != 'lbfgs':
         done_epochs = hp['epochs']
 
-    if cfg.lbfgs and checkpoint_dir is not None:
-        pre_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_pre_lbfgs')
-        save_checkpoint_weights(fit_sys, pre_base)
-        np.savez(pre_base + '.npz', done_epochs=np.array(done_epochs),
-                 bestfit=np.array(bestfit), hp=np.array(json.dumps(hp)),
-                 orig_run_id=np.array(run_id))
-        print(f'  Pre-polish checkpoint: {pre_base}.pt')
+    pre_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_pre_lbfgs')
+    save_checkpoint_pair(fit_sys, pre_base, done_epochs=done_epochs, bestfit=bestfit,
+                         hp=json.dumps(hp), orig_run_id=run_id)
+    print(f'  Pre-polish checkpoint: {pre_base}.pt')
     _adam = [r for r in history.val_hist if r['event'] == 'adam']
     selected = min(reversed(_adam), key=lambda r: r['score']) if _adam else None
     if selected is not None:
         history.record('selected', fit_sys, selected['score'], row=selected)
-    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit, history=history,
-                                     adam_ran=adam_ran)
+    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit, history, adam_ran=adam_ran)
     _last = {r['event']: r for r in history.val_hist}
-    final = (_last.get('polish_candidate') if lbfgs_outcome and lbfgs_outcome.get('accepted')
+    final = (_last.get('polish_candidate') if lbfgs_outcome.get('accepted')
              else _last.get('rebuilt') or selected)
-    if final is not None:
-        history.record('final', fit_sys, final['score'], row=final)
     bestfit_selected = bestfit
     if final is not None:
+        history.record('final', fit_sys, final['score'], row=final)
         bestfit = final['score']
-    elif lbfgs_outcome is not None and lbfgs_outcome.get('accepted'):
-        bestfit = lbfgs_outcome['val_after']
     fit_sys.bestfit = bestfit
 
-    ckpt_base = None
-    _polished = bool(lbfgs_outcome is not None and lbfgs_outcome.get('accepted'))
+    _polished = bool(lbfgs_outcome.get('accepted'))
     _no_adam_ran = (cfg.start_phase == 'lbfgs')
     _drop_optimizer = _polished or _no_adam_ran
-    if checkpoint_dir is not None:
-        ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
-        save_checkpoint_weights(fit_sys, ckpt_base, include_optimizer=not _drop_optimizer)
-        _why = ('weights were polished' if _polished else
-                'no Adam phase ran in this job' if _no_adam_ran else '')
-        print(f'  Checkpoint weights: {ckpt_base}.pt'
-              + (f'  (Adam state omitted: {_why})' if _drop_optimizer else ''))
+    ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
+    save_checkpoint_pair(
+        fit_sys, ckpt_base, include_optimizer=not _drop_optimizer,
+        done_epochs=done_epochs, bestfit=bestfit, bestfit_selected=bestfit_selected, elapsed=elapsed,
+        hp=json.dumps(hp), orig_run_id=run_id, lbfgs_outcome=json.dumps(_json_safe(lbfgs_outcome)),
+        optimizer_state_dropped=_drop_optimizer, start_phase=cfg.start_phase,
+        resumed_from='' if resume_ckpt is None else str(resume_ckpt), resumed_at_epoch=resumed_at_epoch,
+        ps2_summary='' if opening is None else opening.summary_json())
+    _why = ('weights were polished' if _polished else
+            'no Adam phase ran in this job' if _no_adam_ran else '')
+    print(f'  Checkpoint weights: {ckpt_base}.pt'
+          + (f'  (Adam state omitted: {_why})' if _drop_optimizer else ''))
+    print(f'  Checkpoint meta: {ckpt_base}.npz')
 
     fit_sys.eval()
     print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | bestfit={bestfit:.5f}')
-
-    if ckpt_base is not None:
-        np.savez(ckpt_base + '.npz',
-                 done_epochs    = np.array(done_epochs),
-                 bestfit        = np.array(bestfit),
-                 bestfit_selected = np.array(bestfit_selected),
-                 elapsed        = np.array(elapsed),
-                 hp             = np.array(json.dumps(hp)),
-                 orig_run_id    = np.array(run_id),
-                 lbfgs_outcome  = np.array(json.dumps(_json_safe(lbfgs_outcome))),
-                 optimizer_state_dropped = np.array(_drop_optimizer),
-                 start_phase    = np.array(cfg.start_phase),
-                 resumed_from   = np.array('' if resume_ckpt is None else str(resume_ckpt)),
-                 resumed_at_epoch = np.array(resumed_at_epoch),
-                 ps2_summary    = np.array('' if opening is None else opening.summary_json()),
-        )
-        print(f'  Checkpoint meta: {ckpt_base}.npz')
-
     return bestfit
-
-
-def resolve_resume_hp(cfg: RunConfig, default_hp: dict, resume_ckpt) -> dict:
-    """@added (2026-09-15). The hp a resumed run actually trains with (D-179)."""
-    if resume_ckpt:
-        _STRUCTURAL = ('NX_ANN', 'n_nodes_per_layer', 'n_hidden_layers', 'na_nb', 'up_sample')
-        print(f'\nResuming checkpoint: {resume_ckpt}')
-        if os.path.exists(resume_ckpt + '.npz'):
-            _meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
-            _saved_hp = json.loads(str(_meta['hp']))
-            hp = {**default_hp,
-                  **{k: _saved_hp[k] for k in _STRUCTURAL if k in _saved_hp}}
-            print('  hp: architecture from the checkpoint, everything else from this config')
-            _diff = [(k, _saved_hp[k], hp[k]) for k in hp
-                     if k in _saved_hp and _saved_hp[k] != hp[k]]
-            for _k, _was, _now in _diff:
-                print(f'      {_k:<20s} checkpoint {_was!r:>10s}  ->  this run {_now!r}'
-                      + ('   [OBJECTIVE CHANGE]' if _k in ('nf', 'batch_size') else ''))
-            if not _diff:
-                print('      (identical on every field)')
-        else:
-            hp = default_hp
-            print('  No .npz alongside it (deepSI whole-system format); using this config\'s hp')
-            print(f"  hp from THIS config: nf={hp['nf']} stride={cfg.stride} "
-                  f"na_nb={hp['na_nb']}. If the checkpoint was trained at another nf, the "
-                  f"resumed run optimises a different objective than the one that made it.")
-        print(f'  start_phase: {cfg.start_phase}')
-    else:
-        hp = default_hp
-    return hp

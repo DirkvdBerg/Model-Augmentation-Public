@@ -110,8 +110,12 @@
 \del[ASMPT]{The dual-drive gantry that we study in this thesis
 is a high-precision motion system of ASMPT, used in back-end
 semiconductor assembly and packaging equipment.}
-\chg[ASMPT]{The gantry}{The dual-drive gantry that we study} has \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
-third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}).
+\chg[ASMPT]{The gantry}{\kwtwo{We consider a dual-drive gantry with}} \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system})\add[own]{\kwtwo{, as in Garc\'ia-Herreros et al.~\cite{garcia2013model}}}.
+% \chg[ASMPT]{The gantry}{\kwtwo{The dual-drive gantry of Garc\'ia-Herreros 
+% et al.~\cite{garcia2013model}}} has \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+% third \add[Js21]{linear }actuator that moves a payload along this 
+% arm (Fig.~\ref{fig:gantry_system}).
 % FEEDBACK v1 (2026-10-21): Js21 ("and presumably it has guidings and
 %   stages too, right?"): "parallel linear actuators" and "linear" from
 %   Garcia Sec. 2.1 (PDF p2); "stage" is Garcia's word for the whole
@@ -132,7 +136,8 @@ third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref
   %   the current torsion." removed from the caption (Js23, Js25); no marks
   %   in captions (fragile argument). X1, X2 arrows moved off the fixed
   %   world (Js24).
-  \todo{Will need to add springs to the current torsion; feedback from Jasper}
+  \todo{Will need to add springs to the current torsion; feedback from Jasper. Move X1 a bit down.
+  Jasper said I should keep both torsion but i can add the primsatic one but need to explain that it is that.}
   \label{fig:gantry_system}
 \end{figure}
 \revnote{
@@ -330,34 +335,51 @@ The initial states are estimated by an encoder network from past inputs and outp
 %   without "System" (the system is now Section II). Subsection A renamed
 %   from "Physics baseline", which repeated the section title. Titles carry
 %   no change marks (fragile argument).
-\kwtwo{In this section, we give the equations of motion of the baseline
-(Section~\ref{sec:baseline}), its \chg[Dirk]{LPV-LFR}{position-dependent} representation
-(Section~\ref{sec:lfr}), and the identifiable combinations of its physical
-parameters with their parametrisation for estimation
-(Section~\ref{sec:params}).}
+\kwtwo{In this section, we \chg[Dirk]{give}{state} the equations of motion of the baseline\del[own]{
+(Section~\mbox{\ref{sec:baseline}})}, its \chg[Dirk]{LPV-LFR}{position-dependent} representation\del[own]{
+(Section~\mbox{\ref{sec:lfr}})}, and the identifiable combinations of \chg[Dirk]{its}{the} physical
+parameters \chg[Dirk]{with their parametrisation}{and how we parametrise them} for estimation\del[own]{
+(Section~\mbox{\ref{sec:params}})}.}
 \subsection{Equations of motion}\label{sec:baseline}
-\todo{state we leave out coulomb friction and that we will use for the
-experiment in the simulation in section V}
-The physics baseline of the gantry system used in this thesis
+% TODO closed (2026-10-21, Dirk): "state we leave out coulomb friction" is
+%   covered by the friction sentence below.
+% FEEDBACK (2026-10-21, Dirk): first sentence struck, it repeats Section II
+%   (02_system_baseline.tex, "We use the lumped-parameter model of Fig. 1 as
+%   our physics-based baseline model"). Garcia Sec. 2.2 (PDF p3): Eqs. (3) to
+%   (5) are only T, V and D; substituting them with the forces (6) into the
+%   Lagrange equation (7) gives the equations of motion (8) in X, Theta, Y.
+\del[Dirk]{The physics baseline of the gantry system used in this thesis
 is the lumped-parameter model of the
-dual-drive gantry of Garc\'ia-Herreros et al.~\cite{garcia2013model}.
+dual-drive gantry of Garc\'ia-Herreros et al.~\mbox{\cite{garcia2013model}}.}
 % NEW (2026-10-21, Dirk): source of the 3x3 matrices; Garcia prints only the
 %   2x2 X-Theta matrices, Eqs. (12) to (17). The 3x3 form comes from the ASMPT
 %   implementation (kamtin-fp-model/02 EulerLagrange/EulerLagrange.m).
-\add{The Lagrange-Euler equations of their kinetic energy, elastic
-energy and dissipation function \cite[Eqs.~(3) to~(5)]{garcia2013model}
-give the equations of motion in all three coordinates.}
-\revnote{The matrices in all three coordinates come from ASMPT's MATLAB
-implementation of this model; attribution to ASMPT is still needed
-(ask Jasper whether and how ASMPT may be named).}
-Let \(L_b\) denote the cross-arm length between the two flexible joints.
-The generalised coordinates  $q=[X\;\Theta\;Y]^\top$ are defined as $X=(X_1+X_2)/2$ and $\Theta=(X_1-X_2)/L_b$, the position and yaw angle of the cross-arm, while $Y$ is
-unchanged. \kw{These coordinates avoid
-a closed kinematic-chain description and make the coupling 
-associated with the
-nonuniform load distribution explicit \cite{garcia2013model}.}
-\todo{This needs to make clear why we choose for this realisation.}
-\todo{How to connect, nonunfirom ... moving payload position}
+Garc\'ia-Herreros et al.\ derive the equations of motion of the model
+in Fig.~\ref{fig:gantry_system} from the Euler-Lagrange equations
+\cite[Eqs.~(3) to~(8)]{garcia2013model}.
+Let $L_b$ denote the cross-arm length between the two flexible joints.
+The generalised coordinates $q=[X\;\Theta\;Y]^\top$ are defined as 
+$X=(X_1+X_2)/2$ and 
+$\Theta=(X_1-X_2)/L_b$, the position and yaw angle of
+the cross-arm, while $Y$ is unchanged.
+% NOTE (2026-10-21, Dirk): Garcia Eq. (1) (PDF p3) defines
+%   Theta = asin((X1-X2)/L_b); ours is its small-angle form (sin Theta ~ Theta),
+%   to be made explicit in the small-angle assumption below, not here.
+% \kw{These coordinates avoid
+% a closed kinematic-chain description and make the coupling 
+% associated with the
+% \chg[Dirk]{nonuniform load distribution}{\kwtwo{load distribution over $X_1$ and $X_2$, which changes with the payload position $Y$,}} explicit \cite{garcia2013model}.}
+These coordinates avoid closed kinematic chains when defining the
+kinematics~\cite{garcia2013model}.
+They also show the coupling caused by the non-uniform load distribution
+between actuators $X_1$ and $X_2$, from the payload and differences in
+motor characteristics.
+% FEEDBACK (2026-10-21, Dirk): todo "How to connect, nonuniform ... moving
+%   payload position" resolved: Garcia Sec. 2.2 (PDF p3) attributes the
+%   nonuniform load distribution to the payload, and PDF p8 to its variable
+%   position; in M(Y) it is the entry (L_b/2)(m_1-m_2)-m_h Y. Todo "why we
+%   choose for this realisation" closed: the sentence gives Garcia's reasons
+%   (PDF p3).
 % FEEDBACK: the green words were Dirk's own, inside the \todo, so the review
 %   PDF read "These coordinates avoid [3]." (Jan12, Js26, Q19). Garcia Sec. 2.2
 %   gives both reasons.
@@ -390,15 +412,12 @@ valid for small yaw angles, and assumes that the Coriolis and centripetal force 
 negligible compared to the inertia, damping, and stiffness forces.
 % NEW (2026-10-21, Dirk): Garcia Sec. 2.3 moves m_h d Ydd to the force
 %   vector (Eq. 15) and treats Y separately (Eq. 17); the baseline keeps it in M.
-\add{For $X$ and $\Theta$ this gives the matrices of
-\cite[Eqs.~(12) to~(14)]{garcia2013model}; unlike
-\cite{garcia2013model}, we keep the coupling $-m_hd$ between $\Theta$
-and $Y$ in $M(Y)$ instead of moving it to the force vector.}
-\add{Garc\'ia-Herreros et al.\ also model Coulomb friction at the actuators
-$X_1$, $X_2$ and $Y$~\cite[Sec.~2.2]{garcia2013model}.
-We leave this friction out of the baseline, so that the friction of the gantry 
-\eqref{eq:system} is part of the missing dynamics of Section~\ref{sec:problem}.}
-\todo{Check citation: Sec.~2.2}
+%\kwtwo{Unlike~\cite[Sec.~2.3.1]{garcia2013model}, $M(Y)$ keeps the coupling $-m_hd$ between $\Theta$ and $Y$.}
+Our baseline model does not include the Coulomb friction
+of~\cite[Eq.~(6)]{garcia2013model}.
+Instead, it is part of the missing dynamics of Section~\ref{sec:problem}.
+% TODO closed (2026-10-21): Sec. 2.2 checked, Garcia PDF p3 lists the Coulomb
+%   forces c_c1, c_c2, c_cy of X1, X2 and Y.
 % FEEDBACK: Q23 small angles; Garcia Sec. 2.2 (yaw limited to tens of
 %   microrad in operation).
 % The simulated ground-truth model uses the same simplifications.
@@ -440,8 +459,9 @@ K&=
 \end{equation}
 }
 From here on the notation for the time dependency is dropped.
-\todo{Proposed insertion: ``Garc\'ia-Herreros et al.\ also model Coulomb friction at the three actuators \cite[Sec.~2.2]{garcia2013model}. The baseline omits these terms, so that friction remains a physical effect the augmentation must capture (Section~\ref{sec:setup}).'' Reason documented in D-204. Second reason? A sign term is not twice differentiable, which \cite[Cond.~8]{hoekstra2026lfr} assumes for well-posedness. because: ?}
-\todo{Look at this section, the above state a lot, look fine}
+% TODO closed (2026-10-21, Dirk): "Proposed insertion" on Coulomb friction is
+%   covered by the friction sentence above (reason in D-204); "Look at this
+%   section" was a reading note.
 The masses, flexible-joint stiffness and damping coefficients, and the
 dimensions $L_b$ and $d$ are shown in Fig.~\ref{fig:gantry_system}. Here, $J_b$ and $J_h$
 denote the yaw inertias of the cross-arm and the payload, while $c_{g1}$, $c_{g2}$, and $c_y$ denote the actuator
@@ -452,7 +472,9 @@ The flexible joints have stiffness coefficients $k_{b1}$, $k_{b2}$ and damping
 coefficients $c_{b1}$, $c_{b2}$, and $d$ is the distance between the centres
 of mass of the payload and the cross-arm \cite{garcia2013model}.
 The nominal values are taken from
-\cite[Table~I]{garcia2013model} and listed in Appendix~\ref{app:params}. \todo{Not sure if to add this, depends on real data or not; they were not identified on the present Telica machine.}
+\cite[Table~I]{garcia2013model} and listed in Appendix~\ref{app:params}.
+% TODO closed (2026-10-21, Dirk): the sentence stays; the simulation uses the
+%   Table I values (todo was "not identified on the present Telica machine").
 % FEEDBACK: "geometric dimensions" were Dirk's words inside a \todo, so the
 %   review PDF read "and are shown" (Jan15, Js31). Symbol meanings: Garcia
 %   Sec. 2.2 and the d identification passage of Sec. 2.3.
@@ -477,9 +499,9 @@ This position dependence is included by representing the baseline in linear para
 \del{Freezing $M(Y)$ at $Y=0$ increases the simulation error on $X$ by
 up to a factor 3.7 (Fig.~\ref{fig:res_lpv_lti} in
 Appendix~\ref{app:choices}).}
-\todo{Determine and justify the operating range of $Y$; distinguish the
-mechanical stroke, simulated-data range, and range covered by the measured
-ILC records.}
+% TODO moved (2026-10-21, Dirk): operating range of Y is not stated in
+%   Section III (M(Y) > 0 for every Y, so III needs no number); it is
+%   stated in Section V, normalised to the stroke (real gantry, ASMPT rule).
 
 \subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
 \ifdraft

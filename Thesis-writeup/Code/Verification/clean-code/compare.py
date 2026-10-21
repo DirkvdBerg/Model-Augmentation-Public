@@ -8,7 +8,9 @@
 Before any array is read, the golden's fingerprint is recomputed (6.2): the 19 copied mainline
 files, both manifests and every record the case read must hash as they did at capture, and the
 clean side must have read the same records with the same libraries, threads and budget, from the
-CURRENT clean tree (H2: every file under Clean/ hashes as recorded by the clean output). Arrays are
+CURRENT clean tree (H2: every file under Clean/ hashes as recorded by the clean output). On both
+sides every output the case's meta.json lists must exist with its recorded hash (a meta.json from
+before that list: L1/L2 .npz and .json no older than it), else the case is REFUSED. Arrays are
 compared on dtype, shape and bytes; a difference is reported with its max abs and relative error
 and is a FAIL (the 1e-12 fallback of layers 1-2 is applied only by the judge, never here).
 Writes compare-<layer>.json next to this script.
@@ -71,6 +73,12 @@ def check_fingerprint(gmeta, cmeta, allow_d278=True):
     if os.path.normcase(gmeta['data_dir']) != os.path.normcase(cmeta['data_dir']):
         probs.append('data_dir differs: %s vs %s' % (gmeta['data_dir'], cmeta['data_dir']))
     return probs
+
+
+def output_problems(gdir, gmeta, cdir, cmeta, legacy_newer=()):
+    """Both sides' outputs against their meta.json (H.output_problems): [] when neither is stale."""
+    return (['golden: ' + p for p in H.output_problems(gdir, gmeta, legacy_newer)]
+            + ['clean: ' + p for p in H.output_problems(cdir, cmeta, legacy_newer)])
 
 
 def diff_arrays(a, b):
@@ -137,6 +145,11 @@ def run_l12(cases):
             probs = check_fingerprint(gmeta, cmeta)
             if probs:
                 r[layer] = {'status': 'REFUSED (fingerprint)', 'problems': probs}
+                ok_all = False
+                continue
+            probs = output_problems(gdir, gmeta, cdir, cmeta, (stem + '.npz', stem + '.json'))
+            if probs:
+                r[layer] = {'status': 'REFUSED (outputs)', 'problems': probs}
                 ok_all = False
                 continue
             c = compare_npz(gdir, cdir, stem)

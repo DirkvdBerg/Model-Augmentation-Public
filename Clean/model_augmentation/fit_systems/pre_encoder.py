@@ -3,6 +3,7 @@ import torch
 import numpy as np
 
 from model_augmentation.utils.utils import added
+from model_augmentation.utils.torch_nets import mlp_stack
 
 
 @added
@@ -17,12 +18,12 @@ class linear_encoder_init_aug(nn.Module):
         ny,
         na,
         nb,
-        nx_aug=0,
-        n_nodes_per_layer=64,
-        n_hidden_layers=2,
-        activation=nn.Tanh,
+        nx_aug,
+        n_nodes_per_layer,
+        n_hidden_layers,
         # CHANGED: dtype of the constructed reconstructability map.
-        dtype=torch.float32,
+        dtype,
+        activation=nn.Tanh,
     ):
         super(linear_encoder_init_aug, self).__init__()
 
@@ -48,21 +49,11 @@ class linear_encoder_init_aug(nn.Module):
         # repository choices because the paper does not specify those details.
         wa = torch.empty(nx_aug, _ny_hist + _nu_hist, dtype=dtype)
         nn.init.xavier_uniform_(wa, gain=1.0)
-        wa_y = wa[:, :_ny_hist].clone()
-        wa_u = wa[:, _ny_hist:].clone()
-        self.Wa_psi_y = nn.Parameter(wa_y)
-        self.Wa_psi_u = nn.Parameter(wa_u)
+        self.Wa_psi_y = nn.Parameter(wa[:, :_ny_hist].clone())
+        self.Wa_psi_u = nn.Parameter(wa[:, _ny_hist:].clone())
 
-        self.n_in = nu * (nb + 1) + ny * (na + 1)
-        self.n_out = nx + nx_aug
-        seq = [nn.Linear(self.n_in, n_nodes_per_layer), activation()]
-        for i in range(n_hidden_layers - 1):
-            seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
-            seq.append(activation())
-        final_layer = nn.Linear(n_nodes_per_layer, self.n_out)
-        seq.append(final_layer)
-        self.net = nn.Sequential(*seq)
-        nn.init.constant_(final_layer.bias, val=0.0)
+        n_in, n_out = nu * (nb + 1) + ny * (na + 1), nx + nx_aug
+        self.net, final_layer = mlp_stack(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation)
         # CHANGED (D-261, thesis eq:aug_init): the physical rows keep the nn.Linear draw for
         # the data-based pre-fit; the added-state rows start at zero.
         with torch.no_grad():

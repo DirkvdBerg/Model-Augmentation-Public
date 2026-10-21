@@ -13,11 +13,10 @@ def _without_learned(fit_sys, free=None):
     physics block's free coordinate set to it. The model passed in is not touched (todo 7b)."""
     m = copy.deepcopy(fit_sys)
     blocks = m.hfn.connected_blocks
-    ann = next((b for b in blocks if isinstance(b, Static_ANN_Block)), None)
+    ann = next(b for b in blocks if isinstance(b, Static_ANN_Block))
     corr = getattr(m.hfn, 'obc_correction', None)
     with torch.no_grad():
-        if ann is not None:
-            ann.out_gate.zero_()
+        ann.out_gate.zero_()
         if corr is not None:
             corr.theta_frozen.zero_()
         if free is not None:

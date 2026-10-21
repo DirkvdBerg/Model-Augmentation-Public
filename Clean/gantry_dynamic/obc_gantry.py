@@ -14,12 +14,13 @@ from scipy.io import loadmat
 
 from model_augmentation.systems.gantry_ss import P
 from model_augmentation.fit_systems.blocks import Reduced_Gantry_State_Block, Static_ANN_Block
-from model_augmentation.fit_systems.obc import (
-    OBCLifecycle, build_stacked_sensitivity,
-    evaluate_step_rows)
+from model_augmentation.fit_systems.obc import OBCLifecycle, build_stacked_sensitivity, evaluate_step_rows
 
 from .config import RunConfig
 from .data import traj_dir, _record_at_fs_new
+
+# the float64 P^{-T}: measured stage positions y to logical positions q = y P^{-1}
+P_INV_T64 = np.linalg.inv(P.detach().cpu().numpy().astype(np.float64).T)
 
 
 @dataclass
@@ -49,36 +50,27 @@ def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
     return (-q[4:] + 8.0 * q[3:-1] - 8.0 * q[1:-3] + q[:-4]) / (12.0 * ts)
 
 
-def _load_record_float64(filename: str, cfg: RunConfig):
-    """One training record in float64 with the pipeline's exact resampling."""
-    d = loadmat(os.path.join(traj_dir(cfg), filename), squeeze_me=True)
-    u, y = (np.asarray(a, dtype=np.float64) for a in _record_at_fs_new(d, cfg))
-    return u, y
-
-
 def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str],
                         verbose: bool = True) -> GantryReferenceSet:
     """The fixed reference tuples of D-192 over `files` (the training records)."""
     ts = cfg.ts_new
-    P64 = P.detach().cpu().numpy().astype(np.float64)
-    PinvT = np.linalg.inv(P64.T)
     x_mean = np.asarray(norm.x_mean, dtype=np.float64).reshape(1, 6)
     std_x = np.asarray(norm.std_x, dtype=np.float64).reshape(1, 6)
     u_mean = np.asarray(norm.u_mean, dtype=np.float64).reshape(1, 3)
     std_u = np.asarray(norm.std_u, dtype=np.float64).reshape(1, 3)
 
-    xs, us, rec, samp, counts, xnr = [], [], [], [], [], []
-    t0 = time.perf_counter()
+    xs, us, rec, samp, xnr = [], [], [], [], []
     for r, f in enumerate(files):
-        u, y = _load_record_float64(f, cfg)
-        q = y @ PinvT.T
+        # one training record in float64 with the pipeline's exact resampling
+        d = loadmat(os.path.join(traj_dir(cfg), f), squeeze_me=True)
+        u, y = (np.asarray(a, dtype=np.float64) for a in _record_at_fs_new(d, cfg))
+        q = y @ P_INV_T64.T
         qd = fourth_order_central_difference(q, ts)
-        k = np.arange(2, len(u) - (3 if cfg.obc_ref_successor else 2))
+        k = np.arange(2, len(u) - 3)
         x_ref = np.hstack([q[k], qd[k - 2]])
-        if cfg.obc_ref_successor:
-            xnr.append(np.hstack([q[k + 1], qd[k - 1]]))
+        xnr.append(np.hstack([q[k + 1], qd[k - 1]]))
         xs.append(x_ref); us.append(u[k])
-        rec.append(np.full(len(k), r)); samp.append(k); counts.append(len(k))
+        rec.append(np.full(len(k), r)); samp.append(k)
     x_phys = np.concatenate(xs); u_stage = np.concatenate(us)
     record_ix = np.concatenate(rec); sample_ix = np.concatenate(samp)
 
@@ -93,24 +85,21 @@ def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str],
         Z_step=Z_step, Z_field=Z_field,
         record_ix=torch.from_numpy(record_ix).long(), sample_ix=torch.from_numpy(sample_ix).long(),
         record_names=[os.path.basename(f) for f in files],
-        x_phys_next_rec=torch.from_numpy(np.concatenate(xnr)) if xnr else None)
+        x_phys_next_rec=torch.from_numpy(np.concatenate(xnr)))
     if verbose:
-        print('[obc] reference set: %d tuples from %d records (%s per record), '
-              '%.1f s to build' % (N, len(files), '/'.join(str(c) for c in counts),
-                                   time.perf_counter() - t0))
+        print('[obc] reference set: %d tuples from %d records' % (N, len(files)))
     return ref
 
 
 class GantryOBCCorrection(nn.Module):
     """`E_route J_b(vbar, x_b, u) theta` for the progressed state, as an nn.Module."""
 
-    def __init__(self, phy_block: Reduced_Gantry_State_Block, nx: int, nx_phys: int, nu: int,
-                 route_ix: Sequence[int], dtype: torch.dtype,
-                 space: str):
+    def __init__(self, phy_block: Reduced_Gantry_State_Block, nx: int, nx_phys: int,
+                 route_ix: Sequence[int], dtype: torch.dtype):
         super().__init__()
-        self.space = space
+        self.space = 'affine'
         self._phy = [phy_block]
-        self.nx, self.nx_phys, self.nu = int(nx), int(nx_phys), int(nu)
+        self.nx, self.nx_phys = int(nx), int(nx_phys)
         route_ix = [int(i) for i in route_ix]
         self.row_ix = tuple(i for i in route_ix if i < self.nx_phys)
         self.field_cols = tuple(route_ix.index(i) for i in self.row_ix)
@@ -152,9 +141,7 @@ class GantryOBCCorrection(nn.Module):
 
 def make_float64_block(phy_block: Reduced_Gantry_State_Block) -> Reduced_Gantry_State_Block:
     """A float64 copy for the basis build. The live block stays at the pipeline dtype."""
-    blk = copy.deepcopy(phy_block)
-    blk._cur = None
-    return blk.to(torch.float64)
+    return copy.deepcopy(phy_block).to(torch.float64)
 
 
 def make_basis_builder(blk64: Reduced_Gantry_State_Block, ref: GantryReferenceSet,
@@ -166,15 +153,14 @@ def make_basis_builder(blk64: Reduced_Gantry_State_Block, ref: GantryReferenceSe
         if next(blk64.buffers()).device != dev:
             blk64.to(dev)
         t0 = time.perf_counter()
-        J = build_stacked_sensitivity(lambda v, z: blk64.transition_from_free(v, z),
+        J = build_stacked_sensitivity(blk64.transition_from_free,
                                       vbar64.to(dev), ref.Z_step, row_ix, chunk=chunk, device=dev)
         if space == 'affine':
-            c = evaluate_step_rows(lambda v, z: blk64.transition_from_free(v, z),
+            c = evaluate_step_rows(blk64.transition_from_free,
                                    vbar64.to(dev), ref.Z_step, row_ix,
                                    chunk=chunk, device=dev)
             J = torch.cat((J, c[:, None]), dim=1)
         return J, time.perf_counter() - t0
-    build.blk64 = blk64
     return build
 
 
@@ -196,32 +182,23 @@ def make_reference_field(ref: GantryReferenceSet, field_cols: Sequence[int]):
     return field
 
 
-def attach_obc(fit_sys, cfg: RunConfig, data, norm, verbose: bool = True):
+def attach_obc(fit_sys, cfg: RunConfig, data, norm):
     """Attach reference set, correction module and lifecycle to a built `fit_sys`."""
-    blocks = list(fit_sys.hfn.connected_blocks)
-    phy = next((b for b in blocks if isinstance(b, Reduced_Gantry_State_Block)), None)
+    phy = fit_sys.hfn.connected_blocks[0]
     nx = fit_sys.hfn.nx
-    files = data.train_files
-    ref = build_reference_set(cfg, norm, nx_ann=nx - cfg.nx_phys, files=files,
-                              verbose=verbose)
-    corr = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, nu=cfg.nu,
-                               route_ix=cfg.ann_route_ix, dtype=cfg.dtype_pt,
-                               space=cfg.obc_space)
+    ref = build_reference_set(cfg, norm, nx_ann=nx - cfg.nx_phys, files=data.train_files)
+    corr = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, route_ix=cfg.ann_route_ix,
+                               dtype=cfg.dtype_pt)
     corr = corr.to(next(phy.parameters()).device)
     blk64 = make_float64_block(phy)
     life = OBCLifecycle(
         reference_field=make_reference_field(ref, corr.field_cols),
         basis_builder=make_basis_builder(blk64, ref, corr.row_ix, chunk=cfg.obc_ref_chunk,
-                                         space=cfg.obc_space),
-        refresh=cfg.obc_refresh, rtol=cfg.obc_rank_rtol, out_dtype=cfg.dtype_pt,
-        expected_rank=int(phy.free_params.numel()) + (cfg.obc_space == 'affine'),
-        scale_columns=(cfg.obc_space == 'affine'))
+                                         space=cfg.obc_space))
     fit_sys.hfn.obc_correction = corr
     fit_sys.obc = life
     fit_sys.obc_reference = ref
-    if verbose:
-        print('[obc] attached: protected rows %s (ANN cols %s), %d reference tuples, '
-              'space=%s, refresh=%s, solve float64, rollout %s'
-              % (corr.row_ix, corr.field_cols, ref.n, cfg.obc_space, cfg.obc_refresh,
-                 cfg.dtype_pt))
-    return life, corr, ref
+    print('[obc] attached: protected rows %s (ANN cols %s), %d reference tuples, '
+          'space=%s, refresh=%s, solve float64, rollout %s'
+          % (corr.row_ix, corr.field_cols, ref.n, cfg.obc_space, cfg.obc_refresh,
+             cfg.dtype_pt))

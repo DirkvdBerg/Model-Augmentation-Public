@@ -11,13 +11,7 @@ def added(obj):
 
 @added
 def to_tensor(input) -> torch.Tensor:
-    if isinstance(input, type(None)):
-        return None
-    if isinstance(input, torch.Tensor):
-        return input
-    else:
-        try: return torch.Tensor(input)
-        except: raise TypeError("Input could not be converted to tensor")
+    return input if isinstance(input, torch.Tensor) else torch.Tensor(input)
 
 
 def expansion_matrix(ix, n):

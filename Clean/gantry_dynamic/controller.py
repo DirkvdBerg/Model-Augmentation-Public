@@ -5,9 +5,12 @@ import os
 
 import numpy as np
 import torch
+from scipy.linalg import block_diag
 from scipy.signal import cont2discrete, tf2ss
 
-from model_augmentation.fit_systems.closed_loop import ControllerBank
+from model_augmentation.fit_systems.closed_loop import ControllerBank, ClosedLoopSimulator
+
+from .data import servo_sigma
 
 # torch.compile backend for the training rollout (the only fusing backend; the mode is cfg.compile_mode)
 COMPILE_BACKEND = 'inductor'
@@ -19,7 +22,6 @@ kb1, kb2, Lb, d = 1987.5, 1987.5, 0.725, 0.1
 
 FBW = 100.0             # THEORY: gtd_config.m, design bandwidth [Hz]
 W = 2 * np.pi * FBW
-TS = 1.0 / 20e3
 
 # THEORY: getss.m:2-6, stage-to-logical transform and the frozen damping/stiffness.
 P = np.array([[1., 1., 0.], [Lb / 2, -Lb / 2, 0.], [0., 0., 1.]])
@@ -54,48 +56,28 @@ def cnorm_coeffs():
     return num, den
 
 
-def cnorm_at(s):
-    num, den = cnorm_coeffs()
-    return np.polyval(num, s) / np.polyval(den, s)
-
-
 def build_cfb_at(Y_op, ts):
     """Three discrete SISO controllers, one per stage channel, at sample time `ts`."""
     sysw = sys_stage_frf(Y_op, 1j * W)
-    cw = cnorm_at(1j * W)
     num, den = cnorm_coeffs()
-    out, gains = [], []
+    cw = np.polyval(num, 1j * W) / np.polyval(den, 1j * W)
+    out = []
     for j in range(3):
         kj = 1.0 / abs(sysw[j, j] * cw)                                   # THEORY: ruleOfThumb.m:11
         b, a, _ = cont2discrete((kj * num, den), ts, method='bilinear')
         out.append((np.asarray(b).ravel(), np.asarray(a).ravel()))
-        gains.append(kj)
-    return out, np.array(gains)
+    return out
 
 
 def _tf_to_ss_batch(cfb):
     """Per-channel (b, a) -> block-diagonal (A, B, C, D) for the 3-channel diagonal Cfb."""
-    As, Bs, Cs, Ds = [], [], [], []
-    for b, a in cfb:
-        A, B, C, D = tf2ss(b, a)
-        As.append(A); Bs.append(B); Cs.append(C); Ds.append(D)
-    n = sum(A.shape[0] for A in As)
-    A = np.zeros((n, n)); B = np.zeros((n, 3)); C = np.zeros((3, n)); D = np.zeros((3, 3))
-    i = 0
-    for j, (Aj, Bj, Cj, Dj) in enumerate(zip(As, Bs, Cs, Ds)):
-        m = Aj.shape[0]
-        A[i:i + m, i:i + m] = Aj
-        B[i:i + m, j] = Bj.ravel()
-        C[j, i:i + m] = Cj.ravel()
-        D[j, j] = Dj.ravel()[0]
-        i += m
-    return A, B, C, D
+    As, Bs, Cs, Ds = zip(*(tf2ss(b, a) for b, a in cfb))
+    return block_diag(*As), block_diag(*Bs), block_diag(*Cs), np.diag([Dj.ravel()[0] for Dj in Ds])
 
 
 def controller_ss(Y_op, ts, gain=1.0):
     """Cfb at sample time `ts`, as one 3-in 3-out state space (A, B, C, D)."""
-    cfb, _ = build_cfb_at(Y_op, ts)
-    A, B, C, D = _tf_to_ss_batch(cfb)
+    A, B, C, D = _tf_to_ss_batch(build_cfb_at(Y_op, ts))
     return A, B, gain * C, gain * D
 
 
@@ -108,33 +90,26 @@ def _stem(name):
     return stem[:-4] if stem.endswith('.mat') else stem
 
 
-_STORED_DESIGN_Y = {}
-_STORED_GAIN = {}
-_UNSUPPORTED = {}
+# stem -> (design Y, gain) of a supported stored controller, or the text naming an unsupported one
+_REGISTRY = {}
 
 
 def register_stored_controller(name, ctrl_name, design_y, gain, fbw_hz):
-    stem = _stem(name)
-    if abs(fbw_hz - FBW) < 1e-9:
-        _STORED_DESIGN_Y[stem] = design_y
-        _STORED_GAIN[stem] = float(gain)
-        _UNSUPPORTED.pop(stem, None)
-    else:
-        _UNSUPPORTED[stem] = '%s (gain %g, %g Hz)' % (ctrl_name, gain, fbw_hz)
-        _STORED_DESIGN_Y.pop(stem, None)
-        _STORED_GAIN.pop(stem, None)
+    _REGISTRY[_stem(name)] = ((design_y, float(gain)) if abs(fbw_hz - FBW) < 1e-9
+                              else '%s (gain %g, %g Hz)' % (ctrl_name, gain, fbw_hz))
 
 
 def y_op_for(name, use_gain=False):
     """Controller design Y for a record file name, with or without the .mat suffix."""
     stem = _stem(name)
-    if stem in _STORED_DESIGN_Y:
+    entry = _REGISTRY.get(stem)
+    if isinstance(entry, tuple):
         gain_for(stem, use_gain)
-        return _STORED_DESIGN_Y[stem]
-    if stem in _UNSUPPORTED:
+        return entry[0]
+    if entry is not None:
         raise KeyError('record %r uses controller %s; the bank builds ruleOfThumb at gain 1 and '
                        '%g Hz from a design Y only, so this record cannot be trained or validated '
-                       'on in closed loop (D-221)' % (stem, _UNSUPPORTED[stem], FBW))
+                       'on in closed loop (D-221)' % (stem, entry, FBW))
     raise KeyError('no Y_op known for record %r; add it to RECORD_Y_OP from '
                    'gtd_build_records.m, or load it through gantry_dynamic.data so its stored '
                    'controller is registered (D-221)' % stem)
@@ -143,7 +118,8 @@ def y_op_for(name, use_gain=False):
 def gain_for(name, use_gain=False):
     """The stored gain of a record's controller; 1.0 unless stored otherwise. D-227."""
     stem = _stem(name)
-    g = _STORED_GAIN.get(stem, 1.0)
+    entry = _REGISTRY.get(stem)
+    g = entry[1] if isinstance(entry, tuple) else 1.0
     if abs(g - 1.0) > 1e-12 and not use_gain:
         raise KeyError('record %r was generated with %g x K1; set RunConfig.controller_gain to '
                        'score it with its own controller (D-227)' % (stem, g))
@@ -161,11 +137,9 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
     return bank, rows, (uniq if use_gain else [y for y, _ in uniq])
 
 
-def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbose=True,
-                      e_train=None, e_val=None):
-    """The ClosedLoopSimulator for this pipeline. Assign it to `fs.simulator`."""
-    from model_augmentation.fit_systems.closed_loop import ClosedLoopSimulator
-
+def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, e_train, e_val, verbose=True):
+    """The ClosedLoopSimulator for this pipeline. Assign it to `fs.simulator`. Validation pairs its
+    records with the controller rows of `val_files`, in order; `val_data` stays for the callers."""
     names = [_stem(f) for f in list(train_files) + list(val_files)]
     if len(set(names)) != len(names):
         raise ValueError('the same record appears in both train_files and val_files, or twice in '
@@ -178,9 +152,6 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbos
     n_tr = len(train_files)
     train_rows, val_rows = rows[:n_tr], rows[n_tr:]
 
-    sdl = val_data.sdl if hasattr(val_data, 'sdl') else [val_data]
-    val_records = [(names[n_tr + i], sd, val_rows[i]) for i, sd in enumerate(sdl)]
-
     if verbose:
         print('[closed loop] one bank over %d records, %d distinct controllers, Y_op %s'
               % (len(names), bank.n_controllers, y_ops))
@@ -191,7 +162,6 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbos
     # that distinction is what keeps validation and the diagnostics eager.
     compiled = None
     if cfg.compile_mode is not None:
-        import torch
         compiled = (
             torch.compile(fs.hfn, backend=COMPILE_BACKEND, mode=cfg.compile_mode,
                           fullgraph=True),
@@ -201,11 +171,8 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbos
         if verbose:
             print('[closed loop] training rollout COMPILED: backend=%s mode=%s fullgraph=True'
                   % (COMPILE_BACKEND, cfg.compile_mode))
-            print('[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)')
-    from .data import servo_sigma
     k0 = max(fs.na, fs.nb)
-    val_sigma_e = None if e_val is None else servo_sigma(e_val, k0)
+    val_sigma_e = servo_sigma(e_val, k0)
     train_weights = np.asarray(norm.ystd, np.float64).ravel() / servo_sigma(e_train, k0)
-    return ClosedLoopSimulator(bank, train_rows, val_records,
-                               compiled=compiled,
+    return ClosedLoopSimulator(bank, train_rows, val_rows, compiled=compiled,
                                train_weights=train_weights, val_sigma_e=val_sigma_e)

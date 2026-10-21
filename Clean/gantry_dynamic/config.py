@@ -1,12 +1,11 @@
 """Run configuration: the five axes of a thesis run, the run environment and the fixed settings."""
 __project_origin__ = "added"
 
-import dataclasses
 import functools
 import json
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import ClassVar, Optional
 
 import numpy as np
@@ -55,7 +54,7 @@ def y_decimation(cfg) -> str:
 def record_trim(cfg) -> int:
     """Samples dropped at EACH record end at FS_NEW (D-232): loader sample i is the recorded
     FS_ORIG sample (i + record_trim) * D."""
-    return int(round(AA_TRIM_S * cfg.fs_new_hz))
+    return int(round(AA_TRIM_S * cfg.fs_new))
 
 
 @dataclass(frozen=True)
@@ -118,6 +117,12 @@ class RunConfig:
     obc_rank_rtol: ClassVar[Optional[float]] = None
     obc_ref_successor: ClassVar[bool] = True
     obc_ref_chunk: ClassVar[int] = 16384
+    # derived from the fixed settings; nf = steps per training sample, also the gradient-path length
+    d: ClassVar[int] = fs_orig // fs_new
+    ts_new: ClassVar[float] = 1.0 / fs_new
+    nf: ClassVar[int] = max(1, int(nf_seconds / ts_new))
+    dtype_np: ClassVar[type] = np.float64
+    dtype_pt: ClassVar[torch.dtype] = torch.float64
 
     def __post_init__(self):
         """The axis and environment values arrive from the CLI, a config.json or the harness."""
@@ -151,7 +156,7 @@ class RunConfig:
                if k not in skip and meta.get(k, '<missing>') != want[k]}
         if bad:
             raise ValueError('config.json is outside the clean spec (key: (spec, file)): %s' % bad)
-        return dataclasses.replace(cfg, **overrides)
+        return replace(cfg, **overrides)
 
     # axis properties
     @property
@@ -180,31 +185,6 @@ class RunConfig:
         return [float(1.0 + 0.10 * s) for s in _signs]
 
     # derived quantities
-    @property
-    def fs_new_hz(self) -> int:
-        return self.fs_new
-
-    @property
-    def d(self) -> int:
-        return self.fs_orig // self.fs_new_hz
-
-    @property
-    def ts_new(self) -> float:
-        return 1.0 / self.fs_new_hz
-
-    @property
-    def dtype_np(self):
-        return np.float64
-
-    @property
-    def dtype_pt(self):
-        return torch.float64
-
-    @property
-    def nf(self) -> int:
-        """Steps per training sample; this is also the gradient-path length."""
-        return max(1, int(self.nf_seconds / self.ts_new))
-
     @property
     def hp(self) -> dict:
         """Derived hyperparameter dict with the legacy keys/order (checkpoint + npz contract)."""
@@ -263,7 +243,7 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         G_INIT='live',
         LIVE_G_WEIGHT_INIT='kaiming_uniform_a_sqrt5',
         WA_ENCODER_INIT='xavier_uniform_gain1',
-        FS_NEW=cfg.fs_new_hz, D=cfg.d,
+        FS_NEW=cfg.fs_new, D=cfg.d,
         FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=None,
         JOINT_ESTIMATION=cfg.joint_estimation,
         PHYSICS_PARAMETERIZATION='reduced',

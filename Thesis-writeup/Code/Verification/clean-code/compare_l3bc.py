@@ -15,7 +15,7 @@ import numpy as np
 import torch
 
 import hcommon as H
-from compare import check_fingerprint, d278_kept
+from compare import check_fingerprint, d278_kept, output_problems
 from compare_l3 import _cmp_tensors, compare_runs
 
 L3B_CASES = ['221-lowpass', '226-lowpass']
@@ -35,9 +35,10 @@ def run_l3b(cases):
         if not os.path.exists(os.path.join(cdir, 'meta.json')):
             res[case] = {'status': 'NO CLEAN OUTPUT'}; ok_all = False
             continue
-        probs = check_fingerprint(_meta(gdir), _meta(cdir))
+        probs = (check_fingerprint(_meta(gdir), _meta(cdir))
+                 + output_problems(gdir, _meta(gdir), cdir, _meta(cdir)))
         if probs:
-            res[case] = {'status': 'REFUSED (fingerprint)', 'problems': probs}; ok_all = False
+            res[case] = {'status': 'REFUSED (fingerprint or outputs)', 'problems': probs}; ok_all = False
             continue
         out = {}
         go, co = json.load(open(os.path.join(gdir, 'outcome.json'))), json.load(open(os.path.join(cdir, 'outcome.json')))
@@ -71,9 +72,10 @@ def run_l3c(cases):
             continue
         out = {}
         if tag in L3C_CLEAN_ONLY:              # step 4c clean-only behaviour: no golden exists
-            probs = H.clean_tree_problems(_meta(cdir)['sources'].get('clean'))
+            probs = (H.clean_tree_problems(_meta(cdir)['sources'].get('clean'))
+                     + ['clean: ' + p for p in H.output_problems(cdir, _meta(cdir))])
             if probs:
-                res[tag] = {'status': 'REFUSED (fingerprint)', 'problems': probs}; ok_all = False
+                res[tag] = {'status': 'REFUSED (fingerprint or outputs)', 'problems': probs}; ok_all = False
                 continue
             ca = json.load(open(os.path.join(cdir, 'clean_asserts.json')))
             if not ca['ok']:
@@ -87,9 +89,10 @@ def run_l3c(cases):
                 print('    %s: %s' % (k, v))
             continue
         # D-279: ii and iv run the D-278 paths, so their goldens must be the recaptured ones
-        probs = check_fingerprint(_meta(gdir), _meta(cdir), allow_d278=kind not in ('ii', 'iv'))
+        probs = (check_fingerprint(_meta(gdir), _meta(cdir), allow_d278=kind not in ('ii', 'iv'))
+                 + output_problems(gdir, _meta(gdir), cdir, _meta(cdir)))
         if probs:
-            res[tag] = {'status': 'REFUSED (fingerprint)', 'problems': probs}; ok_all = False
+            res[tag] = {'status': 'REFUSED (fingerprint or outputs)', 'problems': probs}; ok_all = False
             continue
         case = tag.rsplit('-', 1)[0]
         compare_runs(os.path.join(gdir, 'run'), os.path.join(cdir, 'run'), out,

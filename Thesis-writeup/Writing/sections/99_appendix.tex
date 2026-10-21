@@ -324,7 +324,13 @@ The controller of every record is, per stage axis $j$,
 where $\omega_b=2\pi f_b$ is the bandwidth and $\kappa_j$ sets the
 open-loop gain of axis $j$ to one at $\omega_b$, for the diagonal entry of
 the rigid baseline at $Y=0$ from stage force to stage position.
-$K_1$ is discretised by the Tustin rule at \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}.
+$K_1$ is discretised by the Tustin rule at \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}%
+\add[own]{\kwtwo{ for the data, and by the same rule at $T_s$ for
+$K_{\mathrm{fb}}$ in the model}}.
+% FEEDBACK (own, 2026-10-21): both discretisations of K_1 stated; answers the
+%   IV-B todo "Should be discussed in the setup for controller
+%   discretisation". Tustin kept (data generated with it); Jasper's ZOH
+%   remark (revnote in IV-B) open as future work (Dirk 2026-10-21).
 
 The noise $v_j$ has the one-sided spectrum
 \begin{equation}
@@ -522,6 +528,27 @@ its feedback force differs from that of the system by a median of
 Within one hold of $T_s$, the force of the system changes by a median of
 \SetupKholdMed\,\% RMS, which is the cost of closing the loop at $T_s$ in
 simulation.}
+\add[own]{\kwtwo{The residual form \eqref{eq:aug_residual_loop} equals the model
+loop of \eqref{eq:aug_two_loops} up to one term.
+Let $\bar u_{\mathrm{act},k}$ be the force that $K_{\mathrm{fb}}$
+computes from the recorded $r_k$ and $y_k$, with state
+$\bar x^{\mathrm{fb}}_k$.
+With $\hat x^{\mathrm{fb}}_k=\bar x^{\mathrm{fb}}_k+x^c_k$,
+\eqref{eq:aug_residual_loop} gives
+\begin{equation*}
+ \hat u_{\mathrm{act},k}=C_{\mathrm{fb}}\hat x^{\mathrm{fb}}_k
+ +D_{\mathrm{fb}}(r_k-\hat y_k)+u^{\mathrm{ff}}_k
+ +\bigl(u_{\mathrm{act},k}-\bar u_{\mathrm{act},k}\bigr).
+\end{equation*}
+The first three terms are the model loop, which contains no noise.
+The last term is the force error of $K_1$ at $T_s$ above.
+Only through this term does the measurement noise reach the model.}}
+% FEEDBACK (own, 2026-10-21): derivation checked against
+%   eq:aug_residual_loop and Clean/model_augmentation/fit_systems/
+%   closed_loop.py (controller stepped on y_t - y_model from xc = 0, model
+%   driven by u_t + u_fb). The force error is the K_1-at-T_s check above
+%   (tables/setup_numbers.tex: K1 at 4 kHz vs u_fb at the same instant).
+%   Main-text figure keeps no noise (Dirk 2026-10-21).
 
 \subsection{Black-box model}\label{app:setup_bb}
 % Sources: beintema2023subnet; scripts/gantry/blackbox-cl-trainable (train_bb_clmap.py), thesis_r8_grid.conf.

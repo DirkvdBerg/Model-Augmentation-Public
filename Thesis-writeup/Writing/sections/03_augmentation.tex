@@ -545,11 +545,18 @@ can be identified from the output error~\cite{forssell1999revisited}.}
 %   the argument is no longer in the text.
 \todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
 \\
-\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with the \kwtwo{assumed known} controller,
+\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with
+\chg[own]{the \kwtwo{assumed known} controller}{the controller $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}},
 as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}.
-\kwtwo{The feedback controller} is linear and time invariant, the model output is used to
-calculate the position error in actuator coordinates\todo{qact?}.
-The controller calculates the actuator forces from this error.
+\del[own]{The feedback controller is linear and time invariant, the model output is used to
+calculate the position error in actuator coordinates.
+The controller calculates the actuator forces from this error.}
+% FEEDBACK (own, 2026-10-21): controller named K_fb of eq:system_loop
+%   (Section II); the two struck sentences repeat Section II (LTI
+%   controller, error r_k-y_k in actuator coordinates, forces), which also
+%   answers the removed \todo{qact?}. Figure labels C_fb -> K_fb, plant ->
+%   gantry, u_k -> u_act,k (Code/Figures/closed_loop_same_reference.tikz.tex,
+%   PDF rebuilt) (Dirk 2026-10-21).
 The system and model use the same reference $r$ and feedforward
 $u^{\mathrm{ff}}$, but use their own output for feedback, with controller
 states $x^{\mathrm{fb}}$ and $\hat x^{\mathrm{fb}}$
@@ -665,7 +672,7 @@ in closed-loop and only initialised at the start.}
  \includegraphics[width=\columnwidth]{closed_loop_same_reference.pdf}
  \caption{
 Recorded system loop (top) and augmented model loop (bottom),
-both using the same feedback controller, reference $r_k$
+both using the same controller $K_{\mathrm{fb}}$, reference $r_k$
 and feedforward $u_k^{\mathrm{ff}}$.
 The model output is calculated before the input updates
 the model state.

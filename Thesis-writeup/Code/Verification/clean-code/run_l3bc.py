@@ -100,8 +100,8 @@ if args.layer == '3b':
             freeze=tuple(cfg.lbfgs_freeze), meter_rel_tol=cfg.lbfgs_meter_rel_tol,
             time_budget_s=cfg.lbfgs_time_budget_s, chunk=cfg.lbfgs_chunk, seed=cfg.seed,
             meters_gate=cfg.lbfgs_meters_gate)
-        kw = dict(meters_fn=GDT._gantry_meters)
-    else:
+        kw = dict(meters_fn=GDT._gantry_meters, verbose=True)
+    else:                                  # C3 (D-281): the clean polish has no `verbose`, it always prints
         spec = PolishSpec(
             n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter,
             inner_iter=cfg.lbfgs_inner_iter, history_size=cfg.lbfgs_history,
@@ -110,7 +110,7 @@ if args.layer == '3b':
         kw = {}
     res = lbfgs_polish(fit_sys, data.train_data, loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
                        spec=spec, val_sys_data=data.val_ckpt_data, val_before=0.0,
-                       validation_measure=cfg.validation_measure, verbose=True, **kw)
+                       validation_measure=cfg.validation_measure, **kw)
     after = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())
              + [('enc.' + k, v) for k, v in fit_sys.encoder.state_dict().items()]}
     params_restored = all(torch.equal(start[k], after[k]) for k in start
@@ -240,12 +240,13 @@ else:
                            config_only_resumes=only_resumes, resumes=meta1.get('RESUMES'))
             ok = same and only_resumes
             if kind == 'vii':
-                z = np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % rid_l3), allow_pickle=True)
                 d = torch.load(os.path.join(ckdir, 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3),
                                map_location='cpu', weights_only=False)
-                chain = dict(resumed_at_epoch=int(z['resumed_at_epoch']), done_epochs=int(z['done_epochs']),
-                             last_epochs_before=d.get('epochs_before'),
-                             last_epoch_counter=float(d.get('epoch_counter')))
+                # closed after the read: an open handle blocks the move out of the temp folder (WinError 5)
+                with np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % rid_l3), allow_pickle=True) as z:
+                    chain = dict(resumed_at_epoch=int(z['resumed_at_epoch']), done_epochs=int(z['done_epochs']),
+                                 last_epochs_before=d.get('epochs_before'),
+                                 last_epoch_counter=float(d.get('epoch_counter')))
                 chain['ok'] = bool(chain['resumed_at_epoch'] == 4 and chain['done_epochs'] == 5
                                    and chain['last_epochs_before'] == 4
                                    and round(chain['last_epoch_counter'], 9) == 1.0)
@@ -257,21 +258,29 @@ else:
         print('L3C clean asserts: %s' % json.dumps(asserts), flush=True)
     if kind in ('ii', 'iv'):
         # D-278, both sides: ii's polish was decided against the source's selected score, iv ran no Adam
-        z = np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % (run_id if args.side == 'mainline' else rid_l3)),
-                    allow_pickle=True)
-        oc = json.loads(str(z['lbfgs_outcome']))
+        # every np.load below is closed after its read: an open handle blocks the move out of the
+        # temp folder (WinError 5)
+        with np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % (run_id if args.side == 'mainline' else rid_l3)),
+                     allow_pickle=True) as z:
+            oc = json.loads(str(z['lbfgs_outcome']))
+            if kind == 'iv':
+                resumed_at, done = int(z['resumed_at_epoch']), int(z['done_epochs'])
         if kind == 'ii':
             src_npz = (os.path.join(out, 'source', src_name + '.npz') if args.side == 'mainline'
                        else os.path.join(run_dir, 'previous', run_id, src_name + '.npz'))
-            sel = float(np.load(src_npz, allow_pickle=True)['bestfit'])
+            with np.load(src_npz, allow_pickle=True) as zs:
+                sel = float(zs['bestfit'])
             chk = dict(val_before=oc['val_before'], selected_bestfit=sel, accepted=oc['accepted'],
                        ok=bool(np.isfinite(sel) and oc['val_before'] == sel))
         else:
             vh = os.path.join(run_dir, 'val_hist.npz')
-            ev = [str(e) for e in np.load(vh)['val_hist_event']] if os.path.exists(vh) else []
-            chk = dict(resumed_at_epoch=int(z['resumed_at_epoch']), done_epochs=int(z['done_epochs']),
+            ev = []
+            if os.path.exists(vh):
+                with np.load(vh) as zv:
+                    ev = [str(e) for e in zv['val_hist_event']]
+            chk = dict(resumed_at_epoch=resumed_at, done_epochs=done,
                        events=ev, polish_ran=None if oc is None else oc['ran'],
-                       ok=bool(int(z['resumed_at_epoch']) == 3 and 'adam' not in ev and oc is not None))
+                       ok=bool(resumed_at == 3 and 'adam' not in ev and oc is not None))
         with open(os.path.join(out, 'd278_checks.json'), 'w') as fh:
             json.dump(chk, fh, indent=1)
         print('L3C D-278 checks: %s' % json.dumps(chk), flush=True)
@@ -285,6 +294,7 @@ class _D:
 
 
 if out != final:
+    os.makedirs(os.path.dirname(final), exist_ok=True)     # the first case into a fresh _clean/L3c/
     shutil.move(out, final)
     out = final
 H.write_meta(out, cfg, _D, dict(case=tag, layer=args.layer, seconds=time.time() - T0))

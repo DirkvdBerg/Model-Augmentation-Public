@@ -380,8 +380,12 @@ def main():
             m.run_config = lambda run_dir: replace(full(run_dir), truncate_s=args.truncate_s)
     # H2: the clean source manifest (both sides, provenance); compare_l4.py refuses a clean output
     # whose manifest differs from the current Clean/ tree
+    # summary.json is the meta file of this folder: removed first, rewritten only after a run's outputs
+    # are saved, with their SHA256 in `outputs` (compare_l4.py refuses a listed file that differs)
+    if os.path.exists(os.path.join(OUT, 'summary.json')):
+        os.remove(os.path.join(OUT, 'summary.json'))
     summary = {'side': args.side, 'staging': STAGING, 'runs': runs, 'lstsq_driver': LSTSQ_DRIVER,
-               'clean_tree': H.clean_tree_hashes(), 'checks': {}, 'eval_check': {}}
+               'clean_tree': H.clean_tree_hashes(), 'checks': {}, 'eval_check': {}, 'outputs': {}}
     for run in args.runs.split(','):
         rid = runs[run]
         run_dir = os.path.join(STAGING, str(rid))
@@ -398,6 +402,9 @@ def main():
         if args.eval_check:
             summary['eval_check'][run] = eval_check(run, rid, res, parts)
             print('[%s %d] eval check %s' % (run, rid, summary['eval_check'][run]), flush=True)
+        written = (['l4_%s_%s.npz' % (run, s) for s in STACKS] if 'l4' in parts else []) + \
+            (['l4b_%s.npz' % run, 'l4b_%s.json' % run] if 'l4b' in parts else [])
+        summary['outputs'].update({f: H.sha256_file(os.path.join(OUT, f)) for f in written})
         with open(os.path.join(OUT, 'summary.json'), 'w') as fh:
             json.dump(summary, fh, indent=1, default=str)
     H.assert_roots()

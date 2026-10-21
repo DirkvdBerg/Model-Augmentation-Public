@@ -1,77 +1,60 @@
 """Model construction (interconnect + encoder) and the least-squares encoder start."""
 __project_origin__ = "added"
 
+from contextlib import contextmanager
+
 import numpy as np
 import torch
 
 from model_augmentation.utils.utils import expansion_matrix, selection_matrix
 from model_augmentation.utils.torch_nets import live_g_feed_forward_nn
-from model_augmentation.fit_systems.interconnect import Interconnect
+from model_augmentation.fit_systems.interconnect import Interconnect, SSE_Interconnect_Composed
 from model_augmentation.fit_systems.blocks import Reduced_Gantry_State_Block, Linear_Output_Block, Static_ANN_Block
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
-from model_augmentation.fit_systems.interconnect import SSE_Interconnect_Composed
-from model_augmentation.systems.gantry_ss import P
+from model_augmentation.fit_systems.closed_loop import closed_loop_rollout
+from model_augmentation.systems import gantry_ss
 
 from .config import RunConfig
+from .obc_gantry import attach_obc, P_INV_T64
 
 PHY_IX   = np.arange(6)
 
 
 def build_model(hp, cfg: RunConfig, data, norm):
     """Build interconnect + SSE_Interconnect from hp dict, return fit_sys (untrained)."""
-    NX_PHYS = cfg.nx_phys
-    nu, ny  = cfg.nu, cfg.ny
-    TS_NEW  = cfg.ts_new
-    DTYPE_PT = cfg.dtype_pt
-    std_x, std_u = norm.std_x, norm.std_u
-    x_mean, u_mean = norm.x_mean, norm.u_mean
-    Cd_norm, Dd_np = norm.Cd_norm, norm.Dd_np
-    y0, ystd = norm.y0, norm.ystd
-
     NX_ANN = hp['NX_ANN']
-    nxd = NX_PHYS + NX_ANN
+    nxd = cfg.nx_phys + NX_ANN
     route_ix = np.asarray(cfg.ann_route_ix)
 
     # THEORY: Hoekstra 2026 Eq. (22e), x_k|k from y and u over k-na .. k-1 (D-250): na = nb
     # past samples, the current one excluded.
     na = nb = hp['na_nb']
-    na_right = nb_right = 0
 
-    ic = Interconnect(nxd, nu, ny)
+    ic = Interconnect(nxd, cfg.nu, cfg.ny)
 
     # CHANGED (D-191): detune and train in the selected coordinate system.
-    from model_augmentation.systems import gantry_ss as _gss
     _names = Reduced_Gantry_State_Block.PARAM_NAMES
-    _nominal = torch.stack([getattr(_gss, n) for n in _names]).to(DTYPE_PT)
-    _common = dict(
-        Y_op=None, std_x=std_x, std_u=std_u,
-        x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
-        up_sample=hp['up_sample'], RMSE_baseline=cfg.param_rmse_baseline,
-        # CHANGED (D-193): the prior is now a DECLARED choice rather than the block's
-        # inherited default.
-        flag_loss_reg=cfg.param_prior,
-    )
-    _combo = Reduced_Gantry_State_Block.combos_of(_nominal, _gss.Lb)
+    _nominal = torch.stack([getattr(gantry_ss, n) for n in _names]).to(cfg.dtype_pt)
+    _combo = Reduced_Gantry_State_Block.combos_of(_nominal, gantry_ss.Lb)
     if cfg.combo_init_detune is not None:
         _combo = _combo * _combo.new_tensor(cfg.combo_init_detune)
     phy_block = Reduced_Gantry_State_Block(
-        params_init=_nominal, combo_init=_combo, **_common).to(DTYPE_PT)
+        params_init=_nominal, combo_init=_combo, Y_op=None, std_x=norm.std_x, std_u=norm.std_u,
+        x_mean=norm.x_mean, u_mean=norm.u_mean, Ts=cfg.ts_new, up_sample=hp['up_sample'],
+        RMSE_baseline=cfg.param_rmse_baseline).to(cfg.dtype_pt)
     # CHANGED: C_aug / Parameterized_Linear_Output_Block removed: diag_gradient_routing
     # confirms near-zero C_aug init (Frobenius ~1e-2) chokes ANN gradient by same factor.
-    out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
+    out_phys = Linear_Output_Block(C=norm.Cd_norm, D=norm.Dd_np)
     ic.add_block(phy_block)
     ic.add_block(out_phys)
 
-    _act = torch.nn.Tanh
-    _ann_net = live_g_feed_forward_nn
-    _ann_net_kwargs = {'output_state_indices': tuple(int(i) for i in route_ix), 'nx_phys': NX_PHYS}
     ann_block = Static_ANN_Block(
-        nz=nxd + nu, nw=len(route_ix),
+        nz=nxd + cfg.nu, nw=len(route_ix),
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
-        net=_ann_net,
-        net_kwargs=_ann_net_kwargs,
-        activation=_act,
+        net=live_g_feed_forward_nn,
+        net_kwargs={'nx_phys': cfg.nx_phys},
+        activation=torch.nn.Tanh,
     )
     ic.add_block(ann_block)
 
@@ -85,26 +68,23 @@ def build_model(hp, cfg: RunConfig, data, norm):
 
     # CHANGED (2026-08-28): one composed class, replacing the
     # ParamLoss -> OrthLoss -> MultipleShooting chain.
-    fit_sys = SSE_Interconnect_Composed(
-        interconnect=ic, na=na, nb=nb,
-        na_right=na_right, nb_right=nb_right,
-    )
+    fit_sys = SSE_Interconnect_Composed(interconnect=ic, na=na, nb=nb)
 
-    fit_sys.norm.u0   = u_mean.flatten()
-    fit_sys.norm.ustd = std_u.flatten()
-    fit_sys.norm.y0   = y0
-    fit_sys.norm.ystd = ystd
+    fit_sys.norm.u0   = norm.u_mean.flatten()
+    fit_sys.norm.ustd = norm.std_u.flatten()
+    fit_sys.norm.y0   = norm.y0
+    fit_sys.norm.ystd = norm.ystd
 
     # D-251/D-271: physical rows set to the least-squares map of a closed-loop baseline
     # simulation by prefit_physical_encoder before training. The class reads n+1 samples for its
     # argument n, so n = na - 1 gives the na-sample window.
     fit_sys.encoder = linear_encoder_init_aug(
-        nx=NX_PHYS, nu=nu, ny=ny, na=na - 1, nb=nb - 1,
+        nx=cfg.nx_phys, nu=cfg.nu, ny=cfg.ny, na=na - 1, nb=nb - 1,
         nx_aug=NX_ANN,
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
-        dtype=DTYPE_PT,
-    ).to(DTYPE_PT)
+        dtype=cfg.dtype_pt,
+    ).to(cfg.dtype_pt)
 
     # CHANGED: pass lr and eps at optimizer creation.
     # CHANGED (D-169, job 80714): the model is BUILT on the CPU even when cfg.device='cuda', and
@@ -116,36 +96,40 @@ def build_model(hp, cfg: RunConfig, data, norm):
             'magnitude while config.json recorded DEVICE=cuda, and the two would be compared as '
             'if they were the same experiment. Check the SLURM allocation (--gres=gpu:1) or set '
             'device="cpu" explicitly.')
-    fit_sys.init_model(sys_data=data.train_data, device='cpu',
-                       optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
+    fit_sys.init_model(sys_data=data.train_data, optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
     eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
     if eps_values != {float(cfg.adam_eps)}:
         raise RuntimeError(
             f'Adam eps mismatch after optimizer construction: config={cfg.adam_eps}, '
             f'optimizer={sorted(eps_values)}')
-    fit_sys.hfn.to(DTYPE_PT)
+    fit_sys.hfn.to(cfg.dtype_pt)
 
     if cfg.obc:
-        from .obc_gantry import attach_obc
         attach_obc(fit_sys, cfg, data, norm)
 
     return fit_sys
 
 
-def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
-    """D-251, D-271: start the PHYSICAL rows of the encoder at the least-squares map of a closed-loop
-    baseline simulation."""
+@contextmanager
+def on_device(fit_sys, cfg: RunConfig):
+    """D-169: the model lives on the CPU and visits cfg.device for the work inside."""
     if cfg.device == 'cuda':
         fit_sys.cuda()
     try:
-        _prefit(fit_sys, cfg, data, norm)
+        yield
     finally:
         if cfg.device == 'cuda':
             fit_sys.cpu()
 
 
+def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
+    """D-251, D-271: start the PHYSICAL rows of the encoder at the least-squares map of a closed-loop
+    baseline simulation."""
+    with on_device(fit_sys, cfg):
+        _prefit(fit_sys, cfg, data, norm)
+
+
 def _prefit(fit_sys, cfg, data, norm):
-    from model_augmentation.fit_systems.closed_loop import closed_loop_rollout
     enc, sim = fit_sys.encoder, fit_sys.simulator
     nx, na, nb, stride = cfg.nx_phys, fit_sys.na, fit_sys.nb, cfg.stride
     dtype, dev = next(enc.parameters()).dtype, next(enc.parameters()).device
@@ -154,14 +138,12 @@ def _prefit(fit_sys, cfg, data, norm):
     fit_sys._sync_prediction_state_for_validation()
     step_kw = {}
     with torch.no_grad():
-        if fit_sys._mats_ix is not None:
-            step_kw['pass_mats'] = fit_sys.hfn.connected_blocks[fit_sys._mats_ix].pass_mats()
+        step_kw['pass_mats'] = fit_sys.hfn.connected_blocks[fit_sys._mats_ix].pass_mats()
         corr = getattr(fit_sys.hfn, 'obc_correction', None)
         if corr is not None:
             step_kw['obc_pass'] = corr.tangent_pair(corr.theta_frozen)
 
     sdl = data.train_data.sdl
-    PinvT = np.linalg.inv(P.detach().cpu().numpy().astype(np.float64).T)
     x_mean, std_x = rv(norm.x_mean), rv(norm.std_x)
     uh_all, yh_all, xt_all = [], [], []
     groups = {}
@@ -171,7 +153,7 @@ def _prefit(fit_sys, cfg, data, norm):
         un = np.stack([(sdl[i].u - rv(fit_sys.norm.u0)) / rv(fit_sys.norm.ustd) for i in ixs])
         yn = np.stack([(sdl[i].y - rv(fit_sys.norm.y0)) / rv(fit_sys.norm.ystd) for i in ixs])
         x0 = np.zeros((len(ixs), nx + cfg.nx_ann))
-        q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ PinvT.T for i in ixs])
+        q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ P_INV_T64.T for i in ixs])
         x0[:, :nx] = (np.hstack([q0, np.zeros_like(q0)]) - x_mean) / std_x
         xs, us = [], []
 
@@ -218,7 +200,6 @@ def least_squares_start(enc, nx, uh, yh, xt):
     pred = Phi @ W + b
     if not (torch.isfinite(W).all() and torch.isfinite(b).all() and torch.isfinite(pred).all()):
         raise RuntimeError('the least-squares encoder start is not finite')
-    sv = sol.singular_values
     ny_h = yh[0].numel()
     with torch.no_grad():
         p = next(enc.parameters())
@@ -230,8 +211,8 @@ def least_squares_start(enc, nx, uh, yh, xt):
         got = cpu(enc(uh, yh)[:, :nx])
     unexplained = ((pred - X) ** 2).mean(0) / X.var(0, unbiased=False)
     print('[encoder start] least squares: %d regressors, rank %d, condition %.3e; unexplained per state %s'
-          % (Phi.shape[1], int(sol.rank), float(sv[0] / sv[-1]), ' '.join('%.2e' % v for v in unexplained)),
-          flush=True)
+          % (Phi.shape[1], int(sol.rank), float(sol.singular_values[0] / sol.singular_values[-1]),
+             ' '.join('%.2e' % v for v in unexplained)), flush=True)
     if not torch.allclose(got, pred, rtol=0.0, atol=1e-6 * float(X.std(0, unbiased=False).min())):
         raise RuntimeError('the encoder does not reproduce the least-squares map (max deviation %.3e)'
                            % float((got - pred).abs().max()))

@@ -3,7 +3,8 @@
     python -u compare_l4.py MAINLINE_OUT CLEAN_OUT
 
 REFUSED, nothing compared, unless the clean summary.json records the clean source manifest of the
-current Clean/ tree (H2). Then both sides must hold the full expected set (H1): the nine final runs,
+current Clean/ tree (H2), and on either side when a loader output present differs from the SHA256
+its summary.json lists (or is not listed: written by another loader run). Then both sides must hold the full expected set (H1): the nine final runs,
 the three layer-4 splits of each, every layer-4b array and row l4_loader.l4b writes per run, a
 val-score check per run on both sides with a finite, positive ref_score, and the mainline evaluation
 check over every run and part. Anything missing is PARTIAL (listed), never PASS; a value mismatch is
@@ -103,16 +104,37 @@ def side_gaps(d, side):
     return gaps
 
 
-def refusal(cdir):
-    """H2: [] when the clean output was made from the current Clean/ tree, else the problems."""
+def stale(d, side):
+    """[] when every loader output present in d is listed in its summary.json `outputs` with the
+    SHA256 it has now, else the problems (a file the last loader run did not write, or rewrote after)."""
+    p = os.path.join(d, 'summary.json')
+    listed = (json.load(open(p)) if os.path.exists(p) else {}).get('outputs')
+    if listed is None:
+        return ['%s: summary.json lists no outputs' % side]
+    probs = []
+    for name in sorted(set(expected_files()) | set(listed)):
+        f = os.path.join(d, name)
+        if not os.path.exists(f):
+            if name in listed:
+                probs.append('%s: %s listed in summary.json but missing' % (side, name))
+        elif name not in listed:
+            probs.append('%s: %s not written by the run that wrote summary.json' % (side, name))
+        elif H.sha256_file(f) != listed[name]:
+            probs.append('%s: %s differs from its summary.json hash' % (side, name))
+    return probs
+
+
+def refusal(cdir, mdir):
+    """H2: [] when the clean output was made from the current Clean/ tree and neither side holds a
+    stale output, else the problems."""
     p = os.path.join(cdir, 'summary.json')
     s = json.load(open(p)) if os.path.exists(p) else {}
     probs = [] if s.get('side') == 'clean' else ['%s does not record side clean' % p]
-    return probs + H.clean_tree_problems(s.get('clean_tree'))
+    return probs + H.clean_tree_problems(s.get('clean_tree')) + stale(mdir, 'mainline') + stale(cdir, 'clean')
 
 
 def main(mdir, cdir):
-    probs = refusal(cdir)
+    probs = refusal(cdir, mdir)
     if probs:
         for x in probs:
             print('REFUSED: %s' % x)

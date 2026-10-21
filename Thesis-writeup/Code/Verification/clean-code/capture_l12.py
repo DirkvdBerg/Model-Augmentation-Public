@@ -32,6 +32,9 @@ out1, out2 = os.path.join(base, 'L1', case), os.path.join(base, 'L2', case)
 golden_state = os.path.join(H.GOLDEN, 'L1', case, 'prefit_state.pt')
 if args.side == 'clean' and not os.path.exists(golden_state):
     sys.exit('no golden post-pre-fit state at %s: capture the mainline side first' % golden_state)
+for _d in (out1, out2):         # a capture that fails before its end leaves no meta.json (NO OUTPUT)
+    if os.path.exists(os.path.join(_d, 'meta.json')):
+        os.remove(os.path.join(_d, 'meta.json'))
 
 T0 = time.time()
 cfg, EP = H.make_cfg(args.row, args.noise, run_id='harness-L1-' + case)
@@ -201,8 +204,9 @@ tim['loss_backward'] = time.time() - t
 H.assert_roots()
 tim['total'] = time.time() - T0
 meta_extra = dict(case=case, layer='1+2', timings=tim)
-H.write_meta(out1, cfg, data, meta_extra)
-H.write_meta(out2, cfg, data, meta_extra)
 c1.save(out1, 'L1')
 c2.save(out2, 'L2')
+# meta.json last, with the hashes of the arrays just saved: a failed save leaves no meta.json
+H.write_meta(out1, cfg, data, meta_extra)
+H.write_meta(out2, cfg, data, meta_extra)
 print('CAPTURE_DONE side=%s case=%s seconds=%.1f %s' % (args.side, case, tim['total'], tim), flush=True)

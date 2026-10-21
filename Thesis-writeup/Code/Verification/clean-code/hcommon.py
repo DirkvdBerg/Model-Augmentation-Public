@@ -188,9 +188,50 @@ def thread_settings():
             'MKL_NUM_THREADS': os.environ.get('MKL_NUM_THREADS')}
 
 
+def output_hashes(out_dir, skip=('meta.json',)):
+    """{relative path ('/' separators): SHA256} of every file below out_dir except `skip`."""
+    out = {}
+    for root, dirs, files in os.walk(out_dir):
+        dirs.sort()
+        for f in sorted(files):
+            p = os.path.join(root, f)
+            rel = os.path.relpath(p, out_dir).replace(os.sep, '/')
+            if rel not in skip:
+                out[rel] = sha256_file(p)
+    return out
+
+
+def output_problems(out_dir, meta, legacy_newer=()):
+    """[] when every output `meta` lists exists below out_dir with its recorded SHA256, else the
+    problems: a case whose meta.json does not describe the files next to it is refused, never
+    compared. A meta.json from before the output manifest has no 'outputs'; then each file of
+    `legacy_newer` must exist and be no older than meta.json (the old capture order wrote meta.json
+    first, so an older file is one the capture never rewrote)."""
+    if 'outputs' in meta:
+        probs = []
+        for rel, h in sorted(meta['outputs'].items()):
+            p = os.path.join(out_dir, *rel.split('/'))
+            if not os.path.exists(p):
+                probs.append('output listed in meta.json is missing: %s' % p)
+            elif sha256_file(p) != h:
+                probs.append('output differs from its meta.json hash: %s' % p)
+        return probs or ([] if meta['outputs'] else ['meta.json lists no outputs: %s' % out_dir])
+    t_meta = os.path.getmtime(os.path.join(out_dir, 'meta.json'))
+    probs = []
+    for f in legacy_newer:
+        p = os.path.join(out_dir, f)
+        if not os.path.exists(p):
+            probs.append('output missing: %s' % p)
+        elif os.path.getmtime(p) < t_meta:
+            probs.append('output older than its meta.json (stale): %s' % p)
+    return probs
+
+
 def write_meta(out_dir, cfg, data, extra=None):
     """meta.json of design 6.2: sources (the clean manifest is the full tree, H2), manifests,
-    records, config, data root, libraries, threads, git provenance, budget."""
+    records, config, data root, libraries, threads, git provenance, budget, and `outputs`, the
+    SHA256 of every file already in out_dir. Call it LAST, once every output of the case is saved:
+    a meta.json then exists only for a complete case and pins the files it was written for."""
     from gantry_dynamic.config import git_provenance, config_json_dict
     from gantry_dynamic.data import traj_dir
     ddir = traj_dir(cfg)
@@ -211,6 +252,7 @@ def write_meta(out_dir, cfg, data, extra=None):
     if extra:
         meta.update(extra)
     os.makedirs(out_dir, exist_ok=True)
+    meta['outputs'] = output_hashes(out_dir)
     with open(os.path.join(out_dir, 'meta.json'), 'w') as fh:
         json.dump(meta, fh, indent=1, default=str)
     return meta

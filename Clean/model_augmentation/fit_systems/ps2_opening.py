@@ -45,11 +45,17 @@ def calibration_split(names):
 
 
 class PS2Opening:
-    def __init__(self, spec, records, ctrl_rows, names, n_xb, n_a, width):
-        """records: normalised (u, y) arrays of the training records, in the simulator's training order;
-        ctrl_rows: their controller rows; names: record names; n_xb, n_a: physical and added states;
-        width: the head's hidden width (= the deployed network's)."""
-        self.spec, self.records, self.ctrl_rows, self.names = spec, records, list(ctrl_rows), list(names)
+    def __init__(self, fit_sys, data, n_xb, n_a, width, spec):
+        """From the gantry pipeline's DataBundle and the attached ClosedLoopSimulator: the normalised
+        (u, y) arrays of the training records in the simulator's training order, their controller
+        rows and names; n_xb, n_a: physical and added states; width: the head's hidden width (= the
+        deployed network's)."""
+        self.records = []
+        for sd in data.train_list:
+            sdn = fit_sys.norm.transform(sd)
+            self.records.append((np.asarray(sdn.u), np.asarray(sdn.y)))
+        self.names = [os.path.splitext(os.path.basename(str(f)))[0].split('_')[0] for f in data.train_files]
+        self.spec, self.ctrl_rows = spec, list(fit_sys.simulator.train_ctrl_rows)
         self.n_xb, self.n_a, self.width = n_xb, n_a, width
         self.fit_ix, self.cal_ix = calibration_split(self.names)
         if not self.cal_ix:
@@ -58,16 +64,6 @@ class PS2Opening:
         self.s1_end = self.s2 = self.status = None
         self._rng = np.random.default_rng(spec.seed)
         self._head = self._opt = self._cal = None
-
-    @classmethod
-    def for_pipeline(cls, fit_sys, data, n_xb, n_a, width, spec=None):
-        """Build from the gantry pipeline's DataBundle and the attached ClosedLoopSimulator."""
-        recs = []
-        for sd in data.train_list:
-            sdn = fit_sys.norm.transform(sd)
-            recs.append((np.asarray(sdn.u), np.asarray(sdn.y)))
-        names = [os.path.splitext(os.path.basename(str(f)))[0].split('_')[0] for f in data.train_files]
-        return cls(spec or PS2Spec(), recs, fit_sys.simulator.train_ctrl_rows, names, n_xb, n_a, width)
 
     @property
     def done(self):
@@ -90,7 +86,7 @@ class PS2Opening:
         end = plateau or self.it >= self.spec.s1_cap
         print('[ps2] update %d: calibration unexplained %.4f%s' % (self.it, u, ' (S1 ends: %s)' % (
             'plateau' if plateau else 'cap') if end else ''), flush=True)
-        if (self.it == self.spec.screen_at and not end and u > self.spec.screen_max) or (end and u > self.spec.screen_max):
+        if (end or self.it == self.spec.screen_at) and u > self.spec.screen_max:
             self.phase, self.status = 'S3', 'fallback: residual not predictable (%.4f > %.2f at update %d)' % (
                 u, self.spec.screen_max, self.it)
             print('[ps2] %s; the run continues as the plain method' % self.status, flush=True)
@@ -102,13 +98,11 @@ class PS2Opening:
         if self.done:
             self._head = self._opt = None
 
-    def summary(self):
-        return {'status': self.status or 'running', 'phase': self.phase, 'updates': self.it, 's1_end': self.s1_end,
-                's2': self.s2, 'calibration_records': [self.names[i] for i in self.cal_ix], 'history': self.history,
-                'spec': asdict(self.spec)}
-
     def summary_json(self):
-        return json.dumps(self.summary())
+        return json.dumps({'status': self.status or 'running', 'phase': self.phase, 'updates': self.it,
+                           's1_end': self.s1_end, 's2': self.s2,
+                           'calibration_records': [self.names[i] for i in self.cal_ix],
+                           'history': self.history, 'spec': asdict(self.spec)})
 
     def _device(self, fs):
         p = next(fs.hfn.parameters())
@@ -117,15 +111,12 @@ class PS2Opening:
     def _start(self, fs):
         dev, dt = self._device(fs)
         enc = fs.encoder
-        self._M = int(fs.na + getattr(fs, 'na_right', 0))
+        self._M = int(fs.na)
         ny = self.records[0][1].shape[1]
         self._head = nn.Sequential(nn.Linear(self.n_a, self.width), nn.Tanh(),
                                    nn.Linear(self.width, self._M * ny)).to(device=dev, dtype=dt)
         nn.init.zeros_(self._head[-1].weight); nn.init.zeros_(self._head[-1].bias)
-        aux = [enc.Wa_psi_u, enc.Wa_psi_y]
-        if getattr(enc, 'net', None) is not None:
-            last = [m for m in enc.net.modules() if isinstance(m, nn.Linear)][-1]
-            aux += [last.weight, last.bias]
+        aux = [enc.Wa_psi_u, enc.Wa_psi_y, enc.net[-1].weight, enc.net[-1].bias]
         self._aux = list(self._head.parameters()) + aux
         self._opt = torch.optim.Adam(self._aux, lr=self.spec.lr)
         self._cal = self._sample(fs, self.cal_ix, self.spec.n_cal, np.random.default_rng(self.spec.seed + 321))
@@ -136,7 +127,6 @@ class PS2Opening:
         """B windows from the given records: encoder history, future (M samples), controller row (and the history one
         sample later). Window convention of n_phase1.windows / deepSI to_hist_future_data."""
         nb, na = fs.nb, fs.na
-        na_r, nb_r = getattr(fs, 'na_right', 0), getattr(fs, 'nb_right', 0)
         k0, M = max(na, nb), self._M
         dev, dt = self._device(fs)
         lens = np.array([len(self.records[i][0]) - k0 - M - 1 for i in rec_ix], dtype=float)
@@ -145,10 +135,10 @@ class PS2Opening:
         for r in ri:
             u, y = self.records[r]
             k = int(rng.integers(k0, len(u) - M - 1))
-            out['uh'].append(u[k - nb:k + nb_r]); out['yh'].append(y[k - na:k + na_r])
+            out['uh'].append(u[k - nb:k]); out['yh'].append(y[k - na:k])
             out['uf'].append(u[k:k + M]); out['yf'].append(y[k:k + M])
             if pair:
-                out['uh1'].append(u[k + 1 - nb:k + 1 + nb_r]); out['yh1'].append(y[k + 1 - na:k + 1 + na_r])
+                out['uh1'].append(u[k + 1 - nb:k + 1]); out['yh1'].append(y[k + 1 - na:k + 1])
         T = lambda a: torch.as_tensor(np.ascontiguousarray(np.stack(a)), device=dev, dtype=dt)
         b = {k: T(v) for k, v in out.items() if v}
         b['ctrl_ix'] = torch.as_tensor([self.ctrl_rows[r] for r in ri], device=dev, dtype=torch.long)

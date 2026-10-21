@@ -1,54 +1,35 @@
-from typing import Callable, Type, Union
-
-import numpy as np
 import torch
 from torch import Tensor, nn
 
 from model_augmentation.utils.utils import to_tensor, added
+from model_augmentation.systems import gantry_ss
 
 
 class Block(nn.Module):
     # CHANGED (clean): trimmed to the spec path
     """Basic block implementation with variables that need to be defined for interconnect."""
 
-    def __init__(self, nz, nw, name=None, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, nz, nw, **kwargs) -> None:
+        super().__init__(**kwargs)
 
         self.nw = nw
         self.nz = nz
 
-        self.name = name
-        self.block_ix = None
-
-    def init_block(self, z: Tensor):
-        return
-
 
 class Static_ANN_Block(Block):
-    def __init__(
-        self,
-        net: Union[
-            Type[nn.Module], Callable[..., nn.Module]
-        ],
-        n_nodes_per_layer=64,
-        n_hidden_layers=2,
-        activation=nn.Tanh,
-        net_kwargs=None,
-        *args,
-        **kwargs,
-    ) -> None:
+    def __init__(self, nz, nw, net, n_nodes_per_layer, n_hidden_layers, activation, net_kwargs) -> None:
         # CHANGED (clean): trimmed to the spec path
-        super(Static_ANN_Block, self).__init__(*args, **kwargs)
+        super(Static_ANN_Block, self).__init__(nz, nw)
 
         # CHANGED: allow a network to receive its structural initialization data at normal
-        # construction time. Existing callers pass nothing and retain the exact old call.
+        # construction time.
         self.net = net(
             n_in=self.nz,
             n_out=self.nw,
             n_nodes_per_layer=n_nodes_per_layer,
             n_hidden_layers=n_hidden_layers,
             activation=activation,
-            **({} if net_kwargs is None else net_kwargs),
+            **net_kwargs,
         )
         # CHANGED: per-output intervention gate for the trajectory-orthogonality method.
         self.register_buffer('out_gate', torch.ones(self.nw), persistent=False)
@@ -62,17 +43,15 @@ class Static_ANN_Block(Block):
 
 @added
 class Linear_Output_Block(Block):
-    def __init__(
-        self, C=torch.empty((0, 0)), D=torch.empty((0, 0)), *args, **kwargs
-    ) -> None:
+    def __init__(self, C, D) -> None:
         _C = to_tensor(C)
         _D = to_tensor(D)
 
-        self.ny = _C.size(0) if _C.numel() else 0
-        self.nx = _C.size(1) if _C.numel() else 0
-        self.nu = _D.size(1) if _D.numel() else 0
+        self.ny = _C.size(0)
+        self.nx = _C.size(1)
+        self.nu = _D.size(1)
 
-        super().__init__(nw=self.ny, nz=self.nx + self.nu, *args, **kwargs)
+        super().__init__(nw=self.ny, nz=self.nx + self.nu)
 
         self.register_buffer("C", _C)
         self.register_buffer("D", _D)
@@ -86,15 +65,10 @@ class Linear_Output_Block(Block):
 
 class Discrete_Nonlinear_Function_Block(Block):
     # CHANGED (clean): trimmed to the spec path
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
     def forward(self, z: Tensor, mats=None):
         # CHANGED (clean): trimmed to the spec path
-        # CHANGED (D-195): optional per-pass constants, forwarded to `nonlinear_function` only
-        # when supplied.
-        w = self.nonlinear_function(z) if mats is None else self.nonlinear_function(z, mats)
-        return w
+        # CHANGED (D-195): optional per-pass constants, forwarded to `nonlinear_function`.
+        return self.nonlinear_function(z, mats)
 
 
 @added
@@ -102,42 +76,24 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
     """
     Gantry continuous-time ODE integrated with RK4, using the LFR rational structure."""
 
-    def __init__(
-        self,
-        Y_op: float = 0.3,
-        std_x=np.ones((6, 1)),
-        std_u=np.ones((3, 1)),
-        x_mean=np.zeros((6, 1)),
-        u_mean=np.zeros((3, 1)),
-        Ts: float = 1 / 20000,
-        up_sample: int = 10,
-        *args,
-        **kwargs,
-    ) -> None:
+    def __init__(self, Y_op, std_x, std_u, x_mean, u_mean, Ts, up_sample, *args, **kwargs) -> None:
         super().__init__(nz=9, nw=6, *args, **kwargs)
 
         self.Ts   = Ts
         self.up_sample = up_sample
-        self.nu   = 3
-        self.ny   = 3
         self.nx   = 6
         self.Y_op = Y_op
 
-        from model_augmentation.systems.gantry_ss import (
-            mh as _mh, m1 as _m1, m2 as _m2, mb as _mb,
-            Jb as _Jb, Jh as _Jh, Lb as _Lb, d as _d,
-            M1 as _M1, M2 as _M2, K as _K, C as _C, P as _P,
-            build_poly_constants, build_G_matrix_entries,
+        _alpha, _beta, _gamma, _N0, _N1, _N2 = gantry_ss.build_poly_constants(
+            gantry_ss.m1, gantry_ss.m2, gantry_ss.mb, gantry_ss.mh,
+            gantry_ss.Jb, gantry_ss.Jh, gantry_ss.Lb, gantry_ss.d
         )
+        _d0 = gantry_ss.mh * (_alpha * _gamma - _beta ** 2)
 
-        _alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
-            _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
-        )
-        _d0 = _mh * (_alpha * _gamma - _beta ** 2)
+        _Ax, _Bw, _Bu, _A_combined = gantry_ss.build_G_matrix_entries(
+            _N0, _d0, gantry_ss.M1, gantry_ss.M2, gantry_ss.K, gantry_ss.C)
 
-        _Ax, _Bw, _Bu, _A_combined = build_G_matrix_entries(_N0, _d0, _M1, _M2, _K, _C)
-
-        self.register_buffer("mh",     _mh.clone())
+        self.register_buffer("mh",     gantry_ss.mh.clone())
         self.register_buffer("alpha",  _alpha.clone())
         self.register_buffer("beta",   _beta.clone())
         self.register_buffer("gamma_", _gamma.clone())
@@ -150,9 +106,9 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         self.register_buffer("Bu",         _Bu.clone())
         self.register_buffer("A_combined", _A_combined.clone())
 
-        self.register_buffer("K_mat", _K.clone())
-        self.register_buffer("C_mat", _C.clone())
-        self.register_buffer("P_mat", _P.clone())
+        self.register_buffer("K_mat", gantry_ss.K.clone())
+        self.register_buffer("C_mat", gantry_ss.C.clone())
+        self.register_buffer("P_mat", gantry_ss.P.clone())
 
         self.register_buffer("std_x",    to_tensor(std_x).reshape(6, 1))
         self.register_buffer("std_x_1d", to_tensor(std_x).reshape(6))
@@ -160,20 +116,13 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         self.register_buffer("x_mean",   to_tensor(x_mean).reshape(6, 1))
         self.register_buffer("u_mean",   to_tensor(u_mean).reshape(3, 1))
 
-    def nonlinear_function(self, z: Tensor):
-        x = z[:, : self.nx, :]
-        u = z[:, self.nx :, :]
-        # CHANGED (D-192): the RK4 loop and the derivative body take the parameter-dependent
-        # matrix tuple EXPLICITLY (`_rk4`, `_deriv_with`) so the one-step OBC path can integrate
-        # the same transition at a caller-supplied parameter point without writing `_cur`.
-        return self._rk4(x, u, self._mats())
-
     def _rk4(self, x: Tensor, u: Tensor, mats) -> Tensor:
+        h = self.Ts / self.up_sample
         for i in range(self.up_sample):
-            k1 = (self.Ts / self.up_sample) * self._deriv_with(x, u, mats)
-            k2 = (self.Ts / self.up_sample) * self._deriv_with(x + k1 / 2, u, mats)
-            k3 = (self.Ts / self.up_sample) * self._deriv_with(x + k2 / 2, u, mats)
-            k4 = (self.Ts / self.up_sample) * self._deriv_with(x + k3, u, mats)
+            k1 = h * self._deriv_with(x, u, mats)
+            k2 = h * self._deriv_with(x + k1 / 2, u, mats)
+            k3 = h * self._deriv_with(x + k2 / 2, u, mats)
+            k4 = h * self._deriv_with(x + k3, u, mats)
             x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
         return x
 
@@ -304,28 +253,16 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
     PARAM_NAMES = ["kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
                    "mh", "m1", "m2", "mb", "Jb", "Jh", "d"]
 
-    def __init__(self, RMSE_baseline: float = 1.0, flag_loss_reg: bool = True,
-                 params_init=None, *args, **kwargs) -> None:
+    def __init__(self, RMSE_baseline: float = 1.0, params_init=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
-        from model_augmentation.systems.gantry_ss import (
-            Lb as _Lb,
-            build_poly_constants as _build_poly,
-            build_G_matrix_entries as _build_G,
-        )
-        self._build_poly = _build_poly
-        self._build_G = _build_G
 
         params_init = to_tensor(params_init).reshape(14).clone()
 
         self.register_buffer("params_init", params_init)
         # CHANGED (D-191): subclasses build the regularizer in their own coordinates.
         self._RMSE_baseline = float(RMSE_baseline)
-        self.flag_loss_reg = flag_loss_reg
 
-        self.register_buffer("Lb", _Lb.clone())
-
-        self._cur = None
+        self.register_buffer("Lb", gantry_ss.Lb.clone())
 
     def _build_KC(self, p: Tensor):
         """Differentiable K(theta), C(theta): same structure as gantry_ss K, C.
@@ -369,36 +306,23 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
         # the OBC pure transition can call it with a caller-supplied raw vector. Same operations.
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          mh, m1, m2, mb, Jb, Jh, d) = p
-        alpha, beta, gamma_, N0, N1, N2 = self._build_poly(
+        alpha, beta, gamma_, N0, N1, N2 = gantry_ss.build_poly_constants(
             m1, m2, mb, mh, Jb, Jh, self.Lb, d)
         d0 = mh * (alpha * gamma_ - beta ** 2)
         M1, M2 = self._build_M1M2(mh)
         K, C = self._build_KC(p)
-        _, _, _, A_combined = self._build_G(N0, d0, M1, M2, K, C)
+        _, _, _, A_combined = gantry_ss.build_G_matrix_entries(N0, d0, M1, M2, K, C)
         return (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
 
     # CHANGED (D-195): the M(Y) rebuild is a PER-PASS constant, not a per-timestep one.
     def nonlinear_function(self, z: Tensor, mats=None):
-        self._cur = self._mats_from_raw(self._recover_params()) if mats is None else mats
-        return super().nonlinear_function(z)
+        if mats is None:
+            mats = self._mats_at(self.free_params)
+        return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
     def pass_mats(self):
         """The M(Y) structure at the CURRENT parameters, to be built once per objective."""
-        mats = self._mats_from_raw(self._recover_params())
-        return mats
-
-    def _mats(self):
-        return self._cur
-
-    # CHANGED: `_cur` is a PER-FORWARD CACHE and must never be serialised.
-    def __getstate__(self):
-        state = dict(self.__dict__)
-        state['_cur'] = None
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._cur = None
+        return self._mats_at(self.free_params)
 
 
 @added
@@ -496,21 +420,19 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
     # CHANGED (D-192): the transition as a PURE function of the free coordinate.
     def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
         """`x_plus = f_base^d(v, x, u)` at the free coordinate `v = free`, without side effects."""
-        p = self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb)
-        mats = self._mats_from_raw(p)
+        mats = self._mats_at(free)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
     # CHANGED (D-194): the ONCE-PER-OBJECTIVE half of the correction.
     def mats_and_tangent_from_free(self, free: Tensor, dfree: Tensor):
         """`(mats, dmats)` at the free coordinate `free`, differentiated in the direction `dfree`."""
-        def _mats(v):
-            return self._mats_from_raw(
-                self.gauge_section(self.combinations_from_free(v), self.params_init, self.Lb))
-        return torch.func.jvp(_mats, (free,), (dfree,))
+        return torch.func.jvp(self._mats_at, (free,), (dfree,))
 
-    def _recover_params(self) -> Tensor:
-        """Raw fourteen-vector in the declared gauge. Not clamped like the raw sibling."""
-        return self.gauge_section(self.recover_combinations(), self.params_init, self.Lb)
+    def _mats_at(self, free: Tensor):
+        """The per-pass matrix tuple at the free coordinate `free`, from the raw fourteen-vector in
+        the declared gauge (not clamped like the raw sibling)."""
+        return self._mats_from_raw(
+            self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb))
 
     def estimation_parameters(self):
         """Names, initial values, and current values in identifiable coordinates."""

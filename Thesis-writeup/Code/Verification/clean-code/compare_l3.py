@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 import hcommon as H
-from compare import check_fingerprint, d278_kept, diff_arrays
+from compare import check_fingerprint, d278_kept, diff_arrays, output_problems
 
 L3_CASES = ['221-lowpass', '229-noisefree', '224-noisefree', '226-lowpass', '227-lowpass']
 NPZ_SKIP = {'elapsed', 'orig_run_id', 'resumed_from'}
@@ -109,9 +109,9 @@ def run_l3(cases):
             print('%-14s L3 NO CLEAN OUTPUT' % case)
             continue
         gmeta, cmeta = json.load(open(os.path.join(gdir, 'meta.json'))), json.load(open(os.path.join(cdir, 'meta.json')))
-        probs = check_fingerprint(gmeta, cmeta)
+        probs = check_fingerprint(gmeta, cmeta) + output_problems(gdir, gmeta, cdir, cmeta)
         if probs:
-            res[case] = {'status': 'REFUSED (fingerprint)', 'problems': probs}
+            res[case] = {'status': 'REFUSED (fingerprint or outputs)', 'problems': probs}
             ok_all = False
             print('%-14s L3 REFUSED %s' % (case, probs))
             continue

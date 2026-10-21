@@ -62,6 +62,10 @@ ir.\ Q. van den Elsen, ir.\ J. W. Gerritsen (ASMPT)}
 % Appendix after the references, on a new page (Dirk 2026-10-11).
 \clearpage
 \appendices
+% FEEDBACK v2 (Maarten p4 "A-A?", Js40, Q25; Dirk 2026-10-21): IEEEtran writes
+%   appendix subsections as "A-A"; numbered A.1, A.2 in references and headings.
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsectiondis}{\thesection.\arabic{subsection}}
 \input{sections/99_appendix}
 
 \end{document}
