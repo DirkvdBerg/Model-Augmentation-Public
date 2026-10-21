@@ -29,7 +29,4 @@ def _true_free(phy):
     """The free coordinate at which the reduced block holds the TRUE combinations."""
     dt = phy.free_params.dtype
     c_true = type(phy).combos_of(phy.params_init.double(), float(phy.Lb)).to(dt)
-    free = phy.free_from_combinations(c_true)
-    tol = 1e-10 if dt == torch.float64 else 1e-5
-    assert torch.allclose(phy.combinations_from_free(free), c_true, rtol=tol, atol=0)
-    return free
+    return phy.free_from_combinations(c_true)

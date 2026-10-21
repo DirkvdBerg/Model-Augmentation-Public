@@ -12,7 +12,7 @@
         used_compiled, loss_first.
 Mainline gets THESIS_SMOKE=1 only for the PS2 smoke spec (training.py:875); its EP.CFG is replaced by
 the budget below, not by THESIS_SMOKE's own replace (which turns compilation off).
-Writes DIR/result.json; compare the two sides with compare_gpu.py.
+Writes DIR/result.json, with the clean source manifest (H2); compare the two sides with compare_gpu.py.
 """
 import argparse
 import json
@@ -61,8 +61,10 @@ def _rec(self, *a, **k):
 SSE_Interconnect_Composed.loss = _rec
 H.assert_roots()
 T0 = time.time()
+# clean_tree: the clean source manifest (H2), compare_gpu.py refuses a clean result made from another tree
 res = dict(side=args.side, row=args.row, kind='b' if args.polish_from else 'a', run_id=run_id,
-           cuda=torch.cuda.get_device_name(0) if torch.cuda.is_available() else None)
+           cuda=torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+           clean_tree=H.clean_tree_hashes())
 if args.polish_from is None:
     if args.side == 'mainline':
         EP.save_dir = lambda cfg: OUT
@@ -116,5 +118,5 @@ H.assert_roots()
 res['seconds'] = time.time() - T0
 with open(os.path.join(OUT, 'result.json'), 'w') as fh:
     json.dump(res, fh, indent=1)
-print('GPU_SMOKE_DONE %s' % json.dumps(res), flush=True)
+print('GPU_SMOKE_DONE %s' % json.dumps({k: v for k, v in res.items() if k != 'clean_tree'}), flush=True)
 sys.exit(0 if res['ok'] else 1)

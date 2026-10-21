@@ -223,9 +223,8 @@ class PS2Opening:
             if s >= sp.s2_min and len(checks) > 5 and min(checks[-5:]) > (1 - sp.s2_tol) * min(checks[:-5]):
                 break
         with torch.no_grad():
-            if state is not None:
-                for p, v in zip(params, state):
-                    p.copy_(v)
+            for p, v in zip(params, state):
+                p.copy_(v)
             for p in params:
                 p.grad = None
         print('[ps2] S2 state-map fit: calibration EE residual %.4f -> %.4f in %d steps' % (r0, best, s), flush=True)

@@ -1,7 +1,6 @@
 """One-step orthogonal-by-construction (OBC) augmentation: the GENERIC part (D-192)."""
 __project_origin__ = "added"
 
-import time
 from dataclasses import dataclass
 from typing import Callable, Optional, Sequence
 
@@ -138,16 +137,12 @@ class OBCLifecycle:
 
         self.basis: Optional[OBCBasis] = None
         self.last_refresh_epoch: Optional[int] = None
-        self.n_refresh = 0
-        self.n_rank_loss = 0
         self.consecutive_rank_loss = 0
-        self.timing = {'field_and_solve_s': [], 'refresh_s': []}
 
     def refresh(self, vbar: Tensor, epoch: Optional[int] = None) -> RankReport:
         """Rebuild the basis at a DETACHED copy of `vbar`; apply the rank-loss policy."""
-        t0 = time.perf_counter()
         vbar64 = vbar.detach().to(torch.float64).clone()
-        J, build_s = self.basis_builder(vbar64)
+        J, _ = self.basis_builder(vbar64)
         cand = OBCBasis.from_matrix(J, vbar64, rtol=self.rtol,
                                     scale_columns=self.scale_columns)
         del J
@@ -155,10 +150,7 @@ class OBCLifecycle:
             cand.to(self.basis.device)
         rep = cand.report
         expected = self.expected_rank if self.expected_rank is not None else rep.n_cols
-        entry = {'epoch': epoch, 'rank': rep.rank, 'expected': expected, 'cond': rep.cond,
-                 'singular_values': rep.singular_values, 'accepted': rep.rank >= expected}
         if rep.rank < expected:
-            self.n_rank_loss += 1
             self.consecutive_rank_loss += 1
             msg = ('[obc] refresh at epoch %s: numerical rank %d < %d (tol %.3e). '
                    % (epoch, rep.rank, expected, rep.tol))
@@ -173,10 +165,7 @@ class OBCLifecycle:
         else:
             self.consecutive_rank_loss = 0
             self.basis = cand
-        self.n_refresh += 1
         self.last_refresh_epoch = epoch
-        entry['seconds'] = time.perf_counter() - t0
-        self.timing['refresh_s'].append(entry['seconds'])
         return rep
 
     def maybe_refresh(self, epoch: int, vbar_fn: Callable[[], Tensor]) -> bool:
@@ -199,11 +188,6 @@ class OBCLifecycle:
         return theta64.to(self.out_dtype)
 
     def prediction_coefficient(self, learning_component) -> Tensor:
-        """Current coefficient for validation/prediction, without training bookkeeping."""
+        """Current coefficient for validation/prediction: the same solve, without autograd."""
         with torch.no_grad():
-            F = self.reference_field(learning_component)
-            if F.device != self.basis.device:
-                self.basis.to(F.device)
-            theta64 = self.basis.coefficient(F)
-            theta = theta64.to(self.out_dtype)
-            return theta
+            return self.coefficient(learning_component)

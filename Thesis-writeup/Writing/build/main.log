@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  20 OCT 2026 19:38
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  21 OCT 2026 16:13
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -635,24 +635,24 @@ File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 ) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 22.
-LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
 
 -- Lines per column: 56 (exact).
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mkii
@@ -677,18 +677,18 @@ File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
-Package hyperref Info: Link coloring OFF on input line 22.
+Package hyperref Info: Link coloring OFF on input line 26.
  (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.out) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.out)
 \@outlinefile=\write5
 \openout5 = `main.out'.
 
-LaTeX Info: Redefining \microtypecontext on input line 22.
-Package microtype Info: Applying patch `item' on input line 22.
-Package microtype Info: Applying patch `toc' on input line 22.
-Package microtype Info: Applying patch `eqnum' on input line 22.
-Package microtype Info: Applying patch `footnote' on input line 22.
-Package microtype Info: Applying patch `verbatim' on input line 22.
-LaTeX Info: Redefining \microtypesetup on input line 22.
+LaTeX Info: Redefining \microtypecontext on input line 26.
+Package microtype Info: Applying patch `item' on input line 26.
+Package microtype Info: Applying patch `toc' on input line 26.
+Package microtype Info: Applying patch `eqnum' on input line 26.
+Package microtype Info: Applying patch `footnote' on input line 26.
+Package microtype Info: Applying patch `verbatim' on input line 26.
+LaTeX Info: Redefining \microtypesetup on input line 26.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -818,22 +818,22 @@ Underfull \hbox (badness 1681) in paragraph at lines 441--458
  []
 
 ) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex) [2]
-Overfull \hbox (5.86552pt too wide) in paragraph at lines 197--200
+Overfull \hbox (5.86552pt too wide) in paragraph at lines 249--252
  [][] 
  []
 
-[3] (figures/lfr_loop.tex)
-Underfull \vbox (badness 2486) has occurred while \output is active []
 
- [4] [5]) (sections/03_augmentation.tex
+Underfull \vbox (badness 1127) has occurred while \output is active []
+
+ [3] (figures/lfr_loop.tex) [4] [5]) (sections/03_augmentation.tex
 Underfull \hbox (badness 3009) in paragraph at lines 211--254
 []|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[6]
-Underfull \vbox (badness 1092) has occurred while \output is active []
 
- (figures/tex/augmentation_structure.tex) [7]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [6] [7] (figures/tex/augmentation_structure.tex)
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 546.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
@@ -843,88 +843,85 @@ Underfull \hbox (badness 3009) in paragraph at lines 536--562
  []
 
 [8]
-<figures/closed_loop_same_reference.pdf, id=497, 281.74458pt x 103.98448pt>
+<figures/closed_loop_same_reference.pdf, id=501, 281.74458pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
-Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 657.
+Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 665.
 (pdftex.def)             Requested size: 252.0pt x 93.00919pt.
 
-Underfull \hbox (badness 2351) in paragraph at lines 681--796
+Underfull \hbox (badness 2351) in paragraph at lines 689--808
 |   []   |   []   |   []   |   []   |   []   |   []
  []
 
 
-Underfull \hbox (badness 3849) in paragraph at lines 681--796
+Underfull \hbox (badness 3849) in paragraph at lines 689--808
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [9 <./figures/closed_loop_same_reference.pdf>]
-Overfull \hbox (4.6546pt too wide) detected at line 796
+[9 <./figures/closed_loop_same_reference.pdf>]
+Overfull \hbox (4.6546pt too wide) detected at line 808
 [][][][][]
  []
 
 [10]
-Overfull \hbox (4.90492pt too wide) detected at line 1008
+Overfull \hbox (4.90492pt too wide) detected at line 1028
 [][][][][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1008--1032
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [11]
+Underfull \hbox (badness 10000) in paragraph at lines 1028--1052
 
  []
 
-[11] (figures/tex/ps2_windows.tex)
-Overfull \hbox (0.61876pt too wide) detected at line 1146
+(figures/tex/ps2_windows.tex) [12]
+Overfull \hbox (0.61876pt too wide) detected at line 1170
 [][][][][]
  []
 
-[12]) (sections/04_obc.tex [13]
-Underfull \vbox (badness 1062) has occurred while \output is active []
-
- [14] [15]
-Underfull \hbox (badness 10000) in paragraph at lines 359--380
+[13]) (sections/04_obc.tex [14] [15]
+Underfull \hbox (badness 10000) in paragraph at lines 367--396
 
  []
 
 
-Overfull \hbox (16.96844pt too wide) detected at line 393
+Overfull \hbox (16.96844pt too wide) detected at line 409
 [][][][][]
  []
 
-) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [16] [17]
-LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 264.
+) (sections/05_setup.tex (tables/setup_numbers.tex) [16] (figures/gantry_system_with_absorber.tex) [17]
+LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 293.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 264.
-) (sections/06_results.tex [18] (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=858, 254.3515pt x 207.31088pt>
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 293.
+ [18]) (sections/06_results.tex (tables/res_structure.tex)
+<figures/res_time_trace.pdf, id=873, 254.3515pt x 207.31088pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
-Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 84.
+Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 91.
 (pdftex.def)             Requested size: 252.0pt x 205.39972pt.
-<figures/res_frf.pdf, id=859, 238.08197pt x 151.69862pt>
+<figures/res_frf.pdf, id=874, 238.08197pt x 151.69862pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
-Package pdftex.def Info: figures/res_frf.pdf  used on input line 91.
+Package pdftex.def Info: figures/res_frf.pdf  used on input line 98.
 (pdftex.def)             Requested size: 252.0pt x 160.56828pt.
- (tables/res_obc_combinations.tex)
-<figures/res_generalisation.pdf, id=867, 485.19507pt x 324.09154pt>
+ [19] (tables/res_obc_combinations.tex)
+<figures/res_generalisation.pdf, id=894, 485.19507pt x 324.09154pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
-Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 145.
+Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 175.
 (pdftex.def)             Requested size: 516.0pt x 344.66783pt.
- [19 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]
+ [20 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
-) (sections/07_discussion.tex
+
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [20 <./figures/res_generalisation.pdf>]) (sections/08_conclusion.tex
+ [21 <./figures/res_generalisation.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
 Underfull \hbox (badness 1817) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
@@ -934,14 +931,14 @@ Underfull \hbox (badness 2158) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [21]) [22
+) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [22]) [23
 
 ] (sections/99_appendix.tex
 Overfull \hbox (47.02722pt too wide) detected at line 182
 [][]
  []
 
-[23
+[24
 
 ] Including 'wip' comment.
 \openout4 = `comment.cut'.
@@ -956,19 +953,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 221--222
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
-<figures/res_frf_full.pdf, id=1002, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=1028, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
 Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 230.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
 (tables/res_all_splits.tex)
-<figures/res_lpv_lti.pdf, id=1006, 228.03192pt x 208.10849pt>
+<figures/res_lpv_lti.pdf, id=1032, 228.03192pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 260.
 (pdftex.def)             Requested size: 252.0pt x 229.98064pt.
  (tables/res_structure_val.tex)
-<figures/res_ps_spectrum.pdf, id=1007, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=1033, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 272.
@@ -978,30 +975,29 @@ Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--293
  [][] 
  []
 
-[24]
-<figures/setup_band.pdf, id=1021, 239.52798pt x 194.67302pt>
+[25]
+<figures/setup_band.pdf, id=1048, 239.52798pt x 194.67302pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
-Package pdftex.def Info: figures/setup_band.pdf  used on input line 379.
+Package pdftex.def Info: figures/setup_band.pdf  used on input line 385.
 (pdftex.def)             Requested size: 252.0pt x 204.81667pt.
- [25 <./figures/res_frf_full.pdf>]
-<figures/setup_coverage.pdf, id=1060, 216.95761pt x 300.7344pt>
+ [26 <./figures/res_frf_full.pdf>]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+<figures/setup_coverage.pdf, id=1087, 216.95761pt x 300.7344pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
-Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 437.
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 443.
 (pdftex.def)             Requested size: 252.0pt x 349.31104pt.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [26] [27 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>]
-Underfull \vbox (badness 1127) has occurred while \output is active []
-
- [28 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>]
-Overfull \hbox (101.11467pt too wide) in paragraph at lines 551--599
+ [27] [28 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>]
+Overfull \hbox (101.11467pt too wide) in paragraph at lines 563--611
  [][] 
  []
 
-Including 'wip' comment.
+[29 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut
@@ -1009,7 +1005,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 6--7
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
  []
 
-))
+) (figures/gantry_system_floating_joint.tex))
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -1021,7 +1017,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[29] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
+[30] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -1030,17 +1026,17 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 8913C76DF126318F6AB56CBD14713BCC;8030.
  ) 
 Here is how much of TeX's memory you used:
- 28193 strings out of 467867
- 540346 string characters out of 5416882
- 1026364 words of memory out of 5000000
- 56009 multiletter control sequences out of 15000+600000
- 693210 words of font info for 367 fonts, out of 8000000 for 9000
+ 28255 strings out of 467867
+ 541508 string characters out of 5416882
+ 1024967 words of memory out of 5000000
+ 56051 multiletter control sequences out of 15000+600000
+ 693790 words of font info for 377 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (30 pages, 1484765 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1508286 bytes).
 PDF statistics:
- 1319 PDF objects out of 1440 (max. 8388607)
- 189 named destinations out of 1000 (max. 500000)
+ 1356 PDF objects out of 1440 (max. 8388607)
+ 191 named destinations out of 1000 (max. 500000)
  64428 words of extra memory for PDF output out of 74296 (max. 10000000)
 

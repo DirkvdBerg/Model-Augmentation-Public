@@ -42,7 +42,9 @@ def resolve_checkpoint(base_path):
     pair_pt, pair_npz = base_path + '.pt', base_path + '.npz'
     if os.path.exists(pair_pt) and os.path.exists(pair_npz):
         ckpt = torch.load(pair_pt, map_location='cpu')
-        meta = np.load(pair_npz, allow_pickle=True)
+        # D-279 (F6): read and closed, since a rerun moves this file right after loading it
+        with np.load(pair_npz, allow_pickle=True) as z:
+            meta = {k: z[k] for k in z.files}
         return ckpt['hfn'], ckpt['encoder'], ckpt.get('optimizer'), meta, 'pair'
 
     candidates = [base_path] if base_path.endswith('.pth') else [
@@ -52,9 +54,14 @@ def resolve_checkpoint(base_path):
     whole = next((c for c in candidates if os.path.exists(c)), None)
     if whole is not None:
         d = torch.load(whole, map_location='cpu', weights_only=False)
+        # D-279 (F4): the count is cumulative over chained continuations (epochs_before = the
+        # count the dump's job started from); ps2_opening = (phase, updates) of the opening at
+        # these weights
         meta = {
-            'done_epochs': np.array(int(round(float(d.get('epoch_counter', 0))))),
+            'done_epochs': np.array(int(round(float(d.get('epochs_before', 0))
+                                              + float(d.get('epoch_counter', 0))))),
             'bestfit': np.array(float(d.get('bestfit', float('inf')))),
+            'ps2_opening': d.get('ps2_opening'),
         }
         _opt = d.get('optimizer') or d.get('_optimizer')
         _opt_sd = _opt.state_dict() if _opt is not None and hasattr(_opt, 'state_dict') else None
@@ -132,6 +139,14 @@ def _assert_same_dtype(fit_sys, hfn_sd):
 def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
     """Restore weights (+ Adam state on an 'adam' start) from either format; return the meta."""
     hfn_sd, enc_sd, optim_sd, meta, fmt = resolve_checkpoint(base_path)
+    opening = meta.get('ps2_opening')
+    if start_phase == 'adam' and opening is not None and opening[0] != 'S3' and opening[1] > 0:
+        # D-279 (F4): the opening's own state (head, optimizers, calibration, RNG) is not in a
+        # dump, so a continuation can neither resume it nor restart it on weights it already changed
+        raise RuntimeError(
+            '%s was written %d updates into an unfinished PS2 opening (phase %s). A continuation '
+            'can neither resume nor restart the opening from it; continue from a dump written '
+            'before the opening started or after it ended.' % (base_path, opening[1], opening[0]))
     _assert_same_dtype(fit_sys, hfn_sd)
     # CHANGED (D-191): raw JE checkpoints carry log_params; reduced JE checkpoints carry
     # free_params. The exact architecture check below rejects cross-parameterization resumes.
@@ -150,7 +165,7 @@ def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
     print(f'  Checkpoint format: {fmt}')
     if start_phase == 'adam' and optim_sd is None:
         _dropped = bool(meta['optimizer_state_dropped']) \
-            if 'optimizer_state_dropped' in getattr(meta, 'files', []) else None
+            if 'optimizer_state_dropped' in meta else None
         print('  NOTE: this checkpoint carries NO Adam optimizer state'
               + (' (recorded as deliberate: optimizer_state_dropped=True)' if _dropped
                  else ' (whole-system format: deepSI stores a live optimizer, not a state dict)'
@@ -209,8 +224,10 @@ class ValHistory:
         self.record('adam', fit_sys, value)
 
 
-def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), history=None):
-    """The D-171 phase, with the device round-trip wired in."""
+def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), history=None,
+                     adam_ran=True):
+    """The D-171 phase, with the device round-trip wired in. `adam_ran`: False when this job ran no
+    Adam update (polish-only, or a resume with the budget spent)."""
     print('\n[lbfgs] polish phase (D-171): Adam is done, quasi-Newton from here')
     spec = PolishSpec(
         n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter,
@@ -225,7 +242,13 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
         # score `bestfit`, for OBC as well. With OBC, fit() rebuilt the basis at the restored
         # parameters, so the rebuilt model scores slightly differently; it is measured once for the
         # log and the history, and it is the model kept when the polish is rejected.
-        val_before = (bestfit if (np.isfinite(bestfit) and cfg.start_phase != 'lbfgs') else None)
+        # D-278: a polish-only start uses the selected score of its checkpoint too (Dirk:
+        # best checkpoint), no longer the start model's remeasured score.
+        val_before = (bestfit if np.isfinite(bestfit) else None)
+        if not adam_ran and not cfg.obc:
+            # The remeasure the polish skips when val_before is given ran the eager forward that
+            # completes lazy initialisation before the compiled probe (lbfgs_polish `_validate`).
+            fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure)
         if cfg.obc:
             val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
             print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
@@ -250,9 +273,9 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
             fit_sys.cpu()
 
 
-def train(fit_sys, hp, cfg: RunConfig, data, norm,
-          resume_ckpt=None, checkpoint_dir=None, run_id=None):
-    """Train for hp['epochs'] epochs with sim-NRMSe validation, then the L-BFGS polish (D-171)."""
+def train(fit_sys, hp, cfg: RunConfig, data, resume=None, checkpoint_dir=None, run_id=None):
+    """Train for hp['epochs'] epochs with sim-NRMSe validation, then the L-BFGS polish (D-171).
+    `resume` = (path, meta) of the checkpoint main() has already loaded into fit_sys (D-279 F6)."""
     done_epochs = 0
     resumed_at_epoch = -1
     lbfgs_outcome = None
@@ -261,13 +284,15 @@ def train(fit_sys, hp, cfg: RunConfig, data, norm,
         fit_sys.unique_code = str(run_id)
     bestfit = float('inf')
 
-    if resume_ckpt is not None:
-        meta = load_checkpoint(fit_sys, resume_ckpt, cfg.joint_estimation,
-                               start_phase=cfg.start_phase)
+    resume_ckpt, meta = (None, None) if resume is None else resume
+    if meta is not None:
         done_epochs = int(meta['done_epochs'])
         resumed_at_epoch = done_epochs
         bestfit     = float(meta['bestfit'])
         print(f'Resumed from {resume_ckpt}  ({done_epochs} epochs done)')
+        # D-279 (F4): this job's dumps count on from here. Weights and Adam moments continue; the
+        # batch stream and an unfinished PS2 opening do not, so this is no uninterrupted trajectory.
+        fit_sys.epochs_before = done_epochs
 
     epochs_remaining = hp['epochs'] - done_epochs
     print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val={cfg.validation_measure}  '
@@ -278,7 +303,11 @@ def train(fit_sys, hp, cfg: RunConfig, data, norm,
     fit_sys.bestfit = float('inf')
     t0 = time.time()
     opening = None
-    if cfg.ps2 and done_epochs == 0 and cfg.start_phase == 'adam':
+    # D-279 (F4): a dump written after the opening ended never restarts it, even when its count
+    # rounds to 0 (load_checkpoint refuses one written inside it); without a record, the count decides
+    ps2_state = None if meta is None else meta.get('ps2_opening')
+    if cfg.ps2 and cfg.start_phase == 'adam' and (
+            done_epochs == 0 if ps2_state is None else ps2_state[0] != 'S3'):
         spec = PS2Spec(seed=cfg.seed)
         if cfg.ps2_smoke:
             spec = PS2Spec(seed=cfg.seed, eval_every=2, s1_min=0, s1_cap=4, screen_at=-1, screen_max=float('inf'),
@@ -291,9 +320,14 @@ def train(fit_sys, hp, cfg: RunConfig, data, norm,
     fit_sys.validation_probes = tuple(prev) + (probe,)
     _prev_probes = prev
     history = fit_sys.validation_probes[-1]
+    adam_ran = cfg.start_phase != 'lbfgs' and epochs_remaining > 0
     try:
         if cfg.start_phase == 'lbfgs':
             print('  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly')
+        elif epochs_remaining <= 0:
+            # D-278: the Adam budget is already spent; fit(epochs=0) would not be a no-op. Polish
+            # directly.
+            print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, hp['epochs']))
         else:
             eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
             if eps_values != {float(cfg.adam_eps)}:
@@ -305,12 +339,10 @@ def train(fit_sys, hp, cfg: RunConfig, data, norm,
                 fit_sys.cuda()
             fit_sys.fit(
                 train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
-                batch_size=hp['batch_size'], epochs=epochs_remaining or hp['epochs'],
+                batch_size=hp['batch_size'], epochs=epochs_remaining,
                 n_its=cfg.n_its,
                 its_per_val=(cfg.n_its if cfg.n_its else (cfg.its_per_val or 'epoch')),
-                auto_fit_norm=False,
                 loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
-                optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps},
                 cuda=(cfg.device == 'cuda'),
                 validation_measure=cfg.validation_measure,
             )
@@ -337,7 +369,8 @@ def train(fit_sys, hp, cfg: RunConfig, data, norm,
     selected = min(reversed(_adam), key=lambda r: r['score']) if _adam else None
     if selected is not None:
         history.record('selected', fit_sys, selected['score'], row=selected)
-    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit, history=history)
+    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit, history=history,
+                                     adam_ran=adam_ran)
     _last = {r['event']: r for r in history.val_hist}
     final = (_last.get('polish_candidate') if lbfgs_outcome and lbfgs_outcome.get('accepted')
              else _last.get('rebuilt') or selected)

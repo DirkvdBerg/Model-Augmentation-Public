@@ -177,7 +177,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
             x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
         return x
 
-    def _deriv_with(self, x: Tensor, u: Tensor, mats, terms: dict = None) -> Tensor:
+    def _deriv_with(self, x: Tensor, u: Tensor, mats) -> Tensor:
         # CHANGED (D-192): body of `deriv` with the matrix tuple passed in; see nonlinear_function.
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
@@ -219,8 +219,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         return xdot
 
     # CHANGED (D-194): primal AND tangent in ONE pass.
-    def _deriv_both_with(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats,
-                         terms: dict = None, sterms: dict = None):
+    def _deriv_both_with(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
         (dK, dC, dA_combined,
@@ -497,7 +496,6 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
     # CHANGED (D-192): the transition as a PURE function of the free coordinate.
     def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
         """`x_plus = f_base^d(v, x, u)` at the free coordinate `v = free`, without side effects."""
-        assert z.size(1) == self.nx + self.nu
         p = self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb)
         mats = self._mats_from_raw(p)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)

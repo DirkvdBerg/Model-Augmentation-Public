@@ -62,6 +62,7 @@ COPIED = {
 }
 
 SIDE = None
+CLEAN_AT_START = None
 
 
 def select_side(side):
@@ -70,6 +71,8 @@ def select_side(side):
     if side not in ('mainline', 'clean'):
         raise ValueError(side)
     SIDE = side
+    global CLEAN_AT_START
+    CLEAN_AT_START = clean_tree_hashes()     # H2: the tree this process imports
     if side == 'mainline':
         sys.path.insert(0, os.path.join(REPO, 'scripts', 'gantry'))
     else:
@@ -133,12 +136,33 @@ def sha256_file(path):
     return h.hexdigest()
 
 
-def source_hashes():
-    """SHA256 of the 19 copied mainline files, and of their clean counterparts where present."""
-    out = {'mainline': {k: sha256_file(os.path.join(REPO, k)) for k in COPIED}}
-    out['clean'] = {v: sha256_file(os.path.join(CLEAN, v)) for v in COPIED.values()
-                    if os.path.exists(os.path.join(CLEAN, v))}
+def clean_tree_hashes():
+    """H2: SHA256 of every file under Clean/ (package initialisers and the import-origin guard
+    included, __pycache__ excluded), keyed by the path relative to Clean/ with '/' separators."""
+    out = {}
+    for root, dirs, files in os.walk(CLEAN):
+        dirs[:] = sorted(d for d in dirs if d != '__pycache__')
+        for f in sorted(files):
+            p = os.path.join(root, f)
+            out[os.path.relpath(p, CLEAN).replace(os.sep, '/')] = sha256_file(p)
     return out
+
+
+def clean_tree_problems(recorded):
+    """H2: [] when `recorded`, the clean manifest an output was made with, equals the current clean
+    tree; else every file added, removed or changed since. A clean output made from another tree
+    is refused, never compared."""
+    if not recorded:
+        return ['the clean output records no clean source manifest']
+    now = clean_tree_hashes()
+    return ['clean source changed since the clean output was made: %s' % k
+            for k in sorted(set(now) | set(recorded)) if now.get(k) != recorded.get(k)]
+
+
+def source_hashes():
+    """SHA256 of the 19 copied mainline files, and of the full clean tree (H2)."""
+    return {'mainline': {k: sha256_file(os.path.join(REPO, k)) for k in COPIED},
+            'clean': clean_tree_hashes()}
 
 
 def data_hashes(data_dir, files):
@@ -165,8 +189,8 @@ def thread_settings():
 
 
 def write_meta(out_dir, cfg, data, extra=None):
-    """meta.json of design 6.2: sources, manifests, records, config, data root, libraries, threads,
-    git provenance, budget."""
+    """meta.json of design 6.2: sources (the clean manifest is the full tree, H2), manifests,
+    records, config, data root, libraries, threads, git provenance, budget."""
     from gantry_dynamic.config import git_provenance, config_json_dict
     from gantry_dynamic.data import traj_dir
     ddir = traj_dir(cfg)
@@ -175,7 +199,11 @@ def write_meta(out_dir, cfg, data, extra=None):
         cj = json.loads(json.dumps(config_json_dict(cfg, git=None), default=str))
     except Exception as e:                   # informational only
         cj = 'unavailable: %r' % (e,)
-    meta = dict(side=SIDE, sources=source_hashes(), data=data_hashes(ddir, files),
+    sources = source_hashes()
+    if sources['clean'] != CLEAN_AT_START:
+        # the clean tree changed while this process ran: record no manifest, so H2 refuses the output
+        sources['clean'] = {}
+    meta = dict(side=SIDE, sources=sources, data=data_hashes(ddir, files),
                 data_dir=ddir, files=dict(train=list(data.train_files), val=list(data.val_files),
                                           test=list(data.test_files)),
                 config=cj, libraries=lib_versions(), threads=thread_settings(),

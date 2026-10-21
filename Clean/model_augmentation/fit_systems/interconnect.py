@@ -3,14 +3,15 @@ from deepSI.fit_systems.encoders import SS_encoder_general
 from torch import nn, Tensor
 import torch
 import numpy as np
+import os
 import time
 import itertools
 import math                     # CHANGED (D-192): epoch index for the OBC refresh
 from torch.utils.data import Dataset
 
+from deepSI.datasets import get_work_dirs
 from deepSI.fit_systems.fit_system import print_array_byte_size, My_Simple_DataLoader, loop_dataset
 
-from model_augmentation.utils.utils import detect_algebraic_loop
 from model_augmentation.utils.utils import added  # CHANGED: marker for project-added classes (D-076)
 from model_augmentation.fit_systems.blocks import Block, Static_ANN_Block  # CHANGED: Static_ANN_Block for SSE_Interconnect_Composed's orth term
 from model_augmentation.utils.deepSI_corrections import fixed_System_data_norm
@@ -134,8 +135,6 @@ class Interconnect(nn.Module):
             output_ix_sorted_signal_connections[output_signal_ix].append(signal_connection)
 
         connection_interconnect_matrix = np.roll(directional_signal_connection_matrix[2:,:-2], 2, axis=0)
-
-        assert not detect_algebraic_loop(directional_signal_connection_matrix)
 
         self.order_output_signal_computation = []
         connection_interconnect_matrix[:,0] = 0
@@ -275,18 +274,17 @@ class Interconnect(nn.Module):
         self.input_signal_sizes.append(new_block.nw)
         self.output_signal_sizes.append(new_block.nz)
 
-    def connect_signals(self, input_signal, output_signal, connection_function_method=None, connection_matrix=torch.empty(0,0), add_to_input_signal_ix=None):
+    def connect_signals(self, input_signal, output_signal, connection_function_method=None, connection_matrix=torch.empty(0,0)):
         # CHANGED (clean): trimmed to the spec path
         input_signal_ix = self.determine_signal_ix(input_signal)
         output_signal_ix = self.determine_signal_ix(output_signal)
-        if add_to_input_signal_ix != None: add_to_input_signal_ix = self.determine_signal_ix(add_to_input_signal_ix)
 
         if not isinstance(connection_function_method, str) and output_signal_ix >= 2: connection_function_method = "concatenation"
         if not isinstance(connection_function_method, str) and output_signal_ix <= 1: connection_function_method = "additive"
         connection_function_method = self.parse_connection_function_method(connection_function_method)
 
         self.signal_connections.append(Signal_Connection(input_signal_ix, output_signal_ix, connection_function_method=connection_function_method, \
-                                        connection_matrix=connection_matrix, add_to_input_signal_ix=add_to_input_signal_ix))
+                                        connection_matrix=connection_matrix))
 
     def connect_block_signals(self, block, input_signal_list: list, output_signal_list: list):
         for input_signal in input_signal_list:
@@ -315,32 +313,43 @@ class Interconnect(nn.Module):
             return signal_ix
 
     def parse_connection_function_method(self, connection_function_method: str):
+        # CHANGED (clean): trimmed to the spec path
         connection_function_method = connection_function_method.lower()
 
         if connection_function_method in ["concatenation", "concat", "con", "cat", "c"]:
             return "concatenation"
         if connection_function_method in ["additive", "add", "a", "additional"]:
             return "additive"
-        if connection_function_method in ["add_to", "to", "at", "add to"]:
-            return "add_to"
 
 class Signal_Connection():
     # CHANGED (clean): trimmed to the spec path
     '''Object to hold information regarding connection between two signals in the interconnect'''
-    def __init__(self, input_signal_ix, output_signal_ix, connection_function_method, connection_matrix = torch.empty((0,0)), add_to_input_signal_ix=None) -> None:
+    def __init__(self, input_signal_ix, output_signal_ix, connection_function_method, connection_matrix = torch.empty((0,0))) -> None:
         self.input_signal_ix = input_signal_ix
         self.output_signal_ix = output_signal_ix
 
         self.connection_function_method = connection_function_method
         self.connection_matrix = connection_matrix
-        self.add_to_input_signal_ix = add_to_input_signal_ix
+
+
+@added
+def _replace(src, dst, tries=20):
+    """os.replace, retried while another process (a sync client, a virus scanner) briefly holds dst
+    open, which Windows reports as PermissionError."""
+    for i in range(tries):
+        try:
+            return os.replace(src, dst)
+        except PermissionError:
+            if i == tries - 1:
+                raise
+            time.sleep(0.25)
 
 
 @added
 class Dtype_DataLoader(My_Simple_DataLoader):
     """My_Simple_DataLoader that keeps the training arrays at the MODEL's dtype."""
 
-    def __init__(self, data, batch_size=32, seed=0, dtype=torch.float32):
+    def __init__(self, data, batch_size=32, dtype=torch.float32):
         def _conv(d):
             t = torch.as_tensor(d)
             return t.to(dtype) if t.is_floating_point() else t
@@ -372,7 +381,7 @@ class SSE_Interconnect(SS_encoder_general):
 
         self.norm = fixed_System_data_norm()
 
-    def init_model(self, sys_data=None, nu=-1, ny=-1, device='cpu', auto_fit_norm=True, optimizer_kwargs={}, parameters_optimizer_kwargs={}, scheduler_kwargs={}):
+    def init_model(self, sys_data=None, nu=-1, ny=-1, device='cpu', optimizer_kwargs={}, parameters_optimizer_kwargs={}, scheduler_kwargs={}):
         # CHANGED (clean): trimmed to the spec path
         '''This function set the nu and ny, inits the network, moves parameters to device, initilizes optimizer and initilizes logging parameters'''
         self.nu, self.ny = sys_data.nu, sys_data.ny
@@ -411,7 +420,7 @@ class SSE_Interconnect(SS_encoder_general):
 
     # CHANGED: added fit() method replacing deepSI's original: supports multi-trajectory, sqrt loss, concurrent validation
     def fit(self, train_sys_data, val_sys_data, epochs=30, n_its=None, batch_size=256, loss_kwargs={}, \
-            auto_fit_norm=True, validation_measure='sim-NRMS', optimizer_kwargs={}, its_per_val='epoch', cuda=False, \
+            validation_measure='sim-NRMS', its_per_val='epoch', cuda=False, \
             verbose=2, sqrt_train=True):
         # CHANGED (clean): trimmed to the spec path
         '''The batch optimization method with parallel validation,'''
@@ -432,7 +441,8 @@ class SSE_Interconnect(SS_encoder_general):
                 # CHANGED (D-169): the model is still on its training device here, so this writes
                 # CUDA tensors.
                 self.checkpoint_save_system()
-            # CHANGED (clean): D-275, _last.pth at every validation so a stopped run can continue
+            # CHANGED (clean): D-275, _last.pth at every validation, so a stopped run can be resumed from
+            # its last weights and Adam moments (not its batch stream or an unfinished PS2 opening).
             self.checkpoint_save_system(name='_last')
             self.train()
             return Loss_val
@@ -505,6 +515,8 @@ class SSE_Interconnect(SS_encoder_general):
                 # CHANGED (D-236): the declared training-phase seam; None = the unchanged loop.
                 if self.training_phase is not None:
                     self.training_phase.after_step(self)
+                    # CHANGED (clean): D-279 (F4), how far the opening got at these weights, for the dumps
+                    self.ps2_opening = (self.training_phase.phase, self.training_phase.it)
 
                 Loss_acc_val_loop += training_loss
                 Loss_acc_print_loop += training_loss
@@ -608,12 +620,18 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     _OBC_UNPICKLABLE = ('obc', 'obc_reference')
     _PHASE_UNPICKLABLE = ('training_phase',)
 
-    def checkpoint_save_system(self, *args, **kwargs):
+    def checkpoint_save_system(self, name='_best', directory=None):
         stash = {k: self.__dict__.pop(k) for k in self._OBC_UNPICKLABLE
                  + self._PHASE_UNPICKLABLE  # CHANGED (D-236)
                  if k in self.__dict__}
         try:
-            return super().checkpoint_save_system(*args, **kwargs)
+            # D-279 (F16): deepSI's save (fit_system.py:493-496) into a temporary file beside the
+            # dump, renamed into place after the complete write, so a process killed while saving
+            # keeps the old dump
+            directory = get_work_dirs()['checkpoints'] if directory is None else directory
+            file = os.path.join(directory, self.name + name + '.pth')
+            torch.save(self.__dict__, file + '.tmp')
+            _replace(file + '.tmp', file)
         finally:
             self.__dict__.update(stash)
 

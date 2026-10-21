@@ -101,12 +101,24 @@
 %   through hybrid bonding, in which dies are directly joined at very fine
 %   pitch.
 % CHANGED: "throughput" dropped, neither source supports machine throughput
-\kw{The dual-drive gantry that we study in this thesis
+% FEEDBACK v2 (ASMPT, Dirk 2026-10-20): ASMPT sentence struck. The ASMPT
+%   supervisor (oral, 2026-10-20): do not tie the gantry to a specific ASMPT
+%   system. The studied gantry is Garcia's model (Fig. 1 caption, Section III
+%   opening); ASMPT's role is the data, so ASMPT is named in Section V
+%   (05_setup.tex, "an ASMPT gantry"). Jan1 (ASMPT sentence in this section)
+%   deferred for that reason; Js3 ("back-end") deferred with it.
+\del[ASMPT]{The dual-drive gantry that we study in this thesis
 is a high-precision motion system of ASMPT, used in back-end
 semiconductor assembly and packaging equipment.}
-The gantry has two actuators that are connected with a cross-arm and a
-third actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}).
-\todo{Js21 (``and presumably it has guidings and stages too, right?'') and Q17 (``add location of encoders'') open: the hardware of the ASMPT machine is confidential, and Garcia's description is of a different machine (Dirk 2026-10-18). Answer the reviewers directly.}
+\chg[ASMPT]{The gantry}{The dual-drive gantry that we study} has \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}).
+% FEEDBACK v1 (2026-10-21): Js21 ("and presumably it has guidings and
+%   stages too, right?"): "parallel linear actuators" and "linear" from
+%   Garcia Sec. 2.1 (PDF p2); "stage" is Garcia's word for the whole
+%   machine (Fig. 1 caption); Garcia's model has no guidings, each actuator
+%   is a mass with friction (Sec. 2.2), so no guidings in the text; answered
+%   to Jasper directly. The studied gantry is Garcia's model (Dirk's revnote
+%   below), so the 2026-10-18 todo reason no longer holds (Dirk 2026-10-21).
 \begin{figure}[b]
   \centering
   \def\gantryabsorber{0}% baseline only; the absorber version is in Section III
@@ -114,8 +126,8 @@ third actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}
   \caption{
   Lumped-parameter model of the Dual-drive gantry stage, adapted from   
   \cite{garcia2013model}. 
-  \kw{Red labels denote actuator coordinates}
-  and blue labels generalised coordinates.}
+  Red labels are actuator coordinates and blue labels generalised coordinates, 
+  with $Y$ in both.}
   % FEEDBACK: caption taken out of its \todo, "Still need to add springs to
   %   the current torsion." removed from the caption (Js23, Js25); no marks
   %   in captions (fragile argument). X1, X2 arrows moved off the fixed
@@ -123,14 +135,25 @@ third actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system}
   \todo{Will need to add springs to the current torsion; feedback from Jasper}
   \label{fig:gantry_system}
 \end{figure}
+\revnote{
+Kan specifiek asmpt attributen voor gebruiken garcia in de matlab simulatie
+in principe niks gebruikt wat niet in garcia staat, met euler lagrange
+}
 % In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
 % the simulated ground-truth system additionally includes the light-grey absorber.
 The actuator forces are defined as
 $\uact=[F_{X1}\;F_{X2}\;F_Y]^\top$ and the measured positions
 $\qact=[X_1\;X_2\;Y]^\top$.
 Here $F_{X1}$, $F_{X2}$ and $F_Y$ are the forces and
-$X_1$, $X_2$ and $Y$ the measured positions of the two X actuators and the Y
-actuator.
+$X_1$, $X_2$ and $Y$ the measured positions of the
+\chg[Dirk]{two X actuators and the Y actuator}{two X and the Y actuators}%
+\add[Q17]{\kwtwo{, each from a linear encoder~\cite{garcia2013model}}}.
+% FEEDBACK v1 (2026-10-21): Q17 ("add location of encoders"): Garcia Sec.
+%   2.1 (PDF p2), each actuator has a linear encoder that measures its
+%   position. Js22 ("positions of what? the stages?"): no change, "of the
+%   two X actuators and the Y actuator" is Garcia's wording (Sec. 2.2, PDF
+%   p3: (X1, X2, Y) are the measured positions of the actuators)
+%   (Dirk 2026-10-21).
 \\
 The system to be identified is the gantry system
 described \chg{as,}{by}
@@ -138,18 +161,23 @@ described \chg{as,}{by}
   \dot x(t)=f\bigl(x(t),\uact(t)\bigr),\qquad y_k=\qact(kT_s)+v_k,
   \label{eq:system}
 \end{equation}
-where the \kw{state $x$ is unknown, except that it contains the actuator
-positions $\qact$}, $y_k$ are the measured positions at sample $k$ with
+% where the \kw{state $x$ is unknown, except that it contains the actuator
+% positions $\qact$}, $y_k$ are the measured positions at sample $k$ with
+% sampling time $T_s$, and $v_k$ is zero-mean, coloured measurement noise.
+% The state-transition function $f$ is unknown.
+where the \chg[own]{\kw{state $x$ is unknown, except that it contains the actuator
+positions $\qact$}}{state $x$ contains the actuator positions $\qact$}, $y_k$ are the measured positions at sample $k$ with
 sampling time $T_s$, and $v_k$ is zero-mean, coloured measurement noise.
-The state-transition function $f$ is unknown.
+The \chg[own]{state-transition function $f$ is}{function $f$ and the
+dimension of $x$ are} unknown.
 The system runs in closed loop with an assumed known
 linear time-invariant feedback controller\del[M-p3]{ (Section~\ref{sec:aug_loop})},
 which gives the data set $\mathcal D_N=\{u_{\mathrm{act},k},y_k\}_{k=1}^N$.
 % \add[M-p3]{The controller computes the actuator forces from the reference
 % $r_k$ and the measured positions, and a feedforward $u^{\mathrm{ff}}_k$ is
 % added (Fig.~\ref{fig:system_loop}):}
-\add[M-p3]{The controller computes the actuator forces from the position
-error $r_k-y_k$ \kwtwo{between} the reference $r_k$ and the measured positions,
+\add[M-p3]{The controller computes the actuator forces from the
+error between the reference $r_k$ and the measured positions $y_k$,
 and a feedforward $u^{\mathrm{ff}}_k$ is added (Fig.~\ref{fig:system_loop}):}
 \begin{equation}
 \begin{aligned}
@@ -159,11 +187,35 @@ and a feedforward $u^{\mathrm{ff}}_k$ is added (Fig.~\ref{fig:system_loop}):}
 \label{eq:system_loop}
 \end{equation}
 \mv[M-p3]{IV-B}{where $(A_{\mathrm{fb}},B_{\mathrm{fb}},C_{\mathrm{fb}},D_{\mathrm{fb}})$
-are the state-space matrices of the controller\add[M-p3]{, with state
+are the state-space matrices of the controller\add[own]{ $K_{\mathrm{fb}}$}\add[M-p3]{, with state
 $x^{\mathrm{fb}}$,} discretised
-with sampling time $T_s$.
+with sampling time $T_s$\add[own]{\kwtwo{, and the actuator forces are held
+constant between samples, $\uact(t)=u_{\mathrm{act},k}$ for
+$kT_s\le t<(k+1)T_s$}}.
+% FEEDBACK (own, 2026-10-21): the hold links the continuous-time
+%   eq:system to the discrete eq:system_loop; Section II states the
+%   assumptions at T_s that Section IV implements (RK4 with the input held,
+%   K_1 at T_s); the data's deviations are named in Section V. Checked by
+%   the second-opinion session sec2-rate-review against Clean/gantry_dynamic
+%   and the Simulink model (Dirk 2026-10-21).
 Both $r_k$ and $u^{\mathrm{ff}}_k$ are in actuator coordinates.}
-\add[M-p3]{The noise $v_k$ is independent of $r$ and $u^{\mathrm{ff}}$.}
+% \add[M-p3]{The noise $v_k$ is independent of $r$ and
+% $u^{\mathrm{ff}}$\add[M-p3]{\kwtwo{, but through the feedback it is
+% correlated with $u_{\mathrm{act}}$}}.}
+\add[M-p3]{The noise $v$ is independent of $r$ and $u^{\mathrm{ff}}$.
+The force $u_{\mathrm{act}}$ is correlated with $v$, because the
+controller computes it from $y$.}
+% FEEDBACK v2 (2026-10-21, Maarten p3, "also discuss noise assumptions
+%   here."): the correlation of u_act with v is the noise property of the
+%   closed-loop data set. Tagged M-p3, not M-p6: the p6 paragraph it first
+%   answered ("Second, the feedback controller causes a correlation ...")
+%   is struck (Jan49, Maarten p6). Used by the Discussion (06_results.tex,
+%   consistency not shown), against the SUBNET assumption stated in IV-C
+%   (Dirk 2026-10-21). Order as Forssell and Ljung 1999
+%   (Automatica), Assumption 2 (reference independent of v, PDF p3) and the
+%   closed-loop problem (correlation of noise and input, PDF p1). A
+%   separate "no process noise" sentence is not added: eq:system shows it,
+%   as Hoekstra 2026 Sec. 2 does (PDF p2-3) (Dirk 2026-10-21).
 % FEEDBACK (2026-10-19, Maarten p3): "It is good to provide a schematic
 %   showing the closed loop and labeling all the signals." and "also discuss
 %   noise assumptions here." The system rows of eq:aug_two_loops and their
@@ -179,7 +231,7 @@ Both $r_k$ and $u^{\mathrm{ff}}_k$ are in actuator coordinates.}
    jn/.style={circle,fill,minimum size=3pt,inner sep=0pt},
    signal/.style={font=\scriptsize}]
   \node[sum] (e) at (0.5,0) {$+$};
-  \node[rblock] (c) at (1.55,0) {$C_{\mathrm{fb}}$};
+  \node[rblock] (c) at (1.55,0) {$K_{\mathrm{fb}}$};
   \node[sum] (f) at (2.6,0) {$+$};
   \node[block] (g) at (4.6,0) {gantry};
   \node[sum] (n) at (6.55,0) {$+$};
@@ -195,36 +247,63 @@ Both $r_k$ and $u^{\mathrm{ff}}_k$ are in actuator coordinates.}
   \draw[->] (7.25,0) -- (7.25,-0.8) -- (0.5,-0.8) -- (e);
   \node[signal] at (0.2,-0.4) {$-$};
  \end{tikzpicture}
- \caption{Closed loop that generates the data: the controller $C_{\mathrm{fb}}$
- of \eqref{eq:system_loop}, the feedforward $u^{\mathrm{ff}}_k$, the gantry
+ \caption{Closed loop that generates the data: the controller
+ $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}, the feedforward $u^{\mathrm{ff}}_k$, the gantry
  \eqref{eq:system} and the measurement noise $v_k$.}
+ % FEEDBACK (own, 2026-10-21): block label C_fb replaced by K_fb, named in
+ %   the eq:system_loop where-clause (C_fb is one of the four matrices of
+ %   eq:system_loop; K_fb matches K_1 of Section V and the ff/fb pair; Maarten
+ %   p6 notation consistency). Gantry output stays q_act; the sampling and
+ %   hold are stated in the text. No marks in figures and captions
+ %   (Dirk 2026-10-21).
  \label{fig:system_loop}
 \end{figure}
 \\
-A baseline model of \eqref{eq:system} with physical
-parameters is available\del[M-mail]{ (Section~\ref{sec:baseline})}.
-\mv[Jan7]{III intro}{The dynamics of the system that are not captured by the baseline model
-\del{defined in Section~\ref{sec:lfr}} will be identified from
-\chg[Jan7]{input-output data measured in closed-loop}{$\mathcal D_N$}.
-The baseline model will be augmented to represent these missing dynamics.}
+We use the lumped-parameter model of Fig.~\ref{fig:gantry_system} as our
+physics-based baseline model of \eqref{eq:system}.
+This model does not capture all dynamics of the system.
+We identify these missing dynamics from $\mathcal D_N$ and augment the
+baseline with learned components and additional
+states~\cite{hoekstra2026lfr}.
 % \mv[Jan7]{III intro}{A correction to the states of the baseline model alone is 
 % not sufficient,
 % \kwtwo{because missing dynamics need states the baseline does not 
 % have\del[M-mail]{
 % (Section~\ref{sec:aug_structure})},}
 % so additional states are introduced.
-\kw{A correction to the states of the baseline model alone is 
-not sufficient for missing dynamics such as a flexible mode, 
-because these need states the baseline does not have, 
-so additional states are introduced.}
-We make use of \kwtwo{a feedforward neural network} to model both the
-corrections to the baseline states
-and the additional states.
 \\
-The goal is to estimate from $\mathcal D_N$ a model that combines this
-baseline with learned components and captures the behaviour of
-\eqref{eq:system}, while the physical
-parameters are uniquely estimated\del[M-mail]{ (Section~\ref{sec:params})}.
+The goal is to estimate the \kw{physical and learned parameters} of the
+augmented model from $\mathcal D_N$, such that it captures the missing
+dynamics and accurately predicts the system, while the identifiable
+combinations of the physical parameters are estimated uniquely.
+% \mv[Jan23]{IV-C}{The model is trained using short windows of the
+% closed-loop data, where each window is simulated with
+% \chg[own]{the known controller}{the controller $K_{\mathrm{fb}}$}.
+% The initial states are estimated by \chg[Q37]{an encoder}{an encoder network}, 
+% including the additional states.}
+% \add[M-p7]{\kwtwo{This is the SUBNET method of Beintema et
+% al.~\cite{beintema2023subnet}: the encoder estimates each initial state
+% from past inputs and outputs and is trained jointly with the model.}}
+We use the SUBNET method of Beintema et
+al.~\cite{beintema2023subnet} to train the model on short windows of
+$\mathcal D_N$, where each window is simulated with the controller
+$K_{\mathrm{fb}}$.
+The initial states are estimated by an encoder network from past inputs and outputs.
+% FEEDBACK v2 (2026-10-21, Maarten p7, highlight on the IV-C sentence "The
+%   network parameters theta_aug, the encoder parameters theta_enc and
+%   theta_base are jointly estimated": "SUBNET is nowhere clear. I would
+%   include at least a brief intro of subnet somewhere. Now the reader
+%   cannot truly understand the identification problem considered so
+%   far."): SUBNET introduced here, right after the goal sentence, as
+%   Hoekstra 2026 introduces it right after the goal sentence of its Sec. 5
+%   (Sec. 5.1, PDF p8); Beintema 2023 states its identification setting in
+%   its own Sec. 2 "Problem setting" (PDF p3). The first two Jan23 sentences
+%   (Jan23: "This should be in the problem statement") come back from IV-C,
+%   since the encoder is no longer unexplained here (also Maarten p7 "I
+%   haven't heard anything about an encoder" and p8, mail: forward
+%   references). The third Jan23 sentence (joint theta_base, sec:params)
+%   stays in IV-C. The drafted IV-C SUBNET sentence is replaced by the
+%   \kwtwo sentence here (Dirk 2026-10-21).
 % RESTRUCTURE (2026-10-19, Maarten mail and p8): the Jan23 paragraph
 %   (windows, controller, encoder, joint theta_base) moved from here to the
 %   opening of Section IV-C, where the encoder is introduced. Here it named
@@ -245,7 +324,6 @@ parameters are uniquely estimated\del[M-mail]{ (Section~\ref{sec:params})}.
 %   Jan23's paragraph stay method (Section III); III's opening paragraphs
 %   now repeat this and are for the Section III session. The
 %   marginal-stability reason (Js82, Js84, Js87, Jan50) stays in III-A/III-C.
-
 \section{Dual-Drive Gantry Physics Baseline}\label{sec:physics}
 % FEEDBACK (2026-10-19): section split off from the former Section II; the
 %   title is the former "Dual-Drive Gantry System and Physics Baseline"
@@ -263,6 +341,15 @@ experiment in the simulation in section V}
 The physics baseline of the gantry system used in this thesis
 is the lumped-parameter model of the
 dual-drive gantry of Garc\'ia-Herreros et al.~\cite{garcia2013model}.
+% NEW (2026-10-21, Dirk): source of the 3x3 matrices; Garcia prints only the
+%   2x2 X-Theta matrices, Eqs. (12) to (17). The 3x3 form comes from the ASMPT
+%   implementation (kamtin-fp-model/02 EulerLagrange/EulerLagrange.m).
+\add{The Lagrange-Euler equations of their kinetic energy, elastic
+energy and dissipation function \cite[Eqs.~(3) to~(5)]{garcia2013model}
+give the equations of motion in all three coordinates.}
+\revnote{The matrices in all three coordinates come from ASMPT's MATLAB
+implementation of this model; attribution to ASMPT is still needed
+(ask Jasper whether and how ASMPT may be named).}
 Let \(L_b\) denote the cross-arm length between the two flexible joints.
 The generalised coordinates  $q=[X\;\Theta\;Y]^\top$ are defined as $X=(X_1+X_2)/2$ and $\Theta=(X_1-X_2)/L_b$, the position and yaw angle of the cross-arm, while $Y$ is
 unchanged. \kw{These coordinates avoid
@@ -301,6 +388,12 @@ where $u$ denotes the generalised force.
 Following Garc\'ia-Herreros et al. \cite{garcia2013model}, the baseline assumes $\cos(\Theta)\approx1$ and $\sin(\Theta)\approx0$, 
 valid for small yaw angles, and assumes that the Coriolis and centripetal force terms are
 negligible compared to the inertia, damping, and stiffness forces.
+% NEW (2026-10-21, Dirk): Garcia Sec. 2.3 moves m_h d Ydd to the force
+%   vector (Eq. 15) and treats Y separately (Eq. 17); the baseline keeps it in M.
+\add{For $X$ and $\Theta$ this gives the matrices of
+\cite[Eqs.~(12) to~(14)]{garcia2013model}; unlike
+\cite{garcia2013model}, we keep the coupling $-m_hd$ between $\Theta$
+and $Y$ in $M(Y)$ instead of moving it to the force vector.}
 \add{Garc\'ia-Herreros et al.\ also model Coulomb friction at the actuators
 $X_1$, $X_2$ and $Y$~\cite[Sec.~2.2]{garcia2013model}.
 We leave this friction out of the baseline, so that the friction of the gantry 
@@ -363,10 +456,16 @@ The nominal values are taken from
 % FEEDBACK: "geometric dimensions" were Dirk's words inside a \todo, so the
 %   review PDF read "and are shown" (Jan15, Js31). Symbol meanings: Garcia
 %   Sec. 2.2 and the d identification passage of Sec. 2.3.
-To prevent the definition of \(q\) from being parameter-dependent,
-the cross-arm length \(L_b\) is fixed at the nominal value listed in Appendix~\ref{app:params}
-rather than treated as a free model parameter.
-\todo{Js33 open (``Wording is a bit weird, in garcia they also do this but this implies they don't''): Garcia lists $L_b$ in his Table~I of identified parameters and does not state that he keeps it fixed, so ``as in [3]'' is not supported. Your wording decision.}
+% FEEDBACK v1 (2026-10-21): Js33 ("Wording is a bit weird, in garcia they
+%   also do this but this implies they don't, right? or otherwise be
+%   specific by explaining it in the relevant section about the parameter
+%   updating."): Jasper's second option taken. The sentence moved to III-C
+%   (sec:params), after the sentence that gives q through eq:Ptransform,
+%   which contains L_b, and reworded there; no claim about Garcia, so
+%   nothing implies he does otherwise (Dirk 2026-10-21).
+\delmv[Js33]{III-C}{To prevent the definition of \(q\) from being parameter-dependent,
+the cross-arm length \(L_b\) is fixed at the nominal value listed in Appendix~\mbox{\ref{app:params}}
+rather than treated as a free model parameter.}
 % FEEDBACK: "As in [3]" removed again (2026-10-18): Garcia Table I is
 %   introduced as identified parameters and contains L_b; no passage says
 %   L_b is kept fixed.
@@ -525,6 +624,11 @@ The fourteen parameters $\theta$ of
 Table~\ref{tab:nominal_parameters} cannot all be identified from input-output data.
 \kwtwo{The positions $X_1$, $X_2$, $Y$ are measured, which gives
 $q$ through \eqref{eq:Ptransform}, and the forces $u$ are known in absolute scale.}
+\add[Js33]{\kwtwo{This transformation uses the cross-arm length $L_b$, so
+$L_b$ is not estimated but fixed at its nominal value
+(Appendix~\ref{app:params}).}}
+% FEEDBACK v1 (2026-10-21): Js33, the III-A L_b sentence moved here and
+%   reworded (struck at its old place in III-A) (Dirk 2026-10-21).
 \kw{With unconstrained initial conditions and full actuation ($P$ invertible), 
 any acceleration $\ddot q$ can be reached at any state within the operating range.
 Since $q$ is measured, the state $(q,\dot q)$ is observable.}

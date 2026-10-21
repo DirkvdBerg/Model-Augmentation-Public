@@ -182,7 +182,7 @@ class RunConfig:
     # derived quantities
     @property
     def fs_new_hz(self) -> int:
-        return self.fs_orig if self.fs_new is None else self.fs_new
+        return self.fs_new
 
     @property
     def d(self) -> int:
@@ -194,11 +194,11 @@ class RunConfig:
 
     @property
     def dtype_np(self):
-        return np.float64 if self.use_f64 else np.float32
+        return np.float64
 
     @property
     def dtype_pt(self):
-        return torch.float64 if self.use_f64 else torch.float32
+        return torch.float64
 
     @property
     def nf(self) -> int:

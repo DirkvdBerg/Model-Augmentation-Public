@@ -329,8 +329,16 @@ at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
 We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.
 The polish minimises the same projected objective, with $\Phi_\Gamma$ held
 fixed at this $\beta$.
-The polish is only kept if its validation error is lower.
-\todo{Clarify (D-274): "lower" means lower than the validation error of the best checkpoint; if the polish is not kept, the model with the rebuilt $\Phi_\Gamma$ is kept, whose validation error can differ slightly from that of the checkpoint (run 229: $2.926741\times10^{-1}$ vs $2.926736\times10^{-1}$).}
+The polish is only kept if its validation error is lower than the selected
+checkpoint's.
+\revnote{Final OBC results pending (polish reruns of R1 and R2,
+2026-10-20, final evaluation not yet run).
+R1 and R13: the polish is kept, validation $\mathrm{NRMS}_e$ from
+$7.751476\times10^{-2}$ to $7.746424\times10^{-2}$ and from
+$2.926736\times10^{-1}$ to $2.925875\times10^{-1}$.
+R2: the polish did not change the model, validation $\mathrm{NRMS}_e$
+$7.834410\times10^{-2}$ before and after (checkpoint
+$7.834413\times10^{-2}$).}
 
 
 The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
@@ -374,6 +382,14 @@ This is a first-order result for the one-step least-squares
 problem on the fixed reference slice $\bar x=0$; it does not
 predict the parameter bias from minimising the closed-loop
 loss \eqref{eq:aug_loss} with active added states.
+\revnote{Issue: $\hat\beta$ reads as the trained estimate of
+Table~\ref{tab:res_obc}, but it is never computed; as a number the
+first-order estimate fails (predicted bias 100 to 1300\,\%, observed a
+few to 30\,\%).
+It only explains what the network overlap and the truth overlap in
+Table~\ref{tab:res_obc} measure.
+Question: keep it under another name, or replace it by a citation
+of~\cite[Eq.~(21)]{gyorok2026obc}?}
 \\
 % RESTRUCTURE (2026-10-20, Dirk): the measures get their own subsection; the
 %   text below is unchanged. New heading shown in kwtwo so it is visible.

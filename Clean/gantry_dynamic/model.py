@@ -116,7 +116,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
             'magnitude while config.json recorded DEVICE=cuda, and the two would be compared as '
             'if they were the same experiment. Check the SLURM allocation (--gres=gpu:1) or set '
             'device="cpu" explicitly.')
-    fit_sys.init_model(sys_data=data.train_data, device='cpu', auto_fit_norm=False,
+    fit_sys.init_model(sys_data=data.train_data, device='cpu',
                        optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
     eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
     if eps_values != {float(cfg.adam_eps)}:

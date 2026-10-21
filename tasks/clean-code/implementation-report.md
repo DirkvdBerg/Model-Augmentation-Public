@@ -2,7 +2,9 @@
 
 2026-10-20. Handoff `tasks/handoffs/2026-10-20-clean-code-implementation.md`; design `tasks/clean-code/design.md`
 (revised) with D-274, D-275 and its amendments 1 to 4. All local layers pass bitwise on CPU; layers 4,
-4b and the 6.4 GPU smokes run on the server (commands at the end).
+4b and the 6.4 GPU smokes run on the server (commands at the end). The judge fixes of 2026-10-21 (step
+4c) changed `Clean/` and the harness; every local layer was rerun on the new tree, see "Judge fixes
+(step 4c)", which supersedes the step-4 rows below for the current code.
 
 ## Result per layer
 
@@ -118,6 +120,68 @@ None changes a number on the CPU path; layers 1 to 3c are the evidence.
    driver) are repeatable to about 1e-13 relative only, far below their printed precision; the
    evaluation scripts were not edited.
 
+## Judge fixes (step 4c)
+
+2026-10-21. Handoff `tasks/handoffs/2026-10-20-clean-code-judge-fixes.md`; findings `judge-codex.md`;
+implementation choices D-279. Every accepted finding is fixed as stated, none reverted. `Clean/` is now
+4,504 lines (was 4,447): the fixes add slightly more than the trims remove. pyflakes 0 warnings; all 24
+modules import with only `Clean/` on the path.
+
+### Per finding
+
+| Finding | What changed, where | Tested by |
+|-|-|-|
+| D-278 F3 | `run_lbfgs_polish`: `val_before = bestfit` whenever finite, polish-only included; a U job that ran no Adam update first runs one eager validation (mainline does this for polish-only; Clean also for the spent-budget resume, same reason, D-279) | 3c 221-lowpass-ii (OBC) and 226-lowpass-ii, both codes: `val_before` = the source's `bestfit` exactly |
+| D-278 F2 | `train`: a resume with no epochs left skips Adam; `fit` gets `epochs_remaining`, no `or hp['epochs']` | new 3c 226-lowpass-iv, both codes: resumes at 3 of 3, no `adam` history row, polish runs |
+| F1 | `main`: a fresh run refuses an existing run folder before reading data (`FileExistsError` naming `--resume`/`--polish-only`); the folder is created when config.json is written | new 3c 226-lowpass-v (clean): refused, folder byte-identical |
+| F6 | `main`: `_prepare_rerun` split into `_rerun_source` (nothing moves) and `_archive_rerun`, called only after data, model (CUDA check) and the full `load_checkpoint` succeeded; `resolve_checkpoint` reads the pair's `.npz` into a dict and closes it (Windows cannot move an open file) | new 3c 224-noisefree-vi (clean): truncated `_best.pth` refused, run folder and dumps byte-identical, no `previous/` |
+| F16 | `SSE_Interconnect_Composed.checkpoint_save_system`: deepSI's save into `<file>.tmp`, then `os.replace` (retried on a Windows sharing violation); every dump, same save points, `--from last` unchanged | all layer-3/3c clean runs write and resume from such dumps |
+| F5 | `lbfgs_polish`: one `try` from the start validation to the final scoring (FixedBatch, probes, steps, final loss, final validation); an uncaught exception is an aborted polish: restore, resync, CUDA cache released after the failed frames are freed; a failed probe returns its exception without traceback before the eager retry | layers 3, 3b, 3c unchanged bitwise; the abort path itself is not reached on CPU |
+| F4 | dumps carry `epochs_before` and `ps2_opening` (phase, updates; set in the fit loop after each opening step); a dump's count is round(epochs_before + epoch_counter); `load_checkpoint` refuses a dump inside a started, unfinished opening; a finished opening is never restarted; comments no longer claim an uninterrupted continuation. Mainline rounding of fractional epochs kept (an exact budget changes the tested 3c numbers) | new 3c 226-lowpass-vii (clean): the second continuation resumes at 4 (not 2), runs 1 epoch, ends at 5; 224-noisefree-vi: a dump marked 3 updates into S1 refused before anything moves |
+| F7 | `compute_normalization`: the `# THEORY:` label beside the first difference (mainline `data.py:350`) | static |
+| F8 | removed `detect_algebraic_loop` with its assertion and import, the `transition_from_free` shape assertion, the `_true_free` round-trip assertion; forward batch-size assertion and external-data guards kept | layers 1 to 3c |
+| F9 | `OBCLifecycle`: `n_refresh`, `n_rank_loss`, `timing`, the entry dict, `t0`, `build_s` removed; rank policy, column scaling and its Gram diagonal kept; the builder still returns `(J, seconds)` (evaluation interface) | layers 1 to 3c (OBC rows) |
+| F10 | `WindowControllerIndex.last_counts` and `ClosedLoopSimulator.last_per_record` removed | layers 1 to 3c |
+| F11 | removed `_make_closure.params`, `Dtype_DataLoader.seed` (fixed RNG seed 0 kept), `terms`/`sterms`, `train.norm`, `init_model`/`fit` `auto_fit_norm`, `fit` `optimizer_kwargs`, with their call-site arguments | layers 1 to 3c |
+| F12 | add-to argument, field and parser branch removed from `connect_signals`, `Signal_Connection`, `parse_connection_function_method` (now 26 trim markers) | layers 1 to 3c |
+| F13 | `GantryOBCCorrection`: constant affine branches (`theta_frozen` p+1, direction `theta[:-1]`, `jv + alpha fbar`); `space` attribute and the basis builder's `space` argument kept | layers 1 to 3c (OBC rows) |
+| F14 | `prediction_coefficient` = `coefficient` under `torch.no_grad()` | layers 1 to 3c (OBC rows) |
+| F15 | S2 restores its snapshot unconditionally; `fs_new_hz`, `dtype_np`, `dtype_pt` return the fixed values | layers 1 to 3c (PS2 rows) |
+| H1 | `compare_l4.py` asserts the expected set on both sides (9 runs, 3 splits, every l4b array and row per run, a val_score check with finite positive `ref_score` per run, a mainline eval check over every run and part); less is PARTIAL; prints PASS, PARTIAL, FAIL or REFUSED, exit 0 only on PASS | local-test outputs: REFUSED (no manifest); synthetic complete, partial, perturbed sets: PASS, PARTIAL, FAIL |
+| H2 | `hcommon.clean_tree_hashes` (every file under `Clean/`, `__pycache__` excluded), captured at process start (a tree changed during a run records none); `compare.py`, `compare_l3bc.py`, `compare_l4.py`, `compare_gpu.py` refuse a clean output from another tree; `l4_loader.py`, `gpu_smoke.py` record it | active in every comparison below |
+
+### Goldens
+
+D-278 reaches only a polish-only start and a resume with the budget spent. Recaptured from mainline: L3c
+226-lowpass-ii and 221-lowpass-ii (old ones in `simulations/clean-golden/L3c-preD278/`); new 226-lowpass-iv.
+For 221-lowpass-ii the recorded `val_before` moves from the rebuilt score 0.379254204730 to the selected
+0.379254207528; the polished model is identical. All other goldens are kept: `compare.py` accepts their
+pre-D-278 `training.py` hash for exactly that file and hash pair (D-279) and never for a ii or iv case.
+
+### Result per layer (current tree, all clean outputs regenerated)
+
+| Layer | Cases | Result | Runtime (golden / clean, per case) |
+|-|-|-|-|
+| 1, 2 | 16 | PASS 16/16 bitwise, 259 to 302 items per case in layer 1 | 32 to 112 s / 34 to 269 s |
+| 3 | 5 | PASS 5/5 bitwise (221-lowpass, 229-noisefree, 224-noisefree, 226-lowpass, 227-lowpass) | 935, 1202, 207, 216, 285 s / 1102, 1242, 208, 223, 230 s |
+| 3b | 2 | PASS 2/2 (forced reject, parameters restored on both sides) | 290, 74 s / 225, 70 s |
+| 3c both codes | 6 | PASS 6/6 bitwise: 226-lowpass i, ii, iii, iv; 221-lowpass i, ii; D-278 checks hold on both sides | 193, 101, 132, 100, 612, 352 s / 211, 101, 164, 86, 563, 361 s |
+| 3c clean only | 3 | PASS 3/3: v (F1), vi (F6, F4), vii (F4) | 9, 38, 133 s |
+| acceptance `R6 lowpass --cpu --smoke` | 1 | PASS, rc 0: initial validation sim-NRMSe 0.3949, 4 Adam updates, polish ACCEPTED, best 0.359563 (as in step 4); config.json, both pairs, val_hist.npz, `_best`/`_last` dumps written, no `.tmp` left | 260 s |
+
+### Deviations added in step 4c
+
+- 7(f) harness: a clean 3c rerun archives its run folder and at once rewrites `val_hist.npz` under the
+  same name; in the OneDrive-synced tree that write failed with Errno 22 in 3 of 11 reruns. `run_l3bc.py`
+  now runs clean 3c cases in `%TEMP%\clean-harness\L3c\<case>` and moves the folder into `_clean/L3c/` at
+  the end. In this proof only 221-lowpass-i ran that way (the other eight ran in place before the change).
+- The first 3c attempt also exposed a Windows-only defect of the F6 reorder (the loaded pair's `.npz`
+  stayed open, so the archive could not move it); fixed in `resolve_checkpoint`, after which every clean
+  layer was rerun (H2).
+- Not changed in mainline (do not edit mainline): mainline's D-278 spent-budget resume reaches a U polish
+  without the eager validation; on CUDA its first compiled probe then does the lazy initialisation.
+  Clean runs the validation there too.
+
 ## Server commands for Dirk (layers 4, 4b and the 6.4 GPU smokes)
 
 All files are in `Thesis-writeup/Code/Verification/clean-code/`; `Clean/` and that folder must be on the
@@ -126,6 +190,10 @@ server checkout (`/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation`
 `Thesis-writeup/Results/`, the server run folders or `~/.deepSI/checkpoints`. Every command runs
 from the harness folder (step 2 changes into it; the batch files change into it themselves).
 
+0. (step 4c) Commit and push `Clean/`, the harness folder and mainline `training.py` (D-278), then pull
+   on the server checkout. Leave `Clean/` unchanged on the server between the loader and smoke runs and
+   their comparisons: the comparators hash the current `Clean/` tree and refuse clean outputs made from
+   another one (H2). Run each comparator in the checkout that produced its outputs.
 1. Read the `[lbfgs]` lines of 221 (job 89792) and 222 (job 89796) in thesis-results-4 and decide the
    staging case of 6.5: ACCEPTED with val_after below the checkpoint's bestfit, ROLLED BACK or ABORTED
    means a plain copy; ACCEPTED with val_after at or above bestfit (but below the rebuilt score) means
@@ -157,8 +225,12 @@ from the harness folder (step 2 changes into it; the batch files change into it 
 Pass criteria: `COMPARE_L4 PASS` (bitwise per record, axis and split, the val-score acceptance on both
 sides and the mainline loader equal to the unmodified evaluation) and `COMPARE_GPU PASS` (compiled branch
 ran, no "skipping cudagraphs", initial validation and the four Adam losses within 1e-9 relative, (b)
-same deterministic and used_compiled, loss_first within 1e-9 relative). Send back the two
-compare-*.json files and the loader `summary.json` files.
+same deterministic and used_compiled, loss_first within 1e-9 relative). Since step 4c, `COMPARE_L4
+PASS` also requires the complete set on both sides (all nine runs, three splits, every layer-4b array
+and row, a val-score check per run with a finite positive reference score, the evaluation check over
+every run); a subset prints `PARTIAL`, and clean outputs without the current `Clean/` manifest print
+`REFUSED` (`COMPARE_GPU REFUSED` likewise). Only PASS counts. Send back the two compare-*.json files
+and the loader `summary.json` files.
 
 ## Local leftovers for Dirk
 
@@ -167,4 +239,9 @@ compare-*.json files and the loader `summary.json` files.
   was refused by the permission check; please delete it by hand.
 - `simulations/clean-golden/smoke/` (the acceptance run) and `simulations/clean-golden/L4-localtest/`
   (the loader script test on 0.6 s records built from the layer-3 goldens, not a layer-4 result; its
-  comparison files are `compare-l4-localtest-{A,B}.json` there) can be deleted; the goldens `L1` to `L3c` and `_clean` are the evidence and stay.
+  comparison files are `compare-l4-localtest-{A,B}.json` there; since H2 they are REFUSED) can be
+  deleted; the goldens `L1` to `L3c` and `_clean` are the evidence and stay.
+- Step 4c: `simulations/clean-golden/_clean-pre4c/` (the step-4 clean outputs and smoke, superseded) and
+  `simulations/clean-golden/L3c-preD278/` (the two pre-D-278 polish-only goldens; git shows them as
+  deleted under `L3c/`) can be deleted or kept as history; `%TEMP%\clean-harness\L3c\` is the empty
+  working folder of deviation 7(f).

@@ -120,8 +120,8 @@ class GantryOBCCorrection(nn.Module):
             E[i, i] = 1.0
         self.register_buffer('E', E)
         self.register_buffer('vbar', torch.zeros(p, dtype=dtype))
-        self.register_buffer('theta_frozen', torch.zeros(
-            p + (1 if self.space == 'affine' else 0), dtype=dtype))
+        # affine space: p tangent directions plus the coefficient of fbar
+        self.register_buffer('theta_frozen', torch.zeros(p + 1, dtype=dtype))
 
     def expansion_point(self) -> Tensor:
         """The CURRENT free coordinate (attached); the lifecycle detaches it."""
@@ -135,8 +135,7 @@ class GantryOBCCorrection(nn.Module):
     # CHANGED (D-194): the ONCE-PER-OBJECTIVE half.
     def tangent_pair(self, theta: Tensor):
         """Per-objective physical pass at ``vbar``."""
-        direction = theta if self.space == 'tangent' else theta[:-1]
-        mats, dmats = self._phy[0].mats_and_tangent_from_free(self.vbar, direction)
+        mats, dmats = self._phy[0].mats_and_tangent_from_free(self.vbar, theta[:-1])
         alpha = theta[-1]
         return mats, dmats, alpha
 
@@ -148,8 +147,7 @@ class GantryOBCCorrection(nn.Module):
         mats, dmats = obc_pass[:2]
         fbar, jv = self._phy[0]._rk4_with_tangent(
             xb, torch.zeros_like(xb), ub, mats, dmats)
-        corr = jv if self.space == 'tangent' else jv + obc_pass[2] * fbar
-        return torch.matmul(self.E, corr)
+        return torch.matmul(self.E, jv + obc_pass[2] * fbar)
 
 
 def make_float64_block(phy_block: Reduced_Gantry_State_Block) -> Reduced_Gantry_State_Block:

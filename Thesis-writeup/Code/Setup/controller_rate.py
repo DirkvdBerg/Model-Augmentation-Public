@@ -66,7 +66,7 @@ def main():
     sc.set_macros(os.path.splitext(os.path.basename(__file__))[0], {
         'SetupKcheck': (sc.sci(chk.max()), 'largest relative RMS, K1 at 20 kHz vs recorded u_fb'),
         'SetupKmismatchMed': ('%.1f' % (100 * np.median(mis)), 'median relative RMS [%], K1 at 4 kHz vs u_fb at the same instant'),
-        'SetupKmismatchMotion': ('%.1f' % (100 * mis[motion].max()), 'largest relative RMS [%] in the records without multisine'),
+        'SetupKmismatchMotion': ('%.2f' % (100 * mis[motion].max()), 'largest relative RMS [%] in the records without multisine'),
         'SetupKmismatchMax': ('%.1f' % (100 * mis.max()), 'largest relative RMS [%], same'),
         'SetupKholdMed': ('%.1f' % (100 * np.median(hold)), 'median relative RMS [%] of the force change within one 4 kHz hold (block mean vs u_fb at kD)'),
     })

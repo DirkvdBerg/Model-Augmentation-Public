@@ -1,17 +1,24 @@
 """Layers 3b and 3c of design 6.3, one case on one side per process.
 
     python -u run_l3bc.py --side S --layer 3b --row 221 --noise lowpass
-    python -u run_l3bc.py --side S --layer 3c --row 226 --noise lowpass --kind i|ii|iii
+    python -u run_l3bc.py --side S --layer 3c --row 226 --noise lowpass --kind i|ii|iii|iv|v|vi|vii
 
 3b: the GOLDEN (mainline) layer-3 `_pre_lbfgs` pair is loaded into a freshly built model on each
 side and `lbfgs_polish(..., val_before=0.0)` forces the reject path (restore and _resync). Saves the
 outcome and the state after it, and asserts in-process that the parameters equal the start.
 
 3c: reruns from each code's OWN layer-3 golden (D-275 D3): (i) Adam continuation from the deepSI
-`_best.pth` with epochs = 4, (ii) polish-only from the `_pre_lbfgs` pair, (iii) (i) from `_last.pth`.
-Mainline: RESUME_CHECKPOINT = a copy of the golden source and EP.CFG = the budget (start_phase
-'lbfgs' for ii) in a new run folder. Clean: main(cfg, rerun=...) on a copy of the clean golden run
-folder and of its deepSI dumps; the cfg comes through RunConfig.from_config_json.
+`_best.pth` with epochs = 4, (ii) polish-only from the `_pre_lbfgs` pair, (iii) (i) from `_last.pth`,
+(iv) (iii) with epochs = 3, the spent budget (D-278 F2). Mainline: RESUME_CHECKPOINT = a copy of the
+golden source and EP.CFG = the budget (start_phase 'lbfgs' for ii) in a new run folder. Clean:
+main(cfg, rerun=...) on a copy of the clean golden run folder and of its deepSI dumps; the cfg comes
+through RunConfig.from_config_json. ii and iv also write d278_checks.json on both sides: ii's polish
+decision used the source's selected score `bestfit` (D-278 F3), iv ran no Adam update.
+Clean only (step 4c, written to clean_asserts.json): (v) a fresh launch into the existing run folder
+is refused and the folder is unchanged (F1); (vi) a resume from a truncated `_best.pth`, and on a PS2
+row from a dump marked inside an unfinished PS2 opening, is refused before anything moves (F6, F4);
+(vii) a second continuation, from case i's `_last.pth` with epochs = 5, resumes at the cumulative
+count 4, not at its own 2 (F4).
 """
 import argparse
 import json
@@ -22,20 +29,32 @@ import time
 
 import hcommon as H
 
+CLEAN_ONLY = ('v', 'vi', 'vii')
+
 ap = argparse.ArgumentParser()
 ap.add_argument('--side', required=True, choices=('mainline', 'clean'))
 ap.add_argument('--layer', required=True, choices=('3b', '3c'))
 ap.add_argument('--row', type=int, required=True, choices=sorted(H.ROWS))
 ap.add_argument('--noise', required=True, choices=('lowpass', 'noisefree'))
-ap.add_argument('--kind', choices=('i', 'ii', 'iii'))
+ap.add_argument('--kind', choices=('i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii'))
 args = ap.parse_args()
+if args.layer == '3c' and args.side == 'mainline' and args.kind in CLEAN_ONLY:
+    sys.exit('kind %s is clean-only' % args.kind)
 
 case = '%d-%s' % (args.row, args.noise)
 tag = case if args.layer == '3b' else '%s-%s' % (case, args.kind)
 side_base = H.GOLDEN if args.side == 'mainline' else H.CLEAN_OUT
-out = os.path.join(side_base, 'L' + args.layer, tag)
-if os.path.exists(out):
-    sys.exit('%s exists; remove it first' % out)
+final = os.path.join(side_base, 'L' + args.layer, tag)
+if os.path.exists(final):
+    sys.exit('%s exists; remove it first' % final)
+out = final
+if args.layer == '3c' and args.side == 'clean':
+    # A clean rerun archives its run folder and at once rewrites val_hist.npz under the same name;
+    # in the OneDrive-synced tree that write failed with Errno 22 (3 of 11 reruns, 2026-10-21). The
+    # case therefore runs in an unsynced folder and is moved to `final` at the end; no number changes.
+    import tempfile
+    out = os.path.join(tempfile.gettempdir(), 'clean-harness', 'L3c', tag)
+    shutil.rmtree(out, ignore_errors=True)
 os.makedirs(out)
 lad = os.path.join(out, 'localappdata')
 os.environ['LOCALAPPDATA'] = lad
@@ -103,23 +122,34 @@ if args.layer == '3b':
     print('L3B accepted=%s params_restored=%s reason=%s' % (res['accepted'], params_restored, res['reason']))
 else:
     kind = args.kind
-    budget = dict(H.BUDGET, epochs=4) if kind in ('i', 'iii') else dict(H.BUDGET)
+    epochs = {'i': 4, 'iii': 4, 'vii': 5}.get(kind)          # None: the budget's own 3 (iv: spent)
+    budget = dict(H.BUDGET, epochs=epochs) if epochs else dict(H.BUDGET)
     src_name = {'i': 'SSE_Interconnect_Composed_%s_best.pth' % rid_l3,
                 'ii': 'gantry_ckpt_%s_pre_lbfgs' % rid_l3,
-                'iii': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3}[kind]
+                'iii': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3,
+                'iv': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3,
+                'vi': 'SSE_Interconnect_Composed_%s_best.pth' % rid_l3,
+                'vii': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3}.get(kind)
+    if kind == 'vii':                          # the second continuation starts from case i's output
+        l3_src = os.path.join(side_base, 'L3c', case + '-i')
     run_id = 'L3c-' + tag
-    shutil.copytree(os.path.join(l3_src, 'localappdata'), lad)       # deepSI dumps of this side's golden
+    shutil.copytree(os.path.join(l3_src, 'localappdata'), lad)       # deepSI dumps of this side's source
+    ckdir = os.path.join(lad, 'deepSI', 'checkpoints')
+    run_dir = os.path.join(out, 'run')
+
+    def _tree(d):
+        """{relative path: SHA256} of every file below d."""
+        return {os.path.relpath(os.path.join(r, f), d): H.sha256_file(os.path.join(r, f))
+                for r, _, fs in os.walk(d) for f in fs}
     if args.side == 'mainline':
         src_dir = os.path.join(out, 'source')
         os.makedirs(src_dir)
         if kind == 'ii':
             for ext in ('.pt', '.npz'):
                 shutil.copy2(os.path.join(l3_src, 'run', src_name + ext), src_dir)
-            resume = os.path.join(src_dir, src_name)
         else:
-            shutil.copy2(os.path.join(lad, 'deepSI', 'checkpoints', src_name), src_dir)
-            resume = os.path.join(src_dir, src_name)
-        os.environ['RESUME_CHECKPOINT'] = resume
+            shutil.copy2(os.path.join(ckdir, src_name), src_dir)
+        os.environ['RESUME_CHECKPOINT'] = os.path.join(src_dir, src_name)
         extra = dict(start_phase='lbfgs') if kind == 'ii' else {}
         cfg, EP = H.make_cfg(args.row, args.noise, run_id=run_id, budget=budget, **extra)
         H.assert_roots()
@@ -128,41 +158,123 @@ else:
         EP.state_recovery_diagnostic = lambda *a, **k: None
         EP.compute_gradient_norms = lambda *a, **k: ({}, {})
         EP.main()
-        os.rename(os.path.join(out, run_id), os.path.join(out, 'run'))
+        os.rename(os.path.join(out, run_id), run_dir)
     else:
-        run_dir = os.path.join(out, 'run')
         shutil.copytree(os.path.join(l3_src, 'run'), run_dir)
         os.environ['SLURM_JOB_ID'] = run_id                     # the rerun id
         cfg0, EP = H.make_cfg(args.row, args.noise, run_id=run_id, budget=budget)
         H.assert_roots()
-        from gantry_dynamic.config import RunConfig
+        from gantry_dynamic.config import RunConfig, save_dir
         with open(os.path.join(run_dir, 'config.json')) as fh:
             meta0 = json.load(fh)
-        cfg = RunConfig.from_config_json(meta0, **({'epochs': 4} if kind in ('i', 'iii') else {}))
+        cfg = RunConfig.from_config_json(meta0, **({'epochs': epochs} if epochs else {}))
         assert cfg == cfg0, (cfg, cfg0)
-        EP.main(cfg, rerun=('resume', run_dir, 'best' if kind == 'i' else 'last') if kind != 'ii'
-                else ('polish-only', run_dir, None))
-        # clean-only assertions (6.3 layer 3c)
-        prev = os.path.join(run_dir, 'previous', run_id)
-        moved = sorted(os.listdir(prev))
+        if kind == 'v':
+            # F1: the layer-3 run folder placed where a fresh launch with its run id would write
+            from dataclasses import replace
+            cfg = replace(cfg, out_root=os.path.join(out, 'out'))
+            sdir = os.path.join(save_dir(cfg), rid_l3)
+            shutil.copytree(run_dir, sdir)
+            before = _tree(sdir)
+            try:
+                EP.main(cfg, run_id=rid_l3)
+                r = dict(refused=False)
+            except FileExistsError as e:
+                r = dict(refused=True, error=str(e))
+            r['unchanged'] = _tree(sdir) == before
+            asserts = dict(r, ok=bool(r['refused'] and r['unchanged']))
+        elif kind == 'vi':
+            # F6 (and F4 on a PS2 row): refused before anything moves
+            best = os.path.join(ckdir, src_name)
+            with open(best, 'rb') as fh:
+                good = fh.read()
+            attempts = {}
 
-        def _orig(f):
-            p = os.path.join(l3_src, 'run', f)
-            return p if os.path.exists(p) else os.path.join(l3_src, 'localappdata', 'deepSI', 'checkpoints', f)
-        expected = sorted(f for f in os.listdir(os.path.join(l3_src, 'run')) if f != 'config.json')
-        if kind != 'ii':
-            expected += ['SSE_Interconnect_Composed_%s%s.pth' % (rid_l3, s) for s in ('_best', '_last')]
-        same = (sorted(moved) == sorted(expected)
-                and all(open(os.path.join(prev, f), 'rb').read() == open(_orig(f), 'rb').read()
-                        for f in moved))
-        meta1 = json.load(open(os.path.join(run_dir, 'config.json')))
-        only_resumes = ({k: v for k, v in meta1.items() if k != 'RESUMES'} == meta0
-                        and len(meta1.get('RESUMES', [])) == 1)
+            def _attempt(label, need):
+                before = (_tree(run_dir), _tree(ckdir))
+                try:
+                    EP.main(cfg, rerun=('resume', run_dir, 'best'))
+                    r = dict(refused=False)
+                except Exception as e:
+                    r = dict(refused=True, error='%s: %s' % (type(e).__name__, str(e).splitlines()[0][:300]))
+                r['unchanged'] = ((_tree(run_dir), _tree(ckdir)) == before
+                                  and not os.path.exists(os.path.join(run_dir, 'previous')))
+                r['ok'] = bool(r['refused'] and r['unchanged'] and need in r.get('error', ''))
+                attempts[label] = r
+                print('L3C vi %s: %s' % (label, r), flush=True)
+            with open(best, 'wb') as fh:
+                fh.write(good[:len(good) // 2])
+            _attempt('truncated _best.pth', '')
+            if H.ROWS[args.row][4]:                              # a PS2 row
+                with open(best, 'wb') as fh:
+                    fh.write(good)
+                d = torch.load(best, map_location='cpu', weights_only=False)
+                d['ps2_opening'] = ('S1', 3)                    # 3 updates into S1
+                torch.save(d, best)
+                _attempt('dump inside an unfinished PS2 opening', 'PS2')
+            with open(best, 'wb') as fh:
+                fh.write(good)
+            asserts = dict(attempts=attempts, ok=bool(
+                len(attempts) == (2 if H.ROWS[args.row][4] else 1) and all(a['ok'] for a in attempts.values())))
+        else:
+            EP.main(cfg, rerun=('resume', run_dir, 'best' if kind == 'i' else 'last') if kind != 'ii'
+                    else ('polish-only', run_dir, None))
+            # clean-only assertions (6.3 layer 3c)
+            prev = os.path.join(run_dir, 'previous', run_id)
+            moved = sorted(os.listdir(prev))
+
+            def _orig(f):
+                p = os.path.join(l3_src, 'run', f)
+                return p if os.path.exists(p) else os.path.join(l3_src, 'localappdata', 'deepSI', 'checkpoints', f)
+            expected = sorted(f for f in os.listdir(os.path.join(l3_src, 'run')) if f not in ('config.json', 'previous'))
+            if kind != 'ii':
+                expected += ['SSE_Interconnect_Composed_%s%s.pth' % (rid_l3, s) for s in ('_best', '_last')]
+            same = (sorted(moved) == sorted(expected)
+                    and all(open(os.path.join(prev, f), 'rb').read() == open(_orig(f), 'rb').read()
+                            for f in moved))
+            meta1 = json.load(open(os.path.join(run_dir, 'config.json')))
+            strip = lambda m: {k: v for k, v in m.items() if k != 'RESUMES'}             # noqa: E731
+            only_resumes = (strip(meta1) == strip(meta0)
+                            and len(meta1.get('RESUMES', [])) == len(meta0.get('RESUMES', [])) + 1)
+            asserts = dict(previous_files=moved, previous_byte_identical=same,
+                           config_only_resumes=only_resumes, resumes=meta1.get('RESUMES'))
+            ok = same and only_resumes
+            if kind == 'vii':
+                z = np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % rid_l3), allow_pickle=True)
+                d = torch.load(os.path.join(ckdir, 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3),
+                               map_location='cpu', weights_only=False)
+                chain = dict(resumed_at_epoch=int(z['resumed_at_epoch']), done_epochs=int(z['done_epochs']),
+                             last_epochs_before=d.get('epochs_before'),
+                             last_epoch_counter=float(d.get('epoch_counter')))
+                chain['ok'] = bool(chain['resumed_at_epoch'] == 4 and chain['done_epochs'] == 5
+                                   and chain['last_epochs_before'] == 4
+                                   and round(chain['last_epoch_counter'], 9) == 1.0)
+                asserts['chain'] = chain
+                ok = ok and chain['ok']
+            asserts['ok'] = bool(ok)
         with open(os.path.join(out, 'clean_asserts.json'), 'w') as fh:
-            json.dump(dict(previous_files=moved, previous_byte_identical=same,
-                           config_only_resumes=only_resumes, resumes=meta1.get('RESUMES')), fh, indent=1)
-        print('L3C clean asserts: previous byte-identical=%s, config.json only RESUMES=%s, moved=%s'
-              % (same, only_resumes, moved))
+            json.dump(asserts, fh, indent=1)
+        print('L3C clean asserts: %s' % json.dumps(asserts), flush=True)
+    if kind in ('ii', 'iv'):
+        # D-278, both sides: ii's polish was decided against the source's selected score, iv ran no Adam
+        z = np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % (run_id if args.side == 'mainline' else rid_l3)),
+                    allow_pickle=True)
+        oc = json.loads(str(z['lbfgs_outcome']))
+        if kind == 'ii':
+            src_npz = (os.path.join(out, 'source', src_name + '.npz') if args.side == 'mainline'
+                       else os.path.join(run_dir, 'previous', run_id, src_name + '.npz'))
+            sel = float(np.load(src_npz, allow_pickle=True)['bestfit'])
+            chk = dict(val_before=oc['val_before'], selected_bestfit=sel, accepted=oc['accepted'],
+                       ok=bool(np.isfinite(sel) and oc['val_before'] == sel))
+        else:
+            vh = os.path.join(run_dir, 'val_hist.npz')
+            ev = [str(e) for e in np.load(vh)['val_hist_event']] if os.path.exists(vh) else []
+            chk = dict(resumed_at_epoch=int(z['resumed_at_epoch']), done_epochs=int(z['done_epochs']),
+                       events=ev, polish_ran=None if oc is None else oc['ran'],
+                       ok=bool(int(z['resumed_at_epoch']) == 3 and 'adam' not in ev and oc is not None))
+        with open(os.path.join(out, 'd278_checks.json'), 'w') as fh:
+            json.dump(chk, fh, indent=1)
+        print('L3C D-278 checks: %s' % json.dumps(chk), flush=True)
     import gantry_dynamic.data as GDD
     files = GDD.record_files(cfg)
 H.assert_roots()
@@ -172,6 +284,9 @@ class _D:
     train_files, val_files, test_files = files
 
 
+if out != final:
+    shutil.move(out, final)
+    out = final
 H.write_meta(out, cfg, _D, dict(case=tag, layer=args.layer, seconds=time.time() - T0))
 print('L3BC_DONE side=%s layer=%s case=%s seconds=%.1f' % (args.side, args.layer, tag, time.time() - T0),
       flush=True)

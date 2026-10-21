@@ -153,7 +153,7 @@ def _eager(fit_sys, active=True):
     return sim.eager() if (active and hasattr(sim, 'eager')) else nullcontext()
 
 
-def _make_closure(fit_sys, batch, params, opt, counter):
+def _make_closure(fit_sys, batch, opt, counter):
     """One closure over the fixed batch, accumulating over chunks when there is more than one."""
     def closure():
         counter[0] += 1
@@ -196,7 +196,8 @@ def _probe_closure(closure, label, verbose):
         if verbose:
             print('  [lbfgs] %s rollout FAILED (%s): %s'
                   % (label, type(e).__name__, str(e).splitlines()[0][:160]))
-        return False, float('nan'), e
+        # without its traceback, so the failed rollout's frames and tensors are freed (D-279 F5)
+        return False, float('nan'), e.with_traceback(None)
     ok = (a == b)
     if verbose:
         print('  [lbfgs] determinism check (%s): %.17e vs %.17e -> %s'
@@ -220,124 +221,148 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec=None,
 
     named = _named_params(fit_sys)
     snap = _snapshot(named)
-
-    def _validate():
-        was_training = fit_sys.hfn.training
-        fit_sys.eval()
-        try:
-            _resync(fit_sys)
-            return float(fit_sys.cal_validation_error(val_sys_data, validation_measure))
-        finally:
-            if was_training:
-                fit_sys.train()
-
-    out['val_before'] = _validate() if val_before is None else float(val_before)
-
-    params = [p for n, p in named if p.requires_grad]
-    out['params_polished'] = sum(p.numel() for p in params)
-
-    batch = FixedBatch(fit_sys, train_sys_data, loss_kwargs, spec.n_windows, spec.seed,
-                       verbose=verbose)
-    out.update(n_windows_used=batch.n_used, n_windows_total=batch.n_total,
-               effective_stride=batch.effective_stride)
-
-    def _new_opt():
-        return torch.optim.LBFGS(
-            params, lr=1.0, max_iter=spec.inner_iter, history_size=spec.history_size,
-            tolerance_grad=spec.tol_grad, tolerance_change=spec.tol_change,
-            line_search_fn='strong_wolfe')
-
-    n_closure = [0]
-    sim = getattr(fit_sys, 'simulator', None)
-    compiled_available = sim is not None and getattr(sim, '_compiled', None) is not None
-
-    with _eager(fit_sys, active=force_eager):
-        opt = _new_opt()
-        closure = _make_closure(fit_sys, batch, params, opt, n_closure)
-        label = 'eager' if (force_eager or not compiled_available) else 'compiled'
-        ok, first, err = _probe_closure(closure, label, verbose)
-        out['deterministic'], out['used_compiled'] = ok, (label == 'compiled' and ok)
-
-    if not ok and not force_eager and compiled_available:
-        print('  [lbfgs] falling back to the EAGER rollout (%s). The strong-Wolfe line '
-              'search compares f at several points, so it needs a loss that both runs and '
-              'reproduces.'
-              % ('the compiled rollout raised' if err is not None
-                 else 'the compiled loss is not reproducible'))
-        force_eager = True
-
-    with _eager(fit_sys, active=force_eager):
-        if not out['deterministic']:
-            opt = _new_opt()
-            closure = _make_closure(fit_sys, batch, params, opt, n_closure)
-            ok, first, err = _probe_closure(closure, 'eager', verbose)
-            out['deterministic'], out['used_compiled'] = ok, False
-        if not ok:
-            out['reason'] = (
-                'the eager rollout raised (%s: %s)' % (type(err).__name__, err)
-                if err is not None else
-                'the loss is not reproducible even eagerly on this device; a line search '
-                'cannot be run. Try torch.use_deterministic_algorithms(True).')
-            out['wall_s'] = time.time() - t0
-            _restore(named, snap)
-            _resync(fit_sys)
-            if verbose:
-                print('  [lbfgs] ABORTED, weights unchanged: %s' % out['reason'])
-            return out
-
-        out['loss_first'] = first
-        if verbose:
-            print('  [lbfgs] %d parameters in one group, m=%d, strong-Wolfe, '
-                  'tol_grad=%.1e tol_change=%.1e (%.1e relative to the opening loss), '
-                  'max %d iterations, %s rollout'
-                  % (out['params_polished'], spec.history_size, spec.tol_grad,
-                     spec.tol_change, spec.tol_change / max(abs(first), 1e-300),
-                     spec.max_iter, 'compiled' if out['used_compiled'] else 'eager'))
-
-        n_outer = max(1, int(math.ceil(spec.max_iter / max(1, spec.inner_iter))))
-        for k in range(n_outer):
-            it_before, _ = _lbfgs_counts(opt, params)
+    batch = opt = closure = failure = None
+    # D-279 (F5): ONE restore-and-resync boundary over everything that allocates or mutates, from
+    # the start validation to the final scoring. An exception the inner handlers do not catch (an
+    # allocation in FixedBatch, the final loss or validation) is an aborted polish: the weights are
+    # restored and the pre-polish result stands.
+    try:
+        def _validate():
+            was_training = fit_sys.hfn.training
+            fit_sys.eval()
             try:
-                opt.step(closure)
-            except Exception as e:
-                kind = 'CUDA out of memory' if _is_oom(e) else type(e).__name__
-                out['n_iter'], out['func_evals'] = _lbfgs_counts(opt, params)
-                out['reason'] = ('%s after %d iterations; phase abandoned, weights restored. %s'
-                                 % (kind, out['n_iter'],
-                                    'Lower lbfgs_windows, or set lbfgs_chunk.'
-                                    if _is_oom(e) else str(e).splitlines()[0][:200]))
+                _resync(fit_sys)
+                return float(fit_sys.cal_validation_error(val_sys_data, validation_measure))
+            finally:
+                if was_training:
+                    fit_sys.train()
+
+        out['val_before'] = _validate() if val_before is None else float(val_before)
+
+        params = [p for n, p in named if p.requires_grad]
+        out['params_polished'] = sum(p.numel() for p in params)
+
+        batch = FixedBatch(fit_sys, train_sys_data, loss_kwargs, spec.n_windows, spec.seed,
+                           verbose=verbose)
+        out.update(n_windows_used=batch.n_used, n_windows_total=batch.n_total,
+                   effective_stride=batch.effective_stride)
+
+        def _new_opt():
+            return torch.optim.LBFGS(
+                params, lr=1.0, max_iter=spec.inner_iter, history_size=spec.history_size,
+                tolerance_grad=spec.tol_grad, tolerance_change=spec.tol_change,
+                line_search_fn='strong_wolfe')
+
+        n_closure = [0]
+        sim = getattr(fit_sys, 'simulator', None)
+        compiled_available = sim is not None and getattr(sim, '_compiled', None) is not None
+
+        with _eager(fit_sys, active=force_eager):
+            opt = _new_opt()
+            closure = _make_closure(fit_sys, batch, opt, n_closure)
+            label = 'eager' if (force_eager or not compiled_available) else 'compiled'
+            ok, first, err = _probe_closure(closure, label, verbose)
+            out['deterministic'], out['used_compiled'] = ok, (label == 'compiled' and ok)
+
+        if not ok and not force_eager and compiled_available:
+            print('  [lbfgs] falling back to the EAGER rollout (%s). The strong-Wolfe line '
+                  'search compares f at several points, so it needs a loss that both runs and '
+                  'reproduces.'
+                  % ('the compiled rollout raised' if err is not None
+                     else 'the compiled loss is not reproducible'))
+            force_eager = True
+            # D-279 (F5): the failed try's optimizer and allocations go before the eager retry
+            opt = closure = None
+            if err is not None and _is_oom(err):
+                torch.cuda.empty_cache()
+
+        with _eager(fit_sys, active=force_eager):
+            if not out['deterministic']:
+                opt = _new_opt()
+                closure = _make_closure(fit_sys, batch, opt, n_closure)
+                ok, first, err = _probe_closure(closure, 'eager', verbose)
+                out['deterministic'], out['used_compiled'] = ok, False
+            if not ok:
+                out['reason'] = (
+                    'the eager rollout raised (%s: %s)' % (type(err).__name__, err)
+                    if err is not None else
+                    'the loss is not reproducible even eagerly on this device; a line search '
+                    'cannot be run. Try torch.use_deterministic_algorithms(True).')
                 out['wall_s'] = time.time() - t0
-                out['n_closure'] = n_closure[0]
                 _restore(named, snap)
                 _resync(fit_sys)
-                if _is_oom(e):
-                    torch.cuda.empty_cache()
                 if verbose:
-                    print('  [lbfgs] ABORTED, weights restored: %s' % out['reason'])
+                    print('  [lbfgs] ABORTED, weights unchanged: %s' % out['reason'])
                 return out
-            out['n_iter'], out['func_evals'] = _lbfgs_counts(opt, params)
-            out['n_closure'] = n_closure[0]
-            done = out['n_iter'] - it_before
+
+            out['loss_first'] = first
             if verbose:
-                print('  [lbfgs] iter %4d (+%d of %d)  (%d closures, %.0f s)'
-                      % (out['n_iter'], done, spec.inner_iter, n_closure[0],
-                         time.time() - t0))
-            if done < spec.inner_iter:
-                out['reason'] = ('converged: L-BFGS stopped internally after %d of %d '
-                                 'iterations in this block (tol_grad=%.1e, tol_change=%.1e)'
-                                 % (done, spec.inner_iter, spec.tol_grad, spec.tol_change))
-                break
-        else:
-            out['reason'] = 'iteration cap %d reached' % spec.max_iter
+                print('  [lbfgs] %d parameters in one group, m=%d, strong-Wolfe, '
+                      'tol_grad=%.1e tol_change=%.1e (%.1e relative to the opening loss), '
+                      'max %d iterations, %s rollout'
+                      % (out['params_polished'], spec.history_size, spec.tol_grad,
+                         spec.tol_change, spec.tol_change / max(abs(first), 1e-300),
+                         spec.max_iter, 'compiled' if out['used_compiled'] else 'eager'))
 
-        out['loss_last'] = _loss_value(fit_sys, batch)
-        out['n_closure'] = n_closure[0]
-        if not np.isfinite(out['loss_last']):
-            out['reason'] += ' | non-finite loss at the final point'
+            n_outer = max(1, int(math.ceil(spec.max_iter / max(1, spec.inner_iter))))
+            for k in range(n_outer):
+                it_before, _ = _lbfgs_counts(opt, params)
+                try:
+                    opt.step(closure)
+                except Exception as e:
+                    kind = 'CUDA out of memory' if _is_oom(e) else type(e).__name__
+                    out['n_iter'], out['func_evals'] = _lbfgs_counts(opt, params)
+                    out['reason'] = ('%s after %d iterations; phase abandoned, weights restored. %s'
+                                     % (kind, out['n_iter'],
+                                        'Lower lbfgs_windows, or set lbfgs_chunk.'
+                                        if _is_oom(e) else str(e).splitlines()[0][:200]))
+                    out['wall_s'] = time.time() - t0
+                    out['n_closure'] = n_closure[0]
+                    _restore(named, snap)
+                    _resync(fit_sys)
+                    if _is_oom(e):
+                        torch.cuda.empty_cache()
+                    if verbose:
+                        print('  [lbfgs] ABORTED, weights restored: %s' % out['reason'])
+                    return out
+                out['n_iter'], out['func_evals'] = _lbfgs_counts(opt, params)
+                out['n_closure'] = n_closure[0]
+                done = out['n_iter'] - it_before
+                if verbose:
+                    print('  [lbfgs] iter %4d (+%d of %d)  (%d closures, %.0f s)'
+                          % (out['n_iter'], done, spec.inner_iter, n_closure[0],
+                             time.time() - t0))
+                if done < spec.inner_iter:
+                    out['reason'] = ('converged: L-BFGS stopped internally after %d of %d '
+                                     'iterations in this block (tol_grad=%.1e, tol_change=%.1e)'
+                                     % (done, spec.inner_iter, spec.tol_grad, spec.tol_change))
+                    break
+            else:
+                out['reason'] = 'iteration cap %d reached' % spec.max_iter
 
-    out['ran'] = True
-    out['val_after'] = _validate()
-    out['wall_s'] = time.time() - t0
+            out['loss_last'] = _loss_value(fit_sys, batch)
+            out['n_closure'] = n_closure[0]
+            if not np.isfinite(out['loss_last']):
+                out['reason'] += ' | non-finite loss at the final point'
+
+        out['ran'] = True
+        out['val_after'] = _validate()
+        out['wall_s'] = time.time() - t0
+    except Exception as e:
+        failure = (_is_oom(e), 'CUDA out of memory' if _is_oom(e) else type(e).__name__,
+                   str(e).splitlines()[0][:200] if str(e) else '')
+    if failure is not None:
+        # handled here, once the except block has released the failed frames and their tensors
+        batch = opt = closure = None
+        out.update(ran=False, accepted=False, wall_s=time.time() - t0, val_after=float('nan'),
+                   reason='%s in the polish; phase abandoned, weights restored. %s' % failure[1:])
+        _restore(named, snap)
+        _resync(fit_sys)
+        if failure[0]:
+            torch.cuda.empty_cache()
+        if verbose:
+            print('  [lbfgs] ABORTED, weights restored: %s' % out['reason'])
+        return out
 
     out['accepted'], why = decide(
         out['val_before'], out['val_after'],

@@ -186,6 +186,7 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     x_logical_list = []
     for t in train_list:
         pos_logical = (P_inv_T @ t.y.T).T
+        # THEORY: var of a first difference of white noise = 2*sigma_n^2, so sigma_v = sigma_n*sqrt(2)*fs
         vel_logical = np.diff(pos_logical, axis=0) * fs
         vel_logical = np.vstack([vel_logical[:1], vel_logical])
         x_logical_list.append(np.hstack([pos_logical, vel_logical]))

@@ -752,7 +752,8 @@ def _gantry_meters(fit_sys):
     return m
 
 
-def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), history=None):
+def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), history=None,
+                     adam_ran=True):
     """The D-171 phase, with the device round-trip and the gantry meter wired in.
 
     Returns the outcome dict, or None when `cfg.lbfgs` is off (an exact no-op).
@@ -790,7 +791,8 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), hi
         # D-278: a polish-only start uses the selected score of its checkpoint too (Dirk:
         # best checkpoint), no longer the start model's remeasured score.
         val_before = (bestfit if np.isfinite(bestfit) else None)
-        if cfg.start_phase == 'lbfgs' and not cfg.obc:
+        # D-280: also after a resume whose Adam budget was spent (`adam_ran` False), not only polish-only.
+        if not adam_ran and not cfg.obc:
             # The remeasure the polish skips when val_before is given ran the eager forward that
             # completes lazy initialisation before the compiled probe (lbfgs_polish `_validate`).
             fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure)
@@ -954,7 +956,8 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     selected = min(reversed(_adam), key=lambda r: r['score']) if _adam else None
     if selected is not None:
         history.record('selected', fit_sys, selected['score'], row=selected)
-    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit, history=history)
+    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit, history=history,
+                                     adam_ran=(cfg.start_phase != 'lbfgs' and epochs_remaining > 0))
     # 'final' = the model that is saved and evaluated: the accepted polish, else (OBC) the model
     # after the basis rebuild, else the selected checkpoint.
     _last = {r['event']: r for r in history.val_hist}

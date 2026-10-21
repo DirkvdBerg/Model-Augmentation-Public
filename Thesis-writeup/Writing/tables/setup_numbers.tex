@@ -10,9 +10,10 @@
 \providecommand{\SetupClPeak}{}\renewcommand{\SetupClPeak}{267}% closed-loop peak of T_YY with K1, median over training Y [Hz]
 % --- controller_rate.py
 \providecommand{\SetupKcheck}{}\renewcommand{\SetupKcheck}{1.5\cdot10^{-9}}% largest relative RMS, K1 at 20 kHz vs recorded u_fb
-\providecommand{\SetupKmismatchMax}{}\renewcommand{\SetupKmismatchMax}{16.8}% largest relative RMS [%], same
-\providecommand{\SetupKmismatchMed}{}\renewcommand{\SetupKmismatchMed}{10.6}% median relative RMS [%], K1 at 4 kHz vs block-mean u_fb
-\providecommand{\SetupKmismatchMotion}{}\renewcommand{\SetupKmismatchMotion}{0.6}% largest relative RMS [%] in the records without multisine
+\providecommand{\SetupKholdMed}{}\renewcommand{\SetupKholdMed}{10.4}% median relative RMS [%] of the force change within one 4 kHz hold (block mean vs u_fb at kD)
+\providecommand{\SetupKmismatchMax}{}\renewcommand{\SetupKmismatchMax}{1.0}% largest relative RMS [%], same
+\providecommand{\SetupKmismatchMed}{}\renewcommand{\SetupKmismatchMed}{0.5}% median relative RMS [%], K1 at 4 kHz vs u_fb at the same instant
+\providecommand{\SetupKmismatchMotion}{}\renewcommand{\SetupKmismatchMotion}{0.03}% largest relative RMS [%] in the records without multisine
 % --- coverage.py
 \providecommand{\SetupEAcc}{}\renewcommand{\SetupEAcc}{100}% E3 acceleration [% of max]
 \providecommand{\SetupESixAcc}{}\renewcommand{\SetupESixAcc}{131}% E6 acceleration [% of max]

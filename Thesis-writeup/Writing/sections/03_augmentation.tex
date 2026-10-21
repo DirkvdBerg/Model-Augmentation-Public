@@ -594,6 +594,14 @@ Kessels instead needs the system's controller state at the start of each
 window, either measured directly or calculated by simulating the
 controller from the start of the record~\cite{kessels2025ai}.}
 We then write the closed-loop model in \eqref{eq:aug_two_loops} as
+\revnote{ZOH eigenlijk beter dan tustin. en tustin is voor een frequency domein het beste.
+dus tustin niet de beste keuze.
+Jasper denkt dat ZOH de juiste keuze is ipv tustin voor controller discretizeren.}
+\revnote{als je discretizeert om tijd te besparne, dat overal doen.
+checken of validatie in 4 of 20khz is.
+met butterworth gooi de data weer weg, dus validatie op 20kzh onlogisch.
+}
+\revnote{verwarrend voor de lezer als je een discrete controller hebt maar in continuous time laat zien.}
 \begin{equation}
 \begin{aligned}
  x^{c}_{k+1}&=A_{\mathrm{fb}}x^{c}_k+B_{\mathrm{fb}}(y_k-\hat y_k),\qquad x^{c}_\tau=0,\\
@@ -680,14 +688,18 @@ the model state.
 records: which parameters are trained, the criterion, the encoder that gives
 each simulation window its initial state, and the optimiser.}
 % RESTRUCTURE (2026-10-19, Maarten p7: brief introduction of the identification method): Dirk's Jan23 paragraph, moved here from Section II.
-\mv[Jan23]{II}{The model is trained using short windows of the closed-loop data, where each
+% FEEDBACK v2 (2026-10-21, Maarten p7, SUBNET): the first two Jan23
+%   sentences and the drafted SUBNET sentence moved to Section II, after the
+%   goal sentence (Dirk 2026-10-21); see the source comment there. The
+%   third Jan23 sentence stays here.
+\delmv[M-p7]{II}{The model is trained using short windows of the closed-loop data, where each
 window is simulated with the known controller.
-The initial states are estimated by \chg[Q37]{an encoder}{an encoder network}, including the additional
-states.
-During training, the physical parameters $\theta_{\mathrm{base}}$ are also
+The initial states are estimated by an encoder network, including the additional
+states.}
+\mv[Jan23]{II}{During training, the physical parameters $\theta_{\mathrm{base}}$ are also
 estimated, using the combinations defined in Section~\ref{sec:params}.}
 % NEW (2026-10-19, Maarten p7: "I would include at least a brief intro of subnet somewhere"): drafted sentence, Dirk to reword.
-\kwtwo{This is the SUBNET approach of Beintema et al.~\cite{beintema2023subnet}:
+\delmv[M-p7]{II}{This is the SUBNET approach of Beintema et al.~\cite{beintema2023subnet}:
 the simulation error over short windows is minimised, and an encoder,
 trained jointly with the model, estimates the initial state of each window
 from past inputs and outputs.}
@@ -844,13 +856,21 @@ rows of the output layer of $\tilde\psi$.
 Check for a published (IFAC) version before submission.}
 \\
 % RESTRUCTURE (2026-10-19): SUBNET assumption moved here from IV-B (Maarten p6, p7).
+% FEEDBACK (own, 2026-10-21): second SUBNET assumption added, the input
+%   independent of the noise (Beintema 2023 Sec. 2.1, PDF p3; Hoekstra 2026
+%   Sec. 5.5, PDF p10, consistency under the conditions on the
+%   data-generating process). Its violation by closed-loop data is not
+%   argued here (one-reason decision, Jan49, Jan50); Section II states the
+%   correlation of u_act with v and the Discussion draws the consequence
+%   (06_results.tex) (Dirk 2026-10-21).
 \mv[M-p7]{IV-B}{SUBNET\del[M-p7]{, the encoder-based identification method of Beintema
-et al.~\cite{beintema2023subnet},} assumes that the system that generates the data is
+et al.~\cite{beintema2023subnet},} assumes \add[own]{\kwtwo{that the input is
+independent of the noise~\cite[Sec.~2.1]{beintema2023subnet} and }}that the system that generates the data is
 incrementally exponentially output
 stable~\cite[Cond.~1]{beintema2023subnet}.
 The identification method we have adapted from~\cite{hoekstra2026lfr}
-relies on this SUBNET assumption~\cite[Sec.~5.5]{hoekstra2026lfr}.
-The open-loop gantry system does not satisfy this assumption: 
+relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions}~\cite[Sec.~5.5]{hoekstra2026lfr}.
+The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:
 a mismatch in the initial velocity will create a permanent position offset.
 In closed-loop the feedback controller is able to correct this offset\add[M-p7]{, which is why each window is simulated in the closed loop of Section~\ref{sec:aug_loop}}.}
 \\
@@ -1041,7 +1061,11 @@ $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
 \item Hand-over: decoder discarded, \eqref{eq:aug_loss} continues from $\vartheta_{\mathrm{PS}}$; deployed model, criterion and selection unchanged; $\bar x$ latent; $\mathcal M_{\mathrm{PS}}$ named
 \end{itemize}
 \fi
-
+\revnote{pragmatisch bekijken, versimpelen. 
+appendix probleem verplaatsen
+probeer makkelijker uit te leggen.
+misschien bepaalde elementen/dingen weg laten die niet echt nodig zijn voor het verhaal.
+pragmatisch mis niet dit hele stuk uit hoeven leggen.}
 The physical states of the baseline are initialised with the 
 data-based fit \eqref{eq:aug_enc_fit} and updated through
 $f^{\mathrm n}_{\mathrm{base}}$, while the added-state rows $W^a$ are randomly initialised.

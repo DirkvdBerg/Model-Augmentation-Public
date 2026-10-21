@@ -75,8 +75,12 @@
 \definecolor{chgnew}{rgb}{0,0.45,0.15}
 \definecolor{mvtext}{rgb}{0,0.25,0.65}
 \newcommand{\fbtag}[1]{\if\relax\detokenize{#1}\relax\else\textsuperscript{\tiny\color{gray}#1}\fi}
-% \fbsout: grey strikethrough; boxes \cite, which \sout cannot break into
-\newcommand{\fbsout}[1]{{\color{gray}\let\fbcite\cite\def\cite##1{\mbox{\fbcite{##1}}}\sout{#1}}}
+% \fbsout: grey strikethrough; boxes \cite, which \sout cannot break into.
+% \kw and \kwtwo become plain text and are expanded first: \sout boxes a
+% braced argument as one unbreakable word, so struck text ran into the next column.
+\makeatletter
+\newcommand{\fbsout}[1]{{\color{gray}\def\kw##1{##1}\def\kwtwo##1{##1}\let\fbcite\cite\def\cite##1{\mbox{\fbcite{##1}}}\protected@edef\fb@sout{#1}\expandafter\sout\expandafter{\fb@sout}}}
+\makeatother
 \ifdraft
   \newcommand{\chg}[3][]{\ifshowdeletions\fbsout{#2}\ \fi{\color{chgnew}#3}\fbtag{#1}}
   \newcommand{\del}[2][]{\ifshowdeletions\fbsout{#2}\fbtag{#1}\fi}

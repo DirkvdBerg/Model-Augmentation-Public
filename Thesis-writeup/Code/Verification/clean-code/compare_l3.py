@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 import hcommon as H
-from compare import check_fingerprint, diff_arrays
+from compare import check_fingerprint, d278_kept, diff_arrays
 
 L3_CASES = ['221-lowpass', '229-noisefree', '224-noisefree', '226-lowpass', '227-lowpass']
 NPZ_SKIP = {'elapsed', 'orig_run_id', 'resumed_from'}
@@ -80,13 +80,17 @@ def compare_runs(grun, crun, out, rid_g, rid_c):
         compare_pair(os.path.join(grun, 'gantry_ckpt_%s%s' % (rid_g, suffix)),
                      os.path.join(crun, 'gantry_ckpt_%s%s' % (rid_c, suffix)), out,
                      'final' if not suffix else 'pre_lbfgs')
-    gv, cv = np.load(os.path.join(grun, 'val_hist.npz')), np.load(os.path.join(crun, 'val_hist.npz'))
-    if set(gv.files) != set(cv.files):
-        out['val_hist:keys'] = 'golden %s | clean %s' % (sorted(gv.files), sorted(cv.files))
-    for k in sorted(set(gv.files) & set(cv.files)):
-        d = diff_arrays(gv[k], cv[k])
-        if d:
-            out['val_hist:' + k] = d
+    gh, ch = os.path.join(grun, 'val_hist.npz'), os.path.join(crun, 'val_hist.npz')
+    if os.path.exists(gh) != os.path.exists(ch):           # a job with no history row writes none
+        out['val_hist'] = 'golden %s | clean %s' % (os.path.exists(gh), os.path.exists(ch))
+    elif os.path.exists(gh):
+        gv, cv = np.load(gh), np.load(ch)
+        if set(gv.files) != set(cv.files):
+            out['val_hist:keys'] = 'golden %s | clean %s' % (sorted(gv.files), sorted(cv.files))
+        for k in sorted(set(gv.files) & set(cv.files)):
+            d = diff_arrays(gv[k], cv[k])
+            if d:
+                out['val_hist:' + k] = d
     gc = json.load(open(os.path.join(grun, 'config.json')))
     cc = json.load(open(os.path.join(crun, 'config.json')))
     for k in sorted(set(gc) & set(cc)):
@@ -116,7 +120,7 @@ def run_l3(cases):
         compare_runs(os.path.join(gdir, 'run'), os.path.join(cdir, 'run'), out, rid, rid)
         ok = not out
         ok_all &= ok
-        res[case] = dict(status='PASS' if ok else 'FAIL', mismatch=out,
+        res[case] = dict(status='PASS' if ok else 'FAIL', mismatch=out, golden_pre_d278=d278_kept(gmeta),
                          seconds=dict(golden=gmeta['seconds'], clean=cmeta['seconds']))
         print('%-14s L3 %s  (golden %.0f s, clean %.0f s)' % (case, res[case]['status'],
                                                               gmeta['seconds'], cmeta['seconds']), flush=True)

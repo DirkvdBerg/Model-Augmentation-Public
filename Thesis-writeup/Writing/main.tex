@@ -15,6 +15,10 @@
 \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote.
 % If that is unneeded, comment it out.
+% Page numbers (Dirk 2026-10-21): the conference option blanks the header, the
+% only place IEEEtran prints the page number; plain puts it centred in the footer.
+\pagestyle{plain}
+\makeatletter\let\ps@IEEEtitlepagestyle\ps@plain\makeatother
 
 \input{util/include}
 \input{util/format}
@@ -35,7 +39,7 @@ Eindhoven, The Netherlands\\
 In collaboration with \textit{ASMPT}, Beuningen, The Netherlands\\[1ex]
 Supervisors: dr.\ ir.\ M. Schoukens, prof.\ dr.\ ir.\ R. T{\'o}th,
 ir.\ J.H. Hoekstra (TU/e);\\
-ir.\ Q. van den Elsen, ir.\ J. Gerritsen (ASMPT)}
+ir.\ Q. van den Elsen, ir.\ J. W. Gerritsen (ASMPT)}
 }
 
 \maketitle

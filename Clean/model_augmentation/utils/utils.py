@@ -20,19 +20,6 @@ def to_tensor(input) -> torch.Tensor:
         except: raise TypeError("Input could not be converted to tensor")
 
 
-def detect_algebraic_loop(A: np.ndarray):
-    n = A.shape[0]
-    An = A.copy()
-
-    for ii in range(2, n + 1):
-        An = np.dot(An, A)
-
-        if np.trace(An) != 0:
-            return True
-
-    return False
-
-
 def expansion_matrix(ix, n):
     S = np.zeros((n, len(ix)))
     S[ix, np.arange(len(ix)), ] = 1

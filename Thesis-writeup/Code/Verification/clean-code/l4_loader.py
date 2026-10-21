@@ -17,6 +17,7 @@ Every computation is the same harness code on both roots; only the code root dif
 --eval-check (mainline side) the loader is first proven against the unmodified mainline evaluation:
 eval_greybox.evaluate (its cache redirected into --out, never into Thesis-writeup/Results),
 eval_overlap.evaluate, eval_negation.evaluate and inspect_checkpoint.added_poles, compared bitwise.
+summary.json records the checks and the clean source manifest (H.clean_tree_hashes, H2).
 """
 import argparse
 import json
@@ -377,8 +378,10 @@ def main():
         full = eval_greybox.run_config
         for m in (eval_greybox, eval_overlap, eval_negation):
             m.run_config = lambda run_dir: replace(full(run_dir), truncate_s=args.truncate_s)
+    # H2: the clean source manifest (both sides, provenance); compare_l4.py refuses a clean output
+    # whose manifest differs from the current Clean/ tree
     summary = {'side': args.side, 'staging': STAGING, 'runs': runs, 'lstsq_driver': LSTSQ_DRIVER,
-               'checks': {}, 'eval_check': {}}
+               'clean_tree': H.clean_tree_hashes(), 'checks': {}, 'eval_check': {}}
     for run in args.runs.split(','):
         rid = runs[run]
         run_dir = os.path.join(STAGING, str(rid))

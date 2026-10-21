@@ -45,7 +45,10 @@
 The system used to obtain the data is simulated. 
 When referring to the system in this section, we refer to this simulated model. 
 The data consist of simulated records, with motion profiles, 
-limits and noise level taken from an industrial gantry whose data is confidential.
+limits and noise level taken from \chg[ASMPT]{an industrial gantry}{an ASMPT gantry} whose data is confidential.
+% FEEDBACK v2 (ASMPT, Dirk 2026-10-20): ASMPT named here, where its data
+%   enter; struck from Section II. The ASMPT supervisor allows saying ASMPT
+%   uses dual-drive gantries, not naming a specific system.
 Frequencies are therefore given relative to the controller bandwidth
 $f_b$, positions relative to the training range, and velocities and
 accelerations relative to the machine limits.
@@ -112,6 +115,12 @@ and lower values keep the standstill servo error above the noise level.}
 \\
 The added mass adds the displacement $q_a$ of $m_a$ relative to
 $m_{h,r}$ along $Y$.
+% NEW (2026-10-21, Dirk): derivation of M_e; the implementation
+%   (Code/Data/gantrySystemExtendedTanh.m) uses only M, C, K in A.
+\add{The equations of motion follow from the Lagrange-Euler equations
+as in Section~\ref{sec:baseline}, with the kinetic energy of $m_a$ and
+the elastic energy and dissipation of $k_a$ and $c_a$ added, and again
+without Coriolis and centripetal terms.}
 With $q_{\mathrm e}=\begin{bmatrix}q^\top&q_a\end{bmatrix}^\top$, the
 system is
 \begin{equation}
@@ -140,7 +149,9 @@ and damping ratio $\zeta_a$.
 The added mass changes the inertia through $M_a$,
 which also includes its coupling to $\Theta$ and $Y$.
 We simulate the system with fixed-step RK4 at
-$f_{\mathrm s}=20$~kHz.
+\chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}$=20$~kHz.
+% FEEDBACK (own, 2026-10-21): f_s renamed f_sim, since 1/T_s = 4 kHz
+%   (sec2-rate-review; Dirk 2026-10-21).
 All parameter values are listed in Table~\ref{tab:nominal_parameters}.
 The friction levels $c_c$ are taken from Garc\'ia-Herreros et
 al.~\cite[Table~I]{garcia2013model}.
@@ -218,6 +229,24 @@ the test set.
 \todo{Missing: whether E6 (a measured machine move) and the relative limits may be described this way. Candidate: ask Jasper or Dragan.}
 \\
 The models run at $T_s=0.25$~ms on training windows of 0.1~s.
+\add[own]{\kwtwo{The simulated system and its controller $K_1$ run at
+$f_{\mathrm{sim}}=20$~kHz, while Section~\ref{sec:problem} assumes the
+loop at $T_s$.
+The data therefore meet these assumptions only approximately:
+$K_1$ discretised at $T_s$ differs from the feedback force of the system
+by a median of \SetupKmismatchMed\,\%~RMS, the force changes by a median
+of \SetupKholdMed\,\%~RMS within one hold of $T_s$, and the reduction of
+the records to $T_s$ in \eqref{eq:setup_decim} changes the noise-free
+output by at most $\SetupFiltDist$~m~RMS (Table~\ref{tab:setup_checks}).}}
+% FEEDBACK (own, 2026-10-21): all three deviations from the Section II
+%   assumptions named (controller rate, hold, reduction), as the
+%   second-opinion session sec2-rate-review found; numbers from
+%   tables/setup_numbers.tex (Dirk 2026-10-21).
+% FEEDBACK (own, 2026-10-21): Section II states the closed loop at T_s
+%   (eq:system_loop), the assumption the method is built on (Section IV
+%   residual form); the data loop runs at f_s. The deviation is stated here,
+%   with the existing check of 99_appendix.tex (K_1 at T_s, force error),
+%   instead of rewriting Section II in continuous time (Dirk 2026-10-21).
 The rate, its anti-alias filter and the window length are supported by the
 checks in Table~\ref{tab:setup_checks}.
 
@@ -308,6 +337,12 @@ Since the reference is known, we compare the predicted servo error
 with the recorded servo error $y-r$.
 The primary metric is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet},
 adapted by using the servo error as output.
+\revnote{Issue: the research plan names the BFR as the primary measure,
+but on the position output every model scores almost 100\,\%, because
+the reference motion dominates the output.
+On the servo error the BFR equals $100-\mathrm{NRMS}_e$, so I report
+$\mathrm{NRMS}_e$.
+Question: is this departure from the research plan acceptable?}
 We also report the RMS in metres and the noise floor:
 \begin{equation}
 \begin{aligned}
@@ -323,18 +358,25 @@ $y_j-r_j$ over the same samples.
 An NRMS of 100\,\% means the model performs no better than predicting the mean servo error.
 The noise floor is the RMS difference between the measured and noise-free
 outputs.
+\revnote{LTI model noise floor verandert niet per de records. kijken noise floor van het noise model te pakken}
+\kwtwo{At standstill $y^\circ=r$, so the floor equals the standstill servo
+error that the noise model was fitted to on the machine.}
 % REVNOTE (2026-10-20, Dirk): origin of the floor. D-078 (Jan's MSD
 %   convention: noise added after an open-loop simulation, floor = RMS of
 %   that noise); kept when the noise moved into the loop (D-212, D-225,
 %   D-238); D-227 / anti-alias Q4 has the residual-form oracle floor; D-256
 %   kept RMS(y - y_noisefree) as a secondary reference.
-\revnote{The noise is fed back by the controller, so $y-y^\circ$ contains
-the noise and the response of the loop to it. This floor is the lower bound
-for a model driven only by $r$ and $u^{\mathrm{ff}}$, such as the black box.
-The grey-box models are simulated with the recorded $u_{\mathrm{act}}$ and
-$y$, which already contain the noise, so their lower bound differs; the true
-system simulated in the same residual form would give it. Which floor should
-be reported, and should it be shown in Fig.~\ref{fig:res_generalisation}?}
+\revnote{Issue: the noise floor is 0.005 to 0.11\,\% on the test records,
+more than an order of magnitude below every model (2.3\,\% or more).
+In Table~\ref{tab:res_structure} and Fig.~\ref{fig:res_generalisation}
+it only stretches the scale, so the differences between the models are
+hard to see.
+The floor is exact for the black box; for the grey-box models in the
+residual form \eqref{eq:aug_residual_loop} it is the same up to a small
+leak through the re-discretised controller.
+Question: may I state the floor in one sentence instead of showing it,
+and is it the realistically achievable RMS you asked for in your
+feedback (point~4)?}
 \\
 The parameter error of combination $j$ is
 \begin{equation}
@@ -356,4 +398,5 @@ tuples of the training, validation and test records (test: I1 to I6), for
 the network of $\mathcal M_{\mathrm U}$, the corrected network of
 $\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.
 On the training tuples the corrected overlap is zero by construction.
-
+\revnote{in deze tabel ook unconstrained laten zien.
+Niet in deze tabel, maar maarten zijn comment about plan en PS (added state init laten zien.)}

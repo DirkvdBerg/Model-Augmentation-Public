@@ -77,13 +77,18 @@ fit_sys.simulator = build_closed_loop(
     val_data=data.val_ckpt_data, e_train=data.e_train, e_val=data.e_val)
 tim['build_closed_loop'] = time.time() - t
 sim = fit_sys.simulator
-for f in ('M_state', 'M_error', 'ystd', 'stdu'):
+# D-281 (O8): the clean simulator no longer has bank.ystd, bank.stdu (B41) or the validation record
+# names (B51; compare.py skips these three) and holds the validation rows (B51) and the loss
+# weights (B5) itself. The mainline capture is unchanged.
+MAIN = args.side == 'mainline'
+for f in ('M_state', 'M_error') + (('ystd', 'stdu') if MAIN else ()):
     c1.add('bank/' + f, getattr(sim.bank, f))
 c1.add('sim/train_ctrl_rows', np.asarray(sim.train_ctrl_rows))
-c1.add('sim/val_rows', np.asarray([r for (_, _, r) in sim.val_records]))
-c1.info['sim/val_labels'] = [n for (n, _, _) in sim.val_records]
+c1.add('sim/val_rows', np.asarray([r for (_, _, r) in sim.val_records] if MAIN else sim.val_rows))
+if MAIN:
+    c1.info['sim/val_labels'] = [n for (n, _, _) in sim.val_records]
 c1.add('sim/val_sigma_e', sim.val_sigma_e)
-c1.add('sim/train_weights', np.stack(sim.indexer.record_weights))
+c1.add('sim/train_weights', np.stack(sim.indexer.record_weights if MAIN else sim.record_weights))
 c1.info['sim/extra_array_names'] = list(sim.extra_array_names)
 
 ref = getattr(fit_sys, 'obc_reference', None)
@@ -127,7 +132,7 @@ if fit_sys.obc is not None:
     for f in ('U', 'S', 'Vh', 'vbar', 'column_scale'):
         c1.add('basis/' + f, getattr(B, f))
     c1.add('basis/rank', np.asarray(B.rank))
-    c1.add('basis/tol', np.asarray(B.report.tol))
+    c1.add('basis/tol', np.asarray(B.report.tol if MAIN else B.tol))     # C19b (D-281): no RankReport
     c1.add('basis/theta_frozen', fit_sys.hfn.obc_correction.theta_frozen)
 if args.side == 'mainline':
     os.makedirs(out1, exist_ok=True)

@@ -71,6 +71,13 @@ Fig.~\ref{fig:res_frf} shows that the final model is able to capture the resonan
 of the system, which is not modelled in the baseline.
 \kw{Appendix~\ref{app:choices} compares the final model on the validation records 
 with plain training of the added states and with zero and eight added states.}
+\revnote{Issue: that the PS start is needed and that the black box had not
+converged rests on final numbers only.
+Hoekstra et al.\ show the validation error during training for every
+model~\cite[Fig.~8]{hoekstra2026lfr}.
+Question: should I add such a figure, in the main text or the appendix?}
+
+\revnote{Figuur heeft meerwaarde. om iets te laten zien niet de 3x3 frf.}
 
 \begin{table}[t]
   \centering
@@ -92,6 +99,14 @@ with plain training of the added states and with zero and eight added states.}
   \caption{Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
   \label{fig:res_frf}
 \end{figure}
+\revnote{Issue: Fig.~\ref{fig:res_frf} shows the final model over $Y$ as a
+shaded band; a second band for the system is unreadable, so the
+dependence of the resonance on $Y$ is not visible.
+The system curve is linearised at rest without friction, which the
+caption will state.
+Plan: a separate small figure with the learned resonance frequency
+against $Y$, for the system and the final model, training range shaded.
+Question: is this extra figure worth the space?}
 
 \subsection{Interpretability}\label{sec:res_obc}
 \ifdraft
@@ -121,6 +136,14 @@ Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
   \label{tab:res_obc}
   \input{tables/res_obc_combinations}
 \end{table}
+\revnote{Issue: Table~\ref{tab:res_obc} shows the detuned start only, so
+whether OBC makes the estimate independent of the start is visible only
+in Table~\ref{tab:app_obc_full}.
+Gy\"or\"ok et al.\ show this by plotting the estimates from many
+starts~\cite[Fig.~2]{gyorok2026obc}; I have two starts per model.
+Question: would a figure of the ten combinations from both starts,
+unconstrained and OBC, with the true values marked, show Aspect~2 better
+than this table?}
 
 \subsection{Generalisation}\label{sec:res_generalisation}
 \ifdraft
@@ -136,9 +159,16 @@ The black box has 74 to 193\,\% on the records without multisine, and it is
 below the final model only on I2 $X_2$.
 On the \kw{multisine twins}, the final model stays below 10\,\% on $Y$, while the
 baseline and the black box are above 47\,\%.
-\revnote{Should I drop Fig.~\ref{fig:res_generalisation} and put it in a table instead,
-also due to the noise floor i think it undersells the results compared to 
-Fig.~\ref{fig:res_time_trace}.}
+\revnote{Issue: in Fig.~\ref{fig:res_generalisation} the noise floor
+stretches the axis down to below 0.01\,\%, so all bars look alike, and
+``multisine twins'' is an unclear name.
+The third panel holds the seven test records without multisine,
+simulated again with the training multisine added; it is the only test
+of the learned dynamics on unseen motion, because without multisine the
+absorber is not excited.
+Plan: drop the floor, use a log axis from 1 to 300\,\%, title the panel
+``Multisine added'' and keep the original record names.
+Question: is this clear, or would you show these records differently?}
 
 \begin{figure*}[t]
   \centering
@@ -161,6 +191,12 @@ the baseline.
 The baseline is already accurate on these records, so the learned
 correction might overfit on the multisine records
 and introduce small errors on the records without multisine.
+\revnote{Issue: without multisine the final model stays at the level of
+the baseline (3.8 against 3.4\,\% on $Y$), far above the noise floor.
+The data give no sign that the friction is learned, but they also do not
+show that the remaining error is caused by friction.
+Question: is ``consistent with the unmodelled friction'' the right
+wording for this remaining error?}
 \\
 OBC reduces the final combination error compared with the
 unconstrained model (47.7 against 83.1\,\%), but the parameters
@@ -209,7 +245,12 @@ same controller used to generate the data.
 Training and evaluation are both performed in closed loop,
 where the controller can suppress errors in the plant model.
 \kwtwo{Through the feedback, the recorded input is correlated with the
-measurement noise, so the consistency of the estimate is not shown.}
+measurement noise\add[own]{, while SUBNET assumes an input that is
+independent of the noise~\cite{beintema2023subnet}}, so the consistency
+of the estimate is not shown.}
+% FEEDBACK (own, 2026-10-21): SUBNET's independence assumption is stated in
+%   IV-C (Beintema 2023 Sec. 2.1); the correlation is stated in Section II
+%   (Dirk 2026-10-21).
 It remains unclear whether the improvements would hold with
 a different controller or on measured data.}
 % REVNOTE (2026-10-20, Dirk): role of the LFR; checked against

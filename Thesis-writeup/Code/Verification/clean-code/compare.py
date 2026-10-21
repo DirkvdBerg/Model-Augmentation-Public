@@ -7,7 +7,8 @@
 
 Before any array is read, the golden's fingerprint is recomputed (6.2): the 19 copied mainline
 files, both manifests and every record the case read must hash as they did at capture, and the
-clean side must have read the same records with the same libraries, threads and budget. Arrays are
+clean side must have read the same records with the same libraries, threads and budget, from the
+CURRENT clean tree (H2: every file under Clean/ hashes as recorded by the clean output). Arrays are
 compared on dtype, shape and bytes; a difference is reported with its max abs and relative error
 and is a FAIL (the 1e-12 fallback of layers 1-2 is applied only by the judge, never here).
 Writes compare-<layer>.json next to this script.
@@ -25,13 +26,36 @@ L12_CASES = ['%d-%s' % (r, n) for n in ('lowpass', 'noisefree')
 L3_CASES = ['221-lowpass', '229-noisefree', '224-noisefree', '226-lowpass', '227-lowpass']
 
 
-def check_fingerprint(gmeta, cmeta):
-    """Problems with the golden's fingerprint, [] when it is current and both sides match."""
+# D-279: training.py before and after the D-278 commit (b4a985b), as captured (CRLF working tree).
+# The two differ only by D-278, which reaches a polish-only start and a resume with the Adam budget
+# spent; the 3c cases that run those paths (ii, iv) were recaptured. Every other golden may carry
+# exactly this old hash while the file has exactly this new one.
+D278_FILE = 'scripts/gantry/gantry_dynamic/training.py'
+D278_PAIR = ('43bbf868595d4f67985fd8141700baf9a6b84c5b7b6cf74ed1eb6ebce627325a',
+             '9ee2a53ea6014c0c00526333eeeae71d016b047dd91dc2586db875ad9edacf3f')
+
+
+#: D-281 (O8): golden fields the optimised clean code no longer has, with the item that dropped them.
+#: Skipped only when absent on the clean side, and listed as 'dropped'. Their content stays covered:
+#: bank.ystd and bank.stdu enter M_state and M_error (B41); the validation rows follow the val_files
+#: order the names came from (B51).
+DROPPED_IN_CLEAN = {'bank/ystd': 'B41', 'bank/stdu': 'B41', 'info:sim/val_labels': 'B51'}
+
+
+def d278_kept(gmeta):
+    """True when the golden was captured before D-278 (accepted only through D278_PAIR)."""
+    return gmeta['sources']['mainline'].get(D278_FILE) == D278_PAIR[0]
+
+
+def check_fingerprint(gmeta, cmeta, allow_d278=True):
+    """Problems with the golden's fingerprint, [] when it is current, both sides match and the
+    clean output was made from the current clean tree (H2)."""
     probs = []
     now = H.source_hashes()['mainline']
     for k, v in gmeta['sources']['mainline'].items():
-        if now.get(k) != v:
+        if now.get(k) != v and not (allow_d278 and k == D278_FILE and (v, now.get(k)) == D278_PAIR):
             probs.append('mainline source changed since capture: %s' % k)
+    probs += H.clean_tree_problems(cmeta['sources'].get('clean'))
     files = gmeta['files']['train'] + gmeta['files']['val'] + gmeta['files']['test']
     data_now = H.data_hashes(gmeta['data_dir'], files)
     for k, v in gmeta['data'].items():
@@ -72,6 +96,9 @@ def compare_npz(gdir, cdir, stem):
     gj = json.load(open(os.path.join(gdir, stem + '.json')))
     cj = json.load(open(os.path.join(cdir, stem + '.json')))
     gk, ck = set(g.files), set(c.files)
+    out['dropped'] = sorted(((gk - ck) | {'info:' + k for k in set(gj['info']) - set(cj['info'])})
+                            & set(DROPPED_IN_CLEAN))
+    gk -= set(out['dropped'])
     out['missing_clean'] = sorted(gk - ck)
     out['extra_clean'] = sorted(ck - gk)
     for k in sorted(gk & ck):
@@ -85,6 +112,8 @@ def compare_npz(gdir, cdir, stem):
                 or gj['hashed'].get(k, {}).get('shape') != cj['hashed'].get(k, {}).get('shape'):
             out['mismatch'][k] = 'hash differs (golden %s, clean %s)' % (gj['hashed'].get(k), cj['hashed'].get(k))
     for k in sorted(set(gj['info']) | set(cj['info'])):
+        if 'info:' + k in out['dropped']:
+            continue
         out['n_compared'] += 1
         if gj['info'].get(k) != cj['info'].get(k):
             out['mismatch']['info:' + k] = 'golden %s | clean %s' % (str(gj['info'].get(k))[:200],
@@ -113,7 +142,7 @@ def run_l12(cases):
             c = compare_npz(gdir, cdir, stem)
             ok = not (c['mismatch'] or c['missing_clean'] or c['extra_clean'])
             ok_all &= ok
-            r[layer] = dict(status='PASS' if ok else 'FAIL', **c,
+            r[layer] = dict(status='PASS' if ok else 'FAIL', **c, golden_pre_d278=d278_kept(gmeta),
                             seconds=dict(golden=gmeta['timings']['total'], clean=cmeta['timings']['total']))
         res[case] = r
         print('%-14s L1 %-6s L2 %-6s' % (case, r['L1']['status'], r['L2']['status']), flush=True)

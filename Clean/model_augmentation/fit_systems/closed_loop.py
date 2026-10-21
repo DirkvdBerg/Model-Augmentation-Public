@@ -114,7 +114,6 @@ class WindowControllerIndex:
         # CHANGED (D-256): optional fixed loss weight per record, one (ny,) row each, appended per
         # window as `loss_w` beside `ctrl_ix` from the same counts. None = no weight array.
         self.record_weights = None if record_weights is None else [np.asarray(w) for w in record_weights]
-        self.last_counts = None
 
     def build(self, data, sys_data, fit_sys, **kw):
         """The extra arrays to append to deepSI's four. Returns a list, checked before returning."""
@@ -131,7 +130,6 @@ class WindowControllerIndex:
                 'ctrl_ix misalignment: %d windows derived, %d in the training data'
                 % (len(ctrl_ix), len(data[0])))
         self.verify_by_content(data, sdl, counts, fit_sys, nf, stride, na_r, nb_r)
-        self.last_counts = list(counts)
         # CHANGED (D-256): same record order and counts as ctrl_ix, so the checks above cover it.
         loss_w = np.concatenate([np.tile(w, (c, 1)) for w, c in zip(self.record_weights, counts)])
         return [ctrl_ix, loss_w]
@@ -222,7 +220,6 @@ class ClosedLoopSimulator:
         # CHANGED (D-169): ONE rollout over all records instead of one per record.
         per_channel, per_record = closed_loop_free_run_rms_batch(
             fit_sys, sdl, self.bank, [row for (_, _, row) in self.val_records])
-        self.last_per_record = per_record
         self.last_per_channel = np.asarray(per_channel)          # CHANGED (D-267): (n_val, ny), m
         # THEORY: deepSI aggregates a multi-record sim-RMS in System_data_list.RMS as
         # weighted_mean([sd.RMS(sdo) for ...]), i.e. the ARITHMETIC mean of the per-record RMS
