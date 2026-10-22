@@ -271,16 +271,25 @@ are
  \eta_0=\operatorname{atanh}(r_0),\quad
  s=\frac{m_{\Delta,0}}{b(\theta^0_{\mathrm{base}})(1-r_0^2)}.
 \end{equation*}
-Here $\eta_0$ makes $\beta_\Delta=0$ reproduce the initial combination, and $s$
-gives $\partial m_\Delta/\partial\beta_\Delta|_0=m_{\Delta,0}$, matching the local
+Here $\eta_0$ makes $\beta_{m_\Delta}=0$ reproduce the initial combination, and $s$
+gives $\partial m_\Delta/\partial\beta_{m_\Delta}|_0=m_{\Delta,0}$, matching the local
 relative-change scaling of the logarithmic coordinates. The construction
 requires $m_{\Delta,0}\neq0$; a start near zero makes $s$ small and the
 coordinate numerically inert. The exact inverse used for reporting is
 \begin{equation*}
- \beta_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
+ \beta_{m_\Delta}=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
 \end{equation*}
 
 \subsection{Identifiable combinations}\label{app:combos}
+\mv[M-p5]{III-C}{If we ignore the symmetric entries, \eqref{eq:matrices} contains
+twelve nonzero entries. Three of these, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$,
+are equal to $m_h$, where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$. This leaves us with ten distinct functions of $\theta$.
+The Jacobian of these ten functions with respect to
+$(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$
+is block triangular and has a determinant of $m_hL_b^2/2\neq0$,
+meaning that the functions are independent.}
+% FEEDBACK v2 (2026-10-22, Maarten p5 (d) "To keep it short"): moved here
+%   from III-C (sec:params) unchanged (Dirk 2026-10-22).
 For $m_h>0$, the ten distinct entries of $M_0$, $C$ and $K$ determine
 $\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
 \begin{equation*}

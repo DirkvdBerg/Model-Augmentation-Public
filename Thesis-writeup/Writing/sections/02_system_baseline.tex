@@ -579,7 +579,7 @@ equivalent to nonsingularity of $M(Y)$ (Appendix~\mbox{\ref{app:lfr-details}}).}
 baseline model in state-space form~\cite{hoekstra2026lfr}.}}
 % Moved from IV-A (2026-10-22, Dirk).
 \mv[Dirk]{IV-A}{\add[Dirk]{\kwtwo{With the state $\tilde x=[q^\top\;\dot q^\top]^\top$,}}
-\chg[Dirk]{Writing}{writing} \eqref{eq:eom} in state-space form gives\kwtwo{ the state derivative $F$}}
+\chg[Dirk]{Writing}{writing} \eqref{eq:eom} in state-space form gives \kwtwo{the state derivative $F$}}
 \begin{equation}
  \dot{\tilde x}=F(\tilde x,u)=\begin{bmatrix}\dot q\\
   M(Y)^{-1}\bigl(u-C\dot q-Kq\bigr)\end{bmatrix}.
@@ -692,26 +692,61 @@ every $Y$ \mbox{\cite[Def.~1]{drenth2025lpvlfr}}.}
 \end{itemize}
 \fi
 The physical parameters are estimated jointly with the
-augmentation\del[M-mail]{ (Section~\ref{sec:augmentation})}, and interpretability requires
-that their estimates are unique (Section~\ref{sec:intro}).
-The fourteen parameters $\theta$ of
-\todo{needs to have appendix in the name of the table}
-Table~\ref{tab:nominal_parameters} cannot all be identified from input-output data.
-\kwtwo{The positions $X_1$, $X_2$, $Y$ are measured, which gives
-$q$ through \eqref{eq:Ptransform}, and the forces $u$ are known in absolute scale.}
-\add[Js33]{\kwtwo{This transformation uses the cross-arm length $L_b$, so
-$L_b$ is not estimated but fixed at its nominal value
-(Appendix~\ref{app:params}).}}
-% FEEDBACK v1 (2026-10-21): Js33, the III-A L_b sentence moved here and
-%   reworded (struck at its old place in III-A) (Dirk 2026-10-21).
-\kw{With unconstrained initial conditions and full actuation ($P$ invertible), 
-any acceleration $\ddot q$ can be reached at any state within the operating range.
+augmentation\del[M-mail]{ (Section~\ref{sec:augmentation})}, and \chg[own]{interpretability requires
+that their estimates are unique (Section~\mbox{\ref{sec:intro}})}{we
+require that their identifiable combinations are estimated uniquely
+(Section~\mbox{\ref{sec:problem}})}.
+% FEEDBACK v2 (2026-10-22, own): reference to the formal goal of Section II
+%   instead of the Section I motivation; III-C answers that goal
+%   (Dirk 2026-10-22).
+\delmv[own]{III-C, below}{The fourteen parameters $\theta$ of
+Table~\mbox{\ref{tab:nominal_parameters}} cannot all be identified from input-output data.}
+\del[own]{The positions $X_1$, $X_2$, $Y$ are measured, which gives
+$q$ through \mbox{\eqref{eq:Ptransform}}, and the forces $u$ are known in absolute scale.}
+% FEEDBACK v2 (2026-10-22, Maarten mail "kan wel wat korter"): struck, it
+%   repeats Section II (D_N holds forces and measured positions) and III-A
+%   (eq:Ptransform); "forces and positions in D_N" below carries it
+%   (Dirk 2026-10-22).
+\mv[Js33]{III-A}{To prevent the definition of $q$ from being parameter-dependent,
+the cross-arm length $L_b$ is fixed at the nominal value listed in
+Appendix~\mbox{\ref{app:params}} rather than treated as a free model parameter.}
+% FEEDBACK v1 (2026-10-21): Js33, the III-A L_b sentence moved here
+%   (struck at its old place in III-A) (Dirk 2026-10-21); Dirk's original
+%   wording restored, it states the reason itself (Dirk 2026-10-22).
+\mv[own]{III-C, above}{The fourteen\add[own]{ remaining} parameters of
+Table~\ref{tab:nominal_parameters}\add[M-p4]{ in Appendix~\mbox{\ref{app:params}}}\add[own]{,
+defined as $\theta$,}
+cannot all be identified from \chg[M-p5]{input-output data}{the forces and
+positions in $\mathcal D_N$ (Section~\mbox{\ref{sec:problem}})}.}
+% FEEDBACK v2 (2026-10-22): moved below the L_b sentence, so "fourteen"
+%   (Table lists fifteen with L_b) follows the reason L_b is fixed. M-p4
+%   "A-A?" and Dirk's todo "needs to have appendix in the name of the
+%   table": done. M-p5 (c) "identifiability should start from model
+%   structure + cost function": the data the claim is about (forces and
+%   positions of D_N, Section II) named here (Dirk 2026-10-22).
+\delmv[own]{below}{With unconstrained initial conditions and full actuation ($P$ invertible),
+any acceleration $\ddot q$ can be reached at any state within the operating range.}\del[own]{
 Since $q$ is measured, the state $(q,\dot q)$ is observable.}
+% FEEDBACK v2 (2026-10-22, Maarten mail): observability sentence struck, the
+%   argument uses equal positions only (Dirk 2026-10-22).
 % The state $(q,\dot q)$ is observable, because $q$ is measured, and
 % the gantry is fully actuated, because $P$ is invertible, so every coordinate
 % of $q$ has its own force.
 Two parameter sets $\theta$ and $\theta'$ that produce the same
-motion for every input force satisfy
+\chg[M-p5]{motion}{positions $q$} for every input force
+\del[M-p5]{ satisfy}\add[M-p5]{
+also have the same $\dot q$ and $\ddot q$, since both are derivatives
+of $q$~\mbox{\cite[Def.~7]{ovchinnikov2021computing}}.}
+% Subtracting \eqref{eq:eom} for $\theta'$ from that for $\theta$ gives}
+% FEEDBACK v2 (2026-10-22, Maarten p5): (a) "reference for this statement?
+%   This is a large jump ... don't you also need the acceleration to be
+%   known too?", (b) "i.e. state derivative.", (c) "... I don't think you
+%   use the velocity and acceleration in your cost at any point.": equal
+%   positions give equal derivatives, so only positions are used; the
+%   subtraction is the missing step. Ovchinnikov Def. 7 (PDF p3): h is
+%   identifiable if h is in C<y*,u*>, i.e. expressible in the outputs, inputs
+%   and their derivatives (Dirk 2026-10-22).
+\add[M-p5]{Writing \eqref{eq:eom} for both sets and subtracting gives}
 \begin{equation*}
   \bigl(M(Y)-M'(Y)\bigr)\ddot q+(C-C')\dot q+(K-K')q=0
 \end{equation*}
@@ -720,30 +755,48 @@ $M'(Y)$, $C'$ and $K'$ at $\theta'$.
 % FEEDBACK: Jan21 "This does not flow well in reading": the conditions
 %   (measured q, known forces, full actuation) now come before the identity
 %   they justify; the "why" sentence opens the subsection.
-\revnote{Do I need to state symbols like Quinten asked?}
+% FEEDBACK v1: Q34 "Define M', C' and K'": done by the where-clause above;
+%   revnote removed (Dirk 2026-10-22).
+\mv[own]{above}{With unconstrained initial conditions and full actuation ($P$ invertible),
+any acceleration $\ddot q$ can be reached\add[own]{ by \eqref{eq:base_ss}} at any
+state\del[own]{ within the operating range}.}
+% FEEDBACK v2 (2026-10-22, Dirk): "within the operating range" struck, the
+%   range is not defined before III-C and M(Y) > 0 for every Y (III-B).
+% FEEDBACK v2 (2026-10-22, Dirk "doesnt really connect to the previous
+%   sentence"): moved from before the identity to directly before "for all
+%   these states and accelerations", which uses it (Dirk 2026-10-22).
 Therefore the identity must hold for all
-these states and accelerations, this implies that $K=K'$, $C=C'$
+these states and accelerations, \chg[own]{this}{which} implies that $K=K'$, $C=C'$
 and $M(Y)=M'(Y)$. Since $M(Y)$ is quadratic in $Y$, this also 
 implies that $M_0=M_0'$, $M_1=M_1'$ and $M_2=M_2'$. 
-If these matrices are equal, the input-output behaviour is also the same. 
-Therefore, the part of $\theta$ that can be identified is 
-determined by the parameter combinations in $M_0,M_1,M_2,C$ and $K$.
+If these matrices are equal, the input-output behaviour is also the same.
+\del[own]{Therefore, the part of $\theta$ that can be identified is
+determined by the parameter combinations in $M_0,M_1,M_2,C$ and $K$.}
+% FEEDBACK v2 (2026-10-22, Maarten mail): struck, the "exactly ten"
+%   sentence below states it (Dirk 2026-10-22).
 % Therefore the part of $\theta$ that can be identified 
 % Therefore, only the parameter combinations in $M_0,M_1,M_2,C$ and $K$ can 
 % be identified.
 % FEEDBACK (2026-10-21, Dirk): matrices are one numbered group (eq:matrices).
-If we ignore the symmetric entries, \chg[Dirk]{\mbox{\eqref{eq:mass_matrix}} and
-\mbox{\eqref{eq:damping_stiffness_matrices}} contain}{\eqref{eq:matrices} contains}
-twelve nonzero entries. Three of these, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$, 
-are equal to $m_h$, where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$. This leaves us with ten distinct functions of $\theta$. 
-The Jacobian of these ten functions with respect to 
-$(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$ 
-is block triangular and has a determinant of $m_hL_b^2/2\neq0$, 
-meaning that the functions are independent.
-Since the matrices only depend on these ten functions, 
-exactly ten independent combinations of $\theta$ can be identified 
-\todo{check source} \cite[Def.~7]{ovchinnikov2021computing}.
-We define these ten combinations as
+\delmv[M-p5]{Appendix~\mbox{\ref{app:combos}}}{If we ignore the symmetric entries, \mbox{\eqref{eq:matrices}} contains
+twelve nonzero entries. Three of these, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$,
+are equal to $m_h$, where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$. This leaves us with ten distinct functions of $\theta$.
+The Jacobian of these ten functions with respect to
+$(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$
+is block triangular and has a determinant of $m_hL_b^2/2\neq0$,
+meaning that the functions are independent.}
+% FEEDBACK v2 (2026-10-22, Maarten p5 (d) "To keep it short, I'd just talk
+%   about uniqueness in the parameters, explain why the original case is not
+%   unique, and what unique vector you have selected." and mail "kan wel wat
+%   korter"): entry counting and Jacobian moved to app:combos; Q35 "Define
+%   0,33" moves with it (Dirk 2026-10-22).
+Since the matrices \del[own]{only }depend on \chg[M-p5]{these ten functions}{ten
+independent combinations of $\theta$ (Appendix~\mbox{\ref{app:combos}})},
+\chg[own]{exactly ten independent combinations of $\theta$}{only these} can be identified
+\cite[Def.~7]{ovchinnikov2021computing}.
+% Ovchinnikov Def. 7 checked against PDF p3 (2026-10-22): todo removed.
+\add[own]{Following the idea of base parameters used in robot
+dynamics\ucite{gautier1990minimum},} \chg[own]{We}{we} define \chg[own]{these ten combinations}{them} as
 \begin{equation}
   \theta_{\mathrm{base}}=[k_{b,\Sigma},c_{g1},c_{g2},c_y,c_{b,\Sigma},
   m_h,m_\Sigma,m_\Delta,J_{\mathrm{eff}},d]^\top,
@@ -752,10 +805,25 @@ We define these ten combinations as
 with $k_{b,\Sigma}=k_{b1}+k_{b2}$, $c_{b,\Sigma}=c_{b1}+c_{b2}$,
 $m_\Sigma=m_1+m_2+m_b$, $m_\Delta=m_1-m_2$ and
 $J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$. 
-This follows the idea of base parameters used in robot dynamics\ucite{gautier1990minimum}.\todo{check source}
-For $m_h>0$, $\theta_{\mathrm{base}}$ can be uniquely determined from
-the ten entries (Appendix~\ref{app:combos}).
-We therefore estimate $\theta_{\mathrm{base}}$ instead of $\theta$\del{,
+\del[own]{This follows the idea of base parameters used in robot dynamics~\cite{gautier1990minimum}.}\todo{check source}
+% FEEDBACK v2 (2026-10-22, Dirk): sentence folded into the definition of
+%   theta_base above, in Dirk's words; Gautier still unchecked (no local PDF).
+\chg[own]{For $m_h>0$, $\theta_{\mathrm{base}}$}{Since $\theta_{\mathrm{base}}$} can be uniquely determined from
+\chg[M-p5]{the ten entries}{the matrices} (Appendix~\ref{app:combos})\chg[own]{.}{,}
+% FEEDBACK v2 (2026-10-22, Dirk): "For m_h>0" struck; the condition is
+%   needed only for d (d = -M_{0,23}/m_h) and is stated in app:combos.
+%   Joined with "We therefore estimate" so the one-to-one property gives
+%   the reason; "the matrices" as in the sentence before, M0 detail in
+%   the appendix (Dirk 2026-10-22).
+\del[own]{The four lost directions are $k_{b1}-k_{b2}$, $c_{b1}-c_{b2}$,
+$J_b-J_h$, and a mass shift from the carriages to the cross-arm at
+fixed $J_{\mathrm{eff}}$.}
+% FEEDBACK v2 (2026-10-22, Maarten p5 (d) "explain why the original case is
+%   not unique, and what unique vector you have selected"): answered by
+%   "only these can be identified" (why theta is not unique) and theta_base
+%   (the chosen vector); the four lost directions struck, more detail than
+%   asked (Dirk 2026-10-22).
+\chg[own]{We therefore estimate}{we estimate} $\theta_{\mathrm{base}}$ instead of $\theta$\del{,
 presented in the results}.
 % For $m_h>0$,
 % $\theta_{\mathrm{base}}$ is a one-to-one function of the ten entries
@@ -770,45 +838,63 @@ presented in the results}.
 % Section~\ref{sec:setup}.
 % \todo{Missing: gautier1990minimum passage unchecked (no local PDF); metadata verified, DOI 10.1109/70.56655. Candidate: obtain the paper and check that it defines base inertial parameters as the minimal set of regressor coefficients.}
 \\
-Positive $\theta_{\mathrm{base}}$ does not imply $M(Y)\succ0$. For
+\chg[own]{Positive $\theta_{\mathrm{base}}$ does not imply $M(Y)\succ0$. For}{In
+Section~\mbox{\ref{sec:lfr}}, $M(Y)\succ0$ follows from positive masses and
+inertias. For}
 $m_h>0$, $m_\Sigma>0$ and $J_{\mathrm{eff}}>0$, $M(Y)\succ0$ for every $Y$ if and only if
 \begin{equation}
   m_\Sigma J_{\mathrm{eff}}>\tfrac{L_b^2}{4}\,m_\Delta^2
   \label{eq:lfr_admissibility}
 \end{equation}
 (Appendix~\ref{app:lfr-wellposed}). 
-To ensure that well-posedness and \eqref{eq:lfr_admissibility}
-hold during training, we use a logarithmic parametrisation for
+To ensure that\del[own]{ well-posedness and} \eqref{eq:lfr_admissibility}
+\chg[own]{hold during training}{holds for every estimate of $\theta_{\mathrm{base}}$}, we use a logarithmic parametrisation for
 the nine positive combinations and a $\tanh$-bounded $m_\Delta$\del[M-mail]{
-(Section~\ref{sec:aug_closed_loop})}.
+(Section~\mbox{\ref{sec:aug_closed_loop}})}.
+% FEEDBACK v2 (2026-10-22, Dirk): purpose sentence kept (it says why beta
+%   exists); "well-posedness" struck, it follows from (13) (III-B); "during
+%   training" -> "for every estimate of theta_base", the verb of the
+%   Section II goal; no concept used before it is introduced.
 % RESTRUCTURE (2026-10-19, Maarten mail: forward references): the
 %   parametrisation below moved here from Section IV-C, next to the
 %   condition it enforces; IV-C used it, II-C pointed forward to it.
-\mv[M-mail]{IV-C}{The optimiser updates $\theta_{\mathrm{base}}$ \kwtwo{through training coordinates} $\beta\in\R^{10}$\kwtwo{,
-which are zero at the initial parameters $\theta^0_{\mathrm{base}}$ and
-\chg{keep every iterate admissible}{ensure that \eqref{eq:lfr_admissibility} holds at every update}}.
-The nine positive parameter combinations\kwtwo{ $j$ of \eqref{eq:phi}} are
-\kwtwo{$\theta_{\mathrm{base},j}=\theta^0_{\mathrm{base},j}\exp(\beta_j)$},
+\mv[M-mail]{IV-C}{\chg[own]{The optimiser updates}{We estimate} $\theta_{\mathrm{base}}$ \kwtwo{through\del[own]{ training} coordinates} $\beta\in\R^{10}$\kwtwo{,
+which are zero at the \chg[own]{initial parameters $\theta^0_{\mathrm{base}}$}{initial estimate $\theta^0_{\mathrm{base}}$}\del[own]{ and
+ensure that \mbox{\eqref{eq:lfr_admissibility}} holds at every update}}.
+The nine positive parameter combinations\del[own]{ $j$ of \mbox{\eqref{eq:phi}}} are
+\kwtwo{$\theta_{\mathrm{base},j}=\theta^0_{\mathrm{base},j}\exp(\beta_j)$}\add[own]{
+for each positive $\theta_{\mathrm{base},j}$ in \eqref{eq:phi}},
 while $m_\Delta$ can be positive or negative and is bounded
 by \eqref{eq:lfr_admissibility}:
+% FEEDBACK v2 (2026-10-22, Dirk): beta_Delta renamed beta_{m_Delta} so the
+%   subscript names its combination (no marks inside the equation).
 \begin{equation}
   m_\Delta=\gamma\,\frac{2}{L_b}\sqrt{m_\Sigma J_{\mathrm{eff}}}\,
-  \tanh\bigl(\eta_0+s\,\beta_\Delta\bigr),
+  \tanh\bigl(\eta_0+s\,\beta_{m_\Delta}\bigr),
   \label{eq:mdelta_map}
 \end{equation}
-where $\beta_\Delta$ \kwtwo{is the entry of $\beta$ for} $m_\Delta$ and
+where \chg[own]{$\beta_\Delta$ is the entry of $\beta$ for $m_\Delta$}{$\beta_{m_\Delta}$ is the coordinate of $m_\Delta$} and
 $\gamma\in(0,1)$ provides a safety margin.
+% FEEDBACK v2 (2026-10-22, Dirk): "optimiser" and "update" not introduced
+%   before III-C, replaced by "We estimate"; the range of j is stated at
+%   the formula and beta_{m_Delta} names itself, so "j of (12)" and "is the
+%   entry of beta for" are struck (Dirk 2026-10-22).
 We choose the offset $\eta_0$ and scale $s$ so that
-$\beta=0$ gives $m_\Delta=m_{\Delta,0}$ and
+$\beta=0$ gives $m_\Delta=m_{\Delta,0}$\del[own]{ and
 $\partial m_\Delta/\partial\beta_\Delta=m_{\Delta,0}$.
 This matches the logarithmic parameters, where
 $\partial\theta_{\mathrm{base},j}/\partial\beta_j
-=\theta^0_{\mathrm{base},j}$ at $\beta=0$
+=\theta^0_{\mathrm{base},j}$ at $\beta=0$}
 (Appendix~\ref{app:lfr-wellposed}).
-The initial value must satisfy
+\del[own]{The initial value must satisfy
 $\lvert m_{\Delta,0}\rvert<\gamma(2/L_b)\sqrt{m_{\Sigma,0}J_{\mathrm{eff},0}}$.
-The bound in \eqref{eq:lfr_admissibility} holds for
-every $\beta$, therefore no clamping or penalty is needed.}
+The bound in \mbox{\eqref{eq:lfr_admissibility}} holds for
+every $\beta$, therefore no clamping or penalty is needed.}}
+% FEEDBACK v2 (2026-10-22, Maarten mail "kan wel wat korter"): slope
+%   matching, initial-value condition and "no clamping" struck; they are in
+%   app:lfr-wellposed (eta_0, s, slope matching, atanh needs |r_0|<1), and
+%   the beta sentence above states that (13) holds at every update
+%   (Dirk 2026-10-22).
 % Training therefore uses logarithmic
 % coordinates for the nine positive combinations and a $\tanh$-bounded $m_\Delta$
 % (Section~\ref{sec:aug_closed_loop}), so \eqref{eq:lfr_admissibility} and

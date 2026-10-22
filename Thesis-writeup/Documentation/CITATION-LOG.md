@@ -62,6 +62,7 @@ Passages read in the PDF under `literature/` and what each supports. One row per
 | drenth2025lpvlfr | Sec. 4.1, Assumptions 2, 3, Condition 5, Thm. 6, pp. 3 to 4 | sufficient well-posedness: diagonal Delta, scheduling in the unit infinity-ball, rho(Dzw) < 1 | 2026-10-09 |
 | toth2010modeling | Sec. 7.3, Def. 7.2, p. 174 | quasi-LPV: the scheduling variable is not a free variable (depends on the system signals) | 2026-10-09 |
 | ovchinnikov2021computing | Sec. 2, Def. 7 (arXiv 2004.07774v3) | identifiable function of the parameters; stated as equivalent to Hong et al. Def. 2.5 | 2026-10-09 |
+| ovchinnikov2021computing | Sec. 2.2, Def. 7, PDF p. 3 (SCL 157, 105030) | for the state-space model (1) with outputs y and inputs u, h is identifiable if h is in C<y*,u*> for every generic solution, i.e. expressible in the outputs, inputs and their derivatives; supports III-C (equal q gives equal q', q'') and "exactly ten" | 2026-10-22 |
 | hoekstra2026lfr | Eq. (22e), Sec. 5.1, p. 8 | the encoder of the truncated criterion reads y and u from k-n to k-1 (past samples only) | 2026-10-09 |
 | hoekstra2026encoder | Sec. 3.1, Eqs. (11) to (17), p. 3 | the reconstructability map gives x_{b,k} from y and u over k-n to k (current sample included) | 2026-10-09 |
 | hoekstra2026encoder | Sec. 3.2, Eqs. (33), (34), p. 4 | data-based alternative: fit W_b to states obtained by forward simulating the baseline on the data | 2026-10-09 |
