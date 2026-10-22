@@ -47,8 +47,10 @@ import torch
 _losses = []
 cfg, EP = H.make_cfg(args.row, 'lowpass', run_id=run_id, budget=BUDGET,
                      **({'start_phase': 'lbfgs'} if args.polish_from and args.side == 'mainline' else {}))
-from model_augmentation.fit_systems.interconnect import SSE_Interconnect_Composed
-_loss = SSE_Interconnect_Composed.loss
+from model_augmentation.fit_systems import interconnect as _IC
+# the model class: SSE_Interconnect_Composed in mainline, AugmentedModel in Clean (D-282)
+_MODEL = _IC.AugmentedModel if args.side == 'clean' else _IC.SSE_Interconnect_Composed
+_loss = _MODEL.loss
 
 
 def _rec(self, *a, **k):
@@ -58,7 +60,7 @@ def _rec(self, *a, **k):
     return L
 
 
-SSE_Interconnect_Composed.loss = _rec
+_MODEL.loss = _rec
 H.assert_roots()
 T0 = time.time()
 # clean_tree: the clean source manifest (H2), compare_gpu.py refuses a clean result made from another tree

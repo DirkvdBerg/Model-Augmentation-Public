@@ -16,24 +16,25 @@ REPO_ROOT = os.path.dirname(ROOT)
 DATA_ROOT = os.path.join(REPO_ROOT, 'Thesis-writeup', 'Data')
 OUT_ROOT = os.path.join(REPO_ROOT, 'simulations', 'gantry_clean')
 
-# HEURISTIC: order 8, fc = 0.8 x the 2 kHz Nyquist of the 4 kHz training rate (TR-022's ratio)
-# THEORY: Butterworth forward-backward magnitude 1/(1 + x^16), x = tan(pi f/fs) / tan(pi fc/fs):
-#   DC gain exactly 1, error 1.7e-12 at 300 Hz and 4.4e-4 at 1 kHz (anti-alias/LITERATURE.md Q3)
+# HEURISTIC: order 8, fc = 0.8 of the 2 kHz Nyquist frequency of the 4 kHz training rate
+# THEORY: zero-phase Butterworth magnitude 1 / (1 + x^16), x = tan(pi f / fs) / tan(pi fc / fs) (the order-8
+#   response squared by the forward-backward pass): DC gain 1, error 1.7e-12 at 300 Hz and 4.4e-4 at 1 kHz
 AA_ORDER, AA_FC_HZ = 8, 1600.0
-# HEURISTIC: the filter's edge transient lasts at most 4.6 ms (above 0.01 x the in-band noise, all
-# 36 records, anti-alias/end_transient.py), rounded up to whole ms
+# HEURISTIC: the filter's edge transient stays above 0.01 of the in-band noise for at most 4.6 ms on the 36
+# records; rounded up to whole ms
 AA_TRIM_S = 0.005
 
+# the thesis runs: OBC or unconstrained arm, correct or detuned start, n_a added states, PS2 opening or plain
 PRESETS = {
-    'R1': dict(arm='obc', start='detuned', n_a=2, ps2=True),     # runs.tsv 221
-    'R2': dict(arm='obc', start='correct', n_a=2, ps2=True),     # 222
-    'R3': dict(arm='u', start='correct', n_a=2, ps2=False),      # 223
-    'R4': dict(arm='u', start='detuned', n_a=2, ps2=True),       # 224
-    'R5': dict(arm='u', start='correct', n_a=2, ps2=True),       # 225
-    'R6': dict(arm='u', start='correct', n_a=0, ps2=False),      # 226
-    'R7': dict(arm='u', start='correct', n_a=8, ps2=True),       # 227
-    'R13': dict(arm='obc', start='detuned', n_a=0, ps2=False),   # 229
-    'R14': dict(arm='u', start='detuned', n_a=0, ps2=False),     # 230
+    'R1': dict(arm='obc', start='detuned', n_a=2, ps2=True),
+    'R2': dict(arm='obc', start='correct', n_a=2, ps2=True),
+    'R3': dict(arm='u', start='correct', n_a=2, ps2=False),
+    'R4': dict(arm='u', start='detuned', n_a=2, ps2=True),
+    'R5': dict(arm='u', start='correct', n_a=2, ps2=True),
+    'R6': dict(arm='u', start='correct', n_a=0, ps2=False),
+    'R7': dict(arm='u', start='correct', n_a=8, ps2=True),
+    'R13': dict(arm='obc', start='detuned', n_a=0, ps2=False),
+    'R14': dict(arm='u', start='detuned', n_a=0, ps2=False),
 }
 
 # config.json keys of the run-environment fields, read back by from_config_json
@@ -41,31 +42,33 @@ _ENV_KEYS = dict(device='DEVICE', compile_mode='COMPILE_MODE', truncate_s='TRUNC
                  epochs='EPOCHS', n_its='N_ITS', its_per_val='ITS_PER_VAL',
                  lbfgs_max_iter='LBFGS_MAX_ITER', lbfgs_inner_iter='LBFGS_INNER_ITER',
                  lbfgs_windows='LBFGS_WINDOWS', ps2_smoke='PS2_SMOKE')
+# config.json keys only the clean code writes
 _CLEAN_KEYS = ('ARM', 'START', 'N_A', 'NOISE', 'PS2_SMOKE', 'DATA_ROOT', 'OUT_ROOT', 'LAST_SAVE', 'CODE')
 
 
 def y_decimation(cfg) -> str:
-    """The D-232 rule that brings y to FS_NEW, as recorded in config.json."""
+    """The rule that brings y to FS_NEW, as recorded in config.json."""
     if cfg.noise == 'lowpass':
         return 'r + zero-phase Butterworth %d at %.0f Hz on y - r, then [::%d]' % (AA_ORDER, AA_FC_HZ, cfg.d)
     return 'point sampling [::%d]' % cfg.d
 
 
 def record_trim(cfg) -> int:
-    """Samples dropped at EACH record end at FS_NEW (D-232): loader sample i is the recorded
-    FS_ORIG sample (i + record_trim) * D."""
+    """Samples dropped at each record end at FS_NEW: loader sample i is the recorded FS_ORIG sample
+    (i + record_trim) D."""
     return int(round(AA_TRIM_S * cfg.fs_new))
 
 
 @dataclass(frozen=True)
 class RunConfig:
+    """One thesis run: the five axes, the run environment and the fixed settings."""
     # the five axes
     arm: str
     start: str
     n_a: int
     ps2: bool
     noise: str
-    # run environment: production defaults; only the CLI flags, main (start_phase) and the harness change them
+    # run environment: production defaults, changed only by the CLI flags, main (start_phase) and the harness
     device: str = 'cuda'
     compile_mode: Optional[str] = 'reduce-overhead'
     truncate_s: Optional[float] = None
@@ -81,7 +84,8 @@ class RunConfig:
     data_root: str = DATA_ROOT
     out_root: str = OUT_ROOT
 
-    # fixed settings of the thesis runs (runs.tsv 221 to 230), under their mainline names
+    # fixed settings of the thesis runs under the mainline names; config_json_dict writes them and the
+    # evaluation reads several
     seed: ClassVar[int] = 1
     nx_phys: ClassVar[int] = 6
     nu: ClassVar[int] = 3
@@ -98,7 +102,8 @@ class RunConfig:
     lr: ClassVar[float] = 1e-5
     adam_eps: ClassVar[float] = 1e-16
     param_prior: ClassVar[bool] = False
-    param_rmse_baseline: ClassVar[float] = 0.01  # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
+    # HEURISTIC: the measured initial square-root loss; only the Lambda_combo buffer uses it, and no loss reads it
+    param_rmse_baseline: ClassVar[float] = 0.01
     use_f64: ClassVar[bool] = True
     joint_estimation: ClassVar[bool] = True
     lbfgs: ClassVar[bool] = True
@@ -106,10 +111,8 @@ class RunConfig:
     validation_measure: ClassVar[str] = 'sim-NRMSe'
     controller_gain: ClassVar[bool] = False
     lbfgs_history: ClassVar[int] = 50
-    # HEURISTIC (D-263, FINAL-RUN-FIXES item 16): the production polish tolerances (1e-12, 1e-14, set for the
-    # unweighted loss) kept at the same ratio to the loss. The sigma_e weighting scales the loss by 2.58e7 and the
-    # largest gradient entry by 2.60e7 (local pilot 2026-10-16: 128 windows of the full training records, same
-    # model, weighted vs unweighted).
+    # HEURISTIC: tolerances 1e-12 and 1e-14 of the unweighted loss, times 2.6e7, the measured factor by which the
+    # servo-error weighting scales the loss and its largest gradient entry
     lbfgs_tol_grad: ClassVar[float] = 2.6e-5
     lbfgs_tol_change: ClassVar[float] = 2.6e-7
     obc_space: ClassVar[str] = 'affine'
@@ -117,7 +120,7 @@ class RunConfig:
     obc_rank_rtol: ClassVar[Optional[float]] = None
     obc_ref_successor: ClassVar[bool] = True
     obc_ref_chunk: ClassVar[int] = 16384
-    # derived from the fixed settings; nf = steps per training sample, also the gradient-path length
+    # derived; nf = steps per training window (n_f), also the length of the gradient path
     d: ClassVar[int] = fs_orig // fs_new
     ts_new: ClassVar[float] = 1.0 / fs_new
     nf: ClassVar[int] = max(1, int(nf_seconds / ts_new))
@@ -125,7 +128,7 @@ class RunConfig:
     dtype_pt: ClassVar[torch.dtype] = torch.float64
 
     def __post_init__(self):
-        """The axis and environment values arrive from the CLI, a config.json or the harness."""
+        """Check the axis and environment values, which arrive from the CLI, a config.json or the harness."""
         allowed = dict(arm=('obc', 'u'), start=('detuned', 'correct'), n_a=(0, 2, 8), ps2=(False, True),
                        noise=('lowpass', 'noisefree'), device=('cpu', 'cuda'),
                        compile_mode=(None, 'default', 'reduce-overhead', 'max-autotune'),
@@ -134,12 +137,13 @@ class RunConfig:
             if getattr(self, name) not in values:
                 raise ValueError('%s must be one of %s, got %r' % (name, values, getattr(self, name)))
         if self.compile_mode is not None and self.device != 'cuda':
-            raise ValueError('compile_mode=%r needs device="cuda", got %r' % (self.compile_mode, self.device))
+            raise ValueError('compile_mode=%r needs device="cuda", got %r; set compile_mode=None on the CPU '
+                             '(the --cpu flag does)' % (self.compile_mode, self.device))
 
     @classmethod
     def from_config_json(cls, meta, **overrides):
-        """D-275 D2: a run's config.json (clean or mainline) as a clean config; any setting outside
-        the spec is rejected. Roots and start_phase come from `overrides` or the defaults."""
+        """A run's config.json, clean or mainline, as a RunConfig; a setting outside the thesis runs raises.
+        Roots and start_phase come from overrides or the defaults."""
         if meta.get('CODE') == 'clean':
             axes = dict(arm=meta['ARM'], start=meta['START'], n_a=int(meta['N_A']), ps2=bool(meta['PS2']),
                         noise=meta['NOISE'])
@@ -155,7 +159,8 @@ class RunConfig:
         bad = {k: (want[k], meta.get(k, '<missing>')) for k in want
                if k not in skip and meta.get(k, '<missing>') != want[k]}
         if bad:
-            raise ValueError('config.json is outside the clean spec (key: (spec, file)): %s' % bad)
+            raise ValueError('config.json has settings outside the thesis runs (key: (expected, file)): %s; '
+                             'run this folder with the mainline code' % bad)
         return replace(cfg, **overrides)
 
     # axis properties
@@ -179,15 +184,15 @@ class RunConfig:
     def combo_init_detune(self):
         if self.start == 'correct':
             return None
-        # HEURISTIC (D-222): D-191's 10 % magnitude, one sign per combination drawn from the seed, so
-        # a start fixes its direction and the noisy and noise-free twins of a seed share it.
-        _signs = np.random.default_rng(self.seed).choice([-1.0, 1.0], size=10)
-        return [float(1.0 + 0.10 * s) for s in _signs]
+        # HEURISTIC: 10 % per combination, the sign of each drawn from the seed, so a seed fixes the direction
+        # and its noisy and noise-free runs share it
+        signs = np.random.default_rng(self.seed).choice([-1.0, 1.0], size=10)
+        return [float(1.0 + 0.10 * s) for s in signs]
 
     # derived quantities
     @property
     def hp(self) -> dict:
-        """Derived hyperparameter dict with the legacy keys/order (checkpoint + npz contract)."""
+        """The hyperparameter dict; its keys and order are those of the checkpoint .npz field hp."""
         return dict(
             NX_ANN=self.nx_ann,
             n_nodes_per_layer=self.n_nodes_per_layer,
@@ -202,13 +207,13 @@ class RunConfig:
 
 
 def save_dir(cfg: RunConfig) -> str:
-    """Output directory for this run's family (the run folder is created below it by the caller)."""
+    """Output folder of the run family; the caller creates the run folder below it."""
     return os.path.join(cfg.out_root, f'{cfg.mode}_{cfg.encoder_init}')
 
 
 @functools.lru_cache(maxsize=1)
 def git_provenance() -> str:
-    """Which code produced this run: '0bded3d Augmentation dirty:302 diff:3b437e0c'."""
+    """The code that produced this run, e.g. '0bded3d Augmentation dirty:302 diff:3b437e0c'."""
     def _git(*args):
         return subprocess.run(('git',) + args, cwd=REPO_ROOT, capture_output=True,
                               text=True, check=True).stdout.strip()
@@ -234,8 +239,8 @@ def git_provenance() -> str:
 
 
 def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
-    """Every mainline config.json key in mainline order with the value of this run (removed options
-    as the literals the final runs wrote), then the clean-only keys and GIT."""
+    """The config.json of a run: every mainline key in mainline order (options the clean code lacks as the
+    values the thesis runs wrote), then the clean-only keys and GIT."""
     return dict(
         MODE=cfg.mode, ENCODER_INIT=cfg.encoder_init,
         ANN_ACTIVATION='tanh',

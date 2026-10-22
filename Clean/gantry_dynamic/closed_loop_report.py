@@ -1,4 +1,4 @@
-"""The two helpers of the closed-loop report (D-227) that the evaluation imports."""
+"""Two helpers of the evaluation: the model without its learned part, and the coordinate of the true parameters."""
 __project_origin__ = "added"
 
 import copy
@@ -9,8 +9,8 @@ from model_augmentation.fit_systems.blocks import Static_ANN_Block
 
 
 def _without_learned(fit_sys, free=None):
-    """A deep copy of the model with the learned component removed and, if `free` is given, the
-    physics block's free coordinate set to it. The model passed in is not touched (todo 7b)."""
+    """A deep copy of the model without the learned part (network gate and theta_frozen zeroed), with the
+    physics block at training coordinate free if given; the model passed in is not changed."""
     m = copy.deepcopy(fit_sys)
     blocks = m.hfn.connected_blocks
     ann = next(b for b in blocks if isinstance(b, Static_ANN_Block))
@@ -25,7 +25,7 @@ def _without_learned(fit_sys, free=None):
 
 
 def _true_free(phy):
-    """The free coordinate at which the reduced block holds the TRUE combinations."""
+    """The training coordinate beta at which the physics block holds the true combinations."""
     dt = phy.free_params.dtype
     c_true = type(phy).combos_of(phy.params_init.double(), float(phy.Lb)).to(dt)
     return phy.free_from_combinations(c_true)

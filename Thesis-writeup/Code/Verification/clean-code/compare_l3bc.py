@@ -105,7 +105,9 @@ def run_l3c(cases):
                 gz, cz = np.load(gp, allow_pickle=True), np.load(cp, allow_pickle=True)
                 if 'resumed_from' in gz.files and 'resumed_from' in cz.files:
                     gn = os.path.basename(str(gz['resumed_from']))
-                    cn = os.path.basename(str(cz['resumed_from']))
+                    # the clean dumps carry the clean model class name (D-282)
+                    cn = os.path.basename(str(cz['resumed_from'])).replace('AugmentedModel_',
+                                                                           'SSE_Interconnect_Composed_')
                     if gn.replace('L3c-' + tag, 'X').replace('L3-' + case, 'X') != cn.replace('L3-' + case, 'X'):
                         out['resumed_from%s' % suffix] = 'golden %s | clean %s' % (gn, cn)
         ca = json.load(open(os.path.join(cdir, 'clean_asserts.json')))

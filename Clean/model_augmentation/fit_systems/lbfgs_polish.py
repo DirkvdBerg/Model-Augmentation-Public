@@ -1,4 +1,4 @@
-"""Terminal L-BFGS polish phase, staged after Adam (D-171)."""
+"""The L-BFGS polish after Adam: one fixed batch of windows, kept only if the validation score improves."""
 __project_origin__ = "added"
 
 import time
@@ -11,7 +11,7 @@ import torch
 
 @dataclass(frozen=True)
 class PolishSpec:
-    """Everything the phase can be tuned by, in one object."""
+    """The settings of the polish."""
     n_windows: int
     max_iter: int
     inner_iter: int
@@ -33,21 +33,20 @@ def _restore(params, snap):
 
 
 def _resync(fit_sys):
-    """D-266: pair a prediction coefficient held OUTSIDE the parameters (the OBC `theta_frozen`)
-    with the parameters as they are now. Every closure's loss() overwrites it, so after a restore,
-    or before a validation, it may still describe another network. Keeps the basis; a no-op for a
-    system without such state."""
-    fit_sys._sync_prediction_state_for_validation(refresh_basis=False)
+    """Pair theta_frozen of the OBC arm with the parameters as they are now, keeping the basis; every loss()
+    overwrites it, so after a restore it can describe another network. A no-op without OBC."""
+    fit_sys._sync_obc_coefficient(refresh_basis=False)
 
 
 def window_count(fit_sys, sys_data, nf, stride):
-    """How many windows `make_training_data` WOULD return, without building any of them."""
+    """How many windows make_training_data would return, without building them."""
     first = max(fit_sys.nb, fit_sys.na) + nf
     return sum(len(range(first, len(sd.u) + 1, stride)) for sd in sys_data.sdl)
 
 
-class FixedBatch:
-    """The ONE deterministic batch the phase optimises, and nothing else."""
+class FixedWindowBatch:
+    """The one deterministic batch the polish optimises: windows at a stride scaled to about n_windows, then a
+    seeded subset if there are still more."""
 
     def __init__(self, fit_sys, sys_data, loss_kwargs, n_windows, seed):
         nf = loss_kwargs['nf']
@@ -66,10 +65,8 @@ class FixedBatch:
         n_pred = window_count(fit_sys, sys_data, nf, self.effective_stride)
         if n_pred != n_built:
             raise RuntimeError(
-                'window_count predicts %d windows at stride %d but make_training_data built %d. '
-                'The two must agree, or the stride scaling that sizes this batch is guessing. '
-                'deepSI\'s System_data.to_hist_future_data has changed, or na/nb/na_right/'
-                'nb_right no longer mean what window_count assumes.'
+                'window_count predicts %d windows at stride %d but make_training_data built %d; make '
+                'window_count follow the windowing of WindowedSystemData'
                 % (n_pred, self.effective_stride, n_built))
 
         self.n_used = min(want, n_built)
@@ -99,24 +96,25 @@ class FixedBatch:
 
 
 def _make_closure(fit_sys, batch, opt, counter):
-    """One closure over the fixed batch."""
+    """The L-BFGS closure over the fixed batch; counter[0] counts its calls."""
     def closure():
         counter[0] += 1
         opt.zero_grad(set_to_none=False)
         loss = fit_sys.loss(*batch.args, **batch.kw)
         loss.backward()
+        # a detached value, so the graph is freed before L-BFGS calls again
         return torch.as_tensor(float(loss))
     return closure
 
 
 def _loss_value(fit_sys, batch):
-    """The objective at the CURRENT weights: one forward over the batch, no graph, no gradient."""
+    """The objective at the current weights: one forward pass over the batch, without gradient."""
     with torch.no_grad():
         return float(fit_sys.loss(*batch.args, **batch.kw))
 
 
 def _lbfgs_counts(opt, params):
-    """(iterations, closure evaluations) as torch ITSELF counted them, cumulative over step()s."""
+    """(iterations, closure evaluations) as torch counts them, cumulative over step() calls."""
     st = opt.state[params[0]]
     return int(st.get('n_iter', 0)), int(st.get('func_evals', 0))
 
@@ -128,14 +126,14 @@ def _is_oom(exc):
 
 
 def _probe_closure(closure, label):
-    """Evaluate twice without stepping; return (ok, first_value, error_or_None)."""
+    """Evaluate the closure twice without a step; returns (identical, first value, error or None)."""
     try:
         a = float(closure())
         b = float(closure())
     except Exception as e:
         print('  [lbfgs] %s rollout FAILED (%s): %s'
               % (label, type(e).__name__, str(e).splitlines()[0][:160]))
-        # without its traceback, so the failed rollout's frames and tensors are freed (D-279 F5)
+        # without its traceback, so the frames and tensors of the failed rollout are freed
         return False, float('nan'), e.with_traceback(None)
     ok = (a == b)
     print('  [lbfgs] determinism check (%s): %.17e vs %.17e -> %s'
@@ -145,7 +143,7 @@ def _probe_closure(closure, label):
 
 def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, val_before=None,
                  validation_measure):
-    """Polish `fit_sys` in place with L-BFGS on one fixed batch. Returns an outcome dict."""
+    """Polish fit_sys in place with L-BFGS on one fixed batch; returns the outcome dict."""
     t0 = time.time()
     out = dict(ran=False, accepted=False, reason='', n_iter=0, max_iter=spec.max_iter,
                n_closure=0, func_evals=0, wall_s=0.0,
@@ -172,8 +170,8 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                 fit_sys.train()
 
     def _abort(reason, oom, word):
-        """Abandon the phase: restore and resync the start weights (and release the CUDA cache
-        after an out-of-memory error); the pre-polish result stands."""
+        """Abandon the polish: restore and resync the start weights, and release the CUDA cache after an
+        out-of-memory error; the pre-polish result stands."""
         out['reason'] = reason
         out['wall_s'] = time.time() - t0
         _restore(params, snap)
@@ -183,16 +181,15 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         print('  [lbfgs] ABORTED, weights %s: %s' % (word, reason))
         return out
 
-    # D-279 (F5): ONE restore-and-resync boundary over everything that allocates or mutates, from
-    # the start validation to the final scoring. An exception the inner handlers do not catch (an
-    # allocation in FixedBatch, the final loss or validation) is an aborted polish: the weights are
-    # restored and the pre-polish result stands.
+    # one restore-and-resync boundary from the start validation to the final scoring: an exception the inner
+    # handlers do not catch aborts the polish with the weights restored
     try:
+        # start validation and the fixed batch
         out['val_before'] = _validate() if val_before is None else float(val_before)
 
         out['params_polished'] = sum(p.numel() for p in params)
 
-        batch = FixedBatch(fit_sys, train_sys_data, loss_kwargs, spec.n_windows, spec.seed)
+        batch = FixedWindowBatch(fit_sys, train_sys_data, loss_kwargs, spec.n_windows, spec.seed)
         out.update(n_windows_used=batch.n_used, n_windows_total=batch.n_total,
                    effective_stride=batch.effective_stride)
 
@@ -202,6 +199,8 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                 tolerance_grad=spec.tol_grad, tolerance_change=spec.tol_change,
                 line_search_fn='strong_wolfe')
 
+        # determinism probe, compiled first if available: the strong-Wolfe line search needs a loss that
+        # reproduces
         n_closure = [0]
         compiled_available = fit_sys.simulator._compiled is not None
 
@@ -212,13 +211,12 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         out['deterministic'], out['used_compiled'] = ok, (label == 'compiled' and ok)
 
         if not ok and compiled_available:
-            print('  [lbfgs] falling back to the EAGER rollout (%s). The strong-Wolfe line '
-                  'search compares f at several points, so it needs a loss that both runs and '
-                  'reproduces.'
+            print('  [lbfgs] falling back to the eager rollout (%s): the strong-Wolfe line search compares f at '
+                  'several points, so it needs a loss that both runs and reproduces'
                   % ('the compiled rollout raised' if err is not None
                      else 'the compiled loss is not reproducible'))
             force_eager = True
-            # D-279 (F5): the failed try's optimizer and allocations go before the eager retry
+            # the failed attempt's optimizer and allocations go before the eager retry
             opt = closure = None
             if err is not None and _is_oom(err):
                 torch.cuda.empty_cache()
@@ -244,6 +242,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                      spec.tol_change, spec.tol_change / max(abs(first), 1e-300),
                      spec.max_iter, 'compiled' if out['used_compiled'] else 'eager'))
 
+            # L-BFGS in blocks of inner_iter iterations, until it stops inside a block or max_iter is reached
             n_outer = max(1, -(-spec.max_iter // max(1, spec.inner_iter)))
             for k in range(n_outer):
                 it_before, _ = _lbfgs_counts(opt, params)
@@ -276,6 +275,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
             if not np.isfinite(out['loss_last']):
                 out['reason'] += ' | non-finite loss at the final point'
 
+        # final validation
         out['ran'] = True
         out['val_after'] = _validate()
         out['wall_s'] = time.time() - t0
@@ -289,7 +289,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         return _abort('%s in the polish; phase abandoned, weights restored. %s' % failure[1:],
                       failure[0], 'restored')
 
-    # keep the polished weights only with a finite loss and a validation measure that improved
+    # keep the polished weights only with a finite loss and a validation score that improved
     if not np.isfinite(out['loss_last']):
         out['accepted'], why = False, 'non-finite loss'
     elif not (np.isfinite(out['val_before']) and np.isfinite(out['val_after'])):

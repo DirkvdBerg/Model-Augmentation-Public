@@ -1,10 +1,10 @@
-"""Gantry augmentation training entry point (clean minimal code of the thesis runs).
+"""Entry point of the thesis training runs: a fresh run, a resume or a polish-only rerun.
 
     python -u Clean/gantry_interconnect_dynamic.py [preset] [noise] [--cpu] [--smoke]
         [--resume RUN_DIR [--from {best,last}] | --polish-only RUN_DIR] [--data-root P] [--out-root P]
 
-No arguments = R1 lowpass on cuda with reduce-overhead compilation (the production run); without
-CUDA use --cpu. Presets R1 to R7, R13, R14 are runs.tsv rows 221 to 230 (gantry_dynamic/config.py).
+Without arguments: R1 lowpass on CUDA with reduce-overhead compilation; without CUDA use --cpu. The presets
+R1 to R7, R13 and R14 are the thesis runs (gantry_dynamic/config.py).
 """
 import argparse
 import json
@@ -26,14 +26,14 @@ from gantry_dynamic.training import train, load_checkpoint
 
 
 def _dumps(run_id):
-    """The deepSI dumps `_best.pth`, `_last.pth` of a run id."""
-    return [os.path.join(get_work_dirs()['checkpoints'], 'SSE_Interconnect_Composed_%s%s.pth' % (run_id, s))
+    """Paths of the deepSI dumps _best.pth and _last.pth of a run; deepSI names them after the model class."""
+    return [os.path.join(get_work_dirs()['checkpoints'], 'AugmentedModel_%s%s.pth' % (run_id, s))
             for s in ('_best', '_last')]
 
 
 def _rerun_source(kind, run_dir, source):
-    """D-275 D6: a rerun continues inside its run folder under the folder's run id. Returns
-    (its config.json, run_id, the source checkpoint in place); nothing moves here."""
+    """(config.json, run id, source checkpoint) of a rerun, which continues in its run folder under the
+    folder's run id; nothing moves here."""
     with open(os.path.join(run_dir, 'config.json')) as fh:
         cj = json.load(fh)
     run_id = str(cj['run_id'])
@@ -45,14 +45,14 @@ def _rerun_source(kind, run_dir, source):
         need = [src]
     for f in need:
         if not os.path.exists(f):
-            raise FileNotFoundError('rerun source checkpoint not found: %s' % f)
+            raise FileNotFoundError('rerun source %s not found; check RUN_DIR, or choose the other dump of a '
+                                    '--resume with --from' % f)
     return cj, run_id, src
 
 
 def _archive_rerun(kind, run_dir, cj, run_id, src):
-    """D-275 D6: the previous outcome (and for a resume both deepSI dumps) moves to
-    previous/<rerun_id>/, config.json (`cj`, as _rerun_source read it) gets a RESUMES entry. Called
-    only once the source has loaded (D-279 F6). Returns the source's path in the archive."""
+    """Move the previous outcome, and for a resume both deepSI dumps, to previous/<rerun_id>/ and add a
+    RESUMES entry to config.json; returns the source's path in the archive."""
     rerun_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
     prev = os.path.join(run_dir, 'previous', rerun_id)
     os.makedirs(prev)
@@ -74,17 +74,17 @@ def _archive_rerun(kind, run_dir, cj, run_id, src):
 
 
 def main(cfg, run_id=None, rerun=None):
-    """One run: data, model, closed loop, encoder start, training, polish, checkpoints.
-    `rerun` = (kind, run_dir, source): ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None)."""
+    """One run: data, model, closed loop, encoder start, Adam, polish and checkpoints; returns the best score.
+
+    rerun = ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None); None for a fresh run."""
+    # run folder: a fresh run never writes into an existing one
     if rerun is None:
         run_id = run_id or os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
         sdir = os.path.join(save_dir(cfg), run_id)
         if os.path.exists(sdir):
-            # D-279 (F1): a fresh run never writes into an existing run folder (D-275 D6)
             raise FileExistsError(
-                'run folder %s exists. A fresh run never writes into an existing run: continue it with '
-                '--resume %s, polish it with --polish-only %s, or launch under another run id.'
-                % (sdir, sdir, sdir))
+                'run folder %s exists; continue it with --resume %s, polish it with --polish-only %s, or '
+                'launch under another run id' % (sdir, sdir, sdir))
         src = None
     else:
         kind, sdir, source = rerun
@@ -97,6 +97,7 @@ def main(cfg, run_id=None, rerun=None):
           + ' g_aug=mlp/live' + ('  PS2' if cfg.ps2 else '  plain')
           + ('  %s from %s' % (rerun[0], rerun[1]) if rerun else ''), flush=True)
 
+    # data and normalisation
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     data = load_datasets(cfg)
@@ -106,10 +107,11 @@ def main(cfg, run_id=None, rerun=None):
 
     if rerun is None:
         os.makedirs(sdir)
-        with open(os.path.join(sdir, 'config.json'), 'w') as _f:
+        with open(os.path.join(sdir, 'config.json'), 'w') as fh:
             json.dump({**config_json_dict(cfg, git=git_provenance()),
-                       'hp': hp, 'run_id': run_id, 'data_dir': traj_dir(cfg)}, _f, indent=2)
+                       'hp': hp, 'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
 
+    # model and closed loop; reseeded, so the initial draws of the model start from the seed
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     fit_sys = build_model(hp, cfg, data, norm)
@@ -118,15 +120,15 @@ def main(cfg, run_id=None, rerun=None):
         fit_sys, norm, cfg,
         train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data,
         e_train=data.e_train, e_val=data.e_val)
-    print('\nLoss rollout: CLOSED loop (known controller wrapped around the model)')
-    # D-271: the data-based encoder start needs the controller bank; a resume restores the
-    # fitted encoder instead.
+    print('\nLoss rollout: closed loop (the known controller around the model)')
+
+    # encoder start (it simulates the closed loop, so it follows the controller bank); a rerun restores
+    # the fitted encoder instead
     resume = None
     if src is None:
         prefit_physical_encoder(fit_sys, cfg, data, norm)
     else:
-        # D-279 (F6): data, device and the whole checkpoint load (format, dtype, architecture, PS2 state,
-        # Adam groups) succeed BEFORE anything in the run folder moves
+        # the run folder is archived only once data, device and the whole checkpoint have loaded
         meta = load_checkpoint(fit_sys, src, cfg.joint_estimation, start_phase=cfg.start_phase)
         resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
 
@@ -136,6 +138,7 @@ def main(cfg, run_id=None, rerun=None):
 
 
 def cli():
+    """Parse the command line into a RunConfig and a rerun, then start main."""
     ap = argparse.ArgumentParser(description='no arguments = R1 lowpass on cuda with reduce-overhead '
                                              'compilation (the production run); without CUDA use --cpu')
     ap.add_argument('preset', nargs='?', default=None, choices=sorted(PRESETS))

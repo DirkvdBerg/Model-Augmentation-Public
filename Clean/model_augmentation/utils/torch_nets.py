@@ -1,13 +1,16 @@
+"""The layer stack of the networks and the augmentation network phi_aug."""
+# CHANGED: restricted to the thesis training path; full implementation in
+# model_augmentation/utils/torch_nets.py at the repository root
 from torch import nn
 import torch
 
-from model_augmentation.utils.utils import added
+from model_augmentation.utils.utils import added  # CHANGED: the marker of the added definitions
 
 
 @added
-def mlp_stack(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
-    """`[Linear, act, (Linear, act) x (n_hidden_layers - 1), Linear]` with a zero final bias, as
-    (Sequential, final layer). The layers draw their default initialisation in this order."""
+def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
+    """[Linear, activation] n_hidden_layers times, then a Linear with zero bias; returns (Sequential, final layer)."""
+    # the layers draw their default initialisation in this order
     seq = [nn.Linear(n_in, n_nodes_per_layer), activation()]
     for i in range(n_hidden_layers - 1):
         seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
@@ -23,12 +26,13 @@ def mlp_stack(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
 
 
 @added
-class live_g_feed_forward_nn(nn.Module):
-    """zero_init_feed_forward_nn, except the added-state rows of the final weight stay live."""
+class AugmentationNetwork(nn.Module):
+    """phi_aug = (f_aug^n, g_aug^n): an MLP whose physical output rows start at zero, so f_aug^n = 0 at the start,
+    while the added-state rows keep their random draw."""
 
     def __init__(self, n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation, nx_phys):
-        super(live_g_feed_forward_nn, self).__init__()
-        self.net, final_layer = mlp_stack(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation)
+        super(AugmentationNetwork, self).__init__()
+        self.net, final_layer = build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation)
         # the routed outputs are the states in order, so the physical rows are the first nx_phys
         with torch.no_grad():
             final_layer.weight[:nx_phys].zero_()

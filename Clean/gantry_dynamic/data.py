@@ -1,4 +1,4 @@
-"""Data loading (the manifest split of one noise entry), resampling and normalization."""
+"""Data loading (the manifest split of one data set), resampling to the training rate and normalisation."""
 __project_origin__ = "added"
 
 import csv
@@ -15,26 +15,26 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 from .config import (RunConfig, AA_ORDER, AA_FC_HZ,
                      record_trim, y_decimation)
 
-# D-221: the thesis data sets below cfg.data_root, one folder per noise entry
+# the thesis data sets below cfg.data_root, one folder per noise setting
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
+# manifest block -> split
 _THESIS_SPLIT = {'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
 
 
 def record_files(cfg: RunConfig):
-    """(train, val, test) file names for cfg.mode, relative to traj_dir(cfg), in manifest order."""
+    """(train, val, test) file names relative to traj_dir(cfg), in manifest order."""
     out = {'train': [], 'val': [], 'test': []}
     with open(os.path.join(traj_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
         for row in csv.DictReader(fh):
             split = _THESIS_SPLIT.get(row['block'])
-            # D-274: only K1 records (thesis: every record is generated with K1); drops E5 (K2-g+),
-            # which was loaded but never scored (D-227).
+            # K1 records only: every thesis record is generated with the controller K1
             if split is not None and row['controller'] == 'K1':
                 out[split].append('%s/%s.mat' % (row['folder'], row['file']))
     return out['train'], out['val'], out['test']
 
 
 def _register_controller(d, filename):
-    """Hand the record's stored controller (meta.controller, D-221) to the closed-loop bank."""
+    """Register the record's stored controller (meta.controller) for the closed-loop bank."""
     from .controller import register_stored_controller
     ctl = d['meta']['controller'].item()
     get = lambda k: ctl[k].item() if hasattr(ctl[k], 'item') else ctl[k]
@@ -44,6 +44,7 @@ def _register_controller(d, filename):
 
 @dataclass
 class DataBundle:
+    """The records of the three splits: System_data at FS_NEW, file names and servo errors e = y - r."""
     train_list: list
     val_list: list
     test_list: list
@@ -59,6 +60,7 @@ class DataBundle:
 
 @dataclass
 class Norm:
+    """Normalisation constants of the physical states, inputs and outputs, and the output map C^n."""
     x_mean: object
     std_x: object
     std_u: object
@@ -70,26 +72,22 @@ class Norm:
 
 
 def traj_dir(cfg: RunConfig) -> str:
+    """Folder of the data set of cfg.noise."""
     return os.path.join(cfg.data_root, DATASETS[cfg.noise])
 
 
 def _load_u(d):
-    """Return plant input u_total [F_X1, F_X2, F_Y] from the generated mat file."""
+    """The plant input u_total = [F_X1, F_X2, F_Y] of a record."""
     return d['u_total']
 
 
 def _resample_u(u, cfg: RunConfig):
-    """Downsample the plant force FS_ORIG -> FS_NEW by per-hold-interval block mean.
+    """The plant force from FS_ORIG to FS_NEW as the mean over each hold interval.
 
-    # THEORY: u_total is ZOH at FS_ORIG (discrete 20 kHz controller), so the exact
-    # input for a ZOH model at FS_NEW is the mean force over each TS_NEW hold
-    # interval (impulse equivalence). Point sampling u[::D] leaves a nonzero-mean
-    # force error that the K=0 axes integrate into a permanent offset tau*dv
-    # (tau=m/c): V1 open-loop settled at Y -3.5e-4 m / X +6e-5 m; block mean
-    # collapses this to ~3e-9 / 3e-8 m (diag_openloop_x0.py, D-087).
-    # NB (D-099): this is a DC/area-consistency effect, NOT anti-aliasing --
-    # u_total is band-limited well below the 2 kHz Nyquist (frac_above ~4e-14,
-    # diag_downsample_spectra.py), so there is no HF energy to fold.
+    # THEORY: u_total is a zero-order hold at FS_ORIG (the 20 kHz controller), so the exact input of a
+    # zero-order-hold model at FS_NEW is the mean force over each FS_NEW hold interval. Point sampling u[::D]
+    # leaves a mean force error, which the stiffness-free X and Y axes turn into a position offset. The force is
+    # band-limited far below the 2 kHz Nyquist frequency, so this is not anti-aliasing.
     """
     D = cfg.d
     n = u.shape[0] // D
@@ -97,17 +95,18 @@ def _resample_u(u, cfg: RunConfig):
 
 
 def _decimate_y(d, cfg: RunConfig):
-    """y at FS_NEW: the D-232 anti-alias rule on the lowpass entry, point sampling otherwise."""
+    """y at FS_NEW: zero-phase anti-alias filtering of y - r on the lowpass data set, point sampling otherwise."""
     D = cfg.d
     if cfg.noise != 'lowpass':
         return d['y'][::D]
     r = d['r_sim']
     sos = butter(AA_ORDER, AA_FC_HZ, fs=cfg.fs_orig, output='sos')
+    # only the servo error is filtered; the reference r is added back unfiltered
     return r[::D] + sosfiltfilt(sos, d['y'] - r, axis=0)[::D]
 
 
 def _record_at_fs_new(d, cfg: RunConfig, fields=()):
-    """[u, y, *fields] of one record at FS_NEW, all on the same samples."""
+    """[u, y, *fields] of one record at FS_NEW on the same samples, trimmed at both ends."""
     D = cfg.d
     u = _resample_u(_load_u(d), cfg)
     N = len(u)
@@ -120,8 +119,8 @@ def _record_at_fs_new(d, cfg: RunConfig, fields=()):
 
 
 def _load_record(filename, cfg: RunConfig, folder=None):
-    """(System_data, e) of one record from ONE read of its file; e = y - r at FS_NEW (float64),
-    on the same samples as y. `folder` overrides traj_dir(cfg), for the evaluation-only twins (D-258)."""
+    """(System_data, e) of one record from one read of its file, e = y - r at FS_NEW in float64; read from folder
+    if given, else from traj_dir(cfg)."""
     d = loadmat(os.path.join(folder or traj_dir(cfg), filename), squeeze_me=True)
     _register_controller(d, filename)
     u, y, r = _record_at_fs_new(d, cfg, ('r_sim',))
@@ -131,21 +130,20 @@ def _load_record(filename, cfg: RunConfig, folder=None):
 
 
 def servo_sigma(e_list, k0):
-    """sigma_e per record and axis (D-262): population std of the servo error e = y - r over the
-    scored samples k0..N-1, shape (n_records, ny). THE one definition, used by the loss weights,
-    the selection, the black box and the evaluation."""
-    # THEORY: Beintema 2023 Eq. (43) normalises by the sample standard deviation of the output;
-    # here the output is the servo error (thesis eq:setup_rms, D-256)
+    """sigma_e per record and axis: the population standard deviation of e = y - r over the scored samples
+    k0 .. N-1, shape (n_records, ny)."""
+    # THEORY: the NRMS normalisation by a standard deviation (Beintema et al.), here that of the servo error
     s = np.stack([np.std(np.asarray(e, np.float64)[k0:], axis=0) for e in e_list])
     if not (np.all(np.isfinite(s)) and np.all(s > 0)):
-        raise ValueError('servo error standard deviation must be finite and positive, got %s' % s)
+        raise ValueError('servo error standard deviation must be finite and positive, got %s; check the '
+                         'records for a constant or missing servo error' % s)
     return s
 
 
 def load_datasets(cfg: RunConfig) -> DataBundle:
-    """Load the train/val/test records of the manifest split."""
+    """Load the train, val and test records of the manifest split."""
     print(f'Data dir ({cfg.mode}): {traj_dir(cfg)}')
-    print(f'y decimation (D-232): {y_decimation(cfg)}; {record_trim(cfg)} samples dropped at both '
+    print(f'y decimation: {y_decimation(cfg)}; {record_trim(cfg)} samples dropped at both '
           f'record ends (u, y and every field)')
     train_files, val_files, test_files = record_files(cfg)
 
@@ -172,7 +170,7 @@ def load_datasets(cfg: RunConfig) -> DataBundle:
 
 
 def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
-    """All NX_PHYS-dimensional normalization constants (independent of NX_ANN)."""
+    """Normalisation constants of the six physical states, the inputs and the outputs, from the training records."""
     u_all = np.concatenate([t.u for t in data.train_list])
     y_all = np.concatenate([t.y for t in data.train_list])
 
@@ -180,6 +178,7 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)
     x_logical_list = []
     for t in data.train_list:
+        # logical positions q = P^-T y, velocities by a first difference
         pos_logical = (P_inv_T @ t.y.T).T
         # THEORY: var of a first difference of white noise = 2*sigma_n^2, so sigma_v = sigma_n*sqrt(2)*fs
         vel_logical = np.diff(pos_logical, axis=0) * fs
@@ -194,6 +193,7 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     ystd   = y_all.std(axis=0) + 1e-8
     y0     = y_all.mean(axis=0)
 
+    # C^n = diag(1 / sigma_y) C diag(sigma_x), so y^n = C^n x_tilde^n: the offsets cancel, since y0 = C x_mean
     Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]
     Dd_np   = Dd.numpy()
 

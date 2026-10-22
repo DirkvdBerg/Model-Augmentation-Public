@@ -54,27 +54,39 @@ $f_a$ & $150\,\mathrm{Hz}$ & $\zeta_a$ & $0.03$ \\
 \end{table}
 
 \subsection{Explicit LPV-LFR realisation}\label{app:lfr-details}
-In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
+In \eqref{eq:Msplit}, $M_0$ is \chg[Dirk]{\mbox{\eqref{eq:mass_matrix}} evaluated at $Y=0$}{\kwtwo{the part of \eqref{eq:mass_matrix} without $Y$}}, and
 \begin{equation*}
  M_1=\begin{bmatrix}0&-m_h&0\\-m_h&0&0\\0&0&0\end{bmatrix},\qquad
  M_2=\begin{bmatrix}0&0&0\\0&m_h&0\\0&0&0\end{bmatrix}.
 \end{equation*}
-With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, solving
+% FEEDBACK (2026-10-22, Dirk): A.2 shortened; derivation unchanged and as in
+%   docs/Thesis-documentation/LPV_LFR_Stepwise_Derivation/main.tex (Overleaf,
+%   latest; Roland's z/w construction). Struck: repeats of III-B (signal
+%   definitions, q'' solve, loop closing) and III-A (actuator frame), the
+%   second display of G's partition (= eq:lfr_G; display commented out, no
+%   outside reference), Horner and N_0..N_2 (implementation only). Kept: the
+%   closed form, which Section IV cites (03_augmentation.tex, "analytically
+%   resolving the baseline LFR loop").
+\del[own]{With $a_1$ and $a_2$ from \mbox{\eqref{eq:lfr_chain}} treated as independent signals, solving
 $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
 $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
-\eqref{eq:lfr_G}, using a continuous-time adaptation of the block partition
-in~\cite[Eq.~(2)]{drenth2025lpvlfr}, is
-\begin{equation}
- \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
- =
- \underbrace{\begin{bmatrix}
-  A_x&B_w&B_u\\ C_z&D_{zw}&D_{zu}\\ C_y&D_{yw}&D_{yu}
- \end{bmatrix}}_{G}
- \begin{bmatrix}\tilde x\\w\\u\end{bmatrix}.
- \label{eq:app_G_partition}
-\end{equation}
-with blocks
+\mbox{\eqref{eq:lfr_G}}, using a continuous-time adaptation of the block partition
+in~\mbox{\cite[Eq.~(2)]{drenth2025lpvlfr}}, is}
+\add[own]{\kwtwo{With $R=M_0^{-1}$, \eqref{eq:lfr_constant} gives
+$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$.
+Partitioning $G$ in \eqref{eq:lfr_G} as in~\cite[Eq.~(2)]{drenth2025lpvlfr},
+with rows $(\dot{\tilde x},z,q)$ and columns $(\tilde x,w,u)$, gives the blocks}}
+% \begin{equation}
+%  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
+%  =
+%  \underbrace{\begin{bmatrix}
+%   A_x&B_w&B_u\\ C_z&D_{zw}&D_{zu}\\ C_y&D_{yw}&D_{yu}
+%  \end{bmatrix}}_{G}
+%  \begin{bmatrix}\tilde x\\w\\u\end{bmatrix}.
+%  \label{eq:app_G_partition}
+% \end{equation}
+\del[own]{with blocks}
 {\footnotesize
 \setlength{\arraycolsep}{2.5pt}
 \begin{equation}
@@ -93,39 +105,49 @@ with blocks
 \end{equation}
 }
 Here $\tilde x,z,w\in\R^6$ and $u,q\in\R^3$, so $G\in\R^{15\times15}$.
-The actuator frame enters only through $u=P\uact$ and $\qact=P^\top q$ in
-\eqref{eq:Ptransform}.
+\del[own]{The actuator frame enters only through $u=P\uact$ and $\qact=P^\top q$ in
+\mbox{\eqref{eq:Ptransform}}.}
 
-Substituting $w=\Dsch(Y)z$ into the $z$ equation of
-\eqref{eq:app_G_partition} gives the algebraic loop equation
-$(I_6-D_{zw}\Dsch(Y))z=C_zx+D_{zu}u$. Written out,
+Substituting $w=\Dsch(Y)z$ \del[own]{into the $z$ equation of
+\mbox{\eqref{eq:app_G_partition}}} gives the \del[own]{algebraic }loop equation
+\chg[own]{$(I_6-D_{zw}\Dsch(Y))z=C_zx+D_{zu}u$. Written out,}{\kwtwo{$(I_6-D_{zw}\Dsch(Y))z=C_z\tilde x+D_{zu}u$, with}}
+% FEEDBACK (2026-10-22, Dirk): display reduced to the matrix
+%   I_6 - D_zw Delta(Y); the product with z and the right-hand side dropped
+%   (they only served the struck loop closing below). C_z x -> C_z x~ (typo).
 \begin{equation*}
- \begin{bmatrix}I_3+YRM_1&YRM_2\\-YI_3&I_3\end{bmatrix}
- \begin{bmatrix}\ddot q\\a_1\end{bmatrix}
- =\begin{bmatrix}R(u-Kq-C\dot q)\\0\end{bmatrix}.
+ I_6-D_{zw}\Dsch(Y)=\begin{bmatrix}I_3+YRM_1&YRM_2\\-YI_3&I_3\end{bmatrix}.
 \end{equation*}
-The second block row gives $a_1=Y\ddot q$, and the first then gives
-$M(Y)\ddot q=u-C\dot q-Kq$, that is \eqref{eq:eom}, after multiplication by
+\del[own]{The second block row gives $a_1=Y\ddot q$, and the first then gives
+$M(Y)\ddot q=u-C\dot q-Kq$, that is \mbox{\eqref{eq:eom}}, after multiplication by
 $M_0$. The condition of
-\cite[Def.~1]{drenth2025lpvlfr}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
+\mbox{\cite[Def.~1]{drenth2025lpvlfr}}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
 therefore the condition that $M(Y)$ is nonsingular: the Schur complement of
-the lower identity block gives
+the lower identity block gives}
+\add[own]{\kwtwo{The Schur complement of the lower identity block gives}}
 \begin{equation*}
 \begin{aligned}
  \det\bigl(I_6-D_{zw}\Dsch(Y)\bigr)
  &=\det\bigl(I_3+YRM_1+Y^2RM_2\bigr)\\
- &=\det M(Y)/\det M_0.
+ &=\det M(Y)/\det M_0,
 \end{aligned}
 \end{equation*}
-Since $M(Y)$ is nonsingular, the loop is solved in closed form,
-$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with
-\begin{equation*}
- M(Y)^{-1}=\frac{N_0+YN_1+Y^2N_2}{d(Y)},\qquad d(Y)=\det M(Y),
-\end{equation*}
-where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic
+\add[own]{\kwtwo{so the condition of \cite[Def.~1]{drenth2025lpvlfr} holds if and only if
+$M(Y)$ is nonsingular.}}
+\chg[own]{Since $M(Y)$ is nonsingular, the loop is solved in closed form,
+$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with}{\kwtwo{The loop then has the closed-form solution
+$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$, with
+$M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$.}}
+% FEEDBACK (2026-10-22, Dirk): "both quadratic in Y" dropped; nothing uses
+%   the degree (III-B states the rational dependence).
+% \begin{equation*}
+%  M(Y)^{-1}=\frac{N_0+YN_1+Y^2N_2}{d(Y)},\qquad d(Y)=\det M(Y),
+% \end{equation*}
+\del[own]{where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic
 in $Y$.
-The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term by term.
-\todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
+The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term by term.}
+% TODO closed (2026-10-22, Dirk): N_0, N_1, N_2 and d(Y) not printed; Horner
+%   dropped (implementation only). Degree 2 of adj M(Y) and det M(Y) checked by
+%   hand (2026-10-22) and symbolically (sympy, 2026-10-06).
 
 \subsection{Positive definiteness of the inertia matrix}
 \label{app:lfr-wellposed}

@@ -1,9 +1,6 @@
+"""Physical constants and LFR matrices of the dual-gantry system in float32, from kamtin-fp-model/03 Simulink
+gantry/main.m (the immutable ground truth)."""
 __project_origin__ = "added"
-
-"""Physical constants and LFR matrices for the dual-gantry system (float32).
-
-Source: kamtin-fp-model/03 Simulink gantry/main.m (immutable ground truth).
-"""
 
 import torch
 
@@ -32,6 +29,7 @@ d   = torch.tensor(0.1,    dtype=_D)
 
 _z = torch.zeros(3, 3, dtype=_D)
 
+# M(Y) = M0 + Y M1 + Y^2 M2
 M1 = _z.clone()
 M1[0, 1] = -mh
 M1[1, 0] = -mh
@@ -39,6 +37,7 @@ M1[1, 0] = -mh
 M2 = _z.clone()
 M2[1, 1] = mh
 
+# damping C and stiffness K of the logical coordinates q
 C = _z.clone()
 C[0, 0] = cg1 + cg2
 C[0, 1] = (cg1 - cg2) * Lb / 2
@@ -49,6 +48,7 @@ C[2, 2] = cy
 K = _z.clone()
 K[1, 1] = kb1 + kb2
 
+# stage-to-logical transform: q = P^-T y, y = P^T q
 P = _z.clone()
 P[0, 0] = 1.0
 P[0, 1] = 1.0
@@ -56,14 +56,14 @@ P[1, 0] = Lb / 2
 P[1, 1] = -Lb / 2
 P[2, 2] = 1.0
 
+# output map y = Cd x = P^T q
 Cd = torch.zeros(3, 6, dtype=_D)
 Cd[:, :3] = P.T
 
 Dd = torch.zeros(3, 3, dtype=_D)
 
 def build_poly_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_, d_):
-    """
-    Polynomial constants for LFR rational inverse of M(Y)."""
+    """alpha, beta, gamma and N0, N1, N2 of the rational inverse M(Y)^-1 = (N0 + Y N1 + Y^2 N2) / d(Y)."""
     alpha = m1_ + m2_ + mb_ + mh_
     beta  = (m1_ - m2_) * Lb_ / 2
     gamma = Jb_ + Jh_ + (m1_ + m2_) * Lb_**2 / 4
@@ -89,8 +89,7 @@ def build_poly_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_, d_):
 
 
 def build_G_matrix_entries(N0_, d0_, M1_, M2_, K_, C_):
-    """
-    Build constant G matrix entries for the LFR realisation."""
+    """Ax, Bw, Bu and A_combined = [Ax Bw Bu] of the LFR, with M0^-1 = N0 / d0."""
     dtype  = N0_.dtype
     device = N0_.device
     eye3   = torch.eye(3, dtype=dtype, device=device)

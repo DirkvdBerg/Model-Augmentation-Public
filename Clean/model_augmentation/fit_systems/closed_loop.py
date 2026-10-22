@@ -1,4 +1,5 @@
-"""Closing a known LTI feedback controller around the model during a loss rollout."""
+"""Closed-loop model simulation with a known controller, following Kessels: the controller bank, the rollout and
+the simulator of training and validation."""
 __project_origin__ = "added"
 
 from contextlib import contextmanager
@@ -8,14 +9,14 @@ import torch
 
 
 class ControllerBank(torch.nn.Module):
-    """The distinct controllers for a dataset, held in the MODEL's coordinates, gathered per batch.
+    """The distinct controllers of a data set in normalised coordinates, gathered per window.
 
-    # THEORY: Kessels (2025) Eq. (5.13c), p157: u_hat = S_u(u_FB + u_FF), scaling at the control
-    # interface. Applied once here rather than restated at every timestep.
+    # THEORY: the controller seen from the normalised model: B^n = B diag(sigma_y), C^n = diag(1/sigma_u) C,
+    # D^n = diag(1/sigma_u) D diag(sigma_y), applied once here.
     """
 
     def __init__(self, A, B, C, D, ystd, std_u, dtype=torch.float32):
-        """A (K,nc,nc), B (K,nc,ny), C (K,nu,nc), D (K,nu,ny), all PHYSICAL. ystd (ny,), std_u (nu,)."""
+        """A (K,nc,nc), B (K,nc,ny), C (K,nu,nc), D (K,nu,ny), all physical; ystd (ny,), std_u (nu,)."""
         super().__init__()
         T = lambda M: torch.as_tensor(np.asarray(M, dtype=float), dtype=dtype)
         A, B, C, D = T(A), T(B), T(C), T(D)
@@ -25,6 +26,7 @@ class ControllerBank(torch.nn.Module):
         Bn = B * ystd_t[None, None, :]
         Cn = C / stdu_t[None, :, None]
         Dn = D / stdu_t[None, :, None] * ystd_t[None, None, :]
+        # one step is one product: (u_fb^n, xc_next) = [C^n; A] xc + [D^n; B^n] e^n
         self.register_buffer('M_state', torch.cat([Cn, A], dim=1))
         self.register_buffer('M_error', torch.cat([Dn, Bn], dim=1))
 
@@ -33,10 +35,9 @@ class ControllerBank(torch.nn.Module):
         return self.M_state.shape[0]
 
     def step(self, xc, e_norm, ctrl):
-        """One controller step, batched, entirely in normalised coordinates.
+        """One controller step for a batch: u_fb^n = C^n xc + D^n e^n, xc_next = A xc + B^n e^n.
 
-        # THEORY: Kessels (2025) Eq. (5.13d), p157: the FB controller is a separate state
-        # equation constrained alongside the model, not part of the model state vector.
+        # THEORY: the controller is a separate state equation beside the model, not part of the model state.
         """
         M_state, M_error = ctrl
         out = torch.baddbmm(torch.bmm(M_error, e_norm.unsqueeze(-1)),
@@ -46,26 +47,20 @@ class ControllerBank(torch.nn.Module):
 
 def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix,
                         obc_pass=None, pass_mats=None):
-    """THE closed-loop rollout. Training, validation and checkpoint selection all call this one."""
-    # CHANGED (D-169): re-home the bank to the data's device.
+    """The closed-loop rollout of training, validation and selection; returns (y_hat^n, x final, xc final)."""
     if bank.M_state.device != u_data.device:
         bank.to(u_data.device)
     ctrl = (bank.M_state[ctrl_ix], bank.M_error[ctrl_ix])
 
-    # HEURISTIC: xc = 0 at every window start. NOT Kessels' Remark 5.4 (p157), which
-    # reconstructs xc from (y_bar, r_bar, controller) for the lumped-r form where the
-    # controller filters y_hat against the reference. In the residual form the controller
-    # filters (y_data - y_model), which does not exist before the window opens, so this is
-    # the definition of an initial condition rather than an estimate of an unknown. It is
-    # also the unique value for which the correction vanishes when the model is exact.
-    # Cost: lost integral memory against the validation free run, measured, see
-    # scripts/gantry/closed-loop-controller/cl_step5_reset_cost.py.
+    # HEURISTIC: xc = 0 at every window start. The controller here filters the model error y^n - y_hat^n, which
+    # does not exist before the window, and xc = 0 is the value for which its correction vanishes when the
+    # model is exact; the integral memory of the recorded run is lost.
     xc = torch.zeros(u_data.shape[0], bank.nc, dtype=u_data.dtype, device=u_data.device)
 
     x, ys = x0, []
     for u_t, y_t in zip(u_data.unbind(1), y_data.unbind(1)):
-        # THEORY: Kessels (2025) Eq. (5.13d), p157: the controller error is formed against the
-        # MODEL output, e_hat = r_bar - y_hat. Here in residual form, so it is y_data - y_model.
+        # THEORY: the controller sees the model output; in this residual form e^n = y^n - y_hat^n and the model
+        # input is u_hat^n = u^n + u_fb^n
         y_model = output_only(x)
         ys.append(y_model)
         u_fb, xc = bank.step(xc, y_t - y_model, ctrl)
@@ -74,33 +69,30 @@ def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix,
 
 
 class ClosedLoopSimulator:
-    """The controller closed around the model. Assigned to `fit_sys.simulator`."""
+    """The closed loop of training and validation; assigned to fit_sys.simulator."""
 
     def __init__(self, bank, train_ctrl_rows, val_rows, compiled, train_weights, val_sigma_e):
         self.bank = bank
-        # CHANGED (D-256, D-262): `train_weights` (one (ny,) row per training record) makes the loss
-        # weighted, so the instance names a second array; `val_sigma_e` ((n_val, ny), servo-error
-        # std per validation record and axis) enables the 'sim-NRMSe' selection measure.
+        # loss() receives these per-window arrays by name
         self.extra_array_names = ('ctrl_ix', 'loss_w')
+        # sigma_e per validation record and axis (n_val, ny), the denominator of sim-NRMSe
         self.val_sigma_e = np.asarray(val_sigma_e, np.float64)
-        # CHANGED (D-169): (hfn, output_only) compiled with torch.compile, or None for eager.
+        # (hfn, output_only) compiled by torch.compile, or None for eager
         self._compiled = compiled
         self.train_ctrl_rows = [int(r) for r in train_ctrl_rows]
-        # CHANGED (D-256): the fixed loss weight per record, one (ny,) row each, appended per window
-        # as `loss_w` beside `ctrl_ix` from the same counts.
+        # W_r per training record, one (ny,) row each, appended to every window as loss_w
         self.record_weights = [np.asarray(w) for w in train_weights]
         self.val_rows = [int(r) for r in val_rows]
 
-    # CHANGED (D-169, job 80706): compiled artefacts are a CACHE, not state, and must not be
-    # serialised.
     def __getstate__(self):
+        """The state without the compiled pair, a cache that cannot be pickled."""
         state = self.__dict__.copy()
         state['_compiled'] = None
         return state
 
     @contextmanager
     def eager(self):
-        """Run through the UNCOMPILED pair for the duration, then restore."""
+        """Run through the uncompiled pair inside the block, then restore."""
         saved, self._compiled = self._compiled, None
         try:
             yield
@@ -108,11 +100,10 @@ class ClosedLoopSimulator:
             self._compiled = saved
 
     def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix, obc_pass=None, pass_mats=None, **kw):
-        # CHANGED (D-194/D-195): `obc_pass` is the once-per-objective tangent pair; it is threaded
-        # to the rollout unchanged and reaches the model step as a tensor-tuple argument.
-        # CHANGED (D-169): route to the compiled pair only when it is VALID to do so.
-        use_c = (self._compiled is not None and ufuture.is_cuda and torch.is_grad_enabled())
-        if use_c:
+        """(y_hat^n, x final) of the closed-loop rollout of a batch of windows from x."""
+        # compiled only for the training loss on CUDA (gradients on); everything else runs eagerly
+        use_compiled = (self._compiled is not None and ufuture.is_cuda and torch.is_grad_enabled())
+        if use_compiled:
             hfn, out_fn = self._compiled
             torch.compiler.cudagraph_mark_step_begin()
         else:
@@ -121,13 +112,14 @@ class ClosedLoopSimulator:
         y_pred, x_final, _ = closed_loop_rollout(hfn, out_fn,
                                                  ufuture, yfuture, x, self.bank, ctrl_ix.long(),
                                                  obc_pass=obc_pass, pass_mats=pass_mats)
-        if use_c:
+        if use_compiled:
+            # copies out of the CUDA graph's buffers, which the next step overwrites
             y_pred, x_final = y_pred.clone(), x_final.clone()
         return y_pred, x_final
 
     def augment_training_data(self, data, sys_data, fit_sys, **kw):
-        """deepSI's four training arrays plus the controller row and the loss weight of every
-        window, aligned to how deepSI concatenates records and checked before returning."""
+        """deepSI's four window arrays plus the controller row and loss weight of every window, checked against
+        the data."""
         nf = kw.get('nf', 25)
         stride = kw.get('stride', 1)
         sdl = sys_data.sdl
@@ -137,16 +129,16 @@ class ClosedLoopSimulator:
                                   for c, r in zip(counts, self.train_ctrl_rows)])
         if len(ctrl_ix) != len(data[0]):
             raise RuntimeError(
-                'ctrl_ix misalignment: %d windows derived, %d in the training data'
-                % (len(ctrl_ix), len(data[0])))
+                'ctrl_ix misalignment: %d windows derived, %d in the training data; make the window count here '
+                'follow the windowing of WindowedSystemData' % (len(ctrl_ix), len(data[0])))
         self.verify_by_content(data, sdl, counts, k0, nf, stride)
-        # CHANGED (D-256): same record order and counts as ctrl_ix, so the checks above cover it.
+        # same record order and counts as ctrl_ix, so the checks above cover it
         loss_w = np.concatenate([np.tile(w, (c, 1)) for w, c in zip(self.record_weights, counts)])
         return list(data) + [ctrl_ix, loss_w]
 
     @staticmethod
     def verify_by_content(data, sdl, counts, k0, nf, stride):
-        """Each record's FIRST and LAST window against its raw data at the derived offset."""
+        """Each record's first and last window against its raw data at the derived offset."""
         ufuture = data[2]
         off = 0
         for sd, c in zip(sdl, counts):
@@ -156,51 +148,40 @@ class ClosedLoopSimulator:
                 want = np.asarray(sd.u[start:start + nf], dtype=got.dtype)
                 if not np.array_equal(got, want):
                     raise RuntimeError(
-                        'window %d does not match its raw record data at the expected offset '
-                        '%d. The per-window controller assignment is built on that offset, so it '
-                        'is wrong.' % (off + j, start))
+                        'window %d does not match its record at offset %d, so the controller rows per window '
+                        'are misplaced; make the window offsets here follow WindowedSystemData'
+                        % (off + j, start))
             off += c
 
     def validation_error(self, fit_sys, val_sys_data):
-        """Closed-loop free run per record, scored in metres. Same rollout as __call__."""
-        # CHANGED (D-256, D-262): 'sim-NRMSe' is the mean over records and axes of the per-channel
-        # RMS divided by the servo-error std of that record and axis, from the same rollout.
+        """sim-NRMSe: the mean over records and axes of RMS / sigma_e of the closed-loop free run, in metres."""
         sdl = val_sys_data.sdl
-        # CHANGED (D-169): ONE rollout over all records instead of one per record.
         per_channel, per_record = closed_loop_free_run_rms_batch(fit_sys, sdl, self.bank, self.val_rows)
-        self.last_per_channel = np.asarray(per_channel)          # CHANGED (D-267): (n_val, ny), m
-        # THEORY: deepSI aggregates a multi-record sim-RMS in System_data_list.RMS as
-        # weighted_mean([sd.RMS(sdo) for ...]), i.e. the ARITHMETIC mean of the per-record RMS
-        # values weighted by sd.N_samples (system_data.py:705-713). The quadratic mean used here
-        # before was justified by System_data.RMS being sqrt over samples AND channels, which is
-        # true WITHIN one record but is not how deepSI combines records; it made the closed-loop
-        # selection scalar sit above the open-loop one on the same rollout. The weight is the FULL
-        # record length, matching N_samples of the simulated record, which includes the cheat_n
-        # prefix and so is not the post-k0 length scored in closed_loop_free_run_rms.
+        self.last_per_channel = np.asarray(per_channel)          # (n_val, ny), metres
+        # THEORY: deepSI's multi-record sim-RMS, the mean of the per-record RMS weighted by the full record
+        # length (System_data_list.RMS)
         self.last_sim_rms = float(np.average(np.asarray(per_record),
                                              weights=[len(sd.u) for sd in sdl]))
         return float(np.mean(self.last_per_channel / self.val_sigma_e))
 
 
 def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=False):
-    """@added (D-169). N records scored in ONE rollout. Returns (per_channel_list, aggregate_list)."""
+    """Closed-loop free-run RMS of N records in one rollout: (per record and axis, per record), and the
+    physical predictions with return_pred."""
     norm = fit_sys.norm
     na, nb = fit_sys.na, fit_sys.nb
     k0 = max(na, nb)
-    _p = next(fit_sys.hfn.parameters())
-    dtype = _p.dtype
-    # CHANGED (D-169): every tensor built here follows the MODEL's device.
-    device = _p.device
+    parameter = next(fit_sys.hfn.parameters())
+    dtype = parameter.dtype
+    device = parameter.device
     np_dtype = np.float64 if dtype == torch.float64 else np.float32
     rv = lambda a: np.asarray(a).ravel()
     T = lambda a: torch.as_tensor(np.ascontiguousarray(a), dtype=dtype, device=device)
 
     if len(sdl) != len(ctrl_rows):
         raise RuntimeError(
-            'closed_loop_free_run_rms_batch got %d records and %d controller rows. They are '
-            'positional: a length mismatch means some record would be scored through another '
-            "record's controller, which produces a plausible number and no error."
-            % (len(sdl), len(ctrl_rows)))
+            'closed_loop_free_run_rms_batch got %d records and %d controller rows; pass one controller row per '
+            'record, in record order' % (len(sdl), len(ctrl_rows)))
 
     un = [((sd.u - rv(norm.u0)) / rv(norm.ustd)).astype(np_dtype) for sd in sdl]
     yn = [((sd.y - rv(norm.y0)) / rv(norm.ystd)).astype(np_dtype) for sd in sdl]
@@ -211,11 +192,12 @@ def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=Fa
 
     per_channel = [None] * len(sdl)
     aggregate = [None] * len(sdl)
-    preds = [None] * len(sdl)                          # CHANGED (D-227): filled only on request
+    preds = [None] * len(sdl)                          # filled with return_pred only
     for ixs in groups.values():
         uh = T(np.stack([un[i][k0 - nb:k0] for i in ixs]))
         yh = T(np.stack([yn[i][k0 - na:k0] for i in ixs]))
         with torch.no_grad():
+            # x_hat^n at k0 from the samples before it; the scored samples are k0 .. N-1
             x0 = fit_sys.encoder(uh, yh)
             u_t = T(np.stack([un[i][k0:] for i in ixs]))
             y_t = T(np.stack([yn[i][k0:] for i in ixs]))

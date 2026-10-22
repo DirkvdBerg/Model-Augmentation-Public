@@ -1,4 +1,4 @@
-"""PS2: a data-driven initialisation of the added-state part of an S-DP augmentation (D-234, D-236)."""
+"""PS2, the predictive-state opening: a data-driven initialisation of the added states during the first Adam updates."""
 __project_origin__ = "added"
 
 import json
@@ -12,13 +12,13 @@ from torch import nn
 
 @dataclass(frozen=True)
 class PS2Spec:
-    """The opening's rules (D-234 / D-236). No number below is a property of any particular plant."""
-    aux_batch: int = 64            # HEURISTIC: the prototype's batch (D-234); the opening's own, not the training batch
-    lr: float = 1e-3               # THEORY: Adam's default rate (Kingma and Ba 2015) for both supervised stages
+    """The settings of the opening; none of them is a property of a particular plant."""
+    aux_batch: int = 64            # HEURISTIC: the opening's own batch, not the training batch
+    lr: float = 1e-3               # THEORY: Adam's default rate (Kingma and Ba) for both supervised stages
     eval_every: int = 25           # HEURISTIC: calibration check cadence, in optimizer updates
     s1_min: int = 100              # HEURISTIC: no S1 switch before this many updates
-    s1_cap: int = 350              # HEURISTIC: S1 ends here at the latest (decided every prototype run, D-234)
-    s1_tol: float = 0.02           # HEURISTIC: plateau = best of the last s1_window checks improved < s1_tol (relative)
+    s1_cap: int = 350              # HEURISTIC: S1 ends here at the latest
+    s1_tol: float = 0.02           # HEURISTIC: plateau = the best of the last s1_window checks improved by less than s1_tol (relative)
     s1_window: int = 4
     screen_at: int = 150           # HEURISTIC: screen: calibration unexplained fraction <= screen_max by this update
     screen_max: float = 0.90
@@ -26,7 +26,7 @@ class PS2Spec:
     n_snap: int = 8192
     n_snap_cal: int = 2048
     s2_batch: int = 512
-    s2_check: int = 100            # HEURISTIC: S2 plateau = best of the last 5 checks improved < s2_tol (relative)
+    s2_check: int = 100            # HEURISTIC: S2 plateau = the best of the last 5 checks improved by less than s2_tol (relative)
     s2_min: int = 500
     s2_cap: int = 8000
     s2_tol: float = 0.01
@@ -34,10 +34,11 @@ class PS2Spec:
 
 
 def calibration_split(names):
-    """Record-level split: hold out the LAST record of every record class with at least 3 records.
+    """Record-level split: the last record of every record class with at least 3 records is held out.
 
-    Class = record name without its trailing number, e.g. 'TR-S5' -> 'TR-S'. # HEURISTIC (D-234 P1/D2): a calibration set
-    must be class-representative; the predictive state of one excitation class need not transfer to another.
+    A class is the record name without its trailing number, 'TR-S5' -> 'TR-S'.
+    # HEURISTIC: the calibration set covers every such class, since the predictive state of one excitation class
+    # need not transfer to another.
     """
     cls = [n.rstrip('0123456789') for n in names]
     cal = sorted(max(i for i, c in enumerate(cls) if c == k) for k in set(cls) if cls.count(k) >= 3)
@@ -45,11 +46,12 @@ def calibration_split(names):
 
 
 class PS2Opening:
+    """The opening after every Adam update until it ends: S1 fits a decoder of the residual on the added states,
+    S2 the network's added-state transition."""
+
     def __init__(self, fit_sys, data, n_xb, n_a, width, spec):
-        """From the gantry pipeline's DataBundle and the attached ClosedLoopSimulator: the normalised
-        (u, y) arrays of the training records in the simulator's training order, their controller
-        rows and names; n_xb, n_a: physical and added states; width: the head's hidden width (= the
-        deployed network's)."""
+        """The normalised (u, y) of the training records in the simulator's order, with their controller rows and
+        names; n_xb, n_a: physical and added states; width: the decoder's hidden width, that of the network."""
         self.records = []
         for sd in data.train_list:
             sdn = fit_sys.norm.transform(sd)
@@ -59,20 +61,23 @@ class PS2Opening:
         self.n_xb, self.n_a, self.width = n_xb, n_a, width
         self.fit_ix, self.cal_ix = calibration_split(self.names)
         if not self.cal_ix:
-            raise ValueError('no record class has 3 records; the calibration split is empty')
+            raise ValueError('no record class has 3 records, so the calibration split is empty; give at least one '
+                             'record class 3 training records')
         self.phase, self.it, self.history = 'S1', 0, []
         self.s1_end = self.s2 = self.status = None
         self._rng = np.random.default_rng(spec.seed)
-        self._head = self._opt = self._cal = None
+        self._decoder = self._opt = self._cal = None
 
     @property
     def done(self):
         return self.phase == 'S3'
 
     def after_step(self, fs):
+        """One step after an Adam update: an S1 update, and every eval_every updates a calibration check that can
+        end S1 and run S2."""
         if self.done:
             return
-        if self._head is None:
+        if self._decoder is None:
             self._start(fs)
         self.it += 1
         self._s1_step(fs)
@@ -92,13 +97,14 @@ class PS2Opening:
             print('[ps2] %s; the run continues as the plain method' % self.status, flush=True)
         elif end:
             self.s1_end = (self.it, u)
-            self.s2 = self._fit_map(fs)
+            self.s2 = self._fit_added_state_transition(fs)
             self.phase, self.status = 'S3', 'completed'
             print('[ps2] opening completed; the run continues as the plain method', flush=True)
         if self.done:
-            self._head = self._opt = None
+            self._decoder = self._opt = None
 
     def summary_json(self):
+        """The opening's record, written as ps2_summary."""
         return json.dumps({'status': self.status or 'running', 'phase': self.phase, 'updates': self.it,
                            's1_end': self.s1_end, 's2': self.s2,
                            'calibration_records': [self.names[i] for i in self.cal_ix],
@@ -109,23 +115,27 @@ class PS2Opening:
         return p.device, p.dtype
 
     def _start(self, fs):
+        """The decoder (output layer at zero), its optimizer over the decoder and theta^a_enc, and the
+        calibration windows."""
         dev, dt = self._device(fs)
         enc = fs.encoder
         self._M = int(fs.na)
         ny = self.records[0][1].shape[1]
-        self._head = nn.Sequential(nn.Linear(self.n_a, self.width), nn.Tanh(),
-                                   nn.Linear(self.width, self._M * ny)).to(device=dev, dtype=dt)
-        nn.init.zeros_(self._head[-1].weight); nn.init.zeros_(self._head[-1].bias)
+        self._decoder = nn.Sequential(nn.Linear(self.n_a, self.width), nn.Tanh(),
+                                      nn.Linear(self.width, self._M * ny)).to(device=dev, dtype=dt)
+        nn.init.zeros_(self._decoder[-1].weight); nn.init.zeros_(self._decoder[-1].bias)
+        # theta^a_enc: W^a and the output layer of psi_tilde, of which only the added-state rows get a gradient
         aux = [enc.Wa_psi_u, enc.Wa_psi_y, enc.net[-1].weight, enc.net[-1].bias]
-        self._aux = list(self._head.parameters()) + aux
+        self._aux = list(self._decoder.parameters()) + aux
         self._opt = torch.optim.Adam(self._aux, lr=self.spec.lr)
+        # a fixed seed of its own for the calibration windows
         self._cal = self._sample(fs, self.cal_ix, self.spec.n_cal, np.random.default_rng(self.spec.seed + 321))
         print('[ps2] opening started: M %d, calibration records %s, spec %s' % (
             self._M, [self.names[i] for i in self.cal_ix], json.dumps(asdict(self.spec))), flush=True)
 
     def _sample(self, fs, rec_ix, B, rng, pair=False):
-        """B windows from the given records: encoder history, future (M samples), controller row (and the history one
-        sample later). Window convention of n_phase1.windows / deepSI to_hist_future_data."""
+        """B windows of the given records, drawn in proportion to their length: encoder history, M future
+        samples, controller row and, with pair, the history one sample later; deepSI's window convention."""
         nb, na = fs.nb, fs.na
         k0, M = max(na, nb), self._M
         dev, dt = self._device(fs)
@@ -145,22 +155,26 @@ class PS2Opening:
         return b
 
     def _residual(self, fs, b, x):
-        """The current model's next M closed-loop output residuals, through the prediction path."""
+        """e_tau / sigma_e: the current model's next M closed-loop output residuals over their RMS on the batch."""
         with torch.no_grad():
-            fs._sync_prediction_state_for_validation(refresh_basis=False)
+            fs._sync_obc_coefficient(refresh_basis=False)
             y_pred, _ = fs.simulate(x, b['uf'], b['yf'], ctrl_ix=b['ctrl_ix'], nf=self._M)
             e = (b['yf'] - y_pred).reshape(len(x), -1)
             return e / e.pow(2).mean().sqrt()
 
-    def _xa(self, x):
+    def _added_states(self, x):
+        """x_bar of a model state: the n_a rows after the physical ones."""
         return x[:, self.n_xb:self.n_xb + self.n_a]
 
     def _s1_step(self, fs):
+        """One S1 update: the decoder on x_bar predicts the residual; trains the decoder and theta^a_enc."""
         b = self._sample(fs, self.fit_ix, self.spec.aux_batch, self._rng)
         x = fs.encoder(b['uh'], b['yh'])
         e = self._residual(fs, b, x.detach())
-        loss = (self._head(self._xa(x)) - e).pow(2).mean()
+        loss = (self._decoder(self._added_states(x)) - e).pow(2).mean()
         grads = torch.autograd.grad(loss, self._aux, allow_unused=True)
+        # the gradients go to the opening's optimizer only; the .grad of the shared parameters is saved and
+        # restored, so the next Adam step of the training is unaffected
         saved = [p.grad for p in self._aux]
         for p, g in zip(self._aux, grads):
             p.grad = torch.zeros_like(p) if g is None else g
@@ -169,44 +183,47 @@ class PS2Opening:
             p.grad = g
 
     def _cal_unexplained(self, fs):
+        """nu: the fraction of the residual the decoder leaves unexplained on the calibration windows."""
         with torch.no_grad():
             x = fs.encoder(self._cal['uh'], self._cal['yh'])
             e = self._residual(fs, self._cal, x)
-            return float((self._head(self._xa(x)) - e).pow(2).mean() / e.pow(2).mean())
+            return float((self._decoder(self._added_states(x)) - e).pow(2).mean() / e.pow(2).mean())
 
-    def _fit_map(self, fs):
-        """S2: one-step regression of the deployed added-state transition on frozen encoder pairs."""
+    def _fit_added_state_transition(self, fs):
+        """S2: one-step regression of the network's added-state transition on frozen encoder pairs, kept at its
+        best calibration cost."""
         sp = self.spec
         ann = fs.hfn.connected_blocks[fs._ann_ix]
         params = list(ann.parameters())
+        # a fixed seed of its own for the snapshot windows
         srng = np.random.default_rng(sp.seed + 1000)
 
         def snap(ix, n):
             b = self._sample(fs, ix, n, srng, pair=True)
             with torch.no_grad():
-                return fs.encoder(b['uh'], b['yh']), b['uf'][:, 0], self._xa(fs.encoder(b['uh1'], b['yh1']))
+                return fs.encoder(b['uh'], b['yh']), b['uf'][:, 0], self._added_states(fs.encoder(b['uh1'], b['yh1']))
         (Xf, Uf, Tf), (Xc, Uc, Tc) = snap(self.fit_ix, sp.n_snap), snap(self.cal_ix, sp.n_snap_cal)
 
-        def ee(X, U, T):
-            # D-274: T.var(0) divides by B-1, i.e. (B-1)/B times eq:ps2_s2; same minimiser.
-            return (self._xa(fs.hfn(X, U)[1].reshape(len(X), -1)) - T).pow(2).mean() / T.var(0).mean()
-        fs._sync_prediction_state_for_validation(refresh_basis=False)
+        def state_map_loss(X, U, T):
+            # the one-step error of x_bar over the target variance; T.var(0) divides by B - 1, which scales the
+            # cost by (B - 1) / B and keeps its minimiser
+            return (self._added_states(fs.hfn(X, U)[1].reshape(len(X), -1)) - T).pow(2).mean() / T.var(0).mean()
+        fs._sync_obc_coefficient(refresh_basis=False)
         opt = torch.optim.Adam(params, lr=sp.lr)
         g = torch.Generator(device='cpu').manual_seed(sp.seed)
         with torch.no_grad():
-            r0 = float(ee(Xc, Uc, Tc))
-        # D-274: the start is a candidate too, so S2 never ends worse than it began on the
-        # calibration pairs (thesis: the parameters with the lowest held-out cost are kept).
+            r0 = float(state_map_loss(Xc, Uc, Tc))
+        # the start is a candidate too, so S2 never ends worse than it began on the calibration pairs
         best, state, checks, s = r0, [p.detach().clone() for p in params], [r0], 0
         for s in range(1, sp.s2_cap + 1):
             j = torch.randint(len(Xf), (sp.s2_batch,), generator=g).to(Xf.device)
             opt.zero_grad(set_to_none=True)
-            ee(Xf[j], Uf[j], Tf[j]).backward()
+            state_map_loss(Xf[j], Uf[j], Tf[j]).backward()
             opt.step()
             if s % sp.s2_check:
                 continue
             with torch.no_grad():
-                rc = float(ee(Xc, Uc, Tc))
+                rc = float(state_map_loss(Xc, Uc, Tc))
             checks.append(rc)
             if rc < best:
                 best, state = rc, [p.detach().clone() for p in params]
@@ -217,5 +234,5 @@ class PS2Opening:
                 p.copy_(v)
             for p in params:
                 p.grad = None
-        print('[ps2] S2 state-map fit: calibration EE residual %.4f -> %.4f in %d steps' % (r0, best, s), flush=True)
+        print('[ps2] S2 state-map fit: calibration cost %.4f -> %.4f in %d steps' % (r0, best, s), flush=True)
         return {'residual_start': r0, 'residual_best': best, 'steps': s}

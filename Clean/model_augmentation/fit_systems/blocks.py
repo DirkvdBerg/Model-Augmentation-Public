@@ -1,12 +1,15 @@
+"""The blocks of the augmented model: Jan's block types and the gantry physics blocks of the baseline."""
+# CHANGED: restricted to the thesis training path; full implementation in
+# model_augmentation/fit_systems/blocks.py at the repository root
 import torch
 from torch import Tensor, nn
 
+# CHANGED: explicit names instead of the star import, and gantry_ss for the added gantry blocks
 from model_augmentation.utils.utils import to_tensor, added
 from model_augmentation.systems import gantry_ss
 
 
 class Block(nn.Module):
-    # CHANGED (clean): trimmed to the spec path
     """Basic block implementation with variables that need to be defined for interconnect."""
 
     def __init__(self, nz, nw, **kwargs) -> None:
@@ -17,12 +20,11 @@ class Block(nn.Module):
 
 
 class Static_ANN_Block(Block):
+    """w = net(z), times a gate per output: the network block of the augmented model."""
     def __init__(self, nz, nw, net, n_nodes_per_layer, n_hidden_layers, activation, net_kwargs) -> None:
-        # CHANGED (clean): trimmed to the spec path
         super(Static_ANN_Block, self).__init__(nz, nw)
 
-        # CHANGED: allow a network to receive its structural initialization data at normal
-        # construction time.
+        # CHANGED: net_kwargs reach the network's constructor (the number of physical rows)
         self.net = net(
             n_in=self.nz,
             n_out=self.nw,
@@ -31,11 +33,11 @@ class Static_ANN_Block(Block):
             activation=activation,
             **net_kwargs,
         )
-        # CHANGED: per-output intervention gate for the trajectory-orthogonality method.
+        # CHANGED: a gate per output, 1 in training, applied in forward; _without_learned zeroes it to remove the
+        # network (persistent=False: not in the state_dict)
         self.register_buffer('out_gate', torch.ones(self.nw), persistent=False)
 
     def forward(self, z: Tensor):
-        # CHANGED (clean): trimmed to the spec path
         w = self.net(z.view(-1, self.nz))
         w = w * self.out_gate
         return w.view(-1, self.nw, 1)
@@ -43,6 +45,7 @@ class Static_ANN_Block(Block):
 
 @added
 class Linear_Output_Block(Block):
+    """w = C x + D u, with C and D as buffers: they follow .to() and are not trained."""
     def __init__(self, C, D) -> None:
         _C = to_tensor(C)
         _D = to_tensor(D)
@@ -64,17 +67,16 @@ class Linear_Output_Block(Block):
 
 
 class Discrete_Nonlinear_Function_Block(Block):
-    # CHANGED (clean): trimmed to the spec path
+    """w = nonlinear_function(z), defined by the subclass."""
     def forward(self, z: Tensor, mats=None):
-        # CHANGED (clean): trimmed to the spec path
-        # CHANGED (D-195): optional per-pass constants, forwarded to `nonlinear_function`.
+        # CHANGED: mats, the matrices built once per objective, are passed on to nonlinear_function
         return self.nonlinear_function(z, mats)
 
 
 @added
-class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
-    """
-    Gantry continuous-time ODE integrated with RK4, using the LFR rational structure."""
+class GantryStateBlock(Discrete_Nonlinear_Function_Block):
+    """The gantry LPV-LFR baseline (Drenth et al.): the continuous-time model with M(Y)^-1 in rational form,
+    integrated by RK4 over one sample in normalised coordinates."""
 
     def __init__(self, Y_op, std_x, std_u, x_mean, u_mean, Ts, up_sample, *args, **kwargs) -> None:
         super().__init__(nz=9, nw=6, *args, **kwargs)
@@ -84,6 +86,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         self.nx   = 6
         self.Y_op = Y_op
 
+        # the nominal LFR matrices of gantry_ss; the trainable subclasses rebuild them at every objective
         _alpha, _beta, _gamma, _N0, _N1, _N2 = gantry_ss.build_poly_constants(
             gantry_ss.m1, gantry_ss.m2, gantry_ss.mb, gantry_ss.mh,
             gantry_ss.Jb, gantry_ss.Jh, gantry_ss.Lb, gantry_ss.d
@@ -117,6 +120,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         self.register_buffer("u_mean",   to_tensor(u_mean).reshape(3, 1))
 
     def _rk4(self, x: Tensor, u: Tensor, mats) -> Tensor:
+        """up_sample classical RK4 steps of h = Ts / up_sample, with u held."""
         h = self.Ts / self.up_sample
         for i in range(self.up_sample):
             k1 = h * self._deriv_with(x, u, mats)
@@ -127,10 +131,11 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         return x
 
     def _deriv_with(self, x: Tensor, u: Tensor, mats) -> Tensor:
-        # CHANGED (D-192): body of `deriv` with the matrix tuple passed in; see nonlinear_function.
+        """xdot^n at (x^n, u^n) with the matrices mats."""
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
 
+        # physical units inside: x = x^n sigma_x + x_mean, u = u^n sigma_u + u_mean
         x_phys = x * self.std_x + self.x_mean
         u_phys = u * self.std_u + self.u_mean
 
@@ -139,14 +144,17 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
         u_log = u2 @ self.P_mat.T
 
+        # f = P u - K q - C qdot
         fnet = (-(x2[:, :3] @ K_mat.T)
                 - (x2[:, 3:] @ C_mat.T)
                 + u_log)
 
         if self.Y_op is not None:
+            # frozen scheduling, set by the evaluation: a = N_op f / d_op at Y = Y_op
             Y_val = self.Y_op
             a = (self.N_op @ fnet.T).T / self.d_op
         else:
+            # a = qddot = M(Y)^-1 f = (N0 + Y N1 + Y^2 N2) f / d(Y)
             Y   = x2[:, 2]
             dY  = mh * (alpha * gamma_ - beta ** 2
                         + 2 * beta * mh * Y
@@ -158,6 +166,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
             a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]
             Y_val = Y[:, None]
 
+        # LFR: w = Y z, z = (a, Y a), xdot = Ax x + Bw w + Bu P u = A_combined (x, w, P u)
         z = torch.cat([a, Y_val * a], dim=-1)
         w = Y_val * z
 
@@ -167,8 +176,9 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)
         return xdot
 
-    # CHANGED (D-194): primal AND tangent in ONE pass.
-    def _deriv_both_with(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
+    def _deriv_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
+        """(xdot^n, its tangent): the derivative of _deriv_with and its directional derivative along the state
+        tangent sx and the matrix tangent dmats."""
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
         (dK, dC, dA_combined,
@@ -176,11 +186,10 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
         if self.Y_op is not None:
             raise NotImplementedError(
-                'the hand-written tangent covers the LPV branch (Y_op=None) only. The frozen-Y '
-                'branch uses the precomputed N_op/d_op buffers, whose tangent is not derived '
-                'here; returning an unvalidated tangent silently would be worse than refusing. '
-                'The production configuration is Y_op=None (D-192).')
+                'the tangent covers the scheduled branch (Y_op=None) only; clear Y_op before using the OBC '
+                'correction')
 
+        # every s_* below is the directional derivative of * along (sx, dmats)
         s_x2 = (sx * self.std_x).squeeze(-1)
         x2 = (x * self.std_x + self.x_mean).squeeze(-1)
         u2 = (u * self.std_u + self.u_mean).squeeze(-1)
@@ -228,17 +237,17 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         s_xdot = (s_xdot_phys / self.std_x_1d).unsqueeze(-1)
         return xdot, s_xdot
 
-    # CHANGED (D-194): RK4 carrying the sensitivity alongside the state.
     def _rk4_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
+        """_rk4 for the state and its tangent together; returns (x_next, sx_next)."""
         h = self.Ts / self.up_sample
         for _ in range(self.up_sample):
-            d1, e1 = self._deriv_both_with(x, sx, u, mats, dmats)
+            d1, e1 = self._deriv_with_tangent(x, sx, u, mats, dmats)
             k1, s1 = h * d1, h * e1
-            d2, e2 = self._deriv_both_with(x + k1 / 2, sx + s1 / 2, u, mats, dmats)
+            d2, e2 = self._deriv_with_tangent(x + k1 / 2, sx + s1 / 2, u, mats, dmats)
             k2, s2 = h * d2, h * e2
-            d3, e3 = self._deriv_both_with(x + k2 / 2, sx + s2 / 2, u, mats, dmats)
+            d3, e3 = self._deriv_with_tangent(x + k2 / 2, sx + s2 / 2, u, mats, dmats)
             k3, s3 = h * d3, h * e3
-            d4, e4 = self._deriv_both_with(x + k3, sx + s3, u, mats, dmats)
+            d4, e4 = self._deriv_with_tangent(x + k3, sx + s3, u, mats, dmats)
             k4, s4 = h * d4, h * e4
             x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
             sx = sx + (s1 + 2 * s2 + 2 * s3 + s4) / 6
@@ -246,9 +255,8 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
 
 @added
-class _Trainable_Gantry_State_Block(Gantry_State_Block):
-    """
-    Shared trainable gantry transition mechanics (D-191)."""
+class _TrainableGantryStateBlock(GantryStateBlock):
+    """The gantry block with trainable parameters: its matrices are rebuilt from a raw fourteen-vector."""
 
     PARAM_NAMES = ["kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
                    "mh", "m1", "m2", "mb", "Jb", "Jh", "d"]
@@ -259,15 +267,13 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
         params_init = to_tensor(params_init).reshape(14).clone()
 
         self.register_buffer("params_init", params_init)
-        # CHANGED (D-191): subclasses build the regularizer in their own coordinates.
+        # the scale of the subclass's Lambda_combo buffer
         self._RMSE_baseline = float(RMSE_baseline)
 
         self.register_buffer("Lb", gantry_ss.Lb.clone())
 
     def _build_KC(self, p: Tensor):
-        """Differentiable K(theta), C(theta): same structure as gantry_ss K, C.
-        Uses only the identifiable sums kb1+kb2, cb1+cb2 (matrices never depend
-        on the individual splits)."""
+        """K and C of a raw parameter vector, built as in gantry_ss; they depend on kb1 + kb2 and cb1 + cb2 only."""
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          mh, m1, m2, mb, Jb, Jh, d) = p
         z = p.new_zeros(())
@@ -287,7 +293,7 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
 
     @staticmethod
     def _build_M1M2(mh: Tensor):
-        """M1, M2 coefficients of M(Y): depend on mh only (gantry_ss M1, M2)."""
+        """M1, M2 of M(Y) = M0 + Y M1 + Y^2 M2; they depend on mh only."""
         z = mh.new_zeros(())
         M1 = torch.stack([
             torch.stack([z,   -mh,  z]),
@@ -302,8 +308,7 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
         return M1, M2
 
     def _mats_from_raw(self, p: Tensor):
-        # CHANGED (D-192): the per-timestep matrix rebuild, factored out of nonlinear_function so
-        # the OBC pure transition can call it with a caller-supplied raw vector. Same operations.
+        """The matrices of one objective at a raw vector p: (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)."""
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          mh, m1, m2, mb, Jb, Jh, d) = p
         alpha, beta, gamma_, N0, N1, N2 = gantry_ss.build_poly_constants(
@@ -314,26 +319,28 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
         _, _, _, A_combined = gantry_ss.build_G_matrix_entries(N0, d0, M1, M2, K, C)
         return (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
 
-    # CHANGED (D-195): the M(Y) rebuild is a PER-PASS constant, not a per-timestep one.
     def nonlinear_function(self, z: Tensor, mats=None):
+        """One sample of the transition; mats are the matrices of this objective, else rebuilt here."""
         if mats is None:
             mats = self._mats_at(self.free_params)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
     def pass_mats(self):
-        """The M(Y) structure at the CURRENT parameters, to be built once per objective."""
+        """The matrices at the current parameters, built once per objective."""
         return self._mats_at(self.free_params)
 
 
 @added
-class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
-    """Gantry physical block parameterized by the TEN identifiable combinations (D-190)."""
+class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
+    """The gantry block trained in the ten identifiable combinations, through training coordinates beta
+    (free_params) that are zero at the start."""
 
     COMBO_NAMES = ["kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
                    "m_total", "m_diff", "J_eff", "d"]
     M_TOTAL_IX = 6
     M_DIFF_IX = 7
     J_EFF_IX = 8
+    # HEURISTIC: m_diff stays within 0.99 of its admissible bound, see _m_diff_bound
     M_DIFF_RHO = 0.99
     COORDINATE_VERSION = 2
 
@@ -349,6 +356,8 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
             "Lambda_combo",
             torch.as_tensor(self._RMSE_baseline, dtype=raw_init.dtype) / combo_init.abs())
 
+        # m_diff = bound tanh(eta0 + scale beta_m): beta_m = 0 gives combo_init with slope m_diff,0, as the log
+        # coordinates of the other nine have
         r0 = combo_init[self.M_DIFF_IX] / self._m_diff_bound(combo_init)
         eta0 = torch.atanh(r0)
         scale = combo_init[self.M_DIFF_IX] / (self._m_diff_bound(combo_init) * (1 - r0 ** 2))
@@ -359,7 +368,7 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
 
     @staticmethod
     def combos_of(raw: Tensor, Lb) -> Tensor:
-        """The ten combinations of a raw fourteen-vector, as a TENSOR (autograd safe)."""
+        """The ten combinations of a raw fourteen-vector, as a tensor (autograd safe)."""
         (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = raw
         Lb = torch.as_tensor(Lb, dtype=raw.dtype, device=raw.device)
         return torch.stack([
@@ -370,7 +379,8 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
 
     @staticmethod
     def gauge_section(combo: Tensor, raw_init: Tensor, Lb) -> Tensor:
-        """One raw fourteen-vector per combination ten-vector. A GAUGE FIXING, not an estimate."""
+        """One raw fourteen-vector with the given combinations, a gauge fixing and not an estimate: equal splits
+        of the sums, mb and the ratio Jb : Jh from raw_init."""
         kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d = combo
         Lb = torch.as_tensor(Lb, dtype=combo.dtype, device=combo.device)
         mb = raw_init[10]
@@ -386,12 +396,12 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
         ])
 
     def _m_diff_bound(self, combo: Tensor) -> Tensor:
-        """`rho (2/Lb) sqrt(m_total J_eff)`: the contracted bound on `|m_diff|` (D-229)."""
+        """rho (2 / Lb) sqrt(m_total J_eff), the contracted bound on |m_diff|."""
         k = 2 * self.M_DIFF_RHO / self.Lb.to(combo.dtype)
         return k * torch.sqrt(combo[..., self.M_TOTAL_IX] * combo[..., self.J_EFF_IX])
 
     def combinations_from_free(self, free: Tensor) -> Tensor:
-        """The ten combinations at free coordinate `free` (..., 10): nine log, `m_diff` bounded."""
+        """The ten combinations at training coordinate free (..., 10): c0 exp(beta) for nine, m_diff by tanh."""
         i = self.M_DIFF_IX
         c = self.combo_init * torch.exp(free)
         m_diff = self._m_diff_bound(c) * torch.tanh(
@@ -399,42 +409,42 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
         return torch.cat((c[..., :i], m_diff.unsqueeze(-1), c[..., i + 1:]), dim=-1)
 
     def free_from_combinations(self, combo: Tensor) -> Tensor:
-        """Inverse of `combinations_from_free` for admissible combinations (..., 10). Reporting only."""
+        """The training coordinate of admissible combinations (..., 10), the inverse of combinations_from_free."""
         i = self.M_DIFF_IX
         c = torch.as_tensor(combo, dtype=self.combo_init.dtype, device=self.combo_init.device)
         positive = torch.cat((c[..., :i], c[..., i + 1:]), dim=-1)
         if not torch.isfinite(c).all() or (positive <= 0).any():
-            raise ValueError("combinations must be finite and positive except for signed m_diff")
+            raise ValueError("combinations must be finite and positive except for signed m_diff; pass "
+                             "physical combinations")
         r = c[..., i] / self._m_diff_bound(c)
         if (r.abs() >= 1).any():
-            raise ValueError("m_diff lies outside the rho-contracted positive-definite domain")
+            raise ValueError("m_diff lies outside the rho-contracted positive-definite domain, so no training "
+                             "coordinate represents it; pass admissible combinations")
         init = torch.cat((self.combo_init[:i], self.combo_init[i + 1:]))
         log = torch.log(positive / init)
         xi = (torch.atanh(r) - self.m_diff_eta0) / self.m_diff_scale
         return torch.cat((log[..., :i], xi.unsqueeze(-1), log[..., i:]), dim=-1)
 
     def recover_combinations(self) -> Tensor:
-        """The ten combinations at the current free coordinate."""
+        """The ten combinations at the current training coordinate."""
         return self.combinations_from_free(self.free_params)
 
-    # CHANGED (D-192): the transition as a PURE function of the free coordinate.
     def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
-        """`x_plus = f_base^d(v, x, u)` at the free coordinate `v = free`, without side effects."""
+        """x_tilde^n_{k+1} = f_base^n(beta, x_tilde^n_k, u^n_k) at training coordinate beta = free, without side
+        effects."""
         mats = self._mats_at(free)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
-    # CHANGED (D-194): the ONCE-PER-OBJECTIVE half of the correction.
     def mats_and_tangent_from_free(self, free: Tensor, dfree: Tensor):
-        """`(mats, dmats)` at the free coordinate `free`, differentiated in the direction `dfree`."""
+        """(matrices, their directional derivative along dfree) at training coordinate free."""
         return torch.func.jvp(self._mats_at, (free,), (dfree,))
 
     def _mats_at(self, free: Tensor):
-        """The per-pass matrix tuple at the free coordinate `free`, from the raw fourteen-vector in
-        the declared gauge (not clamped like the raw sibling)."""
+        """The matrices at training coordinate free, from the raw vector of gauge_section."""
         return self._mats_from_raw(
             self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb))
 
     def estimation_parameters(self):
-        """Names, initial values, and current values in identifiable coordinates."""
+        """Names, start values and current values of the identifiable combinations."""
         return (tuple(self.COMBO_NAMES), self.combo_init.detach(),
                 self.recover_combinations().detach(), "identifiable combinations")

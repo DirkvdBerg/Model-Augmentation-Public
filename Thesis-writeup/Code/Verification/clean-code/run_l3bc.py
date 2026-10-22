@@ -43,6 +43,9 @@ if args.layer == '3c' and args.side == 'mainline' and args.kind in CLEAN_ONLY:
 
 case = '%d-%s' % (args.row, args.noise)
 tag = case if args.layer == '3b' else '%s-%s' % (case, args.kind)
+# deepSI names its dumps after the model class: SSE_Interconnect_Composed in mainline, AugmentedModel in
+# Clean (D-282)
+DUMP_CLASS = 'AugmentedModel' if args.side == 'clean' else 'SSE_Interconnect_Composed'
 side_base = H.GOLDEN if args.side == 'mainline' else H.CLEAN_OUT
 final = os.path.join(side_base, 'L' + args.layer, tag)
 if os.path.exists(final):
@@ -124,12 +127,12 @@ else:
     kind = args.kind
     epochs = {'i': 4, 'iii': 4, 'vii': 5}.get(kind)          # None: the budget's own 3 (iv: spent)
     budget = dict(H.BUDGET, epochs=epochs) if epochs else dict(H.BUDGET)
-    src_name = {'i': 'SSE_Interconnect_Composed_%s_best.pth' % rid_l3,
+    src_name = {'i': DUMP_CLASS + '_%s_best.pth' % rid_l3,
                 'ii': 'gantry_ckpt_%s_pre_lbfgs' % rid_l3,
-                'iii': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3,
-                'iv': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3,
-                'vi': 'SSE_Interconnect_Composed_%s_best.pth' % rid_l3,
-                'vii': 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3}.get(kind)
+                'iii': DUMP_CLASS + '_%s_last.pth' % rid_l3,
+                'iv': DUMP_CLASS + '_%s_last.pth' % rid_l3,
+                'vi': DUMP_CLASS + '_%s_best.pth' % rid_l3,
+                'vii': DUMP_CLASS + '_%s_last.pth' % rid_l3}.get(kind)
     if kind == 'vii':                          # the second continuation starts from case i's output
         l3_src = os.path.join(side_base, 'L3c', case + '-i')
     run_id = 'L3c-' + tag
@@ -228,7 +231,7 @@ else:
                 return p if os.path.exists(p) else os.path.join(l3_src, 'localappdata', 'deepSI', 'checkpoints', f)
             expected = sorted(f for f in os.listdir(os.path.join(l3_src, 'run')) if f not in ('config.json', 'previous'))
             if kind != 'ii':
-                expected += ['SSE_Interconnect_Composed_%s%s.pth' % (rid_l3, s) for s in ('_best', '_last')]
+                expected += [DUMP_CLASS + '_%s%s.pth' % (rid_l3, s) for s in ('_best', '_last')]
             same = (sorted(moved) == sorted(expected)
                     and all(open(os.path.join(prev, f), 'rb').read() == open(_orig(f), 'rb').read()
                             for f in moved))
@@ -240,7 +243,7 @@ else:
                            config_only_resumes=only_resumes, resumes=meta1.get('RESUMES'))
             ok = same and only_resumes
             if kind == 'vii':
-                d = torch.load(os.path.join(ckdir, 'SSE_Interconnect_Composed_%s_last.pth' % rid_l3),
+                d = torch.load(os.path.join(ckdir, DUMP_CLASS + '_%s_last.pth' % rid_l3),
                                map_location='cpu', weights_only=False)
                 # closed after the read: an open handle blocks the move out of the temp folder (WinError 5)
                 with np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % rid_l3), allow_pickle=True) as z:

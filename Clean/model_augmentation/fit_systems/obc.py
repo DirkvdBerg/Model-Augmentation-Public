@@ -1,4 +1,5 @@
-"""One-step orthogonal-by-construction (OBC) augmentation: the GENERIC part (D-192)."""
+"""Orthogonal projection of the network output onto the baseline sensitivity and offset directions (Gyorok et al.),
+the model-independent part: the basis factorisation and the coefficient theta_aux; the gantry code supplies J."""
 __project_origin__ = "added"
 
 from typing import Callable, Optional, Sequence
@@ -8,24 +9,23 @@ from torch import Tensor
 
 
 class OBCRankLossAbort(RuntimeError):
-    """Raised when the reference basis lost rank at two consecutive refreshes (or at the first
-    build, when there is no previous valid basis to retain)."""
+    """The projection basis lost column rank at the first build, or at too many refreshes in a row."""
 
 
 class OBCBasis:
-    """Economy SVD of the stacked baseline sensitivity, frozen for one epoch."""
+    """Economy SVD of a column-scaled projection basis J, with its numerical rank."""
 
     def __init__(self, J: Tensor, vbar: Tensor):
-        """Factorise a float64 `J (n_rows, n_cols)` with its columns scaled to unit norm, `no_grad`
-        throughout. `vbar` is the detached float64 expansion point of `J`."""
+        """J (n_rows, n_cols) in float64; vbar, the detached float64 point beta_lin it is taken at. A rank below
+        n_cols is recorded and the factors truncated, so the caller can reject the basis."""
         with torch.no_grad():
             n_rows, n_cols = J.shape
             G_raw = J.T @ J
             norms_raw = G_raw.diagonal().clamp_min(0).sqrt()
             column_scale = torch.where(norms_raw > 0, norms_raw, torch.ones_like(norms_raw))
             U, S, Vh = torch.linalg.svd(J / column_scale, full_matrices=False)
-            # THEORY: numpy.linalg.matrix_rank default, S.max() * max(M, N) * eps(dtype)
-            # (Golub and Van Loan, Matrix Computations, 4th ed., sect. 5.4.1 numerical rank).
+            # THEORY: numerical rank of the column-scaled J, tol = S_max max(M, N) eps (Golub and Van Loan; the
+            # numpy.linalg.matrix_rank default)
             tol = float(S[0]) * (max(n_rows, n_cols) * torch.finfo(S.dtype).eps)
             rank = int((S > tol).sum())
             if rank < n_cols:
@@ -36,7 +36,8 @@ class OBCBasis:
         self.n_cols, self.rank, self.tol = n_cols, rank, tol
 
     def coefficient(self, F: Tensor) -> Tensor:
-        """`theta = J^+ F = V S^-1 U^T F`, float64, differentiable in `F` (any float dtype)."""
+        """theta_aux = D^-1 V S^-1 U^T F with J D^-1 = U S V^T, D = diag(column_scale): for a full-rank J this is
+        (J^T J)^-1 J^T F. In float64, differentiable in F."""
         F64 = F.to(torch.float64)
         theta = self.Vh.T @ ((self.U.T @ F64) / self.S)
         return theta / self.column_scale
@@ -55,9 +56,9 @@ class OBCBasis:
 def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], vbar: Tensor, Z: Tensor,
                               row_ix: Sequence[int], chunk: int = 16384,
                               device=None) -> Tensor:
-    """`J (N * n_rows_sel, p)` in float64: `d step(v, z_k) / dv` at `vbar`, stacked sample-major."""
+    """Phi: d step(beta, z_i) / d beta at beta_lin = vbar on the rows row_ix, stacked sample-major, float64."""
     if vbar.dtype != torch.float64:
-        raise TypeError('build in float64: vbar is %s' % vbar.dtype)
+        raise TypeError('build in float64: vbar is %s; pass vbar.double()' % vbar.dtype)
     dev = device if device is not None else vbar.device
     row_ix = torch.as_tensor(list(row_ix), dtype=torch.long, device=dev)
     vbar = vbar.detach().to(dev)
@@ -73,7 +74,7 @@ def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], vbar: Te
 
 def evaluate_step_rows(step: Callable[[Tensor, Tensor], Tensor], vbar: Tensor, Z: Tensor,
                        row_ix: Sequence[int], chunk: int, device) -> Tensor:
-    """`step(vbar, z_k)` restricted to `row_ix`, stacked sample-major (float64, no grad)."""
+    """The transition step(vbar, z_i) on the rows row_ix, stacked sample-major, float64 without gradient."""
     dev = device if device is not None else vbar.device
     row_ix = torch.as_tensor(list(row_ix), dtype=torch.long, device=dev)
     vbar = vbar.detach().to(dev)
@@ -85,12 +86,14 @@ def evaluate_step_rows(step: Callable[[Tensor, Tensor], Tensor], vbar: Tensor, Z
     return torch.cat(out, 0)
 
 
-class OBCLifecycle:
-    """Once-per-objective coefficient and the epoch-refresh policy."""
+class OBCProjection:
+    """The projection basis with its rank policy and refresh, and the coefficient theta_aux of the network."""
 
     max_consecutive_rank_loss = 2
 
     def __init__(self, reference_field: Callable, basis_builder: Callable):
+        """reference_field: network -> F, its stacked output on the reference tuples; basis_builder: vbar ->
+        (J, seconds)."""
         self.reference_field = reference_field
         self.basis_builder = basis_builder
 
@@ -99,28 +102,29 @@ class OBCLifecycle:
         self.consecutive_rank_loss = 0
 
     def refresh(self, vbar: Tensor, epoch: Optional[int] = None) -> None:
-        """Rebuild the basis at a DETACHED copy of `vbar`; apply the rank-loss policy."""
+        """Rebuild the basis at a detached copy of vbar; a basis without full column rank keeps the previous one,
+        and raises at the first build or after max_consecutive_rank_loss refreshes in a row."""
         vbar64 = vbar.detach().to(torch.float64).clone()
         J, _ = self.basis_builder(vbar64)
-        cand = OBCBasis(J, vbar64)
+        candidate_basis = OBCBasis(J, vbar64)
         del J
-        if self.basis is not None and cand.device != self.basis.device:
-            cand.to(self.basis.device)
-        if cand.rank < cand.n_cols:
+        if self.basis is not None and candidate_basis.device != self.basis.device:
+            candidate_basis.to(self.basis.device)
+        if candidate_basis.rank < candidate_basis.n_cols:
             self.consecutive_rank_loss += 1
-            msg = ('[obc] refresh at epoch %s: numerical rank %d < %d (tol %.3e). '
-                   % (epoch, cand.rank, cand.n_cols, cand.tol))
+            msg = ('[obc] refresh at epoch %s: numerical rank %d < %d (tol %.3e)'
+                   % (epoch, candidate_basis.rank, candidate_basis.n_cols, candidate_basis.tol))
             if self.basis is None:
-                raise OBCRankLossAbort(msg + 'No previous valid basis exists to retain; the '
-                                       'reference set does not separate the protected '
-                                       'directions at this parameter point.')
+                raise OBCRankLossAbort(msg + ' at the first build, with no previous basis to keep; check that the '
+                                       'reference tuples excite every training coordinate and that the protected '
+                                       'rows and the baseline column are not redundant')
             if self.consecutive_rank_loss >= self.max_consecutive_rank_loss:
-                raise OBCRankLossAbort(msg + '%d consecutive refreshes lost rank; OBC training '
-                                       'readiness is aborted rather than continued on a '
-                                       'truncated basis.' % self.consecutive_rank_loss)
+                raise OBCRankLossAbort(msg + ' for %d refreshes in a row; check the reference excitation and the '
+                                       'protected directions at this parameter point'
+                                       % self.consecutive_rank_loss)
         else:
             self.consecutive_rank_loss = 0
-            self.basis = cand
+            self.basis = candidate_basis
         self.last_refresh_epoch = epoch
 
     def maybe_refresh(self, epoch: int, vbar_fn: Callable[[], Tensor]) -> None:
@@ -129,8 +133,8 @@ class OBCLifecycle:
             self.refresh(vbar_fn(), epoch)
 
     def coefficient(self, learning_component) -> Tensor:
-        """`theta_aux` for THIS objective evaluation: the current learning component on the
-        full reference set, solved in float64 with autograd."""
+        """theta_aux for this objective: the network on all reference tuples, solved on the fixed basis and
+        differentiable through F."""
         F = self.reference_field(learning_component)
         if F.device != self.basis.device:
             self.basis.to(F.device)

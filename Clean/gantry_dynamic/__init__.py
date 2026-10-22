@@ -1,12 +1,12 @@
-"""gantry_dynamic: the gantry side of the clean pipeline (config, data, controller, model, OBC, training)."""
+"""The gantry side of the training code: configuration, data, controller, model, OBC and training."""
 __project_origin__ = "added"
 
 import os as _os
 
 import model_augmentation as _ma
 
-# One process must never mix the clean gantry_dynamic with the mainline model_augmentation
-# (a launch with the repository root first on sys.path would do that silently).
+# this package must run with the model_augmentation of the same folder; a launch with the repository root first
+# on sys.path would mix it with the mainline one without an error
 _here = _os.path.normcase(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 _ma_root = _os.path.normcase(_os.path.dirname(_os.path.dirname(_os.path.abspath(_ma.__file__))))
 if _ma_root != _here:
