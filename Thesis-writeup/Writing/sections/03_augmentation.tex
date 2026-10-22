@@ -228,12 +228,17 @@ and the additional states.}
 \kwtwo{In this section, the baseline model of Section~\ref{sec:physics} is
 augmented to represent the missing dynamics introduced in
 Section~\ref{sec:problem}.} 
-\kwtwo{\kw{We define the augmented model (Section~\ref{sec:aug_structure}),
-simulate it inside the known feedback loop (Section~\ref{sec:aug_loop}),
-estimate it jointly with $\theta_{\mathrm{base}}$
-(Section~\ref{sec:aug_closed_loop}), and start the training from the
-baseline (Section~\ref{sec:aug_encoder}) with a data-driven initialisation for 
-the added states (Section~\ref{sec:aug_ps2}).}}
+% FEEDBACK (2026-10-22, Dirk): subsection pointers struck; the section
+%   intro names the content only, as Hoekstra 2026 Sec. 3 and Sec. 5
+%   (PDF p3, p8) and Section III of this paper.
+\kwtwo{\kw{We define the augmented model\del[Dirk]{
+(Section~\mbox{\ref{sec:aug_structure}})},
+simulate it inside the known feedback loop\del[Dirk]{
+(Section~\mbox{\ref{sec:aug_loop}})},
+estimate it jointly with $\theta_{\mathrm{base}}$\del[Dirk]{
+(Section~\mbox{\ref{sec:aug_closed_loop}})}, and start the training from the
+baseline\del[Dirk]{ (Section~\mbox{\ref{sec:aug_encoder}})} with a data-driven initialisation for
+the added states\del[Dirk]{ (Section~\mbox{\ref{sec:aug_ps2}})}.}}
 % For the system data will be generated in simulation, see Section \todo{section label}. 
 % Given the baseline of Section~\ref{sec:lfr}, our goal is a model that
 % also captures the dynamics the baseline omits, identified from records
