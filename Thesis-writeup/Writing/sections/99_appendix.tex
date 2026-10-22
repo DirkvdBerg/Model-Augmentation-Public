@@ -237,71 +237,85 @@ The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term 
 
 \subsection{Positive definiteness of the inertia matrix}
 \label{app:lfr-wellposed}
-With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
+% REWRITE (2026-10-22, Dirk): formula-first, replaced without marks; Schur
+%   sentence dropped (minors taken from the lower-right corner), |r_0|<1
+%   explicit, "at beta=0" made precise, reporting inverse dropped. Algebra
+%   checked against an external math review (2026-10-22).
+With $a=L_bm_\Delta/2$, \eqref{eq:mass_matrix} in terms of \eqref{eq:phi} is
+\begin{equation*}
+M(Y)=\begin{bmatrix}
+ m_\Sigma+m_h & a-m_hY & 0\\
+ a-m_hY & J_{\mathrm{eff}}+m_h(d^2+Y^2) & -m_hd\\
+ 0 & -m_hd & m_h
+\end{bmatrix}.
+\end{equation*}
+By Sylvester's criterion, applied to the principal minors from the
+lower-right corner, $M(Y)\succ0$ if and only if
+\begin{equation*}
+ m_h>0,\qquad m_h\bigl(J_{\mathrm{eff}}+m_hY^2\bigr)>0,\qquad \det M(Y)>0,
+\end{equation*}
+with
 \begin{equation*}
 \begin{aligned}
-  \frac{\det M(Y)}{m_h}
-  &=(m_\Sigma+m_h)(J_{\mathrm{eff}}+m_hY^2)
-    -(a-m_hY)^2\\
-  &=m_\Sigma m_h\left(Y+\frac{a}{m_\Sigma}\right)^2\\
-  &\quad +(m_\Sigma+m_h)
-      \left(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\right).
+ \frac{\det M(Y)}{m_h}
+ &=(m_\Sigma+m_h)(J_{\mathrm{eff}}+m_hY^2)-(a-m_hY)^2\\
+ &=m_\Sigma m_h\Bigl(Y+\frac{a}{m_\Sigma}\Bigr)^2
+   +(m_\Sigma+m_h)\Bigl(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\Bigr).
 \end{aligned}
 \end{equation*}
-The $2\times2$ Schur complement has positive leading entry
-$m_\Sigma+m_h$. Sylvester's criterion therefore reduces positive definiteness
-to positivity of the completed-square expression for every $Y$. Hence, for
-positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$, $M(Y)\succ0$ for all
-$Y\in\R$ if and only if \eqref{eq:lfr_admissibility} holds.
-For the physical parametrisation, the difference between the two sides is
+For $m_h,m_\Sigma,J_{\mathrm{eff}}>0$, this expression is positive for every
+$Y$ if and only if \eqref{eq:lfr_admissibility} holds.
+Substituting the definitions of $m_\Sigma$, $m_\Delta$ and $J_{\mathrm{eff}}$ gives
 \begin{equation*}
 \begin{aligned}
-  m_\Sigma J_{\mathrm{eff}}-\frac{L_b^2}{4}m_\Delta^2
-  ={}&m_\Sigma(J_b+J_h)\\
-  &+\frac{L_b^2}{4}\left[4m_1m_2+m_b(m_1+m_2)\right],
+ m_\Sigma J_{\mathrm{eff}}-\tfrac{L_b^2}{4}m_\Delta^2
+ ={}&m_\Sigma(J_b+J_h)\\
+ &+\tfrac{L_b^2}{4}\bigl[4m_1m_2+m_b(m_1+m_2)\bigr]>0.
 \end{aligned}
 \end{equation*}
-which is strictly positive for positive component masses and yaw inertias.
-
-In \eqref{eq:mdelta_map}, let
-$b(\theta_{\mathrm{base}})=\gamma(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$. The offset and scale
-are
+In \eqref{eq:mdelta_map}, with
+$b=\gamma(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$ and $b_0$ its value at
+$\theta^0_{\mathrm{base}}$,
 \begin{equation*}
- r_0=\frac{m_{\Delta,0}}{b(\theta^0_{\mathrm{base}})},\quad
+ r_0=\frac{m_{\Delta,0}}{b_0},\quad \lvert r_0\rvert<1,\quad
  \eta_0=\operatorname{atanh}(r_0),\quad
- s=\frac{m_{\Delta,0}}{b(\theta^0_{\mathrm{base}})(1-r_0^2)}.
+ s=\frac{m_{\Delta,0}}{b_0(1-r_0^2)},
 \end{equation*}
-Here $\eta_0$ makes $\beta_{m_\Delta}=0$ reproduce the initial combination, and $s$
-gives $\partial m_\Delta/\partial\beta_{m_\Delta}|_0=m_{\Delta,0}$, matching the local
-relative-change scaling of the logarithmic coordinates. The construction
-requires $m_{\Delta,0}\neq0$; a start near zero makes $s$ small and the
-coordinate numerically inert. The exact inverse used for reporting is
-\begin{equation*}
- \beta_{m_\Delta}=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
-\end{equation*}
+so that at $\beta=0$, $m_\Delta=m_{\Delta,0}$ and
+$\partial m_\Delta/\partial\beta_{m_\Delta}=m_{\Delta,0}$.
 
 \subsection{Identifiable combinations}\label{app:combos}
-\mv[M-p5]{III-C}{If we ignore the symmetric entries, \eqref{eq:matrices} contains
-twelve nonzero entries. Three of these, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$,
-are equal to $m_h$, where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$. This leaves us with ten distinct functions of $\theta$.
-The Jacobian of these ten functions with respect to
-$(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$
-is block triangular and has a determinant of $m_hL_b^2/2\neq0$,
-meaning that the functions are independent.}
-% FEEDBACK v2 (2026-10-22, Maarten p5 (d) "To keep it short"): moved here
-%   from III-C (sec:params) unchanged (Dirk 2026-10-22).
-For $m_h>0$, the ten distinct entries of $M_0$, $C$ and $K$ determine
-$\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
+% REWRITE (2026-10-22, Dirk): formula-first, replaced without marks. The
+%   counting and Jacobian text moved here from III-C is replaced by the
+%   forward map (ten distinct right-hand sides) and its explicit inverse
+%   (independence); "twelve entries" refers to the split matrices
+%   M_0, M_1, M_2, C, K (external math review 2026-10-22).
+The matrices $M_0$, $M_1$, $M_2$, $C$ and $K$ depend on the combinations
+in $\theta_{\mathrm{base}}$ as follows:
+\begin{equation*}
+\begin{gathered}
+\begin{aligned}
+ M_{0,11}&=m_\Sigma+m_h, & M_{0,12}&=\tfrac{L_b}{2}m_\Delta,\\
+ M_{0,22}&=J_{\mathrm{eff}}+m_hd^2, & M_{0,23}&=-m_hd,\\
+ C_{11}&=c_{g1}+c_{g2}, & C_{33}&=c_y,\\
+ C_{12}&=\tfrac{L_b}{2}(c_{g1}-c_{g2}), & K_{22}&=k_{b,\Sigma},
+\end{aligned}\\
+ M_{0,33}=-M_{1,12}=M_{2,22}=m_h,\\
+ C_{22}=c_{b,\Sigma}+\tfrac{L_b^2}{4}(c_{g1}+c_{g2}).
+\end{gathered}
+\end{equation*}
+where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$.
+For $m_h>0$, we can recover these combinations from the matrix entries:
 \begin{equation*}
 \begin{aligned}
- m_h&=M_{0,33}, & d&=-M_{0,23}/m_h, & m_\Sigma&=M_{0,11}-m_h,\\
- m_\Delta&=2M_{0,12}/L_b, & J_{\mathrm{eff}}&=M_{0,22}-m_hd^2, & k_{b,\Sigma}&=K_{22},\\
- c_{g1}&=\tfrac12C_{11}+C_{12}/L_b, & c_{g2}&=\tfrac12C_{11}-C_{12}/L_b, & c_y&=C_{33},\\
- c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}C_{11}. & &
+ m_h&=M_{0,33}, & d&=-M_{0,23}/m_h,\\
+ m_\Sigma&=M_{0,11}-m_h, & m_\Delta&=2M_{0,12}/L_b,\\
+ J_{\mathrm{eff}}&=M_{0,22}-m_hd^2, & k_{b,\Sigma}&=K_{22},\\
+ c_{g1}&=\tfrac12C_{11}+C_{12}/L_b, & c_{g2}&=\tfrac12C_{11}-C_{12}/L_b,\\
+ c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}C_{11}, & c_y&=C_{33}.
 \end{aligned}
 \end{equation*}
-Conversely, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
-give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to-one.
+Therefore, two different values of $\theta_{\mathrm{base}}$ cannot give the same matrices.
 
 \begin{wip}
 \todo{Remarks cut from Section~II-B; keep here or drop?}

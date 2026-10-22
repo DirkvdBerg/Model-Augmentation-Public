@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 OCT 2026 17:16
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 OCT 2026 17:39
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -992,56 +992,61 @@ Underfull \hbox (badness 3954) in paragraph at lines 215--237
  []
 
 
-Overfull \hbox (47.02722pt too wide) detected at line 302
+Overfull \hbox (9.31352pt too wide) detected at line 265
 [][]
+ []
+
+
+Overfull \hbox (1.9734pt too wide) detected at line 283
+\OML/cmm/m/it/10 r[] \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 ;  \OMS/cmsy/m/n/10 j\OML/cmm/m/it/10 r[]\OMS/cmsy/m/n/10 j \OML/cmm/m/it/10 < \OT1/cmr/m/n/10 1\OML/cmm/m/it/10 ;  ^^Q[] \OT1/cmr/m/n/10 = [](\OML/cmm/m/it/10 r[]\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 ;  s \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 ;
  []
 
 Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut)
-Underfull \hbox (badness 10000) in paragraph at lines 341--342
+Underfull \hbox (badness 10000) in paragraph at lines 355--356
 []\OT1/ptm/m/n/10 (+20) Full $\OT1/cmr/m/n/10 3 \OMS/cmsy/m/n/10 ^^B \OT1/cmr/m/n/10 3$ \OT1/ptm/m/n/10 (+20) re-sponse of Fig. []8[]: same
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 341--342
+Underfull \hbox (badness 10000) in paragraph at lines 355--356
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
 [24]
-<figures/res_frf_full.pdf, id=1074, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=1071, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
-Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 350.
+Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 364.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
  (tables/res_all_splits.tex)
-<figures/res_lpv_lti.pdf, id=1078, 228.03192pt x 208.10849pt>
+<figures/res_lpv_lti.pdf, id=1075, 228.03192pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
-Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 380.
+Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 394.
 (pdftex.def)             Requested size: 252.0pt x 229.98064pt.
  (tables/res_structure_val.tex)
-<figures/res_ps_spectrum.pdf, id=1079, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=1076, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
-Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 392.
+Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 406.
 (pdftex.def)             Requested size: 252.0pt x 146.03015pt.
  (tables/res_obc_combinations_test.tex) (tables/res_obc_na0.tex) (tables/res_bb_selection.tex)
-Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--413
+Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--427
  [][] 
  []
 
-<figures/setup_band.pdf, id=1085, 239.52798pt x 194.67302pt>
+<figures/setup_band.pdf, id=1082, 239.52798pt x 194.67302pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
-Package pdftex.def Info: figures/setup_band.pdf  used on input line 511.
+Package pdftex.def Info: figures/setup_band.pdf  used on input line 525.
 (pdftex.def)             Requested size: 252.0pt x 204.81667pt.
 [25]
-<figures/setup_coverage.pdf, id=1100, 216.95761pt x 300.7344pt>
+<figures/setup_coverage.pdf, id=1097, 216.95761pt x 300.7344pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
-Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 569.
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 583.
 (pdftex.def)             Requested size: 252.0pt x 349.31104pt.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
@@ -1050,7 +1055,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [27]
-Overfull \hbox (101.11467pt too wide) in paragraph at lines 710--758
+Overfull \hbox (101.11467pt too wide) in paragraph at lines 724--772
  [][] 
  []
 
@@ -1095,9 +1100,9 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1542311 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1540807 bytes).
 PDF statistics:
- 1404 PDF objects out of 1440 (max. 8388607)
+ 1401 PDF objects out of 1440 (max. 8388607)
  192 named destinations out of 1000 (max. 500000)
  64428 words of extra memory for PDF output out of 74296 (max. 10000000)
 
