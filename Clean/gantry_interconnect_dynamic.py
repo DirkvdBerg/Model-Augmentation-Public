@@ -1,11 +1,4 @@
-"""Entry point of the thesis training runs: a fresh run, a resume or a polish-only rerun.
-
-    python -u Clean/gantry_interconnect_dynamic.py [preset] [noise] [--cpu] [--smoke]
-        [--resume RUN_DIR [--from {best,last}] | --polish-only RUN_DIR] [--data-root P] [--out-root P]
-
-Without arguments: R1 lowpass on CUDA with reduce-overhead compilation; without CUDA use --cpu. The presets
-R1 to R7, R13 and R14 are the thesis runs (gantry_dynamic/config.py).
-"""
+"""Launch a fresh thesis run, resume, or polish-only rerun; defaults to R1 lowpass on CUDA."""
 import argparse
 import json
 import os
@@ -74,9 +67,8 @@ def _archive_rerun(kind, run_dir, cj, run_id, src):
 
 
 def main(cfg, run_id=None, rerun=None):
-    """One run: data, model, closed loop, encoder start, Adam, polish and checkpoints; returns the best score.
-
-    rerun = ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None); None for a fresh run."""
+    """Build and train a fresh run or the requested resume/polish-only rerun; return its final validation score."""
+    # rerun = ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None); None for a fresh run
     # run folder: a fresh run never writes into an existing one
     if rerun is None:
         run_id = run_id or os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -97,7 +89,6 @@ def main(cfg, run_id=None, rerun=None):
           + ' g_aug=mlp/live' + ('  PS2' if cfg.ps2 else '  plain')
           + ('  %s from %s' % (rerun[0], rerun[1]) if rerun else ''), flush=True)
 
-    # data and normalisation
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     data = load_datasets(cfg)

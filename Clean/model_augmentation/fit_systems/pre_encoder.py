@@ -62,6 +62,7 @@ class AugmentedEncoder(nn.Module):
             final_layer.weight[nx:].zero_()
 
     def forward(self, uhist, yhist):
+        """Estimate physical and added initial states from input and output histories."""
         uhist_mod = uhist.view(uhist.size(0), self.nu * (self.nb + 1), 1)
         yhist_mod = yhist.view(yhist.size(0), self.ny * (self.na + 1), 1)
 

@@ -82,13 +82,12 @@ def _load_u(d):
 
 
 def _resample_u(u, cfg: RunConfig):
-    """The plant force from FS_ORIG to FS_NEW as the mean over each hold interval.
-
-    # THEORY: u_total is a zero-order hold at FS_ORIG (the 20 kHz controller), so the exact input of a
-    # zero-order-hold model at FS_NEW is the mean force over each FS_NEW hold interval. Point sampling u[::D]
-    # leaves a mean force error, which the stiffness-free X and Y axes turn into a position offset. The force is
-    # band-limited far below the 2 kHz Nyquist frequency, so this is not anti-aliasing.
-    """
+    """Average each block of cfg.d input samples to obtain the model-rate force."""
+    # THEORY: block averaging preserves the force integral over each model interval; using that mean as a held
+    # force approximates the fine-rate input
+    # a persistent bias in the resampled force can cause drift on the axes without stiffness to ground; block
+    # averaging also applies a boxcar low-pass response before decimation, but it is not a dedicated anti-alias
+    # filter
     D = cfg.d
     n = u.shape[0] // D
     return u[:n * D].astype(np.float64).reshape(n, D, u.shape[1]).mean(axis=1)
@@ -119,8 +118,7 @@ def _record_at_fs_new(d, cfg: RunConfig, fields=()):
 
 
 def _load_record(filename, cfg: RunConfig, folder=None):
-    """(System_data, e) of one record from one read of its file, e = y - r at FS_NEW in float64; read from folder
-    if given, else from traj_dir(cfg)."""
+    """Load a record once and return (System_data, servo error), using folder when supplied."""
     d = loadmat(os.path.join(folder or traj_dir(cfg), filename), squeeze_me=True)
     _register_controller(d, filename)
     u, y, r = _record_at_fs_new(d, cfg, ('r_sim',))
@@ -130,8 +128,7 @@ def _load_record(filename, cfg: RunConfig, folder=None):
 
 
 def servo_sigma(e_list, k0):
-    """sigma_e per record and axis: the population standard deviation of e = y - r over the scored samples
-    k0 .. N-1, shape (n_records, ny)."""
+    """Return servo-error population standard deviations over k0 .. N-1, shape (n_records, ny)."""
     # THEORY: the NRMS normalisation by a standard deviation (Beintema et al.), here that of the servo error
     s = np.stack([np.std(np.asarray(e, np.float64)[k0:], axis=0) for e in e_list])
     if not (np.all(np.isfinite(s)) and np.all(s > 0)):

@@ -309,7 +309,7 @@ This gives us
 \label{eq:aug_transition}
 \end{equation}
 where \kwtwo{$\tilde x_k=[q_k^\top\;\dot q_k^\top]^\top\in\R^6$} is the physical state of
-\eqref{eq:lfr_G}, $\bar x_k\in\R^{n_{\bar x}}$ the added state,
+\chg[Dirk]{\mbox{\eqref{eq:lfr_G}}}{\eqref{eq:base_ss}},$\bar x_k\in\R^{n_{\bar x}}$ the added state,
 \kwtwo{the augmented state} \kwtwo{$\hat x_k=[\tilde x_k^\top\;\bar x_k^\top]^\top$}, \kwtwo{$f_{\mathrm{base}}$ the baseline state update,}
 $u_{\mathrm{act},k}\in\R^3$ the actuator
 forces, $\hat y_k\in\R^3$ the predicted actuator positions,
@@ -339,18 +339,18 @@ representing the actual positions.
 %   to be closed with a decision entry.
 \\
 The baseline is evaluated over one sample period $T_s$.
-Writing \eqref{eq:eom} in state-space form gives\kwtwo{ the state derivative $F$}
-\begin{equation}
- \dot{\tilde x}=F(\tilde x,u)=\begin{bmatrix}\dot q\\
-  M(Y)^{-1}\bigl(u-C\dot q-Kq\bigr)\end{bmatrix},
-\label{eq:aug_ct}
-\end{equation}
+% RESTRUCTURE (2026-10-22, Dirk): the state-space form F moved to III-B
+%   (eq:base_ss), where the baseline is defined; IV-A refers to it. The
+%   former eq:aug_ct display is removed (its one reference, 04_obc.tex,
+%   now cites eq:base_ss).
+\delmv[Dirk]{III-B}{Writing \mbox{\eqref{eq:eom}} in state-space form gives the state derivative $F$,
 where $u=Pu_{\mathrm{act}}$ is the generalised force
-\eqref{eq:Ptransform}, $M$, $C$ and $K$ depend on $\theta_{\mathrm{base}}$
-through \eqref{eq:phi}, and \chg{$M(Y)^{-1}$ is the closed loop of the LFR of
-Section~\ref{sec:lfr}}{\kwtwo{the expression for $M(Y)^{-1}$ follows from
+\mbox{\eqref{eq:Ptransform}},}
+\add[Dirk]{\kwtwo{The baseline state derivative $F$ is given by
+\eqref{eq:base_ss}, where}} $M$, $C$ and $K$ depend on $\theta_{\mathrm{base}}$
+through \eqref{eq:phi}\del[Dirk]{, and the expression for $M(Y)^{-1}$ follows from
 analytically resolving the baseline LFR loop
-(Appendix~\ref{app:lfr-details})}}.
+(Appendix~\mbox{\ref{app:lfr-details}})}.
 $f_{\mathrm{base}}$ is calculated using one fourth-order
 Runge-Kutta (RK4) step of $F$ over $T_s$, with the input
 \kwtwo{held constant (zero-order hold)} during the step.

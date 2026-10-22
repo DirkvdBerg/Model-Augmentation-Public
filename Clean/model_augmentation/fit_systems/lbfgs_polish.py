@@ -120,7 +120,7 @@ def _lbfgs_counts(opt, params):
 
 
 def _is_oom(exc):
-    """True for a CUDA out-of-memory error."""
+    """Recognise CUDA OOM exceptions and RuntimeErrors containing 'out of memory'."""
     return isinstance(exc, torch.cuda.OutOfMemoryError) or (isinstance(exc, RuntimeError)
                                                            and 'out of memory' in str(exc).lower())
 
@@ -184,7 +184,6 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
     # one restore-and-resync boundary from the start validation to the final scoring: an exception the inner
     # handlers do not catch aborts the polish with the weights restored
     try:
-        # start validation and the fixed batch
         out['val_before'] = _validate() if val_before is None else float(val_before)
 
         out['params_polished'] = sum(p.numel() for p in params)
@@ -242,7 +241,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                      spec.tol_change, spec.tol_change / max(abs(first), 1e-300),
                      spec.max_iter, 'compiled' if out['used_compiled'] else 'eager'))
 
-            # L-BFGS in blocks of inner_iter iterations, until it stops inside a block or max_iter is reached
+            # allow ceil(max_iter / inner_iter) blocks, stopping early if a block uses fewer than inner_iter iterations
             n_outer = max(1, -(-spec.max_iter // max(1, spec.inner_iter)))
             for k in range(n_outer):
                 it_before, _ = _lbfgs_counts(opt, params)
@@ -275,7 +274,6 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
             if not np.isfinite(out['loss_last']):
                 out['reason'] += ' | non-finite loss at the final point'
 
-        # final validation
         out['ran'] = True
         out['val_after'] = _validate()
         out['wall_s'] = time.time() - t0

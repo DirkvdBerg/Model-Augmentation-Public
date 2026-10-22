@@ -335,8 +335,17 @@ The initial states are estimated by an encoder network from past inputs and outp
 %   without "System" (the system is now Section II). Subsection A renamed
 %   from "Physics baseline", which repeated the section title. Titles carry
 %   no change marks (fragile argument).
+% FEEDBACK v2 (2026-10-22, own): "its position-dependent representation"
+%   -> "its position-dependent state-space model", matching the III-B title
+%   "Baseline state-space model"; "position-dependent" kept as the link to
+%   Section I (position-dependent behaviour, gap "not for
+%   position-dependent baselines"); "model", not "form", because the
+%   dependence on Y is a property of the model, not of the form. Earlier
+%   change (Dirk): "LPV-LFR" -> "position-dependent"; that mark is folded
+%   into this one, since marks are not nested inside struck text
+%   (Dirk 2026-10-22).
 \kwtwo{In this section, we \chg[Dirk]{give}{state} the equations of motion of the baseline\del[own]{
-(Section~\mbox{\ref{sec:baseline}})}, its \chg[Dirk]{LPV-LFR}{position-dependent} representation\del[own]{
+(Section~\mbox{\ref{sec:baseline}})}, its \chg[own]{position-dependent representation}{position-dependent state-space model}\del[own]{
 (Section~\mbox{\ref{sec:lfr}})}, and the identifiable combinations of \chg[Dirk]{its}{the} physical
 parameters \chg[Dirk]{with their parametrisation}{and how we parametrise them} for estimation\del[own]{
 (Section~\mbox{\ref{sec:params}})}.}
@@ -511,129 +520,165 @@ Appendix~\ref{app:choices}).}
 %   Section III (M(Y) > 0 for every Y, so III needs no number); it is
 %   stated in Section V, normalised to the stroke (real gantry, ASMPT rule).
 
-\subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
+% RESTRUCTURE (2026-10-22, Dirk): III-B defines the baseline transition the
+%   augmentation uses, then names its LPV structure; title was
+%   "Self-scheduled LPV-LFR representation". Order: physics, state-space
+%   form (moved from IV-A, Dirk's sentences), well-defined acceleration,
+%   LPV definition and self-scheduling (Dirk's sentences), the split for
+%   III-C, one pointer to the LFR. The LFR construction (figure, chain,
+%   Delta, G, loop closing, well-posedness) moved to Appendix A.2. Reason:
+%   the augmentation, RK4 and OBC use this transition, not the LFR loop
+%   (06_results.tex, LFR role paragraph); the introduction no longer claims
+%   the LFR as a result. The LFR stays in the thesis as Roland asked (D-005,
+%   D-017; D-020 "derivation and structural analysis only").
+\subsection{Baseline state-space model}\label{sec:lfr}
 \ifdraft
 \begin{itemize}
-\item $Y$ is a state and the scheduling variable; $M(Y)^{-1}$ makes the model rational in $Y$ (Drenth)
-\item $M(Y)=M_0+YM_1+Y^2M_2$; $Y$ enters only through $Y\ddot q$ and $Y^2\ddot q$, realised by repeating $Y$ (this work)
-\item Latent variables $z,w$ and Delta-block $\Dsch(Y)=YI_6$; not claimed minimal (this work)
-\item LTI part $G$ in a continuous-time adaptation of Drenth Eq.~(2); its first block row is the state equation
-\item Closing the algebraic loop gives back \eqref{eq:eom} exactly (this work)
-\item Well posed iff $M(Y)$ nonsingular, true for every $Y$; closed-form $M(Y)^{-1}$, no numerical solve (Drenth Def.~1; this work)
+\item Baseline in the state-space form of \eqref{eq:system} (Section~\ref{sec:problem})
+\item $M(Y)=M_0+YM_1+Y^2M_2$ (used by III-C)
+\item $M(Y)\succ0$ for every $Y$, so $\ddot q$ is uniquely defined; explicit $\dot{\tilde x}=F(\tilde x,u)$
+\item With $Y$ as scheduling variable this is a self-scheduled LPV model (T\'oth, Drenth)
+\item Rational in $Y$ through $M(Y)^{-1}$ and \eqref{eq:Msplit}; exact LPV-LFR in Appendix~\ref{app:lfr-details}
 \end{itemize}
 \fi
-% FEEDBACK v2 (Dirk 2026-10-20, from the introduction session): the
-%   introduction no longer defines LPV, so it is spelled out and defined
-%   here, with the reason it is the logical choice. Toth 2010 p. 28 (LPV:
-%   coefficients are functions of the scheduling variable), p. 165 (p
-%   measurable, or a function of the states: quasi-LPV). The roadmap above
-%   says "position-dependent" so LPV is not used before this definition.
-\mv{III-A}{Moving the payload position $Y$ changes the mass distribution of the gantry and therefore its inertia matrix $M(Y)$.
-\add[Dirk]{\kwtwo{A linear parameter-varying (LPV) model is linear in its
-states and inputs, with matrices that depend on a measured, time-varying
-scheduling variable \cite{toth2010modeling}.}}
-This position dependence is included by representing the baseline in \chg{linear parameter-varying (LPV)}{LPV} form, with the payload position \(Y\) as scheduling variable \cite{toth2010modeling}.}
-\add[Dirk]{\kwtwo{This form is the logical choice, because $Y$ enters
-\eqref{eq:eom} only through $M(Y)$: with $Y$ as a measured scheduling
-signal, the equations are linear in $q$, its derivatives and $u$.}}
-The payload position $Y$ is both a state and the scheduling variable,
-making the baseline a self-scheduled LPV model.\todo{source, or do i state it earlier..?}
-\kw{Because the scheduling variable is the state $Y$ itself, 
-this LPV form \kwtwo{coincides} with \eqref{eq:eom} for every motion of $Y$ and needs 
-no assumption on $\dot Y$.}
-\revnote{Make clear that the acceleration is obtainted from the formulas.
-Maarten also had a comment about this.}
-Solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$, so the model
-is rationally dependent on $Y$. A linear fractional representation (LFR) is introduced to separate this rational scheduling dependence\kwtwo{ exactly, with an LTI part whose
-matrices do not depend on $Y$}.
-We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$, 
-with the scheduling being connected in feedback 
-with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2025lpvlfr,hoekstra2026lfr}.
-%used to isolate and represent the rational scheduling dependence induced by the position-dependent
-% inertia \cite{drenth2025lpvlfr,hoekstra2026lfr}.
-\begin{figure}[t]
-  \centering
-  \input{figures/lfr_loop}
-  \caption{Self-scheduled \kw{baseline} interconnection. The \kw{Delta-block} closes
-  the \kw{latent variables} of $G$ through $w=\Dsch(Y)z$, with
-  $\Dsch(Y)=YI_6$ and $Y$ a component of the \kw{state}.}
-  % FEEDBACK: caption taken out of its \todo (Js42); no marks in captions.
-  \label{fig:lfr}
-\end{figure}
-To separate the scheduling variable $Y$, deconstruct 
-the \kw{inertia matrix} \eqref{eq:mass_matrix} into a polynomial in $Y$,
+% REORDER (2026-10-22, Dirk): paragraphs in the order position dependence
+%   and the split, explicit dynamics, LPV interpretation and use, LFR
+%   pointer. Dirk's sentences reordered within III-B without move marks;
+%   word changes marked. (7) back in acceleration form (A(Y), B(Y) not
+%   written out). Toth 2010 p. 28 (LPV: coefficients are functions of the
+%   scheduling variable), p. 165 (scheduling a function of the states:
+%   quasi-LPV).
+\mv{III-A}{Moving the payload position $Y$ changes the mass distribution of the gantry and therefore its inertia matrix $M(Y)$.}
+\chg[Dirk]{To separate the scheduling variable $Y$, deconstruct
+the inertia matrix \mbox{\eqref{eq:mass_matrix}} into}{\kwtwo{The inertia matrix \eqref{eq:mass_matrix} is}} a polynomial in $Y$,
 \begin{equation}
-  M(Y)=M_0+YM_1+Y^2M_2.
+  M(Y)=M_0+YM_1+Y^2M_2,
   \label{eq:Msplit}
 \end{equation}
-$M_0$, $M_1$ and $M_2$ are given in Appendix~\ref{app:lfr-details}.
-Substituting \eqref{eq:Msplit} into \eqref{eq:eom} gives
-\begin{equation}
-  M_0\ddot q+YM_1\ddot q+Y^2M_2\ddot q=u-C\dot q-Kq.
-  \label{eq:lfr_mass_factorization}
-\end{equation}
-Here $Y$ only enters through $Y\ddot q$ and $Y^2\ddot q$, 
-with $Y^2\ddot q=Y(Y\ddot q)$. This lets us apply the same scheduling variable twice 
-instead of introducing a second scheduling variable $Y^2$,
-\begin{equation}
-  \ddot q\xrightarrow{\;Y\;}a_1\xrightarrow{\;Y\;}a_2,
-  \label{eq:lfr_chain}
-\end{equation}
-with $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$.
-% (1) Construction: Y-free equation -> loop signals -> Delta -> G
-We treat $a_1$ and $a_2$ as independent signals, so \eqref{eq:lfr_mass_factorization}
-becomes
-\begin{equation}
-  M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq,
-  \label{eq:lfr_constant}
-\end{equation}
-which contains no $Y$.
-This is allowed, because the Delta-block below \kw{imposes}
-$a_1=Y\ddot q$ and $a_2=Ya_1$ again.
-The \kw{latent variables} are $z=[\ddot q^\top\;a_1^\top]^\top$ and $w=[a_1^\top\;a_2^\top]^\top$,
-with the \kw{Delta-block} mapping $z$ to $w$,
-\begin{equation}
-  w=\begin{bmatrix}a_1\\a_2\end{bmatrix}
-   =\begin{bmatrix}Y\ddot q\\Ya_1\end{bmatrix}
-   =\underbrace{\begin{bmatrix}YI_3&0\\0&YI_3\end{bmatrix}}_{\Dsch(Y)=YI_6}
-    \begin{bmatrix}\ddot q\\a_1\end{bmatrix}
-   =\Dsch(Y)z.
-  \label{eq:delta}
-\end{equation}
-% TODO closed (2026-10-20, Dirk): the SVD reduction is not added; it does
-%   not change the model used here.
-We write the LTI part $G$ of the LFR in continuous time, adapting the
-discrete-time block structure of~\cite[Eq.~(2)]{drenth2025lpvlfr}:
-\todo{Check this}
-\begin{equation}
-  \begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}
-  =G\begin{bmatrix}\tilde x\\ w\\ u\end{bmatrix},
-  \label{eq:lfr_G}
-\end{equation}
-where $\tilde x=[q^\top\;\dot q^\top]^\top$ is the \kw{state} and $q$ the \kw{output}.
-The first block row is the \kw{state equation}, with $\ddot q$ obtained from
-\eqref{eq:lfr_constant} by multiplying with $M_0^{-1}$. 
-\revnote{This was not clear earlier for Maarten. At least where we compared the 
-two systems for identifiability.}
-For the blocks of $G$, see Appendix~\ref{app:lfr-details}.
+\chg[Dirk]{$M_0$, $M_1$ and $M_2$ are}{where $M_0$, $M_1$ and $M_2$ are} given in Appendix~\ref{app:lfr-details}.
 \\
-\kw{Conversely,} closing the \kw{algebraic loop} with \eqref{eq:delta} results in
-$a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
-into \eqref{eq:eom}. The LFR is therefore an exact realisation of the baseline.
-The LFR is \kw{well posed} if the \kw{algebraic loop} has a unique solution for
-every $Y$ \cite[Def.~1]{drenth2025lpvlfr}. 
-% REVISED (2026-10-20, Dirk; LFR audit): the well-posedness sentences
-%   combined; positive raw masses give M(Y) > 0, the estimated combinations
-%   are handled in III-C.
-\chg{For the gantry realisation we show that this condition holds
-when $M(Y)$ is nonsingular (Appendix~\ref{app:lfr-details}).
-For positive masses and inertias, $M(Y)\succ0$ for every $Y\in\R$
-(Appendix~\ref{app:lfr-wellposed}). Therefore the LFR is well posed over the
-whole operating range of $Y$.}{\kwtwo{For this realisation, well-posedness is
-equivalent to nonsingularity of $M(Y)$ (Appendix~\ref{app:lfr-details}).
-Positive component masses and inertias give $M(Y)\succ0$ for every $Y\in\R$
-(Appendix~\ref{app:lfr-wellposed}), so the baseline LFR is well posed
-throughout the operating range.}}
+With positive masses and inertias, $M(Y)\succ0$ for every $Y\in\R$
+(Appendix~\ref{app:lfr-wellposed}), 
+\chg[Dirk]{the baseline LFR is well posed throughout the operating range}{\kwtwo{we invert $M(Y)$ to calculate $\ddot q$
+from \eqref{eq:eom}}}.
+
+% REVISED (2026-10-22, Dirk): the 2026-10-20 well-posedness sentence
+%   "For this realisation, well-posedness is equivalent to nonsingularity
+%   of M(Y) (Appendix A.2)" moved to A.2, where the Schur step shows it.
+\delmv[Dirk]{A.2}{For this realisation, well-posedness is
+equivalent to nonsingularity of $M(Y)$ (Appendix~\mbox{\ref{app:lfr-details}}).}
+% FEEDBACK v2 (2026-10-22, Maarten mail: narrative, forward references):
+%   reason for the state-space form, backward to Section II, which cites
+%   the augmentation [hoekstra2026lfr]. Hoekstra 2026 Eq. (2), PDF p3: "We
+%   assume a baseline model of (1) is available in the form"
+%   x_{b,k+1} = f_base(theta_base, x_{b,k}, u_k) (discrete time; the step
+%   from eq:base_ss to discrete time is Section IV's). Replaces the struck
+%   sentence on the discrete-time transition of Section IV. "state-space"
+%   -> "this" in the next sentence avoids the repeat (Dirk 2026-10-22).
+\add[M-mail]{\kwtwo{The augmentation of Section~\ref{sec:problem} assumes a
+baseline model in state-space form~\cite{hoekstra2026lfr}.}}
+% Moved from IV-A (2026-10-22, Dirk).
+\mv[Dirk]{IV-A}{\add[Dirk]{\kwtwo{With the state $\tilde x=[q^\top\;\dot q^\top]^\top$,}}
+\chg[Dirk]{Writing}{writing} \eqref{eq:eom} in state-space form gives\kwtwo{ the state derivative $F$}}
+\begin{equation}
+ \dot{\tilde x}=F(\tilde x,u)=\begin{bmatrix}\dot q\\
+  M(Y)^{-1}\bigl(u-C\dot q-Kq\bigr)\end{bmatrix}.
+\label{eq:base_ss}
+\end{equation}
+% FEEDBACK v2 (2026-10-22, own): where-clause struck, it repeats III-A
+%   (eq:Ptransform and "where u denotes the generalised force"); the
+%   comma after eq:base_ss is now a full stop (Dirk 2026-10-22).
+\del[own]{where $u=Pu_{\mathrm{act}}$ is the generalised force
+\mbox{\eqref{eq:Ptransform}}.}
+% REVNOTE closed (2026-10-22, Dirk): "Make clear that the acceleration is
+%   obtained from the formulas" is answered by eq:base_ss (Maarten v2 p5).
+
+% FEEDBACK v2 (2026-10-22, own): the rational-dependence sentence moved to
+%   the LFR paragraph, whose LFR it motivates (Dirk 2026-10-22).
+\delmv[own]{below}{Because of $M(Y)^{-1}$, \mbox{\eqref{eq:base_ss}}
+is rationally dependent on $Y$.}
+% FEEDBACK (2026-10-22, Dirk): the separate LPV definition (added
+%   2026-10-20), "This position dependence is included by representing the
+%   baseline in LPV form ..." and the "logical choice" sentence were merged
+%   into one sentence that defines LPV through eq:base_ss.
+% FEEDBACK v2 (2026-10-22, own): the merged sentence (not Dirk's wording,
+%   packed, "externally specified") struck; Dirk's own sentence (v1 text,
+%   Maarten v2 p4) restored, now about eq:base_ss, plus one short sentence on
+%   what LPV means here (Q, "Explain LPV and its relation to
+%   position-dependency"). The 2026-10-20 definition and "logical choice"
+%   sentences stay dropped (Dirk 2026-10-22).
+\del[own]{Treating $Y$ as an externally specified scheduling signal,
+\mbox{\eqref{eq:base_ss}} is linear in $\tilde x$ and $u$, with matrices
+that depend on $Y$: it is a linear parameter-varying (LPV) model with $Y$
+as scheduling variable~\mbox{\cite{toth2010modeling}}.}
+This position dependence is included by representing
+\chg[own]{the baseline}{\eqref{eq:base_ss}} in linear parameter-varying (LPV)
+form, with the payload position $Y$ as scheduling variable~\cite{toth2010modeling}.
+\add[own]{\kwtwo{For a given $Y$, \eqref{eq:base_ss} is then linear in $\tilde x$ and $u$.}}
+The payload position $Y$ is both a state and the scheduling variable,
+making the baseline a self-scheduled LPV model\add[own]{~\cite{drenth2025lpvlfr}}.
+% FEEDBACK v2 (2026-10-22, own): todo "source, or do i state it
+%   earlier..?" resolved by the citation: Drenth (arXiv v1, PDF p2) embeds a
+%   nonlinear system in LPV form with p = psi(x, u), and calls such models
+%   self-scheduled LPV-LFR models (PDF p3); here psi selects Y from the
+%   state. Toth 2010 calls the same class quasi-LPV (Def. 7.2, p. 194).
+%   CITATION-LOG.md rows for drenth2025lpvlfr, self-scheduled (Dirk
+%   2026-10-22).
+% \kw{Because the scheduling variable is the state $Y$ itself,
+% this LPV form \kwtwo{coincides} with \eqref{eq:eom} for every motion of $Y$ and needs
+% no assumption on $\dot Y$.}
+\kw{Using the state $Y$ as the scheduling variable,
+the LPV form \kwtwo{gives the same equations of motion as}
+\eqref{eq:eom} for any time-varying $Y$, without making
+an assumption on $\dot Y$.}
+% FEEDBACK v2 (2026-10-22, Maarten mail: forward references): struck, it
+%   points forward to Section IV; the sentence before eq:base_ss now gives
+%   its reason backward, via Section II and Hoekstra (Dirk 2026-10-22).
+\del[M-mail]{Equation \mbox{\eqref{eq:base_ss}} defines the continuous-time
+baseline from which the discrete-time transition used in
+Section~\mbox{\ref{sec:augmentation}} is obtained.}
+
+% FEEDBACK v2 (2026-10-22, own): rational-dependence sentence moved here
+%   from after eq:base_ss, as the reason for the LFR; "and eq:Msplit" added,
+%   since the inverse of the polynomial M(Y) is what makes the dependence
+%   rational (Dirk 2026-10-22).
+Because of $M(Y)^{-1}$\add[own]{ and \eqref{eq:Msplit}},
+the matrices in \eqref{eq:base_ss} depend rationally on $Y$.
+\add[Dirk]{\kwtwo{The baseline can also be written as an exact
+linear fractional representation (LFR), which separates this
+rational dependence from a linear time-invariant part.
+Appendix~\ref{app:lfr-details} gives its derivation and shows
+that the algebraic loop is well posed if $M(Y)$ is nonsingular.}}
+% Moved to Appendix A.2 with their text: the LFR introduction, Fig. 2
+%   (fig:lfr), eq:lfr_mass_factorization, eq:lfr_chain, eq:lfr_constant,
+%   eq:delta, eq:lfr_G and the loop closing.
+\delmv[Dirk]{A.2}{A linear fractional representation (LFR) is introduced to separate this rational scheduling dependence exactly, with an LTI part whose
+matrices do not depend on $Y$.
+We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
+with the scheduling being connected in feedback
+with $G$ (Fig.~\mbox{\ref{fig:lfr}}) \mbox{\cite{drenth2025lpvlfr,hoekstra2026lfr}}.
+Substituting \mbox{\eqref{eq:Msplit}} into \mbox{\eqref{eq:eom}} gives (7).
+Here $Y$ only enters through $Y\ddot q$ and $Y^2\ddot q$,
+with $Y^2\ddot q=Y(Y\ddot q)$. This lets us apply the same scheduling variable twice
+instead of introducing a second scheduling variable $Y^2$ (8),
+with $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$.
+We treat $a_1$ and $a_2$ as independent signals, so (7) becomes (9),
+which contains no $Y$.
+This is allowed, because the Delta-block below imposes
+$a_1=Y\ddot q$ and $a_2=Ya_1$ again.
+The latent variables are $z=[\ddot q^\top\;a_1^\top]^\top$ and $w=[a_1^\top\;a_2^\top]^\top$,
+with the Delta-block mapping $z$ to $w$ (10).
+We write the LTI part $G$ of the LFR in continuous time, adapting the
+discrete-time block structure of~\mbox{\cite[Eq.~(2)]{drenth2025lpvlfr}} (11),
+where $\tilde x=[q^\top\;\dot q^\top]^\top$ is the state and $q$ the output.
+The first block row is the state equation, with $\ddot q$ obtained from
+(9) by multiplying with $M_0^{-1}$.
+For the blocks of $G$, see Appendix~\mbox{\ref{app:lfr-details}}.
+Conversely, closing the algebraic loop with (10) results in
+$a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns (9) back
+into \mbox{\eqref{eq:eom}}. The LFR is therefore an exact realisation of the baseline.
+The LFR is well posed if the algebraic loop has a unique solution for
+every $Y$ \mbox{\cite[Def.~1]{drenth2025lpvlfr}}.}
 
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \ifdraft

@@ -35,10 +35,8 @@ class ControllerBank(torch.nn.Module):
         return self.M_state.shape[0]
 
     def step(self, xc, e_norm, ctrl):
-        """One controller step for a batch: u_fb^n = C^n xc + D^n e^n, xc_next = A xc + B^n e^n.
-
-        # THEORY: the controller is a separate state equation beside the model, not part of the model state.
-        """
+        """One batched controller step: u_fb^n = C^n xc + D^n e^n, xc_next = A xc + B^n e^n."""
+        # THEORY: the controller is a separate state equation beside the model, not part of the model state
         M_state, M_error = ctrl
         out = torch.baddbmm(torch.bmm(M_error, e_norm.unsqueeze(-1)),
                             M_state, xc.unsqueeze(-1)).squeeze(-1)
@@ -52,9 +50,8 @@ def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix,
         bank.to(u_data.device)
     ctrl = (bank.M_state[ctrl_ix], bank.M_error[ctrl_ix])
 
-    # HEURISTIC: xc = 0 at every window start. The controller here filters the model error y^n - y_hat^n, which
-    # does not exist before the window, and xc = 0 is the value for which its correction vanishes when the
-    # model is exact; the integral memory of the recorded run is lost.
+    # HEURISTIC: reset the controller-state difference xc at each window start, dropping the effect of earlier
+    # model errors; the recorded controller output remains in u_data
     xc = torch.zeros(u_data.shape[0], bank.nc, dtype=u_data.dtype, device=u_data.device)
 
     x, ys = x0, []
@@ -101,7 +98,7 @@ class ClosedLoopSimulator:
 
     def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix, obc_pass=None, pass_mats=None, **kw):
         """(y_hat^n, x final) of the closed-loop rollout of a batch of windows from x."""
-        # compiled only for the training loss on CUDA (gradients on); everything else runs eagerly
+        # use the compiled pair for gradient-enabled CUDA rollouts, including the polish
         use_compiled = (self._compiled is not None and ufuture.is_cuda and torch.is_grad_enabled())
         if use_compiled:
             hfn, out_fn = self._compiled
@@ -118,8 +115,7 @@ class ClosedLoopSimulator:
         return y_pred, x_final
 
     def augment_training_data(self, data, sys_data, fit_sys, **kw):
-        """deepSI's four window arrays plus the controller row and loss weight of every window, checked against
-        the data."""
+        """Check window alignment and append each window's controller row and loss weights."""
         nf = kw.get('nf', 25)
         stride = kw.get('stride', 1)
         sdl = sys_data.sdl
@@ -148,13 +144,12 @@ class ClosedLoopSimulator:
                 want = np.asarray(sd.u[start:start + nf], dtype=got.dtype)
                 if not np.array_equal(got, want):
                     raise RuntimeError(
-                        'window %d does not match its record at offset %d, so the controller rows per window '
-                        'are misplaced; make the window offsets here follow WindowedSystemData'
-                        % (off + j, start))
+                        'window %d does not match its record at offset %d; check the window values and offsets '
+                        'before trusting the controller-row assignment' % (off + j, start))
             off += c
 
     def validation_error(self, fit_sys, val_sys_data):
-        """sim-NRMSe: the mean over records and axes of RMS / sigma_e of the closed-loop free run, in metres."""
+        """Dimensionless sim-NRMSe: mean over records and axes of the closed-loop RMS divided by sigma_e."""
         sdl = val_sys_data.sdl
         per_channel, per_record = closed_loop_free_run_rms_batch(fit_sys, sdl, self.bank, self.val_rows)
         self.last_per_channel = np.asarray(per_channel)          # (n_val, ny), metres
@@ -166,8 +161,7 @@ class ClosedLoopSimulator:
 
 
 def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=False):
-    """Closed-loop free-run RMS of N records in one rollout: (per record and axis, per record), and the
-    physical predictions with return_pred."""
+    """Return closed-loop RMS per record and axis and per record, batching equal lengths; optionally physical y_hat."""
     norm = fit_sys.norm
     na, nb = fit_sys.na, fit_sys.nb
     k0 = max(na, nb)

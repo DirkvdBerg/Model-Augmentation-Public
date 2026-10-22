@@ -24,7 +24,8 @@ AA_ORDER, AA_FC_HZ = 8, 1600.0
 # records; rounded up to whole ms
 AA_TRIM_S = 0.005
 
-# the thesis runs: OBC or unconstrained arm, correct or detuned start, n_a added states, PS2 opening or plain
+# the thesis runs: OBC or unconstrained arm, correct or detuned start, n_a = n_{bar x} added states, PS2 opening
+# or plain
 PRESETS = {
     'R1': dict(arm='obc', start='detuned', n_a=2, ps2=True),
     'R2': dict(arm='obc', start='correct', n_a=2, ps2=True),
@@ -37,7 +38,7 @@ PRESETS = {
     'R14': dict(arm='u', start='detuned', n_a=0, ps2=False),
 }
 
-# config.json keys of the run-environment fields, read back by from_config_json
+# config.json keys of the run environment fields, read back by from_config_json
 _ENV_KEYS = dict(device='DEVICE', compile_mode='COMPILE_MODE', truncate_s='TRUNCATE_S',
                  epochs='EPOCHS', n_its='N_ITS', its_per_val='ITS_PER_VAL',
                  lbfgs_max_iter='LBFGS_MAX_ITER', lbfgs_inner_iter='LBFGS_INNER_ITER',
@@ -54,15 +55,13 @@ def y_decimation(cfg) -> str:
 
 
 def record_trim(cfg) -> int:
-    """Samples dropped at each record end at FS_NEW: loader sample i is the recorded FS_ORIG sample
-    (i + record_trim) D."""
+    """Return samples trimmed at each FS_NEW record end; sample i maps to FS_ORIG index (i + trim) D."""
     return int(round(AA_TRIM_S * cfg.fs_new))
 
 
 @dataclass(frozen=True)
 class RunConfig:
     """One thesis run: the five axes, the run environment and the fixed settings."""
-    # the five axes
     arm: str
     start: str
     n_a: int
@@ -102,7 +101,7 @@ class RunConfig:
     lr: ClassVar[float] = 1e-5
     adam_eps: ClassVar[float] = 1e-16
     param_prior: ClassVar[bool] = False
-    # HEURISTIC: the measured initial square-root loss; only the Lambda_combo buffer uses it, and no loss reads it
+    # HEURISTIC: the measured initial square root loss; only the Lambda_combo buffer uses it, and no loss reads it
     param_rmse_baseline: ClassVar[float] = 0.01
     use_f64: ClassVar[bool] = True
     joint_estimation: ClassVar[bool] = True
@@ -111,8 +110,7 @@ class RunConfig:
     validation_measure: ClassVar[str] = 'sim-NRMSe'
     controller_gain: ClassVar[bool] = False
     lbfgs_history: ClassVar[int] = 50
-    # HEURISTIC: tolerances 1e-12 and 1e-14 of the unweighted loss, times 2.6e7, the measured factor by which the
-    # servo-error weighting scales the loss and its largest gradient entry
+    # HEURISTIC: fixed gradient and loss-change tolerances for the servo-weighted objective
     lbfgs_tol_grad: ClassVar[float] = 2.6e-5
     lbfgs_tol_change: ClassVar[float] = 2.6e-7
     obc_space: ClassVar[str] = 'affine'
@@ -142,8 +140,7 @@ class RunConfig:
 
     @classmethod
     def from_config_json(cls, meta, **overrides):
-        """A run's config.json, clean or mainline, as a RunConfig; a setting outside the thesis runs raises.
-        Roots and start_phase come from overrides or the defaults."""
+        """Read a supported run configuration, taking roots and start_phase from defaults or overrides."""
         if meta.get('CODE') == 'clean':
             axes = dict(arm=meta['ARM'], start=meta['START'], n_a=int(meta['N_A']), ps2=bool(meta['PS2']),
                         noise=meta['NOISE'])
@@ -163,7 +160,6 @@ class RunConfig:
                              'run this folder with the mainline code' % bad)
         return replace(cfg, **overrides)
 
-    # axis properties
     @property
     def obc(self) -> bool:
         return self.arm == 'obc'
@@ -189,7 +185,6 @@ class RunConfig:
         signs = np.random.default_rng(self.seed).choice([-1.0, 1.0], size=10)
         return [float(1.0 + 0.10 * s) for s in signs]
 
-    # derived quantities
     @property
     def hp(self) -> dict:
         """The hyperparameter dict; its keys and order are those of the checkpoint .npz field hp."""
@@ -239,8 +234,7 @@ def git_provenance() -> str:
 
 
 def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
-    """The config.json of a run: every mainline key in mainline order (options the clean code lacks as the
-    values the thesis runs wrote), then the clean-only keys and GIT."""
+    """Return mainline configuration keys in their original order, then Clean keys and GIT."""
     return dict(
         MODE=cfg.mode, ENCODER_INIT=cfg.encoder_init,
         ANN_ACTIVATION='tanh',

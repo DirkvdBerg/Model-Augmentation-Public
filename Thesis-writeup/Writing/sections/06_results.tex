@@ -231,7 +231,9 @@ Having a disadvantages starting position. t
 \\
 % NEW (2026-10-20, Dirk; LFR audit): role of the LPV-LFR, in the text so it
 %   survives submission (the revnote does not).
-\kwtwo{The baseline is represented as an LPV-LFR (Section~\ref{sec:lfr}),
+% RESTRUCTURE (2026-10-22, Dirk): the LFR derivation is now in Appendix A.2;
+%   III-B gives the baseline transition eq:base_ss.
+\kwtwo{The baseline is represented as an LPV-LFR \chg[Dirk]{(Section~\mbox{\ref{sec:lfr}})}{(Appendix~\ref{app:lfr-details})},
 which is well posed for admissible physical parameters.
 The implementation resolves its loop analytically, and the learned correction
 is added to the resulting discrete-time state update.
@@ -258,8 +260,9 @@ a different controller or on measured data.}
 %   Drenth 2025 (paper Sec. 1, thesis Ch. 1: LPV-LFR for controller synthesis).
 % The explanation is now in the paragraph above (2026-10-20); the revnote
 %   keeps only the question.
-\revnote{Should the LPV-LFR derivation (Section~\ref{sec:lfr}) stay as a
-compact subsection in the main text?}
+% REVNOTE closed (2026-10-22, Dirk): "Should the LPV-LFR derivation stay as
+%   a compact subsection in the main text?" No: it moved to Appendix A.2;
+%   III-B states the baseline transition and points to the LFR.
 
 % Open points of this section (kept together so the text reads without interruption).
 \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section

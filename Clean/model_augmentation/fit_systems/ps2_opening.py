@@ -20,7 +20,8 @@ class PS2Spec:
     s1_cap: int = 350              # HEURISTIC: S1 ends here at the latest
     s1_tol: float = 0.02           # HEURISTIC: plateau = the best of the last s1_window checks improved by less than s1_tol (relative)
     s1_window: int = 4
-    screen_at: int = 150           # HEURISTIC: screen: calibration unexplained fraction <= screen_max by this update
+    # HEURISTIC: screen_at checks the current calibration fraction at this update, which must be on the evaluation grid
+    screen_at: int = 150
     screen_max: float = 0.90
     n_cal: int = 128
     n_snap: int = 8192
@@ -34,12 +35,10 @@ class PS2Spec:
 
 
 def calibration_split(names):
-    """Record-level split: the last record of every record class with at least 3 records is held out.
-
-    A class is the record name without its trailing number, 'TR-S5' -> 'TR-S'.
+    """Hold out the last listed record of each name class containing at least three records."""
+    # a class is the record name without its trailing number, 'TR-S5' -> 'TR-S'
     # HEURISTIC: the calibration set covers every such class, since the predictive state of one excitation class
-    # need not transfer to another.
-    """
+    # need not transfer to another
     cls = [n.rstrip('0123456789') for n in names]
     cal = sorted(max(i for i, c in enumerate(cls) if c == k) for k in set(cls) if cls.count(k) >= 3)
     return [i for i in range(len(names)) if i not in cal], cal
@@ -50,8 +49,7 @@ class PS2Opening:
     S2 the network's added-state transition."""
 
     def __init__(self, fit_sys, data, n_xb, n_a, width, spec):
-        """The normalised (u, y) of the training records in the simulator's order, with their controller rows and
-        names; n_xb, n_a: physical and added states; width: the decoder's hidden width, that of the network."""
+        """Prepare normalised training records and the decoder specification (n_xb physical, n_a added states)."""
         self.records = []
         for sd in data.train_list:
             sdn = fit_sys.norm.transform(sd)
@@ -73,8 +71,7 @@ class PS2Opening:
         return self.phase == 'S3'
 
     def after_step(self, fs):
-        """One step after an Adam update: an S1 update, and every eval_every updates a calibration check that can
-        end S1 and run S2."""
+        """Update S1 and check calibration on its evaluation grid, running S2 when S1 ends successfully."""
         if self.done:
             return
         if self._decoder is None:
@@ -128,14 +125,13 @@ class PS2Opening:
         aux = [enc.Wa_psi_u, enc.Wa_psi_y, enc.net[-1].weight, enc.net[-1].bias]
         self._aux = list(self._decoder.parameters()) + aux
         self._opt = torch.optim.Adam(self._aux, lr=self.spec.lr)
-        # a fixed seed of its own for the calibration windows
         self._cal = self._sample(fs, self.cal_ix, self.spec.n_cal, np.random.default_rng(self.spec.seed + 321))
         print('[ps2] opening started: M %d, calibration records %s, spec %s' % (
             self._M, [self.names[i] for i in self.cal_ix], json.dumps(asdict(self.spec))), flush=True)
 
     def _sample(self, fs, rec_ix, B, rng, pair=False):
-        """B windows of the given records, drawn in proportion to their length: encoder history, M future
-        samples, controller row and, with pair, the history one sample later; deepSI's window convention."""
+        """Sample windows using eligible-start counts, reserving one future successor and an extra end sample;
+        optionally include shifted histories."""
         nb, na = fs.nb, fs.na
         k0, M = max(na, nb), self._M
         dev, dt = self._device(fs)
@@ -173,8 +169,7 @@ class PS2Opening:
         e = self._residual(fs, b, x.detach())
         loss = (self._decoder(self._added_states(x)) - e).pow(2).mean()
         grads = torch.autograd.grad(loss, self._aux, allow_unused=True)
-        # the gradients go to the opening's optimizer only; the .grad of the shared parameters is saved and
-        # restored, so the next Adam step of the training is unaffected
+        # S1 updates shared encoder parameters with its own Adam state, then restores the existing gradient slots
         saved = [p.grad for p in self._aux]
         for p, g in zip(self._aux, grads):
             p.grad = torch.zeros_like(p) if g is None else g
@@ -195,7 +190,6 @@ class PS2Opening:
         sp = self.spec
         ann = fs.hfn.connected_blocks[fs._ann_ix]
         params = list(ann.parameters())
-        # a fixed seed of its own for the snapshot windows
         srng = np.random.default_rng(sp.seed + 1000)
 
         def snap(ix, n):

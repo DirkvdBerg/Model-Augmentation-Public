@@ -39,13 +39,14 @@ class SystemDataNormalizer(object):
         self.ystd = ystd
 
     def transform(self,sys_data):
+        """Return normalised WindowedSystemData, or a list of normalised records."""
         if isinstance(sys_data, (list, tuple, System_data_list)):
             return System_data_list([self.transform(s) for s in sys_data])
         if not isinstance(sys_data, System_data):
             raise NotImplementedError(f'type={type(sys_data)} cannot be transformed by norm; pass System_data '
                                       f'or a System_data_list')
 
-        assert sys_data.normed==False, 'System_data is already normalized'
+        assert sys_data.normed==False, 'System_data is already normalized; pass the original unnormalised data'
         u_transformed = (sys_data.u-self.u0)/self.ustd if sys_data.u is not None else None
         y_transformed = (sys_data.y-self.y0)/self.ystd if sys_data.y is not None else None
         return WindowedSystemData(u=u_transformed,x=sys_data.x,y=y_transformed, \

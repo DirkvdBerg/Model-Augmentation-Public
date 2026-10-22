@@ -38,6 +38,7 @@ class Static_ANN_Block(Block):
         self.register_buffer('out_gate', torch.ones(self.nw), persistent=False)
 
     def forward(self, z: Tensor):
+        """Apply the network and its per-output gate, returning (batch, nw, 1)."""
         w = self.net(z.view(-1, self.nz))
         w = w * self.out_gate
         return w.view(-1, self.nw, 1)
@@ -60,6 +61,7 @@ class Linear_Output_Block(Block):
         self.register_buffer("D", _D)
 
     def forward(self, z: Tensor):
+        """Return C x + D u from the concatenated state and input."""
         x = z[:, : self.nx, :]
         u = z[:, self.nx :, :]
         w = torch.matmul(self.C, x) + torch.matmul(self.D, u)
@@ -69,6 +71,7 @@ class Linear_Output_Block(Block):
 class Discrete_Nonlinear_Function_Block(Block):
     """w = nonlinear_function(z), defined by the subclass."""
     def forward(self, z: Tensor, mats=None):
+        """Evaluate the subclass's nonlinear map with optional per-objective matrices."""
         # CHANGED: mats, the matrices built once per objective, are passed on to nonlinear_function
         return self.nonlinear_function(z, mats)
 
@@ -177,8 +180,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         return xdot
 
     def _deriv_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
-        """(xdot^n, its tangent): the derivative of _deriv_with and its directional derivative along the state
-        tangent sx and the matrix tangent dmats."""
+        """Return xdot^n and its directional derivative along the state tangent sx and matrix tangent dmats."""
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
         (dK, dC, dA_combined,
@@ -273,7 +275,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         self.register_buffer("Lb", gantry_ss.Lb.clone())
 
     def _build_KC(self, p: Tensor):
-        """K and C of a raw parameter vector, built as in gantry_ss; they depend on kb1 + kb2 and cb1 + cb2 only."""
+        """Build K and C; the joint stiffness and damping pairs enter only through kb1 + kb2 and cb1 + cb2."""
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          mh, m1, m2, mb, Jb, Jh, d) = p
         z = p.new_zeros(())
@@ -430,8 +432,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         return self.combinations_from_free(self.free_params)
 
     def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
-        """x_tilde^n_{k+1} = f_base^n(beta, x_tilde^n_k, u^n_k) at training coordinate beta = free, without side
-        effects."""
+        """Return the normalised baseline transition at beta = free without changing the block."""
         mats = self._mats_at(free)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 

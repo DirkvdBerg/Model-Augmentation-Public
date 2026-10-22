@@ -27,8 +27,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
     nx = cfg.nx_phys + n_a
     route_ix = np.asarray(cfg.ann_route_ix)
 
-    # THEORY: the encoder reads the na = nb samples before the window start, not the start sample itself
-    # (Hoekstra et al.)
+    # THEORY: na = nb history samples precede the window start; the current sample is excluded
     na = nb = hp['na_nb']
 
     ic = Interconnect(nx, cfg.nu, cfg.ny)
@@ -43,7 +42,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
         params_init=raw_nominal, combo_init=initial_combinations, Y_op=None, std_x=norm.std_x, std_u=norm.std_u,
         x_mean=norm.x_mean, u_mean=norm.u_mean, Ts=cfg.ts_new, up_sample=hp['up_sample'],
         RMSE_baseline=cfg.param_rmse_baseline).to(cfg.dtype_pt)
-    out_phys = Linear_Output_Block(C=norm.Cd_norm, D=norm.Dd_np)    # fixed output map, not learned
+    out_phys = Linear_Output_Block(C=norm.Cd_norm, D=norm.Dd_np)
     ic.add_block(phy_block)
     ic.add_block(out_phys)
 
@@ -166,7 +165,7 @@ def _prefit(fit_sys, cfg, data, norm):
                 **step_kw)
         X = torch.stack(xs, 1).reshape(len(ixs), len(xs), -1)
         U = torch.stack(us, 1).reshape(len(ixs), len(us), -1)
-        # window s: chi from u_hat^n and y_hat^n at s .. s+k0-1, target x_tilde^n at s+k0, k0 = max(na, nb)
+        # with na = nb = k0, use histories at s .. s+k0-1 to fit x_tilde^n at s+k0
         starts = torch.arange(0, X.shape[1] - max(na, nb), stride, device=dev)
         input_windows.append(U[:, starts[:, None] + torch.arange(nb, device=dev)].flatten(0, 1))
         output_windows.append(y_hat[:, starts[:, None] + torch.arange(na, device=dev)].flatten(0, 1))
@@ -212,7 +211,8 @@ def least_squares_start(enc, nx, uh, yh, xt):
         final.bias[:nx] = 0.0
         final.bias[:nx] = b.to(p) - enc(uh[:1] * 0, yh[:1] * 0)[0, :nx]
         got = cpu(enc(uh, yh)[:, :nx])
-    unexplained = ((pred - X) ** 2).mean(0) / X.var(0, unbiased=False)      # 1 - R^2 per state
+    # 1 - R^2 for states with nonzero target variance
+    unexplained = ((pred - X) ** 2).mean(0) / X.var(0, unbiased=False)
     print('[encoder start] least squares: %d regressors, rank %d, condition %.3e; unexplained per state %s'
           % (Phi.shape[1], int(sol.rank), float(sol.singular_values[0] / sol.singular_values[-1]),
              ' '.join('%.2e' % v for v in unexplained)), flush=True)

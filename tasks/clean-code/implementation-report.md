@@ -409,3 +409,126 @@ B2 and B26 first (O10).
   (no device move or logging arrays any more), the `fit` docstring ("parallel validation"), the
   `linear_encoder_init_aug` dtype comment (names the removed reconstructability map) and the
   `gtd_build_records.m` THEORY comment of `controller.py` (names `TRAIN_FILES`).
+
+## Comments and naming (D-282)
+
+2026-10-22. Handoff `tasks/handoffs/2026-10-21-clean-code-comments-naming.md`; plan `comments-naming-plan.md`;
+review `comments-naming-review-codex.md` (wins over the plan, Dirk 2026-10-22); decision D-282; formula check
+`comment-check-codex.md`, every finding applied. Only names, comments, docstrings, markers and message texts changed;
+the harness proves no number moved. `Clean/` is now 3,905 lines (was 3,911).
+
+### What changed
+
+- Renames (D-282 lists all): `SSE_Interconnect_Composed` -> `AugmentedModel`, `OBCLifecycle` -> `OBCProjection`,
+  `linear_encoder_init_aug` -> `AugmentedEncoder`, `live_g_feed_forward_nn` -> `AugmentationNetwork`,
+  `ValHistory` -> `ValidationHistory`, the gantry blocks `GantryStateBlock`, `_TrainableGantryStateBlock`,
+  `IdentifiableGantryStateBlock`, `WindowedSystemData`, `SystemDataNormalizer`, `FixedWindowBatch`, `DtypeDataLoader`,
+  `build_mlp`, the controller and PS2 helpers and the local names of the review. Kept: Jan's names, every name the
+  evaluation imports or reads, the harness interfaces, `state_dict` keys, `config.json` keys, CLI flags and every
+  string that lands in an output file.
+- Markers: five file headers under the module docstring of Jan's files (the 26 trim lines gone), 25 `# CHANGED:`
+  in Jan's definitions and import groups, 19 `@added` (seven new, on the methods we added to Jan's classes), 20
+  `# THEORY:` and 17 `# HEURISTIC:` labels. The `gantry_ss.py` docstring moved above `__project_origin__`.
+- Comments to the standard of the handoff: one-line docstrings on what is called from outside, formulas in the
+  thesis symbols with normalised quantities marked `^n`, no D-numbers, job ids, history, section or equation
+  references, Kessels named once (the known-controller rollout), every error message says what to do.
+- Harness, forced by the class rename (deepSI names its dumps after the class, so clean dumps are now
+  `AugmentedModel_<id>_{best,last}.pth`): `run_l3bc.py` (dump names per side), `gpu_smoke.py` (the patched class per
+  side), `compare_l3bc.py` (`resumed_from` maps the clean class prefix). Clean dumps written before the rename no
+  longer unpickle; every clean output below was regenerated, layer 3 before 3c.
+
+### The Codex comment check: where its text was not used verbatim
+
+Each of F01 to F15, W01 to W10 and S01 to S07 is applied with Codex's text, except these nearest compliant
+versions (the standard's one line per public docstring at the code's 120-character width, or a label rule):
+
+| Finding | Applied text or change | Why |
+|-|-|-|
+| F02 | Codex's two sentences joined into one comment, in the body of `_resample_u` | S02 moves the label out of the docstring |
+| F03 | `Dimensionless sim-NRMSe: mean over records and axes of the closed-loop RMS divided by sigma_e.` | one line |
+| F05 (dtype) | the message's format arguments drop from four to the two it now uses | message text only |
+| F07, S02 `main` | the `resume` and `rerun` argument notes moved to comments beside their use | one-line docstrings |
+| F08 | `...; optionally physical y_hat.` | one line |
+| F13 | `Build max(1, n_hidden_layers) hidden layers and a final Linear with zero bias; return (Sequential, final layer).` | one line |
+| W03 | the heuristic on its own line above `screen_at` | line width |
+| W04 | kept on two lines | private helper (Codex S02: allowed) |
+| W06 | the first clause on excitation kept, the suffix replaced; the same suffix in the second rank error | consistency |
+| S02 `_without_learned` | `..., optionally at another training coordinate.` | one line |
+| S02 `PS2Opening.__init__` | `... decoder specification (n_xb physical, n_a added states).` | one line |
+| S02, ledger | `ControllerBank.step`, `fourth_order_central_difference`, `calibration_split`, `_resample_u`: one-line docstring, the `# THEORY:`/`# HEURISTIC:` label moved to a comment in the body | one-line docstrings |
+| S06 | the two hyphens removed as proposed; the dash check covers em and en dashes and double or triple hyphens used as dashes, not hyphenated words | as Codex notes |
+
+### Static checks (final tree)
+
+| Check | Result |
+|-|-|
+| syntax tree against the tree before the pass (renames applied; docstrings, comments, `@added`, raise, assert and print messages set aside) | 24/24 equal. Changed non-message strings: the `_dumps` class prefix and the OBC rank-error prefix (read only by its two raises) |
+| comment grep, 441 comments and docstrings (D-numbers and dashes also in the code lines) | D-numbers 0 (139 before), job ids 0 (4), section or equation references 0 (18), em or en dashes 0, double or triple hyphens as dashes 0 (1), "Note:", "we", filler, history words 0 (8) |
+| pyflakes 3.0.1 (base env), `Clean/` and the harness folder | 0 warnings |
+| imports, only `Clean/` on the path | 24 modules, none from outside `Clean/` |
+
+### Result per layer (final tree, every clean output regenerated, H2 active)
+
+| Layer | Cases | Result | Runtime (golden / clean, per case) |
+|-|-|-|-|
+| 1, 2 | 16 | PASS 16/16 bitwise, 256 to 299 items per case in layer 1 (the three O8 fields dropped as before) | 36 to 134 s / 33 to 147 s |
+| 3 | 5 | PASS 5/5 bitwise (221-lowpass, 229-noisefree, 224-noisefree, 226-lowpass, 227-lowpass) | 794, 736, 233, 207, 209 s / 738, 628, 219, 236, 225 s |
+| 3b | 2 | PASS 2/2 (forced reject, parameters restored on both sides) | 216, 71 s / 232, 68 s |
+| 3c both codes | 6 | PASS 6/6 bitwise; D-278 checks hold on both sides (ii, iv); `resumed_from` compared through the class-prefix map | 180, 96, 149, 124, 543, 242 s / 181, 94, 139, 84, 593, 309 s |
+| 3c clean only | 3 | PASS 3/3: v (fresh run refused, folder unchanged), vi (a truncated `_best.pth` and a dump 3 updates into S1 refused, nothing moved; the dump is `AugmentedModel_L3-224-noisefree_best.pth`), vii (resumes at 4, ends at 5) | 9, 30, 122 s |
+| acceptance `R6 lowpass --cpu --smoke` | 1 | PASS, rc 0: initial validation sim-NRMSe 0.3949, 4 Adam updates, polish ACCEPTED, best 0.359563 (as in steps 4, 4c and D-281); config.json, both pairs, val_hist.npz and the `AugmentedModel_<id>_best/_last` dumps written, no `.tmp` left | 290 s |
+
+The goldens are the D-280 mainline goldens, unchanged; mainline was not rerun. All clean outputs were made in one
+detached sequence from the final tree, which has not changed since (`compare.py` checked the H2 manifest of every
+case). Not run: layers 4 and 4b and the GPU smokes (server, last).
+
+### Server commands (updated)
+
+Every command runs from the harness folder on the server checkout
+(`/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation`); logs go to
+`/home/dirk_van_den_berg/logs/augmentation/clean-code/`. Nothing writes into `Thesis-writeup/Results/`, the server
+run folders or `~/.deepSI/checkpoints`.
+0. Commit and push `Clean/`, the harness folder (with the three D-282 edits) and `docs/decisions.md` (D-282), then
+   pull on the server checkout. Leave `Clean/` unchanged on the server until the comparisons below have run: they
+   hash the current tree and refuse clean outputs of another one (H2).
+1. Read the `[lbfgs]` lines of 221 (job 89792) and 222 (job 89796) in thesis-results-4: ACCEPTED with val_after
+   below the checkpoint's bestfit, ROLLED BACK or ABORTED means a plain copy; ACCEPTED with val_after at or above
+   bestfit means that row goes in `--middle`.
+2. Staging folder (once, CPU):
+   ```
+   cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/Thesis-writeup/Code/Verification/clean-code
+   conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
+   python -u l4_stage.py --src ../../../../simulations/gantry_subnet/thesis_taf_lowpass_noise_data_lsq --dst ../../../../simulations/clean-golden/L4-staging
+   ```
+   (append `--middle 221` or `--middle 221,222` per step 1).
+3. Layers 4 and 4b (CPU array: task 0 mainline with the evaluation check, task 1 clean):
+   ```
+   mkdir -p /home/dirk_van_den_berg/logs/augmentation/clean-code
+   sbatch --array=0-1 server_l4.sbatch
+   ```
+   then, when both tasks are done:
+   ```
+   python -u compare_l4.py ../../../../simulations/clean-golden/L4/mainline ../../../../simulations/clean-golden/L4/clean
+   ```
+4. GPU smokes 6.4 (a) R1 and R6, then (b) R6:
+   ```
+   sbatch --array=0-1 server_gpu_smoke.sbatch
+   ```
+   then:
+   ```
+   python -u compare_gpu.py ../../../../simulations/clean-golden/gpu-smoke
+   ```
+Only `COMPARE_L4 PASS` and `COMPARE_GPU PASS` count (PARTIAL and REFUSED do not). Send back the two compare-*.json
+files and the loader `summary.json` files. The class rename changes none of these steps: layers 4 and 4b stage and
+load component pairs (state_dicts), and `gpu_smoke.py` patches the model class of its own side. If a 6.4 smoke
+fails, revert B1, B2 and B26 first (O10).
+
+### Leftovers for Dirk
+
+- Archives that can be deleted or kept as history: `simulations/clean-golden/_clean-D281/` and `smoke-D281/` (the
+  clean outputs and smoke of the optimisation step, superseded; their dumps no longer unpickle under the new class
+  names).
+- Codex F01: the same exactness claim about block averaging sits in `99_appendix.tex` after `eq:setup_decim`; the
+  thesis was not edited.
+- The static checkers of this pass (the syntax-tree comparison against the pre-pass tree and the comment grep) and
+  the detached phase-3 batch are in the session scratchpad only; they can go into the harness folder if wanted.

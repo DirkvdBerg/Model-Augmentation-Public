@@ -15,7 +15,7 @@ from model_augmentation.fit_systems.ps2_opening import PS2Opening, PS2Spec
 
 
 def _json_safe(obj):
-    """The outcome dict without numpy scalars, so json.dumps cannot fail on the meta write."""
+    """Convert NumPy integer and floating values recursively to native values for JSON metadata."""
     if isinstance(obj, dict):
         return {k: _json_safe(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
@@ -28,8 +28,7 @@ def _json_safe(obj):
 
 
 def save_checkpoint_pair(fit_sys, base_path, include_optimizer=True, **meta):
-    """Save the torch components to <base>.pt (the deepSI model has no state_dict of its own) and meta to
-    <base>.npz, one array per value."""
+    """Save component state dictionaries to <base>.pt and metadata arrays to <base>.npz."""
     payload = {
         'hfn':     fit_sys.hfn.state_dict(),
         'encoder': fit_sys.encoder.state_dict(),
@@ -114,9 +113,8 @@ def _assert_same_dtype(fit_sys, hfn_sd):
                 if torch.is_tensor(v) and v.is_floating_point()), None)
     if got is not None and got != want:
         raise RuntimeError(
-            'checkpoint dtype %s does not match this run\'s %s; set use_f64=%s to match the checkpoint, or '
-            'train again at %s (a cast would make the scores before and after the polish incomparable)'
-            % (got, want, got == torch.float64, want))
+            'checkpoint dtype %s does not match this run\'s %s; use a matching float64 checkpoint or the mainline '
+            'implementation configured for the checkpoint precision' % (got, want))
 
 
 def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
@@ -230,14 +228,14 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_r
 
 
 def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
-    """Adam for hp['epochs'] epochs with selection on the validation score, then the L-BFGS polish; returns the
-    final score. resume = (path, meta) of the checkpoint main has loaded into fit_sys."""
+    """Run the remaining Adam budget when requested, then polish and save the selected model; return its final score."""
     done_epochs = 0
     resumed_at_epoch = -1
 
     fit_sys.unique_code = str(run_id)
     bestfit = float('inf')
 
+    # resume = (path, meta) of the checkpoint main has loaded into fit_sys
     resume_ckpt, meta = (None, None) if resume is None else resume
     if meta is not None:
         done_epochs = int(meta['done_epochs'])
@@ -277,7 +275,7 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
         if cfg.start_phase == 'lbfgs':
             print('  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly')
         elif epochs_remaining <= 0:
-            # the Adam budget is spent, and fit(epochs=0) would still run; polish directly
+            # skip fit's validation and checkpoint cycle when the Adam budget is spent
             print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, hp['epochs']))
         else:
             with on_device(fit_sys, cfg):

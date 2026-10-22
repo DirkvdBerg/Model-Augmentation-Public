@@ -53,27 +53,109 @@ $f_a$ & $150\,\mathrm{Hz}$ & $\zeta_a$ & $0.03$ \\
 \end{tabular}
 \end{table}
 
-\subsection{Explicit LPV-LFR realisation}\label{app:lfr-details}
+\subsection{LPV-LFR realisation of the baseline}\label{app:lfr-details}
+% FEEDBACK (2026-10-22, Dirk): opening sentence so A.2 reads as one
+%   derivation (it now holds the full LFR construction from III-B).
+\add[Dirk]{\kwtwo{This appendix derives an exact LPV-LFR realisation of the
+baseline \eqref{eq:base_ss} and shows that it is well posed whenever $M(Y)$
+is nonsingular.}}
 In \eqref{eq:Msplit}, $M_0$ is \chg[Dirk]{\mbox{\eqref{eq:mass_matrix}} evaluated at $Y=0$}{\kwtwo{the part of \eqref{eq:mass_matrix} without $Y$}}, and
 \begin{equation*}
  M_1=\begin{bmatrix}0&-m_h&0\\-m_h&0&0\\0&0&0\end{bmatrix},\qquad
  M_2=\begin{bmatrix}0&0&0\\0&m_h&0\\0&0&0\end{bmatrix}.
 \end{equation*}
+% RESTRUCTURE (2026-10-22, Dirk): the LFR construction moved here from
+%   III-B (sec:lfr), Dirk's sentences unchanged inside \mv; displays and
+%   labels moved with them. "For the blocks of G, see Appendix" dropped
+%   (self-reference); keywords (\kw) not carried over.
+% FEEDBACK (2026-10-22, own): "A LFR representation" -> "An LFR" (article,
+%   Js37; "representation" twice); LTI written out at its first use, since
+%   Section II writes "linear time-invariant" without the abbreviation
+%   (Dirk 2026-10-22).
+\mv[Dirk]{III-B}{\chg[own]{A LFR representation}{An LFR} is introduced to separate \chg[Dirk]{this}{the} rational scheduling dependence\add[Dirk]{ of \eqref{eq:base_ss}}, with
+\chg[own]{an LTI part}{a linear time-invariant (LTI) part} whose
+matrices do not depend on $Y$.
+We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
+with the scheduling being connected in feedback
+with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2025lpvlfr,hoekstra2026lfr}.}
+\begin{figure}[!ht]
+  \centering
+  \input{figures/lfr_loop}
+  \caption{Self-scheduled baseline interconnection. The Delta-block closes
+  the latent variables of $G$ through $w=\Dsch(Y)z$, with
+  $\Dsch(Y)=YI_6$ and $Y$ a component of the state.}
+  % FEEDBACK: caption taken out of its \todo (Js42); no marks in captions.
+  % Moved from III-B (2026-10-22, Dirk).
+  \label{fig:lfr}
+\end{figure}
+\mv[Dirk]{III-B}{Substituting \eqref{eq:Msplit} into \eqref{eq:eom} gives}
+\begin{equation}
+  M_0\ddot q+YM_1\ddot q+Y^2M_2\ddot q=u-C\dot q-Kq.
+  \label{eq:lfr_mass_factorization}
+\end{equation}
+\mv[Dirk]{III-B}{Here $Y$ only enters through $Y\ddot q$ and $Y^2\ddot q$,
+with $Y^2\ddot q=Y(Y\ddot q)$. This lets us apply the same scheduling variable twice
+instead of introducing a second scheduling variable $Y^2$,}
+\begin{equation}
+  \ddot q\xrightarrow{\;Y\;}a_1\xrightarrow{\;Y\;}a_2,
+  \label{eq:lfr_chain}
+\end{equation}
+\mv[Dirk]{III-B}{with $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$.
+We treat $a_1$ and $a_2$ as independent signals, so \eqref{eq:lfr_mass_factorization}
+becomes}
+\begin{equation}
+  M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq,
+  \label{eq:lfr_constant}
+\end{equation}
+\mv[Dirk]{III-B}{which contains no $Y$.
+This is allowed, because the Delta-block below imposes
+$a_1=Y\ddot q$ and $a_2=Ya_1$ again.
+The latent variables are $z=[\ddot q^\top\;a_1^\top]^\top$ and $w=[a_1^\top\;a_2^\top]^\top$,
+with the Delta-block mapping $z$ to $w$,}
+\begin{equation}
+  w=\begin{bmatrix}a_1\\a_2\end{bmatrix}
+   =\begin{bmatrix}Y\ddot q\\Ya_1\end{bmatrix}
+   =\underbrace{\begin{bmatrix}YI_3&0\\0&YI_3\end{bmatrix}}_{\Dsch(Y)=YI_6}
+    \begin{bmatrix}\ddot q\\a_1\end{bmatrix}
+   =\Dsch(Y)z.
+  \label{eq:delta}
+\end{equation}
+\mv[Dirk]{III-B}{We write the LTI part $G$ of the LFR in continuous time, adapting the
+discrete-time block structure of~\cite[Eq.~(2)]{drenth2025lpvlfr}:}
+\todo{Check this}
+\begin{equation}
+  \begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}
+  =G\begin{bmatrix}\tilde x\\ w\\ u\end{bmatrix},
+  \label{eq:lfr_G}
+\end{equation}
+\mv[Dirk]{III-B}{where $\tilde x=[q^\top\;\dot q^\top]^\top$ is the state and $q$ the output.
+The first block row is the state equation, with $\ddot q$ obtained from
+\eqref{eq:lfr_constant} by multiplying with $M_0^{-1}$.}
+% REVNOTE closed (2026-10-22, Dirk): "This was not clear earlier for
+%   Maarten ..." is answered by the explicit state equation eq:base_ss in
+%   III-B; III-C will cite it for Maarten v2 p5.
+\mv[Dirk]{III-B}{Conversely, closing the algebraic loop with \eqref{eq:delta} results in
+$a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
+into \eqref{eq:eom}. The LFR is therefore an exact realisation of the baseline.
+The LFR is well posed if the algebraic loop has a unique solution for
+every $Y$ \cite[Def.~1]{drenth2025lpvlfr}.}
+
 % FEEDBACK (2026-10-22, Dirk): A.2 shortened; derivation unchanged and as in
 %   docs/Thesis-documentation/LPV_LFR_Stepwise_Derivation/main.tex (Overleaf,
 %   latest; Roland's z/w construction). Struck: repeats of III-B (signal
 %   definitions, q'' solve, loop closing) and III-A (actuator frame), the
 %   second display of G's partition (= eq:lfr_G; display commented out, no
-%   outside reference), Horner and N_0..N_2 (implementation only). Kept: the
-%   closed form, which Section IV cites (03_augmentation.tex, "analytically
-%   resolving the baseline LFR loop").
+%   outside reference), Horner and N_0..N_2 (implementation only). The
+%   closed form was kept for Section IV; struck on 2026-10-22 after IV-A
+%   dropped that citation (see below).
 \del[own]{With $a_1$ and $a_2$ from \mbox{\eqref{eq:lfr_chain}} treated as independent signals, solving
 $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
 $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
 \mbox{\eqref{eq:lfr_G}}, using a continuous-time adaptation of the block partition
 in~\mbox{\cite[Eq.~(2)]{drenth2025lpvlfr}}, is}
-\add[own]{\kwtwo{With $R=M_0^{-1}$, \eqref{eq:lfr_constant} gives
+\add[own]{\kwtwo{With $R=M_0^{-1}$ ($M_0=M(0)\succ0$,
+Appendix~\ref{app:lfr-wellposed}), \eqref{eq:lfr_constant} gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$.
 Partitioning $G$ in \eqref{eq:lfr_G} as in~\cite[Eq.~(2)]{drenth2025lpvlfr},
 with rows $(\dot{\tilde x},z,q)$ and columns $(\tilde x,w,u)$, gives the blocks}}
@@ -133,11 +215,14 @@ the lower identity block gives}
 \end{equation*}
 \add[own]{\kwtwo{so the condition of \cite[Def.~1]{drenth2025lpvlfr} holds if and only if
 $M(Y)$ is nonsingular.}}
-\chg[own]{Since $M(Y)$ is nonsingular, the loop is solved in closed form,
-$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with}{\kwtwo{Since $M(Y)\succ0$
-(Appendix~\ref{app:lfr-wellposed}), the loop has the closed-form solution
-$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$, with
-$M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$.}}
+% FEEDBACK (2026-10-22, own): closed-form sentence struck; it repeats the
+%   loop closing above (exact realisation), and Section IV no longer cites
+%   it (03_augmentation.tex, struck "analytically resolving the baseline LFR
+%   loop") (Dirk 2026-10-22).
+\del[own]{Since $M(Y)\succ0$ (Appendix~\mbox{\ref{app:lfr-wellposed}}), the
+loop has the closed-form solution $\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ of
+\mbox{\eqref{eq:base_ss}}, with
+$M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$.}
 % FEEDBACK (2026-10-22, Dirk): "both quadratic in Y" dropped; nothing uses
 %   the degree (III-B states the rational dependence).
 % \begin{equation*}

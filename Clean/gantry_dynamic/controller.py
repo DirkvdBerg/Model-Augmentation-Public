@@ -119,13 +119,13 @@ def gain_for(name, use_gain=False):
     entry = _CONTROLLER_METADATA.get(stem)
     g = entry[1] if isinstance(entry, tuple) else 1.0
     if abs(g - 1.0) > 1e-12 and not use_gain:
-        raise KeyError('record %r was generated with %g x K1; set RunConfig.controller_gain to '
-                       'score it with its own controller' % (stem, g))
+        raise KeyError('record %r was generated with %g x K1; use a caller that explicitly passes use_gain=True '
+                       'to build_controller_bank, or restrict this run to unit-gain records' % (stem, g))
     return g
 
 
 def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, use_gain=False):
-    """The ControllerBank of a set of records, each record's row in it, and the distinct design positions."""
+    """Return the bank, record rows, and distinct positions or (position, gain) keys when use_gain is enabled."""
     keys = [(y_op_for(n, use_gain), gain_for(n, use_gain)) for n in record_names]
     uniq = sorted(set(keys))
     rows = [uniq.index(k) for k in keys]
@@ -136,8 +136,7 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
 
 
 def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, e_train, e_val, verbose=True):
-    """The ClosedLoopSimulator of this model; assign it to fs.simulator. Validation pairs the records with the
-    rows of val_files in order; val_data is unused and kept for the callers."""
+    """Build the simulator with controller rows in file order; val_data is retained for callers and unused."""
     names = [_stem(f) for f in list(train_files) + list(val_files)]
     if len(set(names)) != len(names):
         raise ValueError('records %s appear more than once in train_files and val_files; give each record to '
@@ -153,8 +152,7 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, e_trai
               % (len(names), bank.n_controllers, y_ops))
         print('[closed loop] stepped at ts = %g s (%d Hz), nc = %d states'
               % (cfg.ts_new, round(1 / cfg.ts_new), bank.nc))
-    # compiled here and handed to the simulator, which uses it only for the training loss on CUDA, so
-    # validation stays eager
+    # compile the pair for gradient-enabled CUDA objectives; validation uses the eager rollout
     compiled = None
     if cfg.compile_mode is not None:
         compiled = (

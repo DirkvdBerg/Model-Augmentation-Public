@@ -40,11 +40,9 @@ class GantryReferenceSet:
 
 
 def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
-    """qdot_k = (-q_{k+2} + 8 q_{k+1} - 8 q_{k-1} + q_{k-2}) / (12 ts) for k = 2 .. N-3, aligned with q[2:-2].
-
-    # THEORY: fourth-order central difference (Fornberg 1988); the caller uses it only where the full stencil
-    # lies inside one record.
-    """
+    """Return fourth-order central differences aligned with q[2:-2]."""
+    # THEORY: qdot_k = (-q_{k+2} + 8 q_{k+1} - 8 q_{k-1} + q_{k-2}) / (12 ts) for k = 2 .. N-3, the fourth-order
+    # central difference (Fornberg 1988); the caller uses it only where the full stencil lies inside one record
     return (-q[4:] + 8.0 * q[3:-1] - 8.0 * q[1:-3] + q[:-4]) / (12.0 * ts)
 
 
@@ -148,7 +146,7 @@ def make_float64_block(phy_block: IdentifiableGantryStateBlock) -> IdentifiableG
 def make_basis_builder(blk64: IdentifiableGantryStateBlock, ref: GantryReferenceSet,
                        row_ix: Sequence[int], chunk: int, device=None,
                        space: str = 'affine'):
-    """vbar64 -> (J, seconds) for OBCProjection, J = [Phi F_base^n(beta_lin)] in float64 on the reference tuples."""
+    """Return a float64 basis builder: J = Phi, with F_base^n(beta_lin) appended when space is affine."""
     def build(vbar64: Tensor):
         dev = device if device is not None else vbar64.device
         if next(blk64.buffers()).device != dev:
@@ -169,8 +167,7 @@ def make_basis_builder(blk64: IdentifiableGantryStateBlock, ref: GantryReference
 
 
 def make_reference_field(ref: GantryReferenceSet, field_cols: Sequence[int]):
-    """ann -> F: the network on the reference tuples, its routed physical columns stacked sample-major, with
-    autograd."""
+    """Return a differentiable reference-field evaluator stacking the routed physical network outputs sample-major."""
     cols = torch.as_tensor(list(field_cols), dtype=torch.long)
     # the reference inputs, cached per device and dtype
     cache = {}

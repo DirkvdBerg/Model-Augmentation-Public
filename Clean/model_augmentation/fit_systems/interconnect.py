@@ -53,6 +53,7 @@ class Interconnect(nn.Module):
         return out
 
     def forward(self, x: Tensor, u: Tensor, obc_pass=None, pass_mats=None):
+        """Return (y, x_next), subtracting the attached OBC correction from the next state."""
         # CHANGED: obc_pass and pass_mats, built once per objective, are arguments, so torch.compile sees them
         # as graph inputs
         x = x.view(x.size(0), self.nx, 1)
@@ -71,8 +72,8 @@ class Interconnect(nn.Module):
         y = output_signals[1]
         xp = output_signals[0]
 
-        # CHANGED: subtract f_obc^n, the part of the network along the baseline sensitivity and offset
-        # directions, so the network cannot take over what the baseline parameters explain
+        # CHANGED: remove the fitted baseline component so the corrected network is orthogonal on the reference
+        # stack at x_bar = 0
         if self.obc_correction is not None:
             xp = xp - self.obc_correction(x, u, obc_pass)
 
@@ -234,8 +235,7 @@ class Interconnect(nn.Module):
         self.output_signal_sizes.append(new_block.nz)
 
     def connect_signals(self, input_signal, output_signal, connection_function_method=None, connection_matrix=torch.empty(0,0)):
-        """Connect an input signal to an output signal, by concatenation into a block or by addition into
-        x_next and y."""
+        """Connect two signals using the selected concatenation or additive mapping."""
         input_signal_ix = self.determine_signal_ix(input_signal)
         output_signal_ix = self.determine_signal_ix(output_signal)
 
@@ -336,8 +336,7 @@ class SSE_Interconnect(SS_encoder_general):
 
     @added
     def simulate(self, x, ufuture, yfuture=None, **Loss_kwargs):
-        """Roll the model forward from x through the attached simulator; returns (y_pred, x_final), y_pred
-        (batch, nf, ny)."""
+        """Return (y_pred, x_final) through the attached simulator, with y_pred shaped (batch, nf, ny)."""
         return self.simulator(self, x, ufuture, yfuture, **Loss_kwargs)
 
     @added
@@ -357,8 +356,7 @@ class SSE_Interconnect(SS_encoder_general):
     @added
     def fit(self, train_sys_data, val_sys_data, epochs=30, n_its=None, batch_size=256, loss_kwargs={}, \
             validation_measure='sim-NRMS', its_per_val='epoch', cuda=False):
-        """deepSI's batch loop: Adam updates with a validation every its_per_val updates, the best model dumped as
-        _best and the last as _last, then the best reloaded."""
+        """Run Adam with periodic validation, save best and last models, and reload the selected model."""
 
         def validation(train_loss=None, time_elapsed_total=None):
             self.eval()
@@ -407,7 +405,6 @@ class SSE_Interconnect(SS_encoder_general):
         validation(train_loss=float('nan'), time_elapsed_total=0)
         print(f'Initial Validation {validation_measure}=', self.Loss_val[-1])
 
-        # Adam
         try:
             start_t = time.time()
 
@@ -467,7 +464,7 @@ class SSE_Interconnect(SS_encoder_general):
             selected_checkpoint = '_last'
         if self._sync_obc_coefficient(refresh_basis=True):
             self.checkpoint_save_system(name=selected_checkpoint)
-        print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4} which happened on epoch {best_it} (epoch_id={self.epoch_id[-1]:.2f})')
+        print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4}, selected at update {best_it}; last validation epoch_id={self.epoch_id[-1]:.2f}')
 
 
 @added
@@ -495,8 +492,7 @@ class AugmentedModel(SSE_Interconnect):
         return int(math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6))
 
     def _sync_obc_coefficient(self, refresh_basis=False):
-        """Pair theta_frozen with the current network on the basis; refresh_basis, or a missing basis, rebuilds
-        the basis first. Returns False without OBC."""
+        """Synchronise theta_frozen, rebuilding on request or a missing basis; return whether OBC is attached."""
         if self.obc is None:
             return False
         correction = self.hfn.obc_correction

@@ -92,8 +92,7 @@ class OBCProjection:
     max_consecutive_rank_loss = 2
 
     def __init__(self, reference_field: Callable, basis_builder: Callable):
-        """reference_field: network -> F, its stacked output on the reference tuples; basis_builder: vbar ->
-        (J, seconds)."""
+        """Store the reference-field evaluator and the basis builder returning (J, seconds)."""
         self.reference_field = reference_field
         self.basis_builder = basis_builder
 
@@ -102,8 +101,7 @@ class OBCProjection:
         self.consecutive_rank_loss = 0
 
     def refresh(self, vbar: Tensor, epoch: Optional[int] = None) -> None:
-        """Rebuild the basis at a detached copy of vbar; a basis without full column rank keeps the previous one,
-        and raises at the first build or after max_consecutive_rank_loss refreshes in a row."""
+        """Refresh at detached vbar, retaining a valid basis on rank loss until the configured abort limit."""
         vbar64 = vbar.detach().to(torch.float64).clone()
         J, _ = self.basis_builder(vbar64)
         candidate_basis = OBCBasis(J, vbar64)
@@ -116,12 +114,12 @@ class OBCProjection:
                    % (epoch, candidate_basis.rank, candidate_basis.n_cols, candidate_basis.tol))
             if self.basis is None:
                 raise OBCRankLossAbort(msg + ' at the first build, with no previous basis to keep; check that the '
-                                       'reference tuples excite every training coordinate and that the protected '
-                                       'rows and the baseline column are not redundant')
+                                       'reference tuples excite every training coordinate, and the linear '
+                                       'dependence among the sensitivity columns and the baseline column')
             if self.consecutive_rank_loss >= self.max_consecutive_rank_loss:
-                raise OBCRankLossAbort(msg + ' for %d refreshes in a row; check the reference excitation and the '
-                                       'protected directions at this parameter point'
-                                       % self.consecutive_rank_loss)
+                raise OBCRankLossAbort(msg + ' for %d refreshes in a row; check reference excitation and linear '
+                                       'dependence among the sensitivity columns and the baseline column at this '
+                                       'parameter point' % self.consecutive_rank_loss)
         else:
             self.consecutive_rank_loss = 0
             self.basis = candidate_basis
@@ -133,8 +131,7 @@ class OBCProjection:
             self.refresh(vbar_fn(), epoch)
 
     def coefficient(self, learning_component) -> Tensor:
-        """theta_aux for this objective: the network on all reference tuples, solved on the fixed basis and
-        differentiable through F."""
+        """Solve theta_aux for the current reference field on the fixed basis, differentiably through F."""
         F = self.reference_field(learning_component)
         if F.device != self.basis.device:
             self.basis.to(F.device)

@@ -9,8 +9,8 @@ from model_augmentation.utils.utils import added  # CHANGED: the marker of the a
 
 @added
 def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
-    """[Linear, activation] n_hidden_layers times, then a Linear with zero bias; returns (Sequential, final layer)."""
-    # the layers draw their default initialisation in this order
+    """Build max(1, n_hidden_layers) hidden layers and a final Linear with zero bias; return (Sequential, final layer)."""
+    # keep constructor draws in this order to preserve seeded initialisation
     seq = [nn.Linear(n_in, n_nodes_per_layer), activation()]
     for i in range(n_hidden_layers - 1):
         seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
@@ -38,4 +38,5 @@ class AugmentationNetwork(nn.Module):
             final_layer.weight[:nx_phys].zero_()
 
     def forward(self, X):
+        """Return the physical correction and added-state update from X."""
         return self.net(X)
