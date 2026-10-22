@@ -429,6 +429,10 @@ Under these assumptions, the baseline equations of motion are
 with
 {\footnotesize
 \setlength{\arraycolsep}{3pt}
+% FEEDBACK (2026-10-21, Dirk): matrices numbered as one group (4a) to (4c);
+%   the shared C/K number dropped to its own line in the v2 build (p4).
+%   eq:damping_stiffness_matrices kept on the group, as 03 and 99 cite it.
+\begin{subequations}\label{eq:matrices}\label{eq:damping_stiffness_matrices}
 \begin{equation}
 M(Y)=
 \begin{bmatrix}
@@ -440,39 +444,43 @@ m_1+m_2+m_b+m_h & \tfrac{L_b}{2}(m_1-m_2)-m_hY & 0\\
 \label{eq:mass_matrix}
 \end{equation}
 \begin{equation}
-\begin{aligned}
-C&=
+C=
 \begin{bmatrix}
 c_{g1}+c_{g2} & \tfrac{L_b}{2}(c_{g1}-c_{g2}) & 0\\
 \tfrac{L_b}{2}(c_{g1}-c_{g2}) &
 c_{b1}+c_{b2}+\tfrac{L_b^2}{4}(c_{g1}+c_{g2}) & 0\\
 0 & 0 & c_y
-\end{bmatrix},\\[1ex]
-K&=
+\end{bmatrix},
+\label{eq:damping_matrix}
+\end{equation}
+\begin{equation}
+K=
 \begin{bmatrix}
 0&0&0\\
 0&k_{b1}+k_{b2}&0\\
 0&0&0
 \end{bmatrix}.
-\end{aligned}
-\label{eq:damping_stiffness_matrices}
+\label{eq:stiffness_matrix}
 \end{equation}
+\end{subequations}
 }
 From here on the notation for the time dependency is dropped.
 % TODO closed (2026-10-21, Dirk): "Proposed insertion" on Coulomb friction is
 %   covered by the friction sentence above (reason in D-204); "Look at this
 %   section" was a reading note.
-The masses, flexible-joint stiffness and damping coefficients, and the
-dimensions $L_b$ and $d$ are shown in Fig.~\ref{fig:gantry_system}. Here, $J_b$ and $J_h$
-denote the yaw inertias of the cross-arm and the payload, while $c_{g1}$, $c_{g2}$, and $c_y$ denote the actuator
-damping coefficients.
-The masses $m_1$ and $m_2$ belong to the two X actuators,
-$m_b$ to the cross-arm and $m_h$ to the payload.
-The flexible joints have stiffness coefficients $k_{b1}$, $k_{b2}$ and damping
-coefficients $c_{b1}$, $c_{b2}$, and $d$ is the distance between the centres
-of mass of the payload and the cross-arm \cite{garcia2013model}.
+The masses, \del[Dirk]{flexible-joint }stiffness and damping coefficients,
+and dimensions $L_b$ and $d$ are shown in Fig.~\ref{fig:gantry_system}.
+The two $X$ actuators have masses $m_1$ and $m_2$,
+the cross-arm $m_b$ and the payload $m_h$.
+The yaw inertias of the cross-arm and payload are $J_b$ and $J_h$.
+The actuator damping coefficients are $c_{g1}$, $c_{g2}$ and $c_y$,
+while the flexible joints have stiffness $k_{b1}$, $k_{b2}$
+and damping $c_{b1}$, $c_{b2}$.
+The distance between the centres of mass of the payload
+and cross-arm is $d$~\cite{garcia2013model}.
 The nominal values are taken from
-\cite[Table~I]{garcia2013model} and listed in Appendix~\ref{app:params}.
+\cite[Table~I]{garcia2013model} and listed in
+Appendix~\ref{app:params}.
 % TODO closed (2026-10-21, Dirk): the sentence stays; the simulation uses the
 %   Table I values (todo was "not identified on the present Telica machine").
 % FEEDBACK: "geometric dimensions" were Dirk's words inside a \todo, so the
@@ -678,8 +686,9 @@ determined by the parameter combinations in $M_0,M_1,M_2,C$ and $K$.
 % Therefore the part of $\theta$ that can be identified 
 % Therefore, only the parameter combinations in $M_0,M_1,M_2,C$ and $K$ can 
 % be identified.
-If we ignore the symmetric entries, \eqref{eq:mass_matrix} and 
-\eqref{eq:damping_stiffness_matrices} contain 
+% FEEDBACK (2026-10-21, Dirk): matrices are one numbered group (eq:matrices).
+If we ignore the symmetric entries, \chg[Dirk]{\mbox{\eqref{eq:mass_matrix}} and
+\mbox{\eqref{eq:damping_stiffness_matrices}} contain}{\eqref{eq:matrices} contains}
 twelve nonzero entries. Three of these, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$, 
 are equal to $m_h$, where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$. This leaves us with ten distinct functions of $\theta$. 
 The Jacobian of these ten functions with respect to 
