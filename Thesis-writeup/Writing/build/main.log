@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  23 OCT 2026 19:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  23 OCT 2026 20:18
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1020,15 +1020,19 @@ Underfull \hbox (badness 3343) in paragraph at lines 1723--1791
 |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[14]) (sections/04_obc.tex [15] [16]
+[14]) (sections/04_obc.tex [15]
 
-LaTeX Warning: Citation `[' on page 17 undefined on input line 328.
+LaTeX Warning: Citation `[' on page 16 undefined on input line 295.
+
+[16]
+
+LaTeX Warning: Citation `[' on page 17 undefined on input line 347.
 
 
-LaTeX Warning: Citation `[' on page 17 undefined on input line 328.
+LaTeX Warning: Citation `[' on page 17 undefined on input line 347.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 372--401
+Underfull \hbox (badness 10000) in paragraph at lines 391--420
 
  []
 
@@ -1040,23 +1044,23 @@ File: omspcr.fd
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 297.
  [19]) (sections/06_results.tex (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=935, 254.3515pt x 207.31088pt>
+<figures/res_time_trace.pdf, id=934, 254.3515pt x 207.31088pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 91.
 (pdftex.def)             Requested size: 252.0pt x 205.39972pt.
-<figures/res_frf.pdf, id=936, 238.08197pt x 151.69862pt>
+<figures/res_frf.pdf, id=935, 238.08197pt x 151.69862pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 98.
 (pdftex.def)             Requested size: 252.0pt x 160.56828pt.
- [20] (tables/res_obc_combinations.tex)
-<figures/res_generalisation.pdf, id=956, 485.19507pt x 324.09154pt>
+ [20] (tables/res_obc_combinations.tex) [21 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]
+<figures/res_generalisation.pdf, id=997, 485.19507pt x 324.09154pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 175.
 (pdftex.def)             Requested size: 516.0pt x 344.66783pt.
- [21 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
+) (sections/07_discussion.tex) (sections/08_conclusion.tex
 Underfull \hbox (badness 1817) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
@@ -1150,19 +1154,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 438--439
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
-<figures/res_frf_full.pdf, id=1120, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=1119, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
 Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 447.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
 (tables/res_all_splits.tex)
-<figures/res_lpv_lti.pdf, id=1124, 228.03192pt x 208.10849pt>
+<figures/res_lpv_lti.pdf, id=1123, 228.03192pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 477.
 (pdftex.def)             Requested size: 252.0pt x 229.98064pt.
  (tables/res_structure_val.tex)
-<figures/res_ps_spectrum.pdf, id=1125, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=1124, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 489.
@@ -1173,7 +1177,7 @@ Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--510
  []
 
 [27] [28 <./figures/res_frf_full.pdf>]
-<figures/setup_band.pdf, id=1175, 239.52798pt x 194.67302pt>
+<figures/setup_band.pdf, id=1174, 239.52798pt x 194.67302pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
 Package pdftex.def Info: figures/setup_band.pdf  used on input line 608.
@@ -1182,7 +1186,7 @@ Package pdftex.def Info: figures/setup_band.pdf  used on input line 608.
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [29]
-<figures/setup_coverage.pdf, id=1183, 216.95761pt x 300.7344pt>
+<figures/setup_coverage.pdf, id=1182, 216.95761pt x 300.7344pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
 Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 666.
@@ -1233,9 +1237,9 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (33 pages, 1631534 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (33 pages, 1634981 bytes).
 PDF statistics:
- 1452 PDF objects out of 1728 (max. 8388607)
+ 1451 PDF objects out of 1728 (max. 8388607)
  195 named destinations out of 1000 (max. 500000)
  64428 words of extra memory for PDF output out of 74296 (max. 10000000)
 

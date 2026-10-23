@@ -81,31 +81,41 @@
 \fi
 \changelegend
 
+% RESTRUCTURE (2026-10-23, Dirk): opening states the section goal, as the
+%   "In this section" openings of Sections II and III; replaces the roadmap below.
+\kwtwo{In this section, we make the estimate of $\theta_{\mathrm{base}}$
+unique.}
 The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
 minimising the loss function of Section~\ref{sec:aug_closed_loop} can be non-unique:
 different pairs can give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
-Meaning that the rigid-body dynamics that the baseline parameters 
-$\theta_{\mathrm{base}}$ are able to explain from the data, can instead be represented by 
-a neural network correction.
+% Jan v1 (Jan-2 p7): "Write this in Section IV"; the cut sentence repeats the next one.
+\chg[Jan]{Meaning that the rigid-body dynamics that the baseline parameters
+$\theta_{\mathrm{base}}$ are able to explain from the data, can instead be represented by
+a neural network correction.}{\kwtwo{Then $\theta_{\mathrm{base}}$ is not interpretable
+as defined in Section~\mbox{\ref{sec:intro}}.}}
 To prevent the neural network from correcting what $\theta_{\mathrm{base}}$ 
 can represent we introduce orthogonality by construction~\cite{gyorok2026obc}.
 Orthogonality here is defined as the neural network correction to the
 physical states having no component in the directions in which a change of
 $\theta_{\mathrm{base}}$ is able to change the next state predicted by the baseline.
-This gives us a unique estimate of $\theta_{\mathrm{base}}$ up to first order,
-but it does not guarantee recovering the true baseline parameters.
+% Maarten v2 p15: state when the true values are recovered.
+This gives us a unique estimate of $\theta_{\mathrm{base}}$ up to first order\chg[M-p15]{,
+but it does not guarantee recovering the true baseline parameters.}{\kwtwo{.
+This estimate equals the true parameters only if the missing dynamics
+themselves are orthogonal to these directions.}}
 \\
 Gy\"or\"ok et al.\ have constructed this for input-output baseline models that
 are linear in their parameters~\cite{gyorok2026obc}.
 We extend this to state-space models nonlinear in their parameters,
 specifically for our gantry system.
 % RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III and IV.
-\kwtwo{In this section, we first give the orthogonal-by-construction
-parametrisation of Gy\"or\"ok et al.\ (Section~\ref{sec:obc_construction}),
-then extend it to the gantry (Section~\ref{sec:obc_map}), state how the
-augmented model is identified with it and when the true parameters are
-recovered (Section~\ref{sec:obc_ident}), and finally how orthogonality is
-measured (Section~\ref{sec:obc_measures}).}
+% \kwtwo{In this section, we first give the orthogonal-by-construction
+% parametrisation of Gy\"or\"ok et al.\ (Section~\ref{sec:obc_construction}),
+% then extend it to the gantry (Section~\ref{sec:obc_map}), state how the
+% augmented model is identified with it and when the true parameters are
+% recovered (Section~\ref{sec:obc_ident}), and finally how orthogonality is
+% measured (Section~\ref{sec:obc_measures}).}
+
 \subsection{Orthogonal-by-construction parametrisation}\label{sec:obc_construction}
 \ifdraft
 \begin{itemize}
@@ -135,7 +145,8 @@ regressor~\cite[Eqs.~(8), (9), (11), Lemma~3]{gyorok2026obc}:
 \end{equation}
 where $x_k$ is the vector of past measured outputs and past and current
 inputs~\cite[Eq.~(1)]{gyorok2026obc}, $\hat Y$ stacks the
-predicted outputs over the training data, $\Phi$ is the stacked
+% FEEDBACK (2026-10-23, Dirk): "training data" -> D_N, the name since Section II.
+predicted outputs over \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}, $\Phi$ is the stacked
 regressor, $F^{\mathrm{ANN}}$ stacks the parallel network
 outputs~\cite[Eq.~(5)]{gyorok2026obc} and $\tilde F^{\mathrm{ANN}}$ is the
 projected network output~\cite[Eqs.~(9), (10)]{gyorok2026obc}.
@@ -146,8 +157,9 @@ Calculating $\theta_{\mathrm{aux}}$ requires
 $(\Phi^\top\Phi)^{-1}$, which exists only if $\Phi$ has
 full column rank~\cite[Assumption~1]{gyorok2026obc}.
 Therefore different values of $\theta_{\mathrm b}$ are unable 
-to give the same stacked prediction on the training data. 
-Gy\"or\"ok et al.\ call an input with this property persistently
+% FEEDBACK (2026-10-23, Dirk): "training data" -> D_N; no "call".
+to give the same stacked prediction on \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}.
+\chg[Dirk]{Gy\"or\"ok et al.\ call an input with this property}{\kwtwo{An input with this property is}} persistently
 exciting~\cite[Eq.~(6), Sec.~4.3]{gyorok2026obc}.
 This also requires an identifiable baseline, where different
 values of $\theta_{\mathrm b}$ give different functions
@@ -172,7 +184,8 @@ with respect to $\beta$,
 as in the orthogonal regularisation method of
 Gy\"or\"ok et al.~\cite[Sec.~4, Eq.~(15)]{gyorok2025l4dc}.
 Like the regressor, the stacked Jacobian must have full column rank.
-This requires identifiable parameters, which is why we use $\beta$.
+% FEEDBACK (2026-10-23, Jasper v1 p8 JsV1 "what is beta"; Dirk): back-reference.
+This requires identifiable parameters, which is why we use $\beta$\add[JsV1]{\kwtwo{ (Section~\mbox{\ref{sec:params}})}}.
 The Jacobian is taken at a linearisation point $\beta_{\mathrm{lin}}$ as
 \begin{equation}
  \varphi(\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})
@@ -182,8 +195,11 @@ The Jacobian is taken at a linearisation point $\beta_{\mathrm{lin}}$ as
 \end{equation}
 where $\beta_{\mathrm{lin}}\in\R^{10}$ and
 $\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
-\kw{The linearisation also leaves an offset that does not depend on
-$\beta$~\cite[Eq.~(16)]{gyorok2025l4dc}:}
+% FEEDBACK (2026-10-23, Dirk): offset block reworded with Gyorok 2025 PDF p7
+%   wording around Eq. (16); "so"/"because" tails and "part of" cut; the
+%   Eq. (18) reason says what the column does.
+\chg[Dirk]{\kw{The linearisation also leaves an offset that does not depend on
+$\beta$}}{\kwtwo{Expanding \eqref{eq:obc_sens} gives}}\kw{~\cite[Eq.~(16)]{gyorok2025l4dc}:}
 \begin{equation}
 \begin{aligned}
  f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)
@@ -194,20 +210,21 @@ $\beta$~\cite[Eq.~(16)]{gyorok2025l4dc}:}
 \end{aligned}
 \label{eq:obc_offset}
 \end{equation}
-\kw{where $\gamma:\R^{10}\times\R^6\times\R^3\to\R^6$, so that
+\kw{where} \add[Dirk]{\kwtwo{the first term is linear in $\beta$ and}} \kw{$\gamma:\R^{10}\times\R^6\times\R^3\to\R^6$}\chg[Dirk]{\kw{, so that
 $\varphi\beta_{\mathrm{lin}}+\gamma$ is the next state predicted by the
-baseline at $\beta_{\mathrm{lin}}$.
-Gy\"or\"ok et al.\ add this offset as an extra column to the Jacobian, to
-include all components of the baseline model in the
-orthogonality~\cite[Eq.~(18)]{gyorok2025l4dc}.
-We include it as well, so the neural network has no component along the
-stacked next states predicted by the baseline.}
+baseline at $\beta_{\mathrm{lin}}$}}{\kwtwo{ is an offset independent of $\beta$}}.
+\kw{Gy\"or\"ok et al.\ add this offset as an extra column to the Jacobian, to}
+\chg[Dirk]{\kw{include all components of the baseline model in the
+orthogonality}}{\kwtwo{make the neural network also orthogonal to the next
+states predicted by the baseline}}\kw{~\cite[Eq.~(18)]{gyorok2025l4dc}.
+We include it as well}\del[Dirk]{\kw{, so the neural network has no component along the
+stacked next states predicted by the baseline}}.
 % RESTRUCTURE (2026-10-19, Maarten mail): moved below eq:obc_recovery, which
 %   it used before its definition.
 \delmv[M-mail]{V-C}{The offset does not change the first-order estimate \eqref{eq:obc_recovery}.}
 \chg[M-mail]{\kw{It}}{\kwtwo{The offset}} \kw{does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
-the neural network cancels part of the baseline response, because only the
-part of the network along the stacked baseline response is excluded.}
+the neural network cancels} \del[Dirk]{\kw{part of}} \kw{the baseline response}\del[Dirk]{\kw{, because only the
+part of the network along the stacked baseline response is excluded}}.
 % \\
 % \revnote{Orthogonality here is to the stacked Jacobian and offset
 % $\Phi_\Gamma$ on the tuples (Gy\"or\"ok et al.\ 2026, Lemma~3, with the
@@ -267,12 +284,15 @@ This holds for the stacked tuples at $\bar x=0$, not for each tuple separately.
 \\
 \chg{We}{\kwtwo{Third, we}} use a state-space model predicting the next state instead of the output.
 The fitted part is removed from the neural network correction of the
-physical state at every step in the closed-loop simulation.
+% FEEDBACK (2026-10-23, Jasper v1 p8 JsV10 "which correction?"; Dirk): the
+%   Gyorok sentence is cut, "correction" now only means f_aug; the output
+%   contrast is in the "Third, ..." sentence; citation moved up.
+physical state at every step in the closed-loop simulation\add[JsV10]{\kwtwo{~\cite[Eqs.~(9), (13)]{gyorok2026obc}}}.
 At each step, we subtract the Jacobian \kw{and offset} multiplied by
 $\theta_{\mathrm{aux}}$ from the network correction,
 evaluated at the current state and input.
-Gy\"or\"ok et al.\ apply the same correction to the predicted
-output~\cite[Eqs.~(9), (13)]{gyorok2026obc}.
+\del[JsV10]{Gy\"or\"ok et al.\ apply the same correction to the predicted
+output~\cite[Eqs.~(9), (13)]{gyorok2026obc}.}
 The baseline has no added states, so its Jacobian \kw{and offset are} zero
 in the added-state rows and $g^{\mathrm n}_{\mathrm{aug}}$
 is orthogonal to it by definition.
@@ -290,15 +310,16 @@ We therefore only correct the physical rows:
 \end{aligned}
 \label{eq:obc_corr}
 \end{equation}
-
 where
 $f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$
 is evaluated at $(\tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau})$, and
 $f^{\mathrm n}_{\mathrm{base}}$, $f^{\mathrm n}_{\mathrm{aug}}$ and
-$g^{\mathrm n}_{\mathrm{aug}}$ take the arguments of \eqref{eq:aug_loss}.
+% FEEDBACK (2026-10-23, Dirk): "take the arguments of" -> "are evaluated as
+%   in" (the verb of the same sentence); "so ... is trained" -> "to train".
+$g^{\mathrm n}_{\mathrm{aug}}$ \chg[Dirk]{take the arguments of}{\kwtwo{are evaluated as in}} \eqref{eq:aug_loss}.
 We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, as
-in~\cite[Eqs.~(9), (10)]{gyorok2026obc}, 
-\kw{so} the network is trained using the gradient of its projected output.
+in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
+\chg[Dirk]{\kw{so} the network is trained}{\kwtwo{to train the network}} using the gradient of its projected output.
 \subsection{Identification and recovery}\label{sec:obc_ident}
 \ifdraft
 \begin{itemize}
@@ -317,7 +338,7 @@ the projected state update \eqref{eq:obc_corr}.
 Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$,
 we solve \eqref{eq:obc_coef} at every evaluation of $V$.
 At the start of each epoch $\beta_{\mathrm{lin}}$ is set to the current $\beta$, 
-and it is held fixed during the epoch.
+and\del[Dirk]{ it} is held fixed during the epoch.
 % CUT (2026-10-23, Maarten mail "het kan wel wat korter"; Dirk yes): the two
 %   alternatives of Gyorok 2025 Sec. 4 shortened to one sentence.
 \chg[M-mail]{Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
@@ -326,7 +347,7 @@ of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to
 keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters,
 assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration
 or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
-\chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{Since training may start} from detuned parameters,
+\chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{\kwtwo{To allow training to start}} from detuned parameters\add[Dirk]{\kwtwo{ without rebuilding $\Phi_\Gamma$ at each evaluation of $V$}},
 we instead adapt their recomputation 
 at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
 % CUT (2026-10-23, Maarten mail "korter"; Dirk yes): checkpoint and polish
@@ -347,7 +368,8 @@ $7.834413\times10^{-2}$).}
 
 
 The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
-That depends on whether what the baseline misses on the tuples is itself
+% FEEDBACK (2026-10-23, Dirk): shorter, "the missing dynamics" as in the intro.
+That depends on whether \chg[Dirk]{what the baseline misses}{\kwtwo{the missing dynamics}} on the tuples \chg[Dirk]{is itself}{\kwtwo{are}}
 orthogonal to the stacked Jacobian:
 \begin{equation}
  \Xi
