@@ -1014,9 +1014,17 @@ in closed-loop and only initialised at the start.}
 \item Initialisation \eqref{eq:aug_init}: $\tilde x$ and $\hat y$ reproduce the baseline, $\bar x$ evolves through a live $g_{\mathrm{aug}}$ (2026 Eq.~(29)); adapted from Sec.~5.4.3 (random added-state rows, no linear bypass); the model is named in Section~\ref{sec:setup}, not here
 \end{itemize}
 \fi
-\kwtwo{This subsection states how the augmented model is estimated from the
-records: which parameters are trained, the criterion, the encoder that gives
-each simulation window its initial state, and the optimiser.}
+% FEEDBACK (own, 2026-10-23; Js101): "the records" is undefined here, D_N
+%   is the data set of Section II; the colon list became a sentence in the
+%   order the subsection follows (encoder, criterion, optimiser) (Dirk
+%   2026-10-23).
+\kwtwo{This subsection states how the augmented model is estimated from
+\chg[own]{the records: which parameters are trained, the criterion, the encoder that gives
+each simulation window its initial state, and the optimiser}{$\mathcal D_N$. We first motivate the encoder, then give the cost function, the encoder and the optimiser}.}
+% (2026-10-23, Dirk): order corrected to the text (encoder motivation, cost
+%   function (22), encoder details (23)-(24), optimiser; Jan41 order).
+% (2026-10-23, Dirk): "criterion" -> "cost function", Jan's term for (22)
+%   in v1 (Jan41, Jan45).
 % RESTRUCTURE (2026-10-19, Maarten p7: brief introduction of the identification method): Dirk's Jan23 paragraph, moved here from Section II.
 % FEEDBACK v2 (2026-10-21, Maarten p7, SUBNET): the first two Jan23
 %   sentences and the drafted SUBNET sentence moved to Section II, after the
@@ -1081,23 +1089,33 @@ $W_r=\mathrm{diag}(\sigma_{y,j}/\sigma_{e,r,j})$ weights axis $j$ of training
 record $r$, so that its residual in metres is divided by the standard
 deviation $\sigma_{e,r,j}$ of its servo error \eqref{eq:setup_rms}.}
 \\
-Each simulation window starts\kwtwo{ at a sample $\tau$} from an initial state $\hat x_\tau$\kwtwo{,
+% FEEDBACK (Dirk, 2026-10-23): the k clause separated the "but" from the
+%   initial state it contrasts with; moved to its own sentence.
+Each simulation window starts\kwtwo{ at a sample $\tau$} from an initial state $\hat x_\tau$\del[own]{,
 and $k$ denotes the sample within the window}, but we
 measure only the positions of the physical state $\tilde x$.
 % NOTATION (2026-10-19, Maarten p8 "tau or k? you normally use k to denote
 %   the sample time."): tau = window start, k = sample in the window.
-The additional states $\bar x$ are latent\kwtwo{, yet the simulation of each
-window needs their value at $\tau$}.
+The additional states $\bar x$ are latent\kwtwo{, but we need
+their initial values at $\tau$ to simulate each window}.
+% (2026-10-23, Dirk): the k sentence placed after the x-bar sentence, so the
+%   two sentences on the unknown initial state follow each other.
+\add[own]{\kwtwo{Within the window, $k$ denotes the sample.}}
 Estimating $\hat x_\tau$ as a separate parameter for each window
 would increase the number of parameters as the data
 grows~\cite[Sec.~3.1]{beintema2023subnet}.
 Following Beintema et al., we use \kwtwo{an encoder network} that estimates $\hat x_\tau$ from
-past inputs and outputs~\cite[Sec.~3.2]{beintema2023subnet}.
-Simulating \kwtwo{the windows of $n_f$ samples} using the encoded states
-keeps the computation per gradient step independent of the record length
-for fixed batch size and window lengths~\cite[Sec.~3.1, Eq.~(9)]{beintema2023subnet}.
+\add[own]{the }past inputs and outputs\add[own]{ $\chi_\tau$}~\cite[Sec.~3.2]{beintema2023subnet}.
+% FEEDBACK (own, 2026-10-23): chi_tau named where IV-C introduces the
+%   encoder, so (22) does not use it before (23); Section II already
+%   introduces the encoder from past inputs and outputs (Dirk 2026-10-23).
+keeps the computation per gradient step independent of the record length\add[own]{,}
+for \add[own]{a }fixed batch size and window \chg[own]{lengths}{length}~\cite[Sec.~3.1, Eq.~(9)]{beintema2023subnet}.
 Using short simulation windows increases the loss function
-smoothness~\cite[Sec.~3.1]{beintema2023subnet}.
+smoothness~\cite[Sec.~3.1, 4.2]{beintema2023subnet}.
+% FEEDBACK (own, 2026-10-23; Codex math check, finding 11): Sec. 4.2 added,
+%   where Beintema shows it (Theorem 9, PDF p8); Sec. 3.1 (PDF p4) states
+%   it. No mark inside \cite (a [tag] would end its optional argument).
 \\
 % RESTRUCTURE (2026-10-19, agreed with Dirk): IV-C order is what (P1), why windows and an encoder (P2),
 %   the problem with the encoder inside it (P3, Jan41), encoder details (P4), why closed loop (P5),
@@ -1110,9 +1128,11 @@ $\theta_{\mathrm{base}}$ fixed~\cite[footnote~1]{hoekstra2026encoder}}.}
 $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
 are trained to minimise the normalised output error of the
 closed-loop simulation, with the
-controller fixed. We adapt this from~\cite[Eq.~(22)]{hoekstra2026lfr}, 
-adapted for the closed loop of Section~\ref{sec:aug_loop} and the
+\chg[own]{controller fixed}{known controller $K_{\mathrm{fb}}$}. We adapt this from~\cite[Eq.~(22)]{hoekstra2026lfr}\del[own]{,
+adapted} for the closed loop of Section~\ref{sec:aug_loop} and the
 encoder\del[M-mail]{ \kwtwo{described below}}:
+% FEEDBACK (Dirk, 2026-10-23): "fixed" -> "known" as in Section II (the
+%   controller is not estimated); the double "adapt ... adapted" removed.
 % FEEDBACK (own, 2026-10-22; Codex review, Maarten mail forward
 %   references): the encoder is motivated above and defined right after
 %   (22) (Dirk 2026-10-22).
@@ -1136,8 +1156,14 @@ encoder\del[M-mail]{ \kwtwo{described below}}:
 for $\tau\le k<\tau+n_f$, where each training window starts at a sample
 $\tau\in\mathcal W$ and has length $n_f$, $n_y=3$, and
 $\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters\add[own]{ (Section~\ref{sec:params})}.
-$W_r=\mathrm{diag}(\sigma_{y,j}/\sigma_{e,r,j})$ weights axis $j$ of training
-record $r$, so that its residual in metres is divided by the standard
+% FEEDBACK (own, 2026-10-23): first use of "record" in the thesis; D_N
+%   (Section II, the estimation set) consists of several records, in
+%   Dirk's Section V wording ("The data consist of simulated records"),
+%   as its own sentence before W_r; Dirk's W_r sentence kept with
+%   "training record r" -> "record r" (convention A, Dirk 2026-10-23).
+\add[own]{\kwtwo{The data $\mathcal D_N$ consist of several records.}}
+$W_r=\mathrm{diag}(\sigma_{y,j}/\sigma_{e,r,j})$ weights axis $j$ of \chg[own]{training
+record $r$}{record $r$}, so that its residual in metres is divided by the standard
 deviation $\sigma_{e,r,j}$ of its servo error\chg[M-mail]{ \eqref{eq:setup_rms}}{ $y_j-r_j$}.
 \todo{might have to move to discussion if i dont add it. Since the controller corrects part of the output error,
 it can hide errors in the plant model.
@@ -1159,10 +1185,14 @@ where \kwtwo{$\hat x^{\mathrm n}_{\tau|\tau}$ is the normalised state $\hat x_\t
 of Fig.~\ref{fig:aug_structure} at the start of the window,}
 % NOTATION (2026-10-19, Maarten p6 on Fig. 3): links the window notation of
 %   the text to the loop notation of the figure.
-$n+1$ is the number of samples in the window,
-$\chi_\tau\in\R^{6(n+1)}$ stacks the normalised recorded
-outputs and inputs as in \eqref{eq:aug_norm}, and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$
-is the parameter vector of the encoder.
+% FEEDBACK (own, 2026-10-23): "the window" meant the simulation window of
+%   n_f samples up to here; this is the encoder's past window (Dirk 2026-10-23).
+$n+1$ is the number of \add[own]{past }samples \chg[own]{in the window}{used by the encoder},
+\add[own]{and }$\chi_\tau\in\R^{6(n+1)}$ stacks the normalised recorded
+outputs and inputs as in \eqref{eq:aug_norm}\del[own]{, and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$
+is the parameter vector of the encoder}.
+% FEEDBACK (own, 2026-10-23): theta_enc is introduced before (22) and
+%   defined after (24); n_enc is not used elsewhere (Dirk 2026-10-23).
 The encoder estimates all $6+n_{\bar x}$ initial states $\hat x_\tau$, 
 which includes the measured positions.
 We estimate the positions instead of using the measured $y_\tau$ to keep 
@@ -1178,16 +1208,20 @@ correction~\cite[Eq.~(8)]{hoekstra2026encoder}:
   +\tilde\psi(\chi_\tau),
  \label{eq:aug_enc_lin}
 \end{equation}
+% FEEDBACK (own, 2026-10-23): the psi_b/psi_a sentence repeated the split
+%   of the where-clause; the names moved into it. theta^a_enc moved to IV-E,
+%   where S1 uses it (theta^b_enc is likewise defined where used, IV-D)
+%   (Dirk 2026-10-23).
 where $W^b\in\R^{6\times6(n+1)}$ and $W^a\in\R^{n_{\bar x}\times6(n+1)}$ are
-the linear maps for the six physical states and the $n_{\bar x}$ additional
-states, and $\tilde\psi$ is a neural network.
+the linear maps for the six physical states\add[own]{ $\psi_b$} and the $n_{\bar x}$ additional
+states\add[own]{ $\psi_a$}, and $\tilde\psi$ is a neural network.
 The encoder parameters $\theta_{\mathrm{enc}}$ are $W^b$, $W^a$ and the
 parameters of $\tilde\psi$.
-The first six outputs $\psi_b$ estimate the physical states and the remaining
-$n_{\bar x}$ outputs $\psi_a$ estimate the additional states.
-We use $\theta^a_{\mathrm{enc}}$ for the parameters
+\del[own]{The first six outputs $\psi_b$ estimate the physical states and the remaining
+$n_{\bar x}$ outputs $\psi_a$ estimate the additional states.}
+\delmv[own]{IV-E}{We use $\theta^a_{\mathrm{enc}}$ for the parameters
 that affect only $\psi_a$: $W^a$ and the additional-state
-rows of the output layer of $\tilde\psi$.
+rows of the output layer of $\tilde\psi$.}
 \todo{VERIFY bib: \texttt{hoekstra2026encoder} = arXiv:2602.13108v1
 (13 Feb 2026), Hoekstra, Gy\"or\"ok, T\'oth, Schoukens; matches PDF p.~1.
 Check for a published (IFAC) version before submission.}
@@ -1209,7 +1243,9 @@ The identification method we have adapted from~\cite{hoekstra2026lfr}
 relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions}~\cite[Sec.~5.5]{hoekstra2026lfr}.
 The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:
 a mismatch in the initial velocity will create a permanent position offset.
-In closed-loop the feedback controller is able to correct this offset\add[M-p7]{, which is why each window is simulated in the closed loop of Section~\ref{sec:aug_loop}}.}
+In closed-loop the feedback controller is able to correct this offset\del[own]{, which is why each window is simulated in the closed loop of Section~\mbox{\ref{sec:aug_loop}}}.}
+% FEEDBACK (own, 2026-10-23): the struck clause (added 2026-10-19, M-p7)
+%   repeats the reason now stated at the start of IV-B (Dirk 2026-10-23).
 \\
 % RESTRUCTURE (2026-10-19): window start sentences moved here from IV-B (Maarten p7, p8).
 % RESTRUCTURE (2026-10-23, Dirk): moved back to IV-B (see the comment there).
@@ -1217,8 +1253,10 @@ In closed-loop the feedback controller is able to correct this offset\add[M-p7]{
 Kessels instead needs the system's controller state at the start of each
 window, either measured directly or calculated by simulating the
 controller from the start of the record~\mbox{\cite[Remark~5.4]{kessels2025ai}}.}
-\mv[M-p8]{IV-B}{The controller uses the output error to correct the model input
-within the training window, as in the closed loop system.
+% FEEDBACK (own, 2026-10-23): first sentence struck, it repeats IV-B (the
+%   controller corrects the model input within the window) (Dirk 2026-10-23).
+\mv[M-p8]{IV-B}{\del[own]{The controller uses the output error to correct the model input
+within the training window, as in the closed loop system.}
 Each window starts from a new encoder estimate and $x^c_\tau=0$,
 so the window is not affected by model errors before $\tau$.
 \del[own]{The validation}\del[M-mail]{ of Section~\mbox{\ref{sec:aug_closed_loop}}}\del[own]{ is simulated
@@ -1243,11 +1281,18 @@ order'' with a pointer to it
 math check 2026-10-13, F1).}
 \\
 % FEEDBACK v2 (2026-10-22, Maarten p8 "refer to the equation." on V; Codex review F7) (Dirk 2026-10-22).
-For training we minimise $V$\add[M-p8]{ in \eqref{eq:aug_loss}} with Adam on minibatches of windows, and
+For training we minimise $V$\add[M-p8]{ in \eqref{eq:aug_loss}} with Adam\chg[own]{ on minibatches of windows}{\kwtwo{.
+Each update uses a minibatch of windows}}, and
 the gradient is calculated over the full window.
-We then polish with L-BFGS on a fixed set of windows.
-This is adapted from the Adam and L-BFGS-B sequence of Drenth
-et al.~\cite[Sec.~4.1]{drenth2025lpvlfr}.
+% FEEDBACK (Dirk, 2026-10-23): the "with Adam on minibatches of windows"
+%   chain split into two statements (Dirk 2026-10-23).
+% FEEDBACK (Dirk, 2026-10-23): Dirk's wording; "polish" defined as the
+%   continued minimisation of V with L-BFGS; "sequence" removed. The fixed
+%   window set is one deterministic batch (lbfgs_polish.py FixedWindowBatch).
+\chg[own]{We then polish with L-BFGS on a fixed set of windows.}{\kwtwo{After Adam, we continue to minimise $V$ with L-BFGS on a fixed set of windows.
+We call this step polish.}}
+\chg[own]{This is adapted from the Adam and L-BFGS-B sequence of Drenth
+et al.}{\kwtwo{Drenth et al.\ also use Adam followed by L-BFGS-B}}~\cite[Sec.~4.1]{drenth2025lpvlfr}.
 Because every $\beta$ satisfies \eqref{eq:lfr_admissibility}, 
 unconstrained L-BFGS works without a bound.
 % FEEDBACK (own, 2026-10-23): the validation set is defined here, at its
@@ -1255,13 +1300,22 @@ unconstrained L-BFGS works without a bound.
 %   Section V (Maarten mail, forward references); D_N is the estimation set
 %   (convention A, Dirk 2026-10-23).
 \add[own]{\kwtwo{The parameters are selected on a separate validation set
-$\mathcal D_{\mathrm{val}}$, measured on the same system.}}
+$\mathcal D_{\mathrm{val}}$.}}
 During the optimisation with Adam the parameters with the lowest validation
 error are kept.
-The error is the mean \chg[M-mail]{$\mathrm{NRMS}_{e,j}$ \eqref{eq:setup_rms}}{RMS simulation error divided by the \chg[own]{RMS}{standard deviation of the} servo error, $\mathrm{NRMS}_{e,j}$,} over the
-complete \chg[own]{validation records}{records of $\mathcal D_{\mathrm{val}}$} and axes,
+% FEEDBACK (Dirk, 2026-10-23): the metric details (NRMS_e, normalisation by
+%   the servo error, mean over axes) are evaluation set-up and stay in
+%   Section V (eq:setup_rms); IV-C keeps what matters for the method: whole
+%   records of D_val, closed loop, encoder only at the start. Earlier marks
+%   on this sentence (M-mail: forward reference to eq:setup_rms replaced by
+%   words; own: RMS -> standard deviation, validation records -> records of
+%   D_val) folded into the strike (Dirk 2026-10-23).
+\chg[own]{The error is the mean RMS simulation error divided by the standard deviation of the servo error, $\mathrm{NRMS}_{e,j}$, over the
+complete records of $\mathcal D_{\mathrm{val}}$ and axes,
 simulated in closed loop with the initial state estimated
-once by the encoder and $x^c=0$.
+once by the encoder and $x^c=0$.}{\kwtwo{The validation error is the error of the closed-loop simulation over the
+complete records of $\mathcal D_{\mathrm{val}}$, with the initial state estimated by the encoder
+at the start of each record.}}
 We only keep the polish if it lowers the validation error.
 % \revnote{Final runs (2026-10-18): the polish ran out of GPU memory on the
 % 11~GB cards and aborted with the Adam result kept in R3, R5, R6 and R14
@@ -1527,6 +1581,9 @@ are used for both stages.
 Stage S1 trains the encoder's added-state outputs to predict the residual of
 the augmented model \eqref{eq:aug_transition} using the model parameters $\vartheta$
 from the latest $V$ update step.
+\mv[own]{IV-C}{We use $\theta^a_{\mathrm{enc}}$ for the parameters
+that affect only $\psi_a$: $W^a$ and the additional-state
+rows of the output layer of $\tilde\psi$.}
 % FEEDBACK (own, 2026-10-22; E9): repeats the overview and eq:ps2_alt
 %   (Dirk 2026-10-22).
 \del[own]{Each update of $V$ is followed by one S1 update with its own Adam optimiser.}
