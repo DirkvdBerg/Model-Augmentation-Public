@@ -334,7 +334,17 @@ Therefore, two different values of $\theta_{\mathrm{base}}$ cannot give the same
 %   here from IV-E. Decoder d -> p (d is a baseline parameter). Moved text
 %   keeps its earlier marks.
 \subsection{PS details}\label{app:ps_stop}
-\mv[own]{IV-E}{The decoder \chg[own]{$d$}{$p$}$:\R^{n_{\bar x}}\to\R^{Hn_y}$\add[own]{ of \eqref{eq:ps2_s1}} has parameters
+% RESTRUCTURE (2026-10-23, Dirk): the definition of sigma_e moved here from
+%   the where-clause of (28).
+\add[own]{\kwtwo{In \eqref{eq:ps2_s1}, $\sigma_e$ is the root mean square of all residual
+values in the minibatch $\mathcal B$.}}
+% RESTRUCTURE (2026-10-23, Dirk): the decoder form moved here from (28).
+\mv[own]{IV-E}{The decoder \chg[own]{$d$}{$p$}$:\R^{n_{\bar x}}\to\R^{Hn_y}$\add[own]{ of \eqref{eq:ps2_s1}}
+\add[own]{\kwtwo{is
+\begin{equation*}
+ p(\theta_{\mathrm p},\bar x)=W_{\mathrm p,2}\tanh\bigl(W_{\mathrm p,1}\bar x+b_{\mathrm p,1}\bigr)+b_{\mathrm p,2},
+\end{equation*}
+and}} has parameters
 $\theta_{\mathrm p}=(W_{\mathrm p,1},b_{\mathrm p,1},
 W_{\mathrm p,2},b_{\mathrm p,2})$, with
 $W_{\mathrm p,1}\in\R^{n_h\times n_{\bar x}}$ and

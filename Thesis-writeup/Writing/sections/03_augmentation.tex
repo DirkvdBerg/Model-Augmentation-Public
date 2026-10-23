@@ -1547,78 +1547,106 @@ appendix probleem verplaatsen
 probeer makkelijker uit te leggen.
 misschien bepaalde elementen/dingen weg laten die niet echt nodig zijn voor het verhaal.
 pragmatisch mis niet dit hele stuk uit hoeven leggen.}
-The physical states of the baseline are initialised with the 
-data-based fit \eqref{eq:aug_enc_fit} and updated through
-$f^{\mathrm n}_{\mathrm{base}}$, while the added-state rows $W^a$ are randomly initialised.
+% RESTRUCTURE (2026-10-23, Dirk: "a lot of the current start can be
+%   combined"): 7 sentences -> 5. The E3 contrast sentence (2026-10-22,
+%   replacing "This forms a sharp contrast ...") opens the paragraph; the
+%   start sentences 1 and 2 are merged; the output half of sentence 3 is in
+%   the opening; sentences 4 and 5 are joined; sentence 6 unchanged.
+\mv[own]{below}{The physical states \del[own]{thus }have a data-based start\add[own]{ \eqref{eq:aug_enc_fit}} and a direct map to the output, while the added states have neither.}
+\chg[own]{The physical states of the baseline are initialised with the
+data-based fit \mbox{\eqref{eq:aug_enc_fit}} and updated through
+$f^{\mathrm n}_{\mathrm{base}}$, while the added-state rows $W^a$ are randomly initialised.}{\kwtwo{The added states start from the random rows $W^a$ and are updated through the
+random added-state rows of $\phi_{\mathrm{aug}}$.}}
 % FEEDBACK (own, 2026-10-22; E1): repeats (14) and the output sentence
 %   below (Dirk 2026-10-22).
 \del[own]{For the physical states their generalised coordinates $q_k$ are directly mapped to
 actuator positions, $\hat y_k=P^\top q_k$ in \mbox{\eqref{eq:aug_transition}}.}
-The added states are updated through the random added-state rows of $\phi_{\mathrm{aug}}$,
-without their initialisation or initial updates being derived from the baseline or the data.
+\del[own]{The added states are updated through the random added-state rows of $\phi_{\mathrm{aug}}$,
+without their initialisation or initial updates being derived from the baseline or the data.}
 % FEEDBACK v2 (2026-10-22, Maarten p9 "how does a cost update an effect?
 %   very unclear."; E2): the sentence is struck; the sentences before and
 %   after it carry the argument (Dirk 2026-10-22).
-The output $\hat y_k=P^\top q_k$ contains no added state, and $\bar x_k$
-enters $\tilde x_{k+1}$ only through $f^{\mathrm n}_{\mathrm{aug}}$ in
+\chg[own]{The output $\hat y_k=P^\top q_k$ contains no added state, and $\bar x_k$
+enters}{\kwtwo{They enter}} $\tilde x_{k+1}$ only through $f^{\mathrm n}_{\mathrm{aug}}$ in
 \eqref{eq:aug_loss}. \del[M-p9]{This means that for the added states $V$ only updates their effect on
 the output through $f^{\mathrm n}_{\mathrm{aug}}$.}
-From \eqref{eq:aug_loss}, $V$ \kwtwo{has no term that requires} $\bar x$
-to predict the resulting output error.
-This gives $f^{\mathrm n}_{\mathrm{aug}}$ the capability to lower part of this error with 
+\del[own]{From \mbox{\eqref{eq:aug_loss}}, }$V$ \kwtwo{has no term that requires} $\bar x$
+to predict the \del[own]{resulting }output error\chg[own]{.
+This gives $f^{\mathrm n}_{\mathrm{aug}}$ the capability to lower}{\kwtwo{, so $f^{\mathrm n}_{\mathrm{aug}}$ can lower}} part of this error with
 $\tilde x$ and $\hat u$ alone.
 Minimising $V$ can therefore reduce the error without capturing the missing
 dynamics in $\bar x$. \todo{Section~\ref{sec:results} tests whether it does.}
-% FEEDBACK (own, 2026-10-22; E3): the contrast stated concisely; both
-%   halves are in the sentences above (fit vs random start; output without
-%   added state) (Dirk 2026-10-22: "state E3 much more concise").
-\chg[own]{This forms a sharp contrast between the physical and added states,
-due to the physical states being able to directly map to the output,
-while also having a much better starting point.}{\kwtwo{The physical states thus have a data-based start and a direct map to the output, while the added states have neither.}}
-
-
-%\\
-
+\delmv[own]{start of IV-E}{The physical states thus have a data-based start and a direct map to the output, while the added states have neither.}
+\\
 We therefore propose predictive-state (PS) initialisation, which is
-a data-driven initialisation for the added states. 
-Similar to $W^b$ after its initialisation is done, 
-the parameters are optimised through \eqref{eq:aug_loss}.
-PS is adapted from a two-stage regression of predictive-state
-learning~\cite[Sec.~2]{hefny2015supervised}, and it makes use of initialisation
-before backpropagation through time\kwtwo{ (BPTT)}~\cite[Sec.~4.2]{downey2017psrnn}.
+a data-driven initialisation for the added states.
+% FEEDBACK (own, 2026-10-23; IV-E restructure, Dirk "apply all"): the W^b
+%   sentence is covered by "After S2, (22) is minimised from the resulting
+%   parameters"; the literature sentence moved after the stage sentences so
+%   the idea comes first.
+\del[own]{Similar to $W^b$ after its initialisation is done,
+the parameters are optimised through \mbox{\eqref{eq:aug_loss}}.}
+\delmv[own]{below}{PS is adapted from a two-stage regression of predictive-state
+learning~\mbox{\cite[Sec.~2]{hefny2015supervised}}, and it makes use of initialisation
+before backpropagation through time (BPTT)~\mbox{\cite[Sec.~4.2]{downey2017psrnn}}.}
 %\\
-
 % RESTRUCTURE (2026-10-19, Maarten p9: "This remains opaque for me",
 %   "Formalize the optimization problem that you solve for each stage"):
 %   overview of the three stages first, drafted for Dirk to reword.
 % FEEDBACK (own, 2026-10-22; IV-E issues 3 and 6): two stages, not three
 %   (minimising (22) afterwards is the hand-over); the S1 and S2 labels
 %   are introduced once, in the overview (Dirk 2026-10-22).
-\kwtwo{PS has \chg[own]{three}{two} stages, each with its own optimisation problem.
-\chg[own]{In S1,}{In the first stage (S1),} \eqref{eq:aug_loss} is minimised as before, and after each of its
+% FEEDBACK (Dirk, 2026-10-23): "optimisation problem" -> "cost function"
+%   (IV-C term); the S1 sentence is Dirk's own S1 sentence (passive), not
+%   my explanation of the residual.
+\kwtwo{PS has \chg[own]{three}{two} stages, each with its own \chg[own]{optimisation problem}{cost function}.
+\chg[own]{In S1,}{In the first stage (S1),} \chg[own]{\mbox{\eqref{eq:aug_loss}} is minimised as before, and after each of its
 updates the added-state outputs of the encoder are trained to predict the
-residual of the model.
+residual of the model}{the encoder's added-state outputs are trained to predict the residual of the
+augmented model}.
 \chg[own]{In S2,}{In the second stage (S2),} $g^{\mathrm n}_{\mathrm{aug}}$ is trained to predict the next added state.
-After S2, \eqref{eq:aug_loss} is minimised from the resulting parameters.}
+After S2, \chg[own]{\mbox{\eqref{eq:aug_loss}} is minimised from the resulting parameters}{we continue minimising $V$}.}
+% (2026-10-23, Dirk): Dirk's "continue minimising" wording; the start
+%   parameters are given in the hand-over (eq:ps2_handover).
+% FEEDBACK (own, 2026-10-23): S1 stated as its idea (Maarten p9 "This
+%   remains opaque"); that V is still minimised during S1 is said below
+%   ("We continue minimising V during the first stage").
+\mv[own]{above}{PS is adapted from a two-stage regression of predictive-state
+learning~\cite[Sec.~2]{hefny2015supervised}\chg[own]{, and it makes use of initialisation
+before backpropagation through time (BPTT)}{\kwtwo{, which Downey et al.\ use to initialise a recurrent
+network before backpropagation through time (BPTT)}}~\cite[Sec.~4.2]{downey2017psrnn}.}
 \chg[own]{The first stage (S1)}{S1} predicts the residual of the model, instead
 of \kw{features of future observations} as in~\cite{hefny2015supervised}.
 \chg[own]{The second stage (S2)}{S2} trains the nonlinear state update
-instead of a \kw{linear operator.}
-\kw{We continue \kwtwo{minimising $V$} during the first stage, while Downey et al.\ finish
-their initialisation before starting BPTT~\cite[Sec.~4.2]{downey2017psrnn}.}
+instead of a \kw{\chg[own]{linear operator}{linear map}.}
+\kw{We continue \kwtwo{minimising $V$} during the first stage\del[own]{, while Downey et al.\ finish
+their initialisation before starting BPTT~\mbox{\cite[Sec.~4.2]{downey2017psrnn}}}.}
+% FEEDBACK (Dirk, 2026-10-23): "operator" -> "map" (Hefny's second stage is
+%   a linear regression); the Downey contrast dropped, Downey stays cited in
+%   the literature sentence above.
 Fig.~\ref{fig:ps2_windows} shows which samples
-are used for both stages.
+are used for \chg[Dirk]{both stages}{each stage}.
 
 \begin{figure}[t]
  \centering
  \resizebox{\columnwidth}{!}{\input{figures/tex/ps2_windows}}
- \caption{Windows of PS on one record, layout adapted
- from~\cite[Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the
- window $\chi_\tau$ to $\hat x^{\mathrm n}_{\tau|\tau}$, and the decoder $p$ maps its added part
- $\bar x_{\tau|\tau}$ to the residuals $e_\tau$ of the next $H$ samples
- \eqref{eq:ps2_s1}. S2 (bottom): $g_{\mathrm{aug}}$ maps $\hat x^{\mathrm n}_{\tau|\tau}$ and the
- recorded $u_\tau$ to the added state encoded from the window shifted by one
- sample \eqref{eq:ps2_s2}.}
+ % FEEDBACK (Dirk, 2026-10-23: "messy and really ai"): rewritten with plain
+ % verbs, one step per sentence; captions take no marks. OLD: "Windows of PS
+ % on one record, layout adapted from [Hefny Fig. 2]. S1 (top): the encoder
+ % maps the window chi_tau to x-hat^n_tau|tau, and the decoder p maps its
+ % added part x-bar_tau|tau to the residuals e_tau of the next H samples
+ % (28). S2 (bottom): g_aug maps x-hat^n_tau|tau and the recorded u_tau to
+ % the added state encoded from the window shifted by one sample (30)."
+ \caption{Samples used by PS on one record, with the layout
+ of~\cite[Fig.~2]{hefny2015supervised}. In S1 (top), the encoder $\psi$ estimates
+ $\hat x^{\mathrm n}_{\tau|\tau}$ from the window $\chi_\tau$. The decoder $p$ then
+ predicts the residual $e_\tau$ of the next $H$ samples from the added states
+ $\bar x_{\tau|\tau}$ \eqref{eq:ps2_s1}. In S2 (bottom), $g_{\mathrm{aug}}$ predicts
+ the next added state $\bar x_{\tau+1|\tau+1}$ from $\hat x^{\mathrm n}_{\tau|\tau}$ and the
+ recorded $u_\tau$ \eqref{eq:ps2_s2}. The same encoder gives $\bar x_{\tau+1|\tau+1}$
+ from the window $\chi_{\tau+1}$, shifted by one sample.}
+ % (2026-10-23, Dirk): "the same encoder" makes clear it is the SUBNET
+ % encoder of IV-C, not a second one (only its psi_a outputs, frozen in S2).
  \label{fig:ps2_windows}
  % FEEDBACK (2026-10-22, Dirk revnote below): decoder d -> p in caption and
  % figures/tex/ps2_windows.tex (node "dec"); caption: no marks. Revnote
@@ -1630,12 +1658,19 @@ are used for both stages.
 % Stage S1 trains the encoder's added-state outputs to predict the residual of
 % the augmented model \eqref{eq:aug_transition} at the parameters $\vartheta$
 % after the latest update of $V$.
-Stage S1 trains the encoder's added-state outputs to predict the residual of
-the augmented model \eqref{eq:aug_transition} using the model parameters $\vartheta$
-from the latest $V$ update step.
-\mv[own]{IV-C}{We use $\theta^a_{\mathrm{enc}}$ for the parameters
+% FEEDBACK (own, 2026-10-23; IV-E restructure): third introduction of S1
+%   removed; the sentence keeps only its new content.
+\chg[own]{Stage S1 trains the encoder's added-state outputs to predict the residual of
+the augmented model \mbox{\eqref{eq:aug_transition}} using}{\kwtwo{In S1, the residual is computed with}} the model parameters $\vartheta$
+from the latest \chg[own]{$V$ update step}{update of $V$}.
+% FEEDBACK (Dirk, 2026-10-23: "vague"): named directly with the symbols of
+%   the where-clause of (27); hidden layers of psi_tilde not included, as in
+%   ps2_opening.py (S1 optimiser).
+\mv[own]{IV-C}{\chg[own]{We use $\theta^a_{\mathrm{enc}}$ for the parameters
 that affect only $\psi_a$: $W^a$ and the additional-state
-rows of the output layer of $\tilde\psi$.}
+rows of the output layer of $\tilde\psi$.}{\kwtwo{The encoder parameters for the added states are $W^a$ and the added-state
+rows $\tilde W^{\bar x}_L$, $\tilde b^{\bar x}_L$ of the output layer of $\tilde\psi$.
+We call these $\theta^a_{\mathrm{enc}}$.}}}
 % FEEDBACK (own, 2026-10-22; E9): repeats the overview and eq:ps2_alt
 %   (Dirk 2026-10-22).
 \del[own]{Each update of $V$ is followed by one S1 update with its own Adam optimiser.}
@@ -1643,7 +1678,10 @@ rows of the output layer of $\tilde\psi$.}
 %   S1 (code: fit_ix) (Dirk 2026-10-22). F3 below: "with its own Adam
 %   optimiser" restored from the struck E9 sentence (code: separate Adam
 %   state on theta^a_enc, ps2_opening.py).
-For the S1 update we select a minibatch $\mathcal B$ of samples $\tau$ from the training data\add[own]{ without the held-out part}.
+% FEEDBACK (Dirk, 2026-10-23): Dirk's sentence on the left-out records,
+%   introduced here before the stopping rule uses them.
+For the S1 update we select a minibatch $\mathcal B$ of samples $\tau$ from \chg[own]{the training data}{$\mathcal D_N$}.
+\add[Dirk]{A subset of records is left out of S1 and S2 to evaluate the performance of each stage.}
 % RESTRUCTURE (2026-10-19, Maarten mail): the held-out sentences moved to
 %   the paragraph that defines nu (it was used before its definition).
 \delmv[M-mail]{the $
@@ -1655,27 +1693,35 @@ The left out data is still used in $V$.}
 samples up to $\tau-1$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathrm n}_{\tau|\tau}$.}
 From \chg[own]{this state}{\kwtwo{the encoder state $\hat x^{\mathrm n}_{\tau|\tau}$}} the augmented model is simulated in the closed loop of 
 Section~\ref{sec:aug_loop}.
-We calculate the residual from the next $H=n+1$ samples, from $\tau$ to $\tau+H-1$.
+We calculate the residual\add[own]{ $y-\hat y$} \chg[own]{from}{over} the next $H=n+1$ samples, from $\tau$ to $\tau+H-1$.
 The top of Fig.~\ref{fig:ps2_windows} shows the window $\chi_\tau$ and the
 samples of the residual $e_\tau$.
-We have chosen to use the same number of samples as the encoder window.
+\del[own]{We have chosen to use the same number of samples as the encoder window.}
+% FEEDBACK (own, 2026-10-23): "H = n+1" in the sentence above says it.
 % FEEDBACK (own, 2026-10-22; Dirk revnote "d is also a baseline parameter,
 %   need to change"): decoder d -> p (matches theta_p); in the equations
 %   without marks (Dirk 2026-10-22).
-Then a temporary decoder \chg[own]{$d$}{$p$} with only the added states as inputs
+% FEEDBACK (Dirk, 2026-10-23): (28) reordered as (22) and (30), the
+%   minimisation first; the decoder form moved to Appendix PS details next
+%   to its dimensions. OLD (28), before 2026-10-23:
+%  e_\tau&=\frac{1}{\sigma_e}[(y^n_\tau-\hat y^n_{\tau|\tau})^T ... (y^n_{\tau+H-1}-\hat y^n_{\tau+H-1|\tau})^T]^T,\\
+%  p(\theta_p,\bar x)&=W_{p,2}\tanh(W_{p,1}\bar x+b_{p,1})+b_{p,2},\\
+%  &\min_{\theta_p,\theta^a_enc} \frac{1}{|B|H n_y}\sum_{\tau\in B}\|p(\theta_p,\psi_a(\theta_enc,\chi_\tau))-e_\tau\|_2^2,
+Then a temporary decoder \chg[own]{$d$}{$p$}\add[own]{\kwtwo{, a neural network with one hidden layer
+(Appendix~\ref{app:ps_stop}),}} with only the added states as inputs
 $\bar x_{\tau|\tau}=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
 is used to predict this residual:
 \begin{equation}
 \begin{aligned}
- e_\tau&=\frac{1}{\sigma_e}\bigl[\,(y^{\mathrm n}_{\tau}-\hat y^{\mathrm n}_{\tau|\tau})^\top\;\cdots\;
-  (y^{\mathrm n}_{\tau+H-1}-\hat y^{\mathrm n}_{\tau+H-1|\tau})^\top\bigr]^\top,\\
- p(\theta_{\mathrm p},\bar x)&=W_{\mathrm p,2}\tanh\bigl(W_{\mathrm p,1}\bar x+b_{\mathrm p,1}\bigr)+b_{\mathrm p,2},\\
  &\min_{\theta_{\mathrm p},\,\theta^a_{\mathrm{enc}}}\;
  \frac{1}{|\mathcal B|\,H\,n_y}\sum_{\tau\in\mathcal B}
- \norm{p\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2,
+ \norm{p\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2,\\
+ &e_\tau=\frac{1}{\sigma_e}\bigl[\,(y^{\mathrm n}_{\tau}-\hat y^{\mathrm n}_{\tau|\tau})^\top\;\cdots\;
+  (y^{\mathrm n}_{\tau+H-1}-\hat y^{\mathrm n}_{\tau+H-1|\tau})^\top\bigr]^\top,
 \end{aligned}
 \label{eq:ps2_s1}
 \end{equation}
+\revnote{(28) reordered (minimisation first, as (22) and (30)); decoder form moved to the appendix. Remove this note after checking.}
 % where $\hat y^{\mathrm n}_{k|\tau}$ is the output of the loop of
 % Section~\ref{sec:aug_loop} from $\hat x^{\mathrm n}_{\tau|\tau}$ at the current
 % $\vartheta$, held fixed in the gradient, $\mathcal B$ a minibatch of window
@@ -1693,8 +1739,11 @@ closed-loop simulation of Section~\ref{sec:aug_loop},
 starting at $\hat x^{\mathrm n}_{\tau|\tau}$.
 This simulated output is kept fixed during
 the S1 update.
-$\mathcal B$ is the minibatch of samples $\tau$ and
-$\sigma_e$ is the RMS of all residual values in $\mathcal B$.
+% FEEDBACK (Dirk, 2026-10-23: RMS not introduced, too specific): the B
+%   definition repeats the sentence before (28); sigma_e said by what it
+%   does, its exact definition moved to Appendix PS details.
+\del[own]{$\mathcal B$ is the minibatch of samples $\tau$ and}
+\chg[own]{$\sigma_e$ is the RMS of all residual values in $\mathcal B$}{\kwtwo{$\sigma_e$ scales the residual to unit size (Appendix~\ref{app:ps_stop})}}.
 % RESTRUCTURE (2026-10-22, Dirk; E4): decoder dimensions and zero start
 %   moved to Appendix PS details (implementation; (28) defines p).
 \delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{The decoder $d:\R^{n_{\bar x}}\to\R^{Hn_y}$ has parameters
@@ -1763,15 +1812,22 @@ The threshold rule for S2 is given in Appendix~\mbox{\ref{app:ps_stop}}.}
 %   fraction of the residual (eq:ps2_nu), not a prediction error; the
 %   held-out part staying in V was only in the appendix, which Maarten does
 %   not read (code: calibration_split, fit_ix vs cal_ix) (Dirk 2026-10-22).
-\add[own]{\kwtwo{S1 ends by a stopping rule on \chg[own]{the prediction error $\nu$}{the unexplained fraction $\nu$ of the residual} on a
-held-out part of $\mathcal D_N$, which also decides whether S2 runs
+% FEEDBACK (Dirk, 2026-10-23): the stopping rule is fully in the appendix;
+%   the main text keeps only what (29) and (32) need (S1 ends, S2 may be
+%   skipped), referring to Dirk's left-out records; "still used in V" in
+%   Dirk's own wording (now in the appendix: "The left out data is still
+%   used in V").
+\add[own]{\kwtwo{We use the left out records to decide when S1 ends and whether S2 runs
 (Appendix~\ref{app:ps_stop}).}}
-\add[own]{\kwtwo{The held-out part is still used in $V$.}}
+\add[own]{\kwtwo{The left out records are still used to minimise $V$.}}
 % RESTRUCTURE (2026-10-19, Maarten p9 "Formalize the optimization problem
 %   that you solve for each stage"): S1 alternation written out; defines
 %   i_1, which eq:ps2_handover already uses. Drafted for Dirk to reword.
-\kwtwo{Written as one procedure, S1 alternates the two problems: for
-$i=0,1,\dots,i_1-1$,
+% FEEDBACK (Dirk, 2026-10-23): (29) kept (Maarten p9 "formalize"); lead-in
+%   and where-clause in plain words.
+\kwtwo{\chg[own]{Written as one procedure, S1 alternates the two problems: for}{During S1, each Adam step on $V$ is followed by one Adam step on
+\eqref{eq:ps2_s1}. For}
+$i=0,1,\dots,i_1-1$\chg[own]{,}{ this gives}
 \begin{equation}
 \begin{aligned}
  \vartheta^{(i+1)}&=\mathcal A_V\bigl(\vartheta^{(i)}\bigr),\\
@@ -1780,38 +1836,54 @@ $i=0,1,\dots,i_1-1$,
 \end{aligned}
 \label{eq:ps2_alt}
 \end{equation}
-where $\mathcal A_V$ is one Adam step on \eqref{eq:aug_loss},
-$\mathcal A_{\mathrm{S1}}$ one Adam step on \eqref{eq:ps2_s1}\add[own]{ with its own Adam optimiser}, the updated
+where \chg[own]{$\mathcal A_V$ is one Adam step on \mbox{\eqref{eq:aug_loss}},
+$\mathcal A_{\mathrm{S1}}$ one Adam step on \mbox{\eqref{eq:ps2_s1}} with its own Adam optimiser, the updated
 $\theta^a_{\mathrm{enc}}$ is written back into $\vartheta^{(i+1)}$, and $i_1$ is
-the update at which the stopping rule above ends S1.}
+the last update of S1}{$\mathcal A_V$ and $\mathcal A_{\mathrm{S1}}$ are one Adam step on \eqref{eq:aug_loss}
+and \eqref{eq:ps2_s1}, each with its own Adam optimiser.
+Both steps update $\theta^a_{\mathrm{enc}}$, so the $\theta^a_{\mathrm{enc}}$ from $\mathcal A_{\mathrm{S1}}$ replaces the one in $\vartheta^{(i+1)}$,
+and $i_1$ is the last update of S1}.}
 \todo{Missing: basis of the PS switch and stop rules (S1 plateau and cap, screen update and threshold, S2 plateau and cap, snapshot sizes, calibration split as the last record of each class with three or more records). Candidate: rows of the hyperparameter table in Section~\ref{sec:setup}, all HEURISTIC (\texttt{PS2Spec}; \texttt{PS2-METHOD.md} Sec.~5), noting that the S1 cap, not the plateau, ended S1 in every run so far.}
 
 
-S1 has only trained the part of the encoder that initialises the 
-added states $\bar x_{\tau|\tau}$, $g^{\mathrm n}_{\mathrm{aug}}$ 
-is only updated by $V$. 
-S2 trains the state update itself.
-In S2 $g^{\mathrm n}_{\mathrm{aug}}$ is trained to predict the next
+% FEEDBACK (Dirk, 2026-10-23: "more concise"): four sentences -> two; the
+%   g_aug clause follows from the first sentence; the two S2 sentences
+%   joined (replaces the "Until S2," split of the same day).
+S1 has only trained the part of the encoder that initialises the
+added states $\bar x_{\tau|\tau}$\del[own]{, $g^{\mathrm n}_{\mathrm{aug}}$
+is only updated by $V$}.
+S2 trains the state update\add[own]{ $g^{\mathrm n}_{\mathrm{aug}}$} itself\chg[own]{.
+In S2 $g^{\mathrm n}_{\mathrm{aug}}$ is trained}{,} to predict the next
 added state $\bar x_{k+1}$ from the full state $\hat x^{\mathrm n}_k$ and the input
 $u^{\mathrm n}_k$.
 % FEEDBACK (own, 2026-10-22; IV-E issue 2, E11): "records" -> "data" (the
 %   held-out part of D_N is named in the S1 stopping sentence); the
 %   figure-reading sentence repeats the caption of Fig. ps2_windows
 %   (Dirk 2026-10-22).
-For S2 samples $k_i$\kwtwo{, $i=1,\dots,N_{\mathcal P}$,} from the training data are selected,
-except the same held-out \chg[own]{records}{data} from S1 are left out.
+% FEEDBACK (Dirk, 2026-10-23: more concise, fewer commas): active "we
+%   select"; the index range is in (30); "pairs" named (the elements of P
+%   are triples); the figure sentence as a reading instruction.
+For S2 \add[own]{we select }samples $k_i$\del[own]{, $i=1,\dots,N_{\mathcal P}$,} from \chg[own]{the training data}{$\mathcal D_N$}\del[own]{ are selected,}
+\chg[own]{except the same held-out records from S1 are left out}{\kwtwo{without the left out records}}.
 For each sample the encoder estimates $\hat x^{\mathrm n}_{k_i|k_i}$ from
 $\chi_{k_i}$ and $\bar x_{k_i+1|k_i+1}$ from the next window
 $\chi_{k_i+1}$.
-Fig.~\ref{fig:ps2_windows} shows an example with $k_i=\tau$.
+\chg[own]{Fig.~\mbox{\ref{fig:ps2_windows}} shows an example with $k_i=\tau$}{\kwtwo{In Fig.~\ref{fig:ps2_windows}, $k_i$ is the sample $\tau$}}.
 \del[own]{The window $\chi_\tau$ at the top is used for $\hat x^{\mathrm n}_{k_i|k_i}$,
 and the shifted window at the bottom is used for $\bar x_{k_i+1|k_i+1}$.}
-We calculate these pairs once after S1, this set $\mathcal P$\kwtwo{ in \eqref{eq:ps2_s2}} is kept fixed.
+We calculate \chg[own]{these pairs}{$\hat x^{\mathrm n}_{k_i|k_i}$ and $\bar x_{k_i+1|k_i+1}$} once after S1\chg[own]{, this set $\mathcal P$ in \mbox{\eqref{eq:ps2_s2}} is kept fixed}{\kwtwo{.
+Together with the recorded inputs $u^{\mathrm n}_{k_i}$, they form the fixed set $\mathcal P$ in \eqref{eq:ps2_s2}}}.
+% (2026-10-23, Dirk): says in words what P contains before (30) defines it.
 \\
-During S2 the model is not simulated in closed-loop \kw{and $V$ is paused.}
+During S2 the model is not simulated in closed-loop \kw{and $V$ is \chg[own]{paused}{not minimised}.}
 We instead train $g^{\mathrm n}_{\mathrm{aug}}$ on
 $\mathcal P$ using one-step regression with the recorded
-actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser:
+actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser\chg[own]{:}{.}
+% RESTRUCTURE (2026-10-23, Dirk, option a): the recorded-force sentence
+%   moved next to the sentence it justifies; the colon became a full stop,
+%   with "S2 solves" as the new lead-in to (30).
+\mv[own]{below}{At the start of a window, the recorded force equals the closed-loop input of $V$ when the encoder reproduces $y_{k_i}$ (Appendix~\ref{app:ps_stop}).}
+\add[own]{\kwtwo{S2 solves}}
 \begin{equation}
 \begin{aligned}
  \mathcal P&=\bigl\{(\hat x^{\mathrm n}_{k_i|k_i},\,u^{\mathrm n}_{k_i},\,\bar x_{k_i+1|k_i+1})\bigr\}_{i=1}^{N_{\mathcal P}},\\
@@ -1825,25 +1897,33 @@ actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser:
 \end{equation}
 where $\theta_{\mathrm{enc}}$ is not updated during S2,
 $\mathcal B_{\mathcal P}\subset\mathcal P$ is a minibatch,
-$\bar x_{j,\cdot}$ is the $j$th added state and $m_j$
+\chg[own]{$\bar x_{j,\cdot}$}{$\bar x_{j,k_i+1|k_i+1}$} is the $j$th added state and $m_j$
 is the mean of $\bar x_{j,k_i+1|k_i+1}$ over $\mathcal B_{\mathcal P}$.
-The cost is the fraction of the variance in the
-next added states that is not explained by the prediction.
+\chg[own]{The cost is the fraction of the variance in the
+next added states that is not explained by the prediction.}{\kwtwo{We divide the prediction error by the variance of $\bar x_{k_i+1|k_i+1}$
+over $\mathcal B_{\mathcal P}$ to keep the cost independent of the scale of $\bar x$.}}
+% (2026-10-23, Dirk chose option 2): the formula in plain words with its
+%   reason, in Dirk's "... to keep ..." pattern (IV-C encoder sentence).
 % FEEDBACK (own, 2026-10-22; IV-E issue 5): the S2 input argument moved to
 %   the appendix (E13); one sentence keeps the reason in the main text
 %   (Dirk 2026-10-22).
 % FEEDBACK (own, 2026-10-22; Codex review F2): the sentence dropped the
 %   condition; with x^c=0 only the C_fb term vanishes, D_fb(y-yhat) stays
 %   (appendix derivation; closed_loop.py rollout u_t + u_fb) (Dirk 2026-10-22).
-\add[own]{\kwtwo{\chg[own]{The recorded force approximately equals the closed-loop input of
-$V$ at that sample}{At the start of a window, the recorded force equals the closed-loop input of $V$ when the encoder reproduces $y_{k_i}$} (Appendix~\ref{app:ps_stop}).}}
+\delmv[own]{above (30)}{At the start of a window, the recorded force equals the closed-loop input of $V$ when the encoder reproduces $y_{k_i}$ (Appendix~\mbox{\ref{app:ps_stop}}).}
 \\
 % FEEDBACK (own, 2026-10-22; IV-E issue 4): E12 kept in the main text, it
 %   defines theta^S2_aug in eq:ps2_handover; "records" -> "data" (method
 %   text names the held-out part of D_N, the record split is in the
 %   appendix) (Dirk 2026-10-22).
-The parameters with the lowest cost on the separate set of pairs
-from the held-out \chg[own]{records}{data} are kept.
+\chg[own]{The parameters with the lowest cost on the separate set of pairs
+from the held-out records are kept.}{\kwtwo{We keep the network parameters $\theta_{\mathrm{aug}}$ with the lowest cost
+\eqref{eq:ps2_s2} on the left out records.}}
+% (2026-10-23, Dirk): subject first; "the S2 parameters" named as theta_aug
+%   (matches theta^S2_aug in eq:ps2_handover).
+% (2026-10-23): P itself excludes the left out records; the selection set is
+%   a second set built the same way from them (ps2_opening.py, S2 calibration
+%   cost).
 % RESTRUCTURE (2026-10-22, Dirk; E13; revnote "appendix", Maarten p9
 %   "Try to shorten it"): the S2 input derivation moved to Appendix PS
 %   details.
@@ -1860,26 +1940,33 @@ acts on the output error.
 For S2 $g^{\mathrm n}_{\mathrm{aug}}$ is therefore trained with approximately
 the input it receives at that sample in the closed-loop simulation of $V$.}
 S2 updates all parameters $\theta_{\mathrm{aug}}$ of $\phi_{\mathrm{aug}}$.
-The cost only depends on the added-state rows, so the physical rows of $W_L$ and $b_L$
+% FEEDBACK (Dirk, 2026-10-23: "much more concise"): A, B and C shortened in
+%   Dirk's pattern (reason after "because", no "so").
+\chg[own]{The cost only depends on the added-state rows, so the physical rows of $W_L$ and $b_L$
 are not changed.
 The hidden layers of $\phi_{\mathrm{aug}}$ are shared by
 $f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$, so S2 also
-updates $f^{\mathrm n}_{\mathrm{aug}}$.
+updates $f^{\mathrm n}_{\mathrm{aug}}$.}{\kwtwo{The physical rows of $W_L$ and $b_L$ stay unchanged, because \eqref{eq:ps2_s2}
+only depends on the added-state rows, but the shared hidden layers also change
+$f^{\mathrm n}_{\mathrm{aug}}$.}}
 \todo{The encoder windows at $k_i$ and $k_i+1$ share measurement samples, so noise enters both sides of the S2 regression. Hefny et al.\ discuss how correlated noise can bias such a fit~\cite[Sec.~2]{hefny2015supervised}. We do not correct for this effect in S2.}
-When S2 is completed the optimisation continues minimising
-\eqref{eq:aug_loss}\kwtwo{, starting from}
+\chg[own]{When S2 is completed the optimisation continues minimising
+\mbox{\eqref{eq:aug_loss}}, starting from}{\kwtwo{After S2, we continue minimising \eqref{eq:aug_loss} from}}
 \begin{equation}
  \vartheta_{\mathrm{PS}}
  =\bigl(\beta^{(i_1)},\,\theta^{\mathrm{S2}}_{\mathrm{aug}},\,\theta^{(i_1)}_{\mathrm{enc}}\bigr),
  \label{eq:ps2_handover}
 \end{equation}
-followed by the L-BFGS polish and selection of Section~\ref{sec:aug_closed_loop}.
+followed by the \del[own]{L-BFGS }polish and \add[own]{the }selection of Section~\ref{sec:aug_closed_loop}.
 Here $\beta^{(i_1)}$ and $\theta^{(i_1)}_{\mathrm{enc}}$ are the parameters
-after S1 and $\theta^{\mathrm{S2}}_{\mathrm{aug}}$ contains the parameters
-after S2. When S2 is skipped, $\vartheta_{\mathrm{PS}}$ contains the
-parameters at the end of S1.
+after S1 and $\theta^{\mathrm{S2}}_{\mathrm{aug}}$ \del[own]{contains the parameters
+}after S2. When S2 is skipped, $\vartheta_{\mathrm{PS}}$ contains the
+parameters \chg[own]{at the end of}{after} S1.
 \\
-PS has only changed the starting point of minimising $V$ 
-with its initialisation phases, not what is being minimised.
-The models with and without PS have the same number of parameters, 
-since the decoder is removed.
+PS \chg[own]{has only changed}{only changes} the starting point of minimising $V$\del[own]{
+with its initialisation phases}, not what is \del[own]{being }minimised.
+% FEEDBACK (Dirk, 2026-10-23): no "models" here (the compared models are
+%   named in Section V); PS as subject, as in the sentence before.
+\chg[own]{The models with and without PS have the same number of parameters,
+since the decoder is removed.}{\kwtwo{PS adds no parameters to the augmented model, because the decoder is
+removed after S1.}}
