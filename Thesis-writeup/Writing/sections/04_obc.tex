@@ -365,8 +365,6 @@ $2.926736\times10^{-1}$ to $2.925875\times10^{-1}$.
 R2: the polish did not change the model, validation $\mathrm{NRMS}_e$
 $7.834410\times10^{-2}$ before and after (checkpoint
 $7.834413\times10^{-2}$).}
-
-
 The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
 % FEEDBACK (2026-10-23, Dirk): shorter, "the missing dynamics" as in the intro.
 That depends on whether \chg[Dirk]{what the baseline misses}{\kwtwo{the missing dynamics}} on the tuples \chg[Dirk]{is itself}{\kwtwo{are}}
@@ -396,19 +394,27 @@ With the projection, $\hat\beta$ does not depend on the network output,
 since $\Phi^\top\tilde F^{\mathrm n}_{\mathrm{aug}}=0$ by \eqref{eq:obc_coef}.
 \mv[M-mail]{V-B}{The offset does not change the first-order estimate \eqref{eq:obc_recovery}.}
 Without the projection, $\Phi^\top F^{\mathrm n}_{\mathrm{aug}}$
-is still in the estimate $\hat\beta_{\mathrm{np}}$.
+% FEEDBACK (2026-10-23, Dirk): beta_np is Gyorok 2026 Eq. (25) (PDF p4, Sec. 4.2).
+is still in the estimate $\hat\beta_{\mathrm{np}}$\add[Dirk]{\kwtwo{~\cite[Eq.~(25)]{gyorok2026obc}}}.
 The expression for $\hat\beta-\beta^\star$ has the same form as
 Gy\"or\"ok et al.~\cite[Eq.~(21)]{gyorok2026obc}, which they derived
-assuming an exact fit of noise-free
-data~\cite[Assumption~6]{gyorok2026obc}.
+% FEEDBACK (2026-10-23, Dirk): Gyorok's own wording (2026 PDF p4, line before
+%   and text of Assumption 6); "noise-free" is not part of the assumption.
+assuming \chg[Dirk]{an exact fit of noise-free
+data}{\kwtwo{the model exactly recovers the dynamics on $\mathcal D_N$}}~\cite[Assumption~6]{gyorok2026obc}.
 We obtain it by minimising the squared one-step error.
 The estimate equals $\beta^\star$ if and only if
-$\Phi^\top\Xi=0$, requiring $\Xi$ to be orthogonal to the
+% FEEDBACK (2026-10-23, Dirk): Phi^T Xi = 0 is the orthogonality, not a requirement for it.
+$\Phi^\top\Xi=0$, \chg[Dirk]{requiring $\Xi$ to be}{\kwtwo{which means that $\Xi$ is}} orthogonal to the
 columns of $\Phi$ on the tuples~\cite[Condition~4, Remark~5]{gyorok2026obc}.
-This is a first-order result for the one-step least-squares
+% FEEDBACK (2026-10-23, Dirk): first order, one-step and x-bar = 0 are
+%   stated above and in V-B; only the closed-loop limit is kept, in Dirk's
+%   "This holds for ..., not for ..." pattern (V-B).
+\chg[Dirk]{This is a first-order result for the one-step least-squares
 problem on the fixed reference slice $\bar x=0$; it does not
 predict the parameter bias from minimising the closed-loop
-loss \eqref{eq:aug_loss} with active added states.
+loss \eqref{eq:aug_loss} with active added states.}{\kwtwo{This holds for the
+one-step error, not for the closed-loop loss \eqref{eq:aug_loss}.}}
 \revnote{Issue: $\hat\beta$ reads as the trained estimate of
 Table~\ref{tab:res_obc}, but it is never computed; as a number the
 first-order estimate fails (predicted bias 100 to 1300\,\%, observed a
@@ -420,7 +426,10 @@ of~\cite[Eq.~(21)]{gyorok2026obc}?}
 \\
 % RESTRUCTURE (2026-10-20, Dirk): the measures get their own subsection; the
 %   text below is unchanged. New heading shown in kwtwo so it is visible.
-\subsection{\texorpdfstring{\kwtwo{Orthogonality measures}}{Orthogonality measures}}\label{sec:obc_measures}
+% FEEDBACK (2026-10-23, Dirk): title "Orthogonality measures" -> "Overlap with
+%   the parameter directions"; "overlap" is the term of Section VI and Results
+%   for rho. No change marks in headings; kwtwo shows it is new.
+\subsection{\texorpdfstring{\kwtwo{Overlap with the parameter directions}}{Overlap with the parameter directions}}\label{sec:obc_measures}
 We measure orthogonality using the normalised inner product,
 with the physical state normalised using \eqref{eq:aug_norm}:
 % CUT (2026-10-23, own; Dirk yes): c_neg is used in no later section (only rho,
@@ -432,32 +441,35 @@ with the physical state normalised using \eqref{eq:aug_norm}:
 %  \col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)-\tilde x^{\mathrm n}_i\bigr)_{i\in\mathcal I}\Bigr),
 \begin{equation}
 \begin{aligned}
- \rho(d)&=\max_{v\in\ran\Phi\setminus\{0\}}
- \frac{\langle v,d\rangle}{\norm{v}_2\norm{d}_2}
- =\frac{\norm{\Pi d}_2}{\norm{d}_2},\\
+ \rho(Z)&=\max_{\mathclap{Q\in\ran\Phi\smallsetminus\{0\}}}
+ \frac{\langle Q,Z\rangle}{\norm{Q}_2\norm{Z}_2}
+ =\frac{\norm{\Pi Z}_2}{\norm{Z}_2},\\
  \Pi&=\Phi\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top,
 \end{aligned}
 \label{eq:obc_overlap}
 \end{equation}
 \revnote{Changed (own): the $\cos\angle(a,b)$ and $c_{\mathrm{neg}}$ lines
 were removed from \eqref{eq:obc_overlap}; the cosine is now written inside
-$\rho$.}
+$\rho$. Changed (Dirk): $\smallsetminus$ instead of $\setminus$ in the max; $d$ renamed
+$Z$ (d is a physical parameter; Z is unused in the thesis); max variable $v$
+renamed $Q$ ($v_k$ is the measurement noise).}
 % where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal projector
 % onto $\ran\Phi$.
 % $\rho(d)$ is the largest normalised inner product of $d$ with a parameter
 % direction, and $\rho(d)=0$ if and only if $\Phi^\top d=0$.
 % $c_{\mathrm{neg}}$ measures negation as the alignment of the network with the
 % one-step change of the state predicted by the baseline.
-where \chg[own]{$a,b,d\in\R^{6N}$ are}{\kwtwo{$d\in\R^{6N}$ is}} nonzero and $\Pi$ is the orthogonal
+% FEEDBACK (2026-10-23, Dirk): d -> Z, d is a physical parameter (Dirk's revnote).
+where \chg[own]{$a,b,d\in\R^{6N}$ are}{\kwtwo{$Z\in\R^{6N}$ is}} nonzero and $\Pi$ is the orthogonal
 projector onto $\ran\Phi$.
-$\rho(d)$ gives the largest normalised inner product between $d$
+\add[Dirk]{\kwtwo{The overlap }}\chg[Dirk]{$\rho(d)$}{\kwtwo{$\rho(Z)$}} \chg[Dirk]{gives}{\kwtwo{is}} the largest normalised inner product between \chg[Dirk]{$d$}{\kwtwo{$Z$}}
 and a vector in $\ran\Phi$.
-It is zero if and only if $\Phi^\top d=0$.
+It is zero if and only if \chg[Dirk]{$\Phi^\top d=0$}{\kwtwo{$\Phi^\top Z=0$}}.
 \del[own]{Negation is measured by $c_{\mathrm{neg}}$, which is the cosine between the network output
 and
 the one-step state change predicted by the baseline.}
 
-\revnote{Lets use something else then d.}
+% Done 2026-10-23 (d -> Z): \revnote{Lets use something else then d.}
 % ---------------------------------------------------------------------------
 % OUTLINE BLOCKS (Dirk's bullets), moved here from the text on 2026-10-15 for readability.
 % Each is preceded by a comment naming where it stood.
