@@ -1091,6 +1091,9 @@ deviation $\sigma_{e,r,j}$ of its servo error \eqref{eq:setup_rms}.}
 \\
 % FEEDBACK (Dirk, 2026-10-23): the k clause separated the "but" from the
 %   initial state it contrasts with; moved to its own sentence.
+% (2026-10-23, Dirk): record definition moved here from after (22), before
+%   its first use.
+\add[own]{\kwtwo{The data $\mathcal D_N$ consist of multiple records.}}
 Each simulation window starts\kwtwo{ at a sample $\tau$} from an initial state $\hat x_\tau$\del[own]{,
 and $k$ denotes the sample within the window}, but we
 measure only the positions of the physical state $\tilde x$.
@@ -1154,14 +1157,17 @@ encoder\del[M-mail]{ \kwtwo{described below}}:
 \label{eq:aug_loss}
 \end{equation}
 for $\tau\le k<\tau+n_f$, where each training window starts at a sample
-$\tau\in\mathcal W$ and has length $n_f$, $n_y=3$, and
+$\tau\in\mathcal W$\add[own]{ of record $r$} and has length $n_f$, $n_y=3$, and
 $\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters\add[own]{ (Section~\ref{sec:params})}.
+% FEEDBACK (own, 2026-10-23; Codex IV-C check, finding 2): ties tau to the
+%   record r of W_r (Dirk 2026-10-23).
 % FEEDBACK (own, 2026-10-23): first use of "record" in the thesis; D_N
 %   (Section II, the estimation set) consists of several records, in
 %   Dirk's Section V wording ("The data consist of simulated records"),
 %   as its own sentence before W_r; Dirk's W_r sentence kept with
 %   "training record r" -> "record r" (convention A, Dirk 2026-10-23).
-\add[own]{\kwtwo{The data $\mathcal D_N$ consist of several records.}}
+% (2026-10-23, Dirk): the record sentence moved up, before the windows
+%   paragraph, so "record r" in the where-clause of (22) is defined first.
 $W_r=\mathrm{diag}(\sigma_{y,j}/\sigma_{e,r,j})$ weights axis $j$ of \chg[own]{training
 record $r$}{record $r$}, so that its residual in metres is divided by the standard
 deviation $\sigma_{e,r,j}$ of its servo error\chg[M-mail]{ \eqref{eq:setup_rms}}{ $y_j-r_j$}.
@@ -1313,9 +1319,13 @@ error are kept.
 \chg[own]{The error is the mean RMS simulation error divided by the standard deviation of the servo error, $\mathrm{NRMS}_{e,j}$, over the
 complete records of $\mathcal D_{\mathrm{val}}$ and axes,
 simulated in closed loop with the initial state estimated
-once by the encoder and $x^c=0$.}{\kwtwo{The validation error is the error of the closed-loop simulation over the
-complete records of $\mathcal D_{\mathrm{val}}$, with the initial state estimated by the encoder
-at the start of each record.}}
+once by the encoder and $x^c=0$.}{\kwtwo{The records of $\mathcal D_{\mathrm{val}}$ are simulated in closed-loop and only
+initialised at the start. The encoder uses the first $n+1$ samples for this, and the
+validation error is calculated over the remaining samples.}}
+% FEEDBACK (Dirk, 2026-10-23; Codex IV-C check, finding 1): validation scores
+%   each record after the encoder history (closed_loop.py k0); sentence 1 is
+%   Dirk's own earlier wording ("simulated in closed-loop and only
+%   initialised at the start").
 We only keep the polish if it lowers the validation error.
 % \revnote{Final runs (2026-10-18): the polish ran out of GPU memory on the
 % 11~GB cards and aborted with the Adam result kept in R3, R5, R6 and R14
