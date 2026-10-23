@@ -327,7 +327,46 @@ Therefore, two different values of $\theta_{\mathrm{base}}$ cannot give the same
 \end{itemize}
 \end{wip}
 
-\subsection{PS stopping rule}\label{app:ps_stop}
+% RESTRUCTURE (2026-10-22, Dirk; Section IV-E set E4, E5, E7, E13; Dirk
+%   revnote "appendix", Maarten p9 "Try to shorten it"): title was "PS
+%   stopping rule" (titles take no marks); the decoder details, the noise
+%   remarks, the held-out split with nu and the S2 input argument moved
+%   here from IV-E. Decoder d -> p (d is a baseline parameter). Moved text
+%   keeps its earlier marks.
+\subsection{PS details}\label{app:ps_stop}
+\mv[own]{IV-E}{The decoder \chg[own]{$d$}{$p$}$:\R^{n_{\bar x}}\to\R^{Hn_y}$\add[own]{ of \eqref{eq:ps2_s1}} has parameters
+$\theta_{\mathrm p}=(W_{\mathrm p,1},b_{\mathrm p,1},
+W_{\mathrm p,2},b_{\mathrm p,2})$, with
+$W_{\mathrm p,1}\in\R^{n_h\times n_{\bar x}}$ and
+$W_{\mathrm p,2}\in\R^{Hn_y\times n_h}$.
+Both $W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ are initially
+set to zero, so that the decoder starts by predicting zero residual.}
+\mv[own]{IV-E}{To avoid correlation between the history and future noise Hefny et al.\ separate
+the past and future samples~\cite[Sec.~2]{hefny2015supervised}.
+The encoder window ends at $\tau-1$, while the residual starts at $\tau$, so
+no measurement sample is reused on both sides.
+With filtered measurement noise, this separation does not guarantee noise
+independence.}
+\\
+\mv[own]{IV-E}{The training data is divided into excitation classes\todo{see section}, and for classes
+with at least three records one is left out of S1 and S2 to evaluate \chg[M-mail]{$\nu$ \eqref{eq:ps2_nu}}{\kwtwo{S1}}.
+The left out data is still used in $V$.
+To evaluate how well $\bar x_{\tau|\tau}$ performs at predicting the residual, a
+fixed \kwtwo{set of windows $\mathcal C$} from the held out data is used.
+For this set the squared prediction error of the decoder
+divided by the squared residual is computed,
+\begin{equation}
+ \nu=\frac{\sum_{\tau\in\mathcal C}\norm{p\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2}
+ {\sum_{\tau\in\mathcal C}\norm{e_\tau}_2^2}.
+ \label{eq:ps2_nu}
+\end{equation}
+S1 is stopped when a maximum number of updates is reached or when $\nu$ stops improving, or at an early check when $\nu$ is above $\nu_{\max}$.
+S2 starts only if $\nu$ is below a threshold $\nu_{\max}$, else the decoder is removed
+and training continues. In both cases the encoder changes from S1 are kept.
+\del[own]{The threshold rule for S2 is given in Appendix~\mbox{\ref{app:ps_stop}}.}}
+% FEEDBACK (own, 2026-10-22): the pointer sentence is struck, since the rule
+%   now follows directly.
+\\
 The unexplained fraction $\nu$ of \eqref{eq:ps2_nu} is evaluated after every
 $i_c$th update of $V$, with $\nu_i$ its value after update $i$.
 S1 ends at update
@@ -348,6 +387,24 @@ S2 runs if $\nu_{i_1}\le\nu_{\max}$ and, when $i_1>i_s$, also
 $\nu_{i_s}\le\nu_{\max}$, where $i_s<i_{\max}$ is a fixed early check.
 If $\nu_{i_s}>\nu_{\max}$, PS ends at $i_s$.
 The values are given in Table~\ref{tab:hyper}.
+\\
+\mv[own]{IV-E}{For S2 we use the recorded actuator force $u^{\mathrm n}_{k_i}$
+applied to the system at $k_i$.
+The encoder estimates $\bar x_{k_i+1|k_i+1}$ from
+$\chi_{k_i+1}$, using the data up to \chg[own]{$k_i+1$}{$k_i$}.
+% FEEDBACK (own, 2026-10-22; Codex review F6): by eq:aug_encoder the window
+%   chi_{k_i+1} ends at k_i (figure source: chi_{tau+1} = tau-n .. tau); the
+%   struck copy in IV-E keeps the old text (Dirk 2026-10-22).
+At the start of a window in \eqref{eq:aug_residual_loop}
+$x^c=0$, resulting in the model input
+\begin{equation*}
+ \hat u_{\mathrm{act},k_i}=u_{\mathrm{act},k_i}+D_{\mathrm{fb}}\bigl(y_{k_i}-\hat y_{k_i|k_i}\bigr),
+\end{equation*}
+when the encoder reproduces $y_{k_i}$ this equals the recorded input,
+because at this sample only the controller feedthrough $D_{\mathrm{fb}}$
+acts on the output error.
+For S2 $g^{\mathrm n}_{\mathrm{aug}}$ is therefore trained with approximately
+the input it receives at that sample in the closed-loop simulation of $V$.}
 
 \subsection{Open-loop frequency response}\label{app:frf}
 \ifdraft

@@ -33,7 +33,7 @@
   \draw (4*\w-\h+\g,\yB-0.1) -- (4*\w-\h+\g,\yB) -- (6*\w+\h-\g,\yB) -- (6*\w+\h-\g,\yB-0.1);
   \node[lab, anchor=south west] at (4*\w-\h+\g,\yB) {$e_\tau$};
   \node[blk] (psi) at (1.5*\w,\yS) {$\psi$};
-  \node[blk] (dec) at (4.4*\w,\yS) {$d$};
+  \node[blk] (dec) at (4.4*\w,\yS) {$p$}; % decoder d -> p (Dirk 2026-10-22: d is a baseline parameter)
   \node[blk] (v1) at (\xV,\yS) {$\|{\cdot}\|_2^2$};
   \draw[->] (1.5*\w,\yB) -- (psi.south);
   \draw[->] (psi.east) -- (dec.west) node[midway, above, lab] {$\bar x_{\tau|\tau}$};

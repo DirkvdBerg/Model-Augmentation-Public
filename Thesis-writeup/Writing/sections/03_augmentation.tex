@@ -270,14 +270,19 @@ the added states\del[Dirk]{ (Section~\mbox{\ref{sec:aug_ps2}})}.}}
 \item The baseline/network split is not unique (2026 Sec.~5.2); interpretable means the estimated $\theta_{\mathrm{base}}$ keeps its physical meaning (Gy\"or\"ok Sec.~3); Section~IV makes the estimate unique
 \end{itemize}
 \fi
-To represent additional dynamics such as a flexible mode,
-refitting $\theta_{\mathrm{base}}$ or correcting the baseline states with 
-a static augmentation
-\kwtwo{, where the learned correction is only added to the physical states,
-} is not sufficient.
-Both these methods \kwtwo{only retain} the original states of the baseline\del{,
+% FEEDBACK (own, 2026-10-22): the two sentences repeat Section I
+%   (01_introduction.tex, "Dynamic augmentation is chosen, because missing
+%   dynamics require additional states ..."), same claim and cite; Maarten
+%   mail "korter", no repeats. Jan22, Js58, Js59 answered there. The
+%   earlier untagged strike of the "while ..." clause is kept as its own
+%   \del beside the new one (no nesting) (Dirk 2026-10-22).
+\del[own]{To represent additional dynamics such as a flexible mode,
+refitting $\theta_{\mathrm{base}}$ or correcting the baseline states with
+a static augmentation, where the learned correction is only added to the
+physical states, is not sufficient.
+Both these methods only retain the original states of the baseline}\del{,
 while missing dynamics require
-states the baseline does not include}~\cite[Sec.~2]{hoekstra2026lfr}.
+states the baseline does not include}\del[own]{~\mbox{\cite[Sec.~2]{hoekstra2026lfr}}.}
 % To represent additional dynamics such as a flexible mode,
 % refitting $\theta_{\mathrm{base}}$ or correcting the baseline states with 
 % a static augmentation
@@ -287,20 +292,79 @@ states the baseline does not include}~\cite[Sec.~2]{hoekstra2026lfr}.
 % Both these methods \kwtwo{only retain} the original states of the baseline,
 % while missing dynamics require
 % states the baseline does not include~\cite[Sec.~2]{hoekstra2026lfr}.
-A dynamic augmentation therefore adds states $\bar x$ to model these
-missing dynamics.
-The augmented model updates these states using the full state
-and input~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
+% FEEDBACK (Dirk, 2026-10-22): no "As motivated in" opening; Dirk's
+%   sentence kept; "therefore" and "these" lost their antecedent with the
+%   struck paragraph; the reason is Dirk's own struck clause ("missing
+%   dynamics require states the baseline does not include"), reused, with
+%   the Section I pointer at the end.
+A dynamic augmentation \del[Dirk]{therefore }adds states $\bar x$ to model \chg[Dirk]{these}{the}
+missing dynamics\add[Dirk]{, which require states the baseline does not include
+(Section~\ref{sec:intro})}.
+% FEEDBACK (own, 2026-10-22): "full state and input" undefined at this point
+%   (x-hat only defined after (14)); named as in (14) (Dirk 2026-10-22).
+The augmented model updates these states using \chg[own]{the full state
+and input}{\kwtwo{the baseline states, the added states and the actuator forces}}~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
 \\
+% FEEDBACK (own, 2026-10-22; F1): the cite sat inside \todo and did not
+%   print; moved out (todo removed, it only asked for this cite);
+%   "it" -> "its" (Dirk 2026-10-22).
 \kwtwo{We use the dynamic parallel structure of Hoekstra et
-al. \todo{~\cite[Table~1]{hoekstra2026lfr}} (Fig.~\ref{fig:aug_structure}), 
-here a neural network adds it correction on the same state as the 
-baseline model in \kw{parallel}.
-besides the baseline model on the same state.}
-The learning components are a neural network consisting of $f_{\mathrm{aug}}$
-and $g_{\mathrm{aug}}$.
+al.\add[own]{~\cite[Table~1]{hoekstra2026lfr}}\del[Dirk]{ (Fig.~\mbox{\ref{fig:aug_structure}})}\del[own]{,
+here a neural network adds it correction on the same state as the
+baseline model in parallel}.
+\del[own]{besides the baseline model on the same state.}}
+% FEEDBACK (Dirk, 2026-10-22: "does not make clear how the correction
+%   works", reuse own wording): the "here ..." clause is struck ("on the
+%   same state" was inaccurate: f_base uses only x-tilde); Dirk's sentence
+%   from the struck Section IV intro (\delmv[Jan7]{II}, never placed in
+%   Section II) is reused here verbatim; it names both network outputs, as
+%   in (14). Replaces the F1 "it"->"its" mark (Dirk 2026-10-22).
+\mv[Dirk]{IV intro}{We make use of a feedforward neural network to model both the changes for the baseline states
+and the additional states.}
+% FEEDBACK v2 (2026-10-23, Maarten p6 beside Fig. 3: "nice figure, this
+%   can help you explain the method, but it should be more explicit in the
+%   sections"): Dirk's sentence; the parenthetical "(Fig. 3)" in the first
+%   sentence is struck. The figure block follows directly (moved up from
+%   the end of IV-A) (Dirk 2026-10-23).
+\add[M-p6]{Fig.~\ref{fig:aug_structure} shows how the network is connected
+in parallel with the baseline model.}
+\begin{figure}[t]
+ \centering
+ \resizebox{\columnwidth}{!}{\input{figures/tex/augmentation_structure}}
+ % FEEDBACK (2026-10-23, Dirk): caption rewritten by Dirk ("act", the
+ % "encoder psi of Section II" pointer (psi is defined only in IV-C) and the
+ % unexplained "one step" in the block label); "state update" ->
+ % "state-transition function" as in the where-clause of (14). Captions take
+ % no marks. OLD caption: "Augmented model. The physics step f_base and the
+ % network phi_aug act in parallel on x-hat_k. phi_aug gives f_aug and
+ % g_aug, and the output map is not learned. The encoder psi of Section II
+ % sets x-hat_tau at the start k=tau of each window. f_base and h_base use
+ % the physical part x-tilde_k of x-hat_k." (Js88 sentence kept in new form.)
+ \caption{Augmented model. The network $\phi_{\mathrm{aug}}$ is connected in
+ parallel with the baseline state-transition function $f_{\mathrm{base}}$,
+ which is one RK4 step of the physics model over $T_s$.
+ Both $f_{\mathrm{base}}$ and $h_{\mathrm{base}}$ use the physical
+ states $\tilde x_k$ of $\hat x_k$.
+ % SHORTENED (2026-10-23, Dirk): the network-output and h_aug = 0 sentences
+ % removed; the figure labels and the text (network paragraph, output-map
+ % sentence) state both.
+ The encoder $\psi$ estimates the initial state $\hat x_\tau$
+ for each simulation window.
+ \todo{No setpoint generator currently for the inputs; layout cramped at one column width.}
+ }
+ \label{fig:aug_structure}
+\end{figure}
+% FEEDBACK (own, 2026-10-22; A1, A2): leftover fragment struck; the
+%   "learning components" sentence repeats "a neural network adds its
+%   correction" above and the network paragraph below, so it is struck,
+%   which also settles Maarten p5 strike "a" + "networks" on it.
+\del[own]{The learning components are a neural network consisting of $f_{\mathrm{aug}}$
+and $g_{\mathrm{aug}}$.}
 The model is defined in \kwtwo{discrete} time with the augmentation added to
-the state update of the baseline~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
+the state update of the baseline\del[own]{~\mbox{\cite[Sec.~2, Table~1]{hoekstra2026lfr}}}.
+% FEEDBACK (own, 2026-10-22; F6, Js60 "so many citations in a row"): third
+%   [Sec. 2, Table 1] cite within a few sentences; this sentence states our
+%   model, the structure is cited two sentences above (Dirk 2026-10-22).
 This gives us
 \begin{equation}
 \begin{aligned}
@@ -314,27 +378,49 @@ This gives us
 \label{eq:aug_transition}
 \end{equation}
 where \kwtwo{$\tilde x_k=[q_k^\top\;\dot q_k^\top]^\top\in\R^6$} is the physical state of
-\chg[Dirk]{\mbox{\eqref{eq:lfr_G}}}{\eqref{eq:base_ss}},$\bar x_k\in\R^{n_{\bar x}}$ the added state,
-\kwtwo{the augmented state} \kwtwo{$\hat x_k=[\tilde x_k^\top\;\bar x_k^\top]^\top$}, \kwtwo{$f_{\mathrm{base}}$ the baseline state update,}
+\chg[Dirk]{\mbox{\eqref{eq:lfr_G}}}{\eqref{eq:base_ss}}\add[own]{\kwtwo{ in generalised coordinates}}, $\bar x_k\in\R^{n_{\bar x}}$ the added state,
+\kwtwo{the augmented state} \kwtwo{$\hat x_k=[\tilde x_k^\top\;\bar x_k^\top]^\top$}, \kwtwo{\chg[own]{$f_{\mathrm{base}}$ the baseline state update}{$f_{\mathrm{base}}$ and $h_{\mathrm{base}}(\tilde x_k)=P^\top q_k$ the baseline state-transition and output functions},}
+% FEEDBACK (own, 2026-10-22): x-tilde frame stated (u_act, y-hat are in
+%   actuator coordinates); f_base named with Hoekstra 2026's term (Sec. 2,
+%   "baseline state-transition and output functions"), since "state
+%   update" can read as an increment; h_base defined, as Fig. 3 and
+%   "h_aug = 0" use it (Dirk 2026-10-22).
 $u_{\mathrm{act},k}\in\R^3$ the actuator
 forces, $\hat y_k\in\R^3$ the predicted actuator positions,
-and \kwtwo{$y_k$ the measured positions of \eqref{eq:system}},
+\del[own]{and $y_k$ the measured positions of \mbox{\eqref{eq:system}},}
+% FEEDBACK (own, 2026-10-22; F2): y_k does not occur in (14) and is defined
+%   in Section II (eq:system); missing space before \bar x_k added
+%   (spacing only, unmarked) (Dirk 2026-10-22).
 $\theta_{\mathrm{base}}\in\R^{10}$ the combinations \eqref{eq:phi},
 and \todo{using theta might be confusing with baseline} $\theta_{\mathrm{aug}}\in\R^{n_{\mathrm{aug}}}$ the network parameters.
-The added states are updated by $g_{\mathrm{aug}}$ without any predetermined 
-physical meaning, in contrast to the baseline states $\tilde x$ for which 
-the positions are measured.
+% FEEDBACK (Dirk, 2026-10-22: "vague with the positions measured"): the
+%   sentence keeps the meaning contrast only; the measurement contrast is
+%   stated in IV-C ("The additional states are latent ... we measure only
+%   the positions") (Dirk 2026-10-22).
+The added states \del[own]{are updated by $g_{\mathrm{aug}}$ }\add[own]{\kwtwo{have}} \chg[own]{without any}{no} predetermined
+physical meaning, in contrast to the baseline states $\tilde x$\chg[own]{ for which
+the positions are measured}{\kwtwo{, which are positions and velocities}}.
 \\
 The dynamic-parallel augmentation structure is chosen, because the
-orthogonal-by-construction \chg[M-mail]{parametrisation that Section~\ref{sec:obc} builds upon}{\kwtwo{augmentation of Section~\ref{sec:intro}}}
+orthogonal-by-construction \chg[M-mail]{parametrisation that Section~\ref{sec:obc} builds upon}{\kwtwo{augmentation}}
 is defined for \kwtwo{this additive structure}~\cite{gyorok2026obc}.
+% FEEDBACK (Dirk, 2026-10-22): no section pointer; the cite carries it and
+%   OBC is introduced in Section I (Dirk 2026-10-22).
 \\
 The output map is not augmented \kwtwo{($h_{\mathrm{aug}}=0$ in Fig.~\ref{fig:aug_structure})}, because \eqref{eq:Ptransform} gives the exact
-relation between the states and the measured outputs
-\kwtwo{, as in Kessels~\cite[Remark~5.3]{kessels2025ai}}.
-This is also done to ensure that $q$ still represents the physical positions.
-With a learned correction to the output map the states could stop
-representing the actual positions.
+relation between the states and the measured outputs%
+% FEEDBACK v2 (2026-10-22, Maarten p5 "spacing too much"; M1): the line break
+%   before the comma printed a space; the % above removes it (Dirk 2026-10-22).
+\del[own]{, as in Kessels~\mbox{\cite[Remark~5.3]{kessels2025ai}}}\chg[own]{.
+This is also done to}{\kwtwo{, and this ensures}} \del[own]{ensure }that $q$ still represents the physical positions.
+% FEEDBACK (Dirk + Jan27, 2026-10-22): the q sentence merged into the one
+%   before; Kessels dropped, the dynamic parallel structure of Hoekstra
+%   2026 Table 1 is a state-level augmentation (output augmentations are
+%   Table 2), so h_aug = 0 follows from the cited structure (Dirk
+%   2026-10-22).
+% FEEDBACK (own, 2026-10-22; A4): repeats the sentence before (Maarten mail "korter").
+\del[own]{With a learned correction to the output map the states could stop
+representing the actual positions.}
 % TODOS closed (2026-10-20, Dirk; LFR audit): "not an LPV-LFR with a
 %   learned scheduling map as in Drenth" and "reason for a network rather
 %   than Drenth's LPV-LFR augmentation". Answered by the existing sentence
@@ -343,7 +429,8 @@ representing the actual positions.
 %   correction is added outside the resolved baseline LFR loop. D-017 still
 %   to be closed with a decision entry.
 \\
-The baseline is evaluated over one sample period $T_s$.
+% FEEDBACK (own, 2026-10-22; A3): repeats "one RK4 step of F over T_s" below.
+\del[own]{The baseline is evaluated over one sample period $T_s$.}
 % RESTRUCTURE (2026-10-22, Dirk): the state-space form F moved to III-B
 %   (eq:base_ss), where the baseline is defined; IV-A refers to it. The
 %   former eq:aug_ct display is removed (its one reference, 04_obc.tex,
@@ -351,14 +438,24 @@ The baseline is evaluated over one sample period $T_s$.
 \delmv[Dirk]{III-B}{Writing \mbox{\eqref{eq:eom}} in state-space form gives the state derivative $F$,
 where $u=Pu_{\mathrm{act}}$ is the generalised force
 \mbox{\eqref{eq:Ptransform}},}
-\add[Dirk]{\kwtwo{The baseline state derivative $F$ is given by
-\eqref{eq:base_ss}, where}} $M$, $C$ and $K$ depend on $\theta_{\mathrm{base}}$
-through \eqref{eq:phi}\del[Dirk]{, and the expression for $M(Y)^{-1}$ follows from
+% FEEDBACK (Dirk, 2026-10-22: "what does this accomplish?"): the sentence
+%   only pointed to eq:base_ss and repeated III-C (theta_base enters M, C,
+%   K); struck, the pointer moved onto F in the RK4 sentence. Existing
+%   marks kept as separate strikes (Dirk 2026-10-22).
+\del[own]{The baseline state derivative $F$ is given by
+\mbox{\eqref{eq:base_ss}}, where $M$, $C$ and $K$ depend on $\theta_{\mathrm{base}}$
+through \mbox{\eqref{eq:phi}}}\del[Dirk]{, and the expression for $M(Y)^{-1}$ follows from
 analytically resolving the baseline LFR loop
-(Appendix~\mbox{\ref{app:lfr-details}})}.
-$f_{\mathrm{base}}$ is calculated using one fourth-order
-Runge-Kutta (RK4) step of $F$ over $T_s$, with the input
+(Appendix~\mbox{\ref{app:lfr-details}})}\del[own]{.}
+% FEEDBACK v2 (2026-10-22, Maarten p6 beside Fig. 3: "it should be more
+%   explicit in the sections"): f_base was the one block without a pointer
+%   to the figure (Dirk 2026-10-22).
+\add[own]{\kwtwo{The baseline state-transition function }}$f_{\mathrm{base}}$\add[M-p6]{ (Fig.~\ref{fig:aug_structure})} is calculated using one fourth-order
+Runge-Kutta (RK4) step of $F$\add[own]{ \eqref{eq:base_ss}} over $T_s$, with the input
+\add[own]{\kwtwo{ $u=Pu_{\mathrm{act}}$ \eqref{eq:Ptransform}}}
 \kwtwo{held constant (zero-order hold)} during the step.
+% FEEDBACK (own, 2026-10-22): f_base takes u_act, F the generalised force
+%   u; the conversion was struck in both IV-A and III-B (Dirk 2026-10-22).
 For each of the four RK4 \kwtwo{sub-steps} $M(Y)$ is evaluated 
 using the value of $Y$ from its intermediate state.
 
@@ -370,83 +467,225 @@ which together give well-posedness~\cite[Cond.~6, Cond.~8, Thm.~9]{hoekstra2026l
 The baseline LFR is also well posed
 (Section~\ref{sec:lfr}).}
 
+% RESTRUCTURE (2026-10-22, Dirk; A6): network paragraph moved here from
+%   after the normalisation (see the source comment there); normalised
+%   superscripts dropped, since (16) and (17) follow.
+% FEEDBACK (Dirk, 2026-10-22: "earlier i state feedforward, now just jump to
+%   A multilayer perceptron"): the network is picked up as the feedforward
+%   network introduced above; "is used for both f_aug and g_aug" repeated
+%   that sentence. The struck copy shows the moved wording without the
+%   superscript marks of 2026-10-22 (no marks inside struck text).
+\mv[own]{IV-A, after normalisation}{\chg[own]{A multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh activation
+functions for the hidden layers and a linear output layer is used
+for both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$.}{\kwtwo{The feedforward neural network $\phi_{\mathrm{aug}}$ is a multilayer perceptron with tanh activation
+functions for the hidden layers and a linear output layer.}}
+% FEEDBACK v2 (2026-10-22, Maarten p5 "make explicit what these inputs are
+%   (\tilde x, \bar x, u_act)"; M2): symbols added (Dirk 2026-10-22).
+The inputs to the neural network are the \kwtwo{six baseline states\add[M-p5]{ $\tilde x_k$}\add[M-p5]{,} \del[M-p5]{and} $n_{\bar x}$ added states\add[M-p5]{ $\bar x_k$}}
+and the \kwtwo{$n_u=3$ actuator forces\add[M-p5]{ $u_{\mathrm{act},k}$}}.
+% FEEDBACK (own, 2026-10-22; Codex review F4): phi_aug outputs
+%   f^n_aug = T_x f_aug, so "outputs f_aug" was wrong; g^n_aug = g_aug
+%   (x-bar not normalised), so g stays (Dirk 2026-10-22).
+The first six outputs \chg[own]{$f^{\mathrm n}_{\mathrm{aug}}$ update}{give the corrections of} the six
+physical states and the remaining $n_{\bar x}$ outputs
+\chg[own]{$g^{\mathrm n}_{\mathrm{aug}}$}{$g_{\mathrm{aug}}$}
+\kwtwo{equal} the  additional states $\bar x_{k+1}$ (Fig.~\ref{fig:aug_structure}).
+% FEEDBACK (Dirk, 2026-10-22: "not how i write, especially act"; "feels
+%   too long"): the "act" sentence struck, its cite moved to the reason
+%   sentence; the velocity-only sentence follows from "changes both the
+%   velocity and the position" and is struck (replaces the F5 split of
+%   2026-10-22); Y sentence shortened (Dirk 2026-10-22).
+\del[own]{These corrections act on all six physical states, the positions included,
+as in the dynamic-parallel structure~\mbox{\cite[Table~1]{hoekstra2026lfr}}.}
+The positions are also corrected\add[own]{,} because within one sample period
+an unmodelled force would change both the velocity and \add[own]{the }position\del[own]{,
+correcting only for the velocities would not be able to capture this}\add[own]{~\cite[Table~1]{hoekstra2026lfr}}.
+\chg[own]{Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload
+position $Y$ through $\tilde x_k$, enabling}{\kwtwo{The payload position $Y$ in $\tilde x_k$ enables}} the neural network to learn
+ position-dependent effects.}
+\\
 The inputs to the neural network are normalised
 to zero mean and unit variance, which has been shown to improve
-the estimation of models containing neural networks~\cite[Sec.~5.3]{hoekstra2026lfr}.
-The mean and standard deviations are computed from the training data.
-For the baseline states the measured positions are converted to their generalised 
-positions, for which the velocities can be estimated from their 
-finite difference by dividing with $T_s$. 
+the estimation of models containing neural networks~\chg[Q41]{\mbox{\cite[Sec.~5.3]{hoekstra2026lfr}}}{\cite{bishop1995neural}}\add[Q41]{\kwtwo{, as in~\cite[Sec.~5.3]{hoekstra2026lfr}}}.
+\todo{Add bib entry \texttt{bishop1995neural}: C.~M.~Bishop, \emph{Neural Networks for Pattern Recognition}, Oxford University Press, 1995 (the source Hoekstra et al.\ cite for this claim, their ref.~[6], Sec.~5.3).}
+% FEEDBACK v1 (2026-10-22, Q41 "A more primary source can be used like Deep
+%   Learning by Goodfellow"): the general claim cites Hoekstra's own source
+%   (Bishop 1995, Hoekstra 2026 ref. [6]); Hoekstra kept for adopting the
+%   procedure. Bib entry still to be added (todo) (Dirk 2026-10-22).
+% FEEDBACK (own, 2026-10-23): D_N of Section II is the estimation
+%   (training) set; validation is introduced once in IV-C, the test set in
+%   Section V (convention A, Dirk 2026-10-23).
+% FEEDBACK (own, 2026-10-23, Js76): symbols mu and sigma named where the
+%   statistics are introduced; the conversion gets its reason (the states
+%   are generalised, y is in actuator coordinates) and its formula
+%   q = P^{-T}y, which also explains P^{-T}mu_y below. The F4 clause of
+%   2026-10-22 ("and mu_x and sigma_x are computed from these") withdrawn
+%   (Dirk: wording; sentence 1 covers it). The "same scale" sentence stays
+%   struck (Dirk 2026-10-23: "all models" vague; the Hoekstra contrast,
+%   simulated vs measured states, is not needed to follow the method).
+The \chg[own]{mean}{means $\mu$} and standard deviations\add[own]{ $\sigma$} are computed from \chg[own]{the training data}{$\mathcal D_N$}.
+\chg[own]{For the baseline states the measured positions are converted to their generalised
+positions,}{\kwtwo{The baseline states are in generalised coordinates, so the measured positions are converted to $q=P^{-\top}y$,}} for which the velocities can be estimated from their
+finite difference by dividing with $T_s$.
 This ensures that the positions and outputs are scaled with the same 
-measurements. This also makes sure that 
-all models independent of its initial parameters use the same scale, 
+measurements. \del[own]{This also makes sure that
+all models independent of its initial parameters use the same scale,}
+% FEEDBACK (own, 2026-10-22; A5): struck sentence repeats the one before
+%   (scale from the measurements) and ended in a dangling comma; three-word
+%   lead-in to (16) added (Maarten mail "korter").
+\add[own]{\kwtwo{The normalisation is}}
 \begin{equation}
  \tilde x^{\mathrm n}=T_x(\tilde x-\mu_x),\quad
  u^{\mathrm n}=T_u(u_{\mathrm{act}}-\mu_u),\quad
  y^{\mathrm n}=T_y(y-\mu_y),
  \label{eq:aug_norm}
 \end{equation}
-where $\mu_x\in\R^6$ and $\mu_u,\mu_y\in\R^3$ are the channel means, 
+% FEEDBACK (own, 2026-10-23): "channel means" is signal-processing jargon;
+%   standard term "sample means" (Hoekstra 2026 Sec. 5.3: "sample-based
+%   standard deviation of each input signal") (Dirk 2026-10-23).
+where $\mu_x\in\R^6$ and $\mu_u,\mu_y\in\R^3$ are the \chg[own]{channel means}{\kwtwo{sample means of $\tilde x$, $u_{\mathrm{act}}$ and $y$}},
 and $T_i=\operatorname{diag}(\sigma_i)^{-1}$
-for $i\in{x,u,y}$, with $\sigma_i$ the corresponding standard
-deviations. 
-\kw{The additional states $\bar x$ are not normalised separately,
+% FEEDBACK (own, 2026-10-22; F3): set braces escaped, they did not print
+%   (typesetting only, unmarked) (Dirk 2026-10-22).
+for $i\in\{x,u,y\}$, with $\sigma_i$ the corresponding standard
+deviations.
+% FEEDBACK (Dirk, 2026-10-23): "In the baseline," dropped; Dirk's sentence
+%   reordered so it starts with what RK4 does and names F (F is defined in
+%   SI units), one comma (Dirk 2026-10-23).
+\mv[M-p6]{after \mbox{\eqref{eq:aug_norm_maps}}}{\kwtwo{RK4 evaluates $F$ with the states and inputs in SI units, which} \del[M-p6]{where $\tilde x$ and $u_{\mathrm{act}}$} follow from $\tilde x^{\mathrm n}$ and
+$u^{\mathrm n}$ by inverting \eqref{eq:aug_norm}\del[M-p6]{, so RK4 uses the
+states and inputs in SI units}.}
+% FEEDBACK (Dirk, 2026-10-23): Dirk's own rewrite (Jan32); "not normalised"
+%   followed by "normalised augmented state" read as a contradiction.
+%   Notation \tilde x^{\mathrm n\top} kept as in (16), (17) (Dirk 2026-10-23).
+\chg[Dirk]{The additional states $\bar x$ are not normalised separately,
 as their initial scale is provided by the neural-network
-initialisation and the normalised input data,}
+initialisation and the normalised input data,}{We normalise only the baseline states, since the added states
+$\bar x$ have no physical units.
+The scale of $\bar x$ is set by the network initialisation
+and \kwtwo{its normalised inputs}.}
+% FEEDBACK (own, 2026-10-23): "the normalised input data" -> "its normalised
+%   inputs": the network's inputs, not u_act or the data set; the encoder
+%   (also a source of the x-bar scale) is not named here, it is introduced
+%   in IV-C (Dirk 2026-10-23).
+\chg[Dirk]{so}{The augmented state is then} \kwtwo{$\hat x^{\mathrm n}=[\tilde x^{\mathrm n\top}\;\bar x^\top]^\top$}.
 \todo{The additional states $\bar x$ are not normalised separately.
 Their scale is learned by the encoder and the added-state
 transition network, operating on normalised physical signals.}
-so \kwtwo{$\hat x^{\mathrm n}=[\tilde x^{\mathrm n\top}\;\bar x^\top]^\top$}.
 \\
-After normalisation the model equations become
+After normalisation the model equations are
+% FEEDBACK v1+v2 (2026-10-22, Jan33 "these equations do not have the same
+%   inputs. These are mentioned below but should already be in the
+%   equation"; Maarten p6 "This should be dependent on \tilde{x}^n now" +
+%   "and u^n"; M3): baseline row written as Hoekstra 2026 eq. (28) (Sec.
+%   5.3, PDF p9) with the means included; network rows reversed, since the
+%   network runs on normalised signals and the SI correction of (14)
+%   follows from its output (also shows Jan34). Equations take no marks;
+%   the old version is kept below as a comment and a revnote flags the
+%   change (Dirk 2026-10-22).
+% OLD (17), before 2026-10-22:
+%  f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n},u^{\mathrm n})
+%  &=T_x\bigl(f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x,u_{\mathrm{act}})-\mu_x\bigr),\\
+%  f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n},u^{\mathrm n})
+%  &=T_xf_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x,u_{\mathrm{act}}),\\
+%  g^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n},u^{\mathrm n})
+%  &=g_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x,u_{\mathrm{act}}),\\
+%  \hat y^{\mathrm n}_k&=C^{\mathrm n}\tilde x^{\mathrm n}_k,\qquad
+%  C^{\mathrm n}=T_yP^\top[I_3\;\,0]\,T_x^{-1}.
+% REWRITE 2 (2026-10-23, Dirk: the first rewrite mixed directions and the
+%   f_base row overflowed the column): (17) is now (14) in the coordinates
+%   of (16) (rows 1-3, the form the constraints of (22) use), with f^n_base
+%   and the mapping back below it (rows 4-5, Jan33 "should already be in
+%   the equation", Maarten p6). Same math as OLD (17): f^n_aug = T_x f_aug
+%   and g^n_aug = g_aug follow from rows 1-2 and the "only scaled by T_x"
+%   sentence. First rewrite (2026-10-22), superseded:
+%  f^n_base(.,x^n,u^n) = T_x(f_base(., T_x^{-1}x^n+mu_x, T_u^{-1}u^n+mu_u)-mu_x),
+%  f_aug(.,xhat,u_act) = T_x^{-1} f^n_aug(.,xhat^n,u^n),
+%  g_aug(.,xhat,u_act) = g^n_aug(.,xhat^n,u^n), yhat^n = C^n x^n.
 \begin{equation}
 \begin{aligned}
+ \tilde x^{\mathrm n}_{k+1}
+ &=f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n}_k,u^{\mathrm n}_k)\\
+ &\quad+f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n}_k,u^{\mathrm n}_k),\\
+ \bar x_{k+1}
+ &=g^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n}_k,u^{\mathrm n}_k),\\
+ \hat y^{\mathrm n}_k&=C^{\mathrm n}\tilde x^{\mathrm n}_k,\qquad
+ C^{\mathrm n}=T_yP^\top[I_3\;\,0]\,T_x^{-1},\\
  f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n},u^{\mathrm n})
  &=T_x\bigl(f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x,u_{\mathrm{act}})-\mu_x\bigr),\\
- f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n},u^{\mathrm n})
- &=T_xf_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x,u_{\mathrm{act}}),\\
- g^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n},u^{\mathrm n})
- &=g_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x,u_{\mathrm{act}}),\\
- \hat y^{\mathrm n}_k&=C^{\mathrm n}\tilde x^{\mathrm n}_k,\qquad
- C^{\mathrm n}=T_yP^\top[I_3\;\,0]\,T_x^{-1}.
+ \tilde x&=T_x^{-1}\tilde x^{\mathrm n}+\mu_x,\qquad
+ u_{\mathrm{act}}=T_u^{-1}u^{\mathrm n}+\mu_u.
 \end{aligned}
 \label{eq:aug_norm_maps}
 \end{equation}
-where $\tilde x$ and $u_{\mathrm{act}}$ follow from $\tilde x^{\mathrm n}$ and
-$u^{\mathrm n}$ by inverting \eqref{eq:aug_norm}, so RK4 uses the
-states and inputs in \kwtwo{SI units}.
-\kwtwo{Because $f_{\mathrm{aug}}$ is added to $f_{\mathrm{base}}$, whose mean
+\revnote{(17) rewritten (Jan33, Maarten p6): rows 1 to 3 are (14) in normalised coordinates, rows 4 and 5 define the normalised baseline with the mapping back. Same math as before. Old versions in the source comment. Remove this note after checking.}
+% RESTRUCTURE (2026-10-22, Dirk; A7): Maarten p6 "make this explicit right
+%   after (16)"; moved there. Also answers Maarten p5 "if you normalize
+%   u_act, and state, how do you compensate for this in the baseline
+%   model?".
+\delmv[M-p6]{after \mbox{\eqref{eq:aug_norm}}}{where $\tilde x$ and $u_{\mathrm{act}}$ follow from $\tilde x^{\mathrm n}$ and
+$u^{\mathrm n}$ by inverting \mbox{\eqref{eq:aug_norm}}, so RK4 uses the
+states and inputs in SI units.}
+% FEEDBACK (Dirk, 2026-10-23): Dirk's own rewrite of the passage after
+%   (17) (comma chains removed). Fixes on his text: Hoekstra's Eq. (28) has
+%   no means (zero-mean assumption, Sec. 5.3), so "uses the means as in"
+%   -> "adds the means to"; the reason states the method ("we do not
+%   assume zero-mean signals"), not an unchecked data property; cite as
+%   \cite. The struck sentences show the previous wording (Dirk 2026-10-23).
+\chg[Dirk]{Because $f_{\mathrm{aug}}$ is added to $f_{\mathrm{base}}$, whose mean
 $\mu_x$ is already subtracted in $f^{\mathrm n}_{\mathrm{base}}$, the correction is
-only scaled by $T_x$.}
+only scaled by $T_x$.}{We scale $f_{\mathrm{aug}}$ only by $T_x$, since
+$f_{\mathrm{base}}^{\mathrm n}$ already subtracts $\mu_x$.}
 \todo{The correction changes the predicted state, so its normalised
 form is $f_{\mathrm{aug}}^{\mathrm n}=T_xf_{\mathrm{aug}}$,
 without subtracting $\mu_x$. In the implementation, the
 network directly outputs $f_{\mathrm{aug}}^{\mathrm n}$.}
-The output map remains linear\kwtwo{ without offset} because the mean of the
-positions\kwtwo{ in $\mu_x$} is calculated from the output mean as
-$P^{-\top}\mu_y$.
+\chg[Dirk]{The output map remains linear without offset because the mean of the
+positions in $\mu_x$ is calculated from the output mean as
+$P^{-\top}\mu_y$, so that $\mu_y$ cancels in $T_y(P^\top q-\mu_y)$.}{We set the position means in $\mu_x$ to $P^{-\top}\mu_y$,
+so $\mu_y$ cancels in $T_y(P^\top q-\mu_y)$
+and the output map remains linear without an offset.}
+% FEEDBACK v1 (2026-10-22, Jan35 "?" on P^{-T}mu_y): mechanism added.
+%   Hoekstra clause (own): his (28) assumes zero-mean signals ("a baseline
+%   model operating around zero mean", Sec. 5.3, PDF p9); the gantry
+%   positions are not zero mean, so the means are included; the affine
+%   change of coordinates is exact for any f_base (Dirk 2026-10-22).
+% FEEDBACK (Dirk, 2026-10-23): f^n_base cannot "add the means to" an
+%   equation; "we" subject as in the two sentences before; the zero-mean
+%   assumption attributed to Hoekstra 2026 Sec. 5.3, where (28) is derived.
+\add[Dirk]{We include the means in $f_{\mathrm{base}}^{\mathrm n}$, since we do not
+assume zero-mean signals as in~\cite[Sec.~5.3]{hoekstra2026lfr}.}
 \\
-A multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh activation
+% RESTRUCTURE (2026-10-22, Dirk; A6): the network paragraph moved before
+%   the normalisation paragraph (Hoekstra 2026 Sec. 3.3 follows the
+%   structure; Maarten p5 "make explicit what these inputs are (\tilde x,
+%   \bar x, u_act)" needs the inputs before normalisation names them). The
+%   display stays here, in normalised symbols, because the network runs on
+%   normalised signals (implementation outputs f^n_aug directly); one new
+%   lead-in sentence. Struck copy flattened (no marks inside struck text);
+%   the moved copy keeps its marks.
+\delmv[own]{IV-A, before normalisation}{A multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh activation
 functions for the hidden layers and a linear output layer is used
-for both $f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$:
+for both $f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$:}
+\add[Dirk]{The network $\phi_{\mathrm{aug}}$ uses the normalised signals:}
 \[
 \bigl[f^{\mathrm n\top}_{\mathrm{aug}}\;\,g^{\mathrm n\top}_{\mathrm{aug}}\bigr]^\top
 =\phi_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n}_k,u^{\mathrm n}_k).
 \]
-The inputs to the neural network are the \kwtwo{six baseline states and $n_{\bar x}$ added states}
-and the \kwtwo{$n_u=3$ actuator forces}.
+\delmv[own]{IV-A, before normalisation}{The inputs to the neural network are the six baseline states and $n_{\bar x}$ added states
+and the $n_u=3$ actuator forces.
 The first six outputs $f^{\mathrm n}_{\mathrm{aug}}$ update the six
 physical states and the remaining $n_{\bar x}$ outputs
-$g^{\mathrm n}_{\mathrm{aug}}$ 
-\kwtwo{equal} the  additional states $\bar x_{k+1}$ (Fig.~\ref{fig:aug_structure}).
-\kw{These corrections act on all six physical states, the positions included,
-as in the dynamic-parallel structure~\cite[Table~1]{hoekstra2026lfr}.}
-The positions are also corrected because within one sample period 
+$g^{\mathrm n}_{\mathrm{aug}}$
+equal the additional states $\bar x_{k+1}$ (Fig.~\mbox{\ref{fig:aug_structure}}).
+These corrections act on all six physical states, the positions included,
+as in the dynamic-parallel structure~\mbox{\cite[Table~1]{hoekstra2026lfr}}.
+The positions are also corrected because within one sample period
 an unmodelled force would change both the velocity and position,
 correcting only for the velocities would not be able to capture this.
-Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload 
+Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload
 position $Y$ through $\tilde x_k$, enabling the neural network to learn
- position-dependent effects.
+ position-dependent effects.}
 % RESTRUCTURE (2026-10-19, Maarten p6 "Isn't this discussion part of the
 %   next section?"): the marginal-stability paragraph moved to the start of
 %   IV-B as the first reason for the closed-loop simulation.
@@ -464,25 +703,8 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).}
 
 %LEFT HERE Section III 11-10 15:57
 
-\begin{figure}[t]
- \centering
- \resizebox{\columnwidth}{!}{\input{figures/tex/augmentation_structure}}
- \caption{Augmented model. The physics step $f_{\mathrm{base}}$ and the
- network $\phi_{\mathrm{aug}}$ act in parallel on $\hat x_k$.
- $\phi_{\mathrm{aug}}$ gives $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$,
- and the output map is not learned.
- % RESTORED (2026-10-19, Dirk): the encoder sentence is back with a pointer
- % to IV-C (was "The encoder psi sets x-hat at each window start."). "During
- % training, the input is the closed-loop input of Section IV-B." stays out
- % (IV-B states it).
- \kwtwo{The encoder $\psi$, introduced in Section~\ref{sec:aug_closed_loop},
- sets $\hat x_\tau$ at the start $k=\tau$ of each window.}
- $f_{\mathrm{base}}$ and
- $h_{\mathrm{base}}$ use the physical part $\tilde x_k$ of $\hat x_k$.% FEEDBACK Js88: sentence added, unmarked (caption)
- \todo{No setpoint generator currently for the inputs; layout cramped at one column width.}
- }
- \label{fig:aug_structure}
-\end{figure}
+% RESTRUCTURE (2026-10-23, Dirk): the figure block of fig:aug_structure
+%   moved up, to right after its first description in IV-A (Maarten p6).
 
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
 \ifdraft
@@ -495,8 +717,11 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).}
 \item The output error re-enters the model input, so part of it is corrected within the window; error before $\tau$ is not carried in, the free-run validation carries it
 \end{itemize}
 \fi
-The data is measured in closed-loop, and the model is simulated in 
-closed-loop. 
+% FEEDBACK (own, 2026-10-22; B1): closed-loop data is stated in Section II
+%   (eq:system_loop); "simulated in closed-loop" repeats the next sentence
+%   and the K_fb sentence below (Maarten mail "korter") (Dirk 2026-10-22).
+\del[own]{The data is measured in closed-loop, and the model is simulated in
+closed-loop.}
 Instead of using the recorded input as
 in~\cite[Eq.~(22)]{hoekstra2026lfr}, we include the
 feedback controller in the simulation\del[Jan49]{ for two reasons}.
@@ -596,6 +821,9 @@ but $r$ and $u^{\mathrm{ff}}$ are not used in simulation.
 If the controllers between the system and simulation differ, 
 the equations are only approximate and noise-induced bias
 cannot be ruled out.
+% REVNOTE (2026-10-22, Dirk): noise assumptions to be discussed in the IV-B
+%   walk; the cut pass leaves this sentence as it is.
+\revnote{Noise (Section II: $u_{\mathrm{act}}$ correlated with $v$): state here which assumption holds, with the appendix result (model loop driven by $r$, $u^{\mathrm{ff}}$; $v$ enters through the encoder start and the controller difference). Discuss in the IV-B walk.}
 \\
 At the start of \chg[M-p7]{each training window}{a simulation at sample $\tau$} we set $x^c_\tau=0$,
 which sets the model's controller state equal to that of the system at $\tau$.
@@ -708,8 +936,12 @@ each simulation window its initial state, and the optimiser.}
 window is simulated with the known controller.
 The initial states are estimated by an encoder network, including the additional
 states.}
-\mv[Jan23]{II}{During training, the physical parameters $\theta_{\mathrm{base}}$ are also
-estimated, using the combinations defined in Section~\ref{sec:params}.}
+% FEEDBACK (own, 2026-10-22; C1): repeats the joint-estimation sentence
+%   below ("theta_aug, theta_enc and theta_base are jointly estimated, as in
+%   Hoekstra Eq. (22)"); the pointer to the combinations moves to
+%   "theta_base(beta) gives the baseline parameters" (Dirk 2026-10-22).
+\mv[Jan23]{II}{\del[own]{During training, the physical parameters $\theta_{\mathrm{base}}$ are also
+estimated, using the combinations defined in Section~\mbox{\ref{sec:params}}.}}
 % NEW (2026-10-19, Maarten p7: "I would include at least a brief intro of subnet somewhere"): drafted sentence, Dirk to reword.
 \delmv[M-p7]{II}{This is the SUBNET approach of Beintema et al.~\cite{beintema2023subnet}:
 the simulation error over short windows is minimised, and an encoder,
@@ -790,7 +1022,10 @@ are trained to minimise the normalised output error of the
 closed-loop simulation, with the
 controller fixed. We adapt this from~\cite[Eq.~(22)]{hoekstra2026lfr}, 
 adapted for the closed loop of Section~\ref{sec:aug_loop} and the
-encoder \kwtwo{described below}:
+encoder\del[M-mail]{ \kwtwo{described below}}:
+% FEEDBACK (own, 2026-10-22; Codex review, Maarten mail forward
+%   references): the encoder is motivated above and defined right after
+%   (22) (Dirk 2026-10-22).
 \begin{equation}
 \begin{aligned}
  &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal W|\,n_f\,n_y}
@@ -810,7 +1045,7 @@ encoder \kwtwo{described below}:
 \end{equation}
 for $\tau\le k<\tau+n_f$, where each training window starts at a sample
 $\tau\in\mathcal W$ and has length $n_f$, $n_y=3$, and
-$\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters.
+$\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters\add[own]{ (Section~\ref{sec:params})}.
 $W_r=\mathrm{diag}(\sigma_{y,j}/\sigma_{e,r,j})$ weights axis $j$ of training
 record $r$, so that its residual in metres is divided by the standard
 deviation $\sigma_{e,r,j}$ of its servo error\chg[M-mail]{ \eqref{eq:setup_rms}}{ $y_j-r_j$}.
@@ -895,8 +1130,12 @@ controller from the start of the record~\cite[Remark~5.4]{kessels2025ai}.}
 within the training window, as in the closed loop system.
 Each window starts from a new encoder estimate and $x^c_\tau=0$,
 so the window is not affected by model errors before $\tau$.
-The validation \del[M-mail]{of Section~\ref{sec:aug_closed_loop} }is simulated 
-in closed-loop and only initialised at the start.}
+\del[own]{The validation}\del[M-mail]{ of Section~\mbox{\ref{sec:aug_closed_loop}}}\del[own]{ is simulated
+in closed-loop and only initialised at the start.}}
+% FEEDBACK (own, 2026-10-22; C2): the validation sentence repeats the
+%   optimiser paragraph ("simulated in closed loop with the initial state
+%   estimated once by the encoder and x^c=0"); the earlier M-mail strike
+%   stays as its own \del (Dirk 2026-10-22).
 \\
 The baseline parameters and the neural network can both correct the same
 model errors, making the optimal parameter values  
@@ -912,17 +1151,24 @@ order'' with a pointer to it
 (basis: \texttt{04\_obc.tex} \eqref{eq:obc_coef}; 
 math check 2026-10-13, F1).}
 \\
-For training we minimise $V$ with Adam on minibatches of windows, and 
+% FEEDBACK v2 (2026-10-22, Maarten p8 "refer to the equation." on V; Codex review F7) (Dirk 2026-10-22).
+For training we minimise $V$\add[M-p8]{ in \eqref{eq:aug_loss}} with Adam on minibatches of windows, and
 the gradient is calculated over the full window.
 We then polish with L-BFGS on a fixed set of windows.
 This is adapted from the Adam and L-BFGS-B sequence of Drenth
 et al.~\cite[Sec.~4.1]{drenth2025lpvlfr}.
 Because every $\beta$ satisfies \eqref{eq:lfr_admissibility}, 
 unconstrained L-BFGS works without a bound.
-During the optimisation with Adam the parameters with the lowest validation 
+% FEEDBACK (own, 2026-10-23): the validation set is defined here, at its
+%   only use in the method (checkpoint selection), without a pointer to
+%   Section V (Maarten mail, forward references); D_N is the estimation set
+%   (convention A, Dirk 2026-10-23).
+\add[own]{\kwtwo{The parameters are selected on a separate validation set
+$\mathcal D_{\mathrm{val}}$, measured on the same system.}}
+During the optimisation with Adam the parameters with the lowest validation
 error are kept.
 The error is the mean \chg[M-mail]{$\mathrm{NRMS}_{e,j}$ \eqref{eq:setup_rms}}{RMS simulation error divided by the RMS servo error, $\mathrm{NRMS}_{e,j}$,} over the
-complete validation records and axes,
+complete \chg[own]{validation records}{records of $\mathcal D_{\mathrm{val}}$} and axes,
 simulated in closed loop with the initial state estimated
 once by the encoder and $x^c=0$.
 We only keep the polish if it lowers the validation error.
@@ -945,9 +1191,9 @@ We only keep the polish if it lowers the validation error.
 \item The fitted physical rows only set the start and are trained jointly with $\theta_{\mathrm{base}}$ (2026 Eq.~(22)); least-squares start (D-271)
 \end{itemize}
 \fi
-
 \kwtwo{A fully random initialisation} can \kwtwo{be unstable and give poor optimisation results}\kwtwo{. To resolve this,} training starts
 from \kwtwo{a model that behaves as the baseline}~\cite[Sec.~5.4]{hoekstra2026lfr}.
+\todo{Word different, look at Quinten his comment.}
 \\
 The physical rows are initialised from the baseline model.
 Because solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$ 
@@ -975,9 +1221,16 @@ where $\tilde x^{\mathrm n,0}_k$ is the simulated baseline state,
 $\theta^0_{\mathrm{base}}$ are the initial parameters,
 and $\hat u^{\mathrm n,0}_k$ is the closed-loop input
 from \eqref{eq:aug_cl_step}.
-We use $\hat y^{\mathrm n,0}_k$ as the model output
-and set the controller state $x^c$ to zero at the 
-start of each record (see Section~\ref{sec:aug_loop}).
+% RESTRUCTURE (2026-10-22, Dirk; D8): the closed-loop-input sentence moved
+%   here from after the fit, beside the simulation it explains (Maarten p8
+%   "simulate in closed loop?").
+\mv[own]{below}{We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the
+recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.}
+% FEEDBACK (own, 2026-10-22; D2): the x^c clause repeats the next sentence
+%   ("... zero added states and x^c=0") (Dirk 2026-10-22).
+We use $\hat y^{\mathrm n,0}_k$ as the model output\del[own]{
+and set the controller state $x^c$ to zero at the
+start of each record (see Section~\mbox{\ref{sec:aug_loop}})}.
 For our closed-loop simulation, each record starts from the measured
 positions in generalised coordinates, $q=P^{-\top}y$, with zero
 velocities, zero added states and $x^c=0$.
@@ -994,39 +1247,57 @@ states by least squares~\cite[Eq.~(33)]{hoekstra2026encoder}:
  \label{eq:aug_enc_fit}
 \end{equation}
 where $b\in\R^6$ is an intercept.
+% RESTRUCTURE (2026-10-22, Dirk; D7): the definitions of chi^0 and D moved
+%   here from eight sentences below, next to (26) that uses them.
+\mv[own]{below}{$\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
+using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
+$\mathcal D$ is the set of window ends $\tau$ at the training stride of
+10 samples.}
 Hoekstra et al.\ use this linear fit for LTI baselines and fit a
 neural network for nonlinear baselines~\cite[Eqs.~(33), (35)]{hoekstra2026encoder}.
 We use the linear fit as a linear restriction of their data-based
 initialisation, and learn the nonlinear correction $\tilde\psi$ during
 training.
-The affine fit is computed by a single numerical-rank-truncated
+% FEEDBACK (own, 2026-10-22; D3): solver detail cut, the reader needs the
+%   problem (26), not the solver (Maarten mail "korter") (Dirk 2026-10-22).
+\del[own]{The affine fit is computed by a single numerical-rank-truncated
 SVD solve in centred and standardised regressors, without
-gradient-based pre-training.
+gradient-based pre-training.}
 The intercept $b^{b,0}$ is placed in the output bias of the physical rows
 of $\tilde\psi$, whose output weights start at zero, so that
 $\psi_b=W^{b,0}\chi_\tau+b^{b,0}$ at the start.
-The hidden layers of $\tilde\psi$ are drawn from
-$\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input size of the layer.
+% FEEDBACK (own, 2026-10-22; D4): same distribution as for phi_aug below;
+%   both now in one sentence there (Dirk 2026-10-22).
+\del[own]{The hidden layers of $\tilde\psi$ are drawn from
+$\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input size of the layer.}
 We write $\theta^{b,0}_{\mathrm{enc}}$ for this start of
 $\theta^b_{\mathrm{enc}}$, which consists of $W^b$, the hidden layers of
 $\tilde\psi$ and its physical output rows, and use it to \kwtwo{start minimising \eqref{eq:aug_loss}}.
-$\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
+\delmv[own]{after \mbox{\eqref{eq:aug_enc_fit}}}{$\chi^0_\tau$ is formed as we do in \mbox{\eqref{eq:aug_encoder}}
 using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
 $\mathcal D$ is the set of window ends $\tau$ at the training stride of
-10 samples.
-We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the 
-recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.
-The fitting loss in \eqref{eq:aug_enc_fit} and $\theta^{b,0}_{\mathrm{enc}}$
+10 samples.}
+\delmv[own]{after \mbox{\eqref{eq:aug_enc_sim}}}{We use the closed-loop input from \mbox{\eqref{eq:aug_enc_sim}}, instead of the
+recorded input as in~\mbox{\cite[Eq.~(30)]{hoekstra2026lfr}}.}
+% FEEDBACK (own, 2026-10-22; D6): repeats "use it to start minimising (22)"
+%   above (Dirk 2026-10-22).
+\del[own]{The fitting loss in \mbox{\eqref{eq:aug_enc_fit}} and $\theta^{b,0}_{\mathrm{enc}}$
 are only used for initialisation.
-Subsequent training uses \eqref{eq:aug_loss}.
+Subsequent training uses \mbox{\eqref{eq:aug_loss}}.}
 
 
-We start training with the augmented model giving the same
-output as the baseline model from the same initial state, as \kwtwo{posed}
-by~\cite[Eq.~(29)]{hoekstra2026lfr}. \revnote{I use the encoder 
-for my augmented model, so i state: model from the same initial state. 
+% FEEDBACK v2 (2026-10-22, Maarten p8 "unclear." on this sentence; D1): it
+%   repeats the IV-D intro ("training starts from a model that behaves as
+%   the baseline [Sec. 5.4]"); the end of this paragraph states the result
+%   precisely (same x-tilde and y-hat, x-bar still updated). The next
+%   sentence gets a four-word lead-in for "Therefore". Dirk's revnote kept
+%   (Dirk 2026-10-22).
+\del[M-p8]{We start training with the augmented model giving the same
+output as the baseline model from the same initial state, as posed
+by~\mbox{\cite[Eq.~(29)]{hoekstra2026lfr}}.} \revnote{I use the encoder
+for my augmented model, so i state: model from the same initial state.
 But i could leave it out.}
-Therefore we zero the physical rows of $\phi_{\mathrm{aug}}$ its output layer, 
+\chg[M-p8]{Therefore we}{\kwtwo{To start from the baseline, we}} zero the physical rows of $\phi_{\mathrm{aug}}$ its output layer, 
 and the added-state rows are kept random:
 \begin{equation}
 \begin{aligned}
@@ -1047,13 +1318,14 @@ $\tilde W^{\bar x}_L$ and $\tilde b^{\bar x}_L$
 are the added-state rows of the output layer weights and bias of $\tilde\psi$\kwtwo{, respectively}.
 \kwtwo{Here $W\sim\mathcal U(-a,a)$ means that every entry of $W$ is drawn
 independently from the uniform distribution on $[-a,a]$.}
-We initialise $W^{\bar x}_L$ and the hidden layers of $\phi_{\mathrm{aug}}$
+We initialise $W^{\bar x}_L$ and the hidden layers of $\phi_{\mathrm{aug}}$\add[own]{ and $\tilde\psi$}
 from $\mathcal U(-1/\sqrt{m},1/\sqrt{m})$,
 where $m$ is the input size of the layer.
 We use Xavier initialisation for $W^a$,
 following~\cite[Eq.~(31)]{hoekstra2026lfr}.
-We choose the uniform distribution with gain one,
-giving $a=\sqrt{6/(n_{\bar x}+6(n+1))}$.
+% FEEDBACK (own, 2026-10-22; D5): a is already given in (27) (Dirk 2026-10-22).
+We choose the uniform distribution with gain one\del[own]{,
+giving $a=\sqrt{6/(n_{\bar x}+6(n+1))}$}.
 At the start of training, $\theta_{\mathrm{base}}=\theta^0_{\mathrm{base}}$
 and $f^{\mathrm n}_{\mathrm{aug}}=0$.
 The augmented model and baseline model give the same $\tilde x$ and $\hat y$, 
@@ -1081,23 +1353,31 @@ pragmatisch mis niet dit hele stuk uit hoeven leggen.}
 The physical states of the baseline are initialised with the 
 data-based fit \eqref{eq:aug_enc_fit} and updated through
 $f^{\mathrm n}_{\mathrm{base}}$, while the added-state rows $W^a$ are randomly initialised.
-For the physical states their generalised coordinates $q_k$ are directly mapped to 
-actuator positions, $\hat y_k=P^\top q_k$ in \eqref{eq:aug_transition}.
-The added states are updated through the random added-state rows of $\phi_{\mathrm{aug}}$, 
+% FEEDBACK (own, 2026-10-22; E1): repeats (14) and the output sentence
+%   below (Dirk 2026-10-22).
+\del[own]{For the physical states their generalised coordinates $q_k$ are directly mapped to
+actuator positions, $\hat y_k=P^\top q_k$ in \mbox{\eqref{eq:aug_transition}}.}
+The added states are updated through the random added-state rows of $\phi_{\mathrm{aug}}$,
 without their initialisation or initial updates being derived from the baseline or the data.
+% FEEDBACK v2 (2026-10-22, Maarten p9 "how does a cost update an effect?
+%   very unclear."; E2): the sentence is struck; the sentences before and
+%   after it carry the argument (Dirk 2026-10-22).
 The output $\hat y_k=P^\top q_k$ contains no added state, and $\bar x_k$
 enters $\tilde x_{k+1}$ only through $f^{\mathrm n}_{\mathrm{aug}}$ in
-\eqref{eq:aug_loss}. This means that for the added states $V$ only updates their effect on 
-the output through $f^{\mathrm n}_{\mathrm{aug}}$.
+\eqref{eq:aug_loss}. \del[M-p9]{This means that for the added states $V$ only updates their effect on
+the output through $f^{\mathrm n}_{\mathrm{aug}}$.}
 From \eqref{eq:aug_loss}, $V$ \kwtwo{has no term that requires} $\bar x$
 to predict the resulting output error.
 This gives $f^{\mathrm n}_{\mathrm{aug}}$ the capability to lower part of this error with 
 $\tilde x$ and $\hat u$ alone.
 Minimising $V$ can therefore reduce the error without capturing the missing
 dynamics in $\bar x$. \todo{Section~\ref{sec:results} tests whether it does.}
-This forms a sharp contrast between the physical and added states,
-due to the physical states being able to directly map to the output, 
-while also having a much better starting point.
+% FEEDBACK (own, 2026-10-22; E3): the contrast stated concisely; both
+%   halves are in the sentences above (fit vs random start; output without
+%   added state) (Dirk 2026-10-22: "state E3 much more concise").
+\chg[own]{This forms a sharp contrast between the physical and added states,
+due to the physical states being able to directly map to the output,
+while also having a much better starting point.}{\kwtwo{The physical states thus have a data-based start and a direct map to the output, while the added states have neither.}}
 
 
 %\\
@@ -1114,15 +1394,18 @@ before backpropagation through time\kwtwo{ (BPTT)}~\cite[Sec.~4.2]{downey2017psr
 % RESTRUCTURE (2026-10-19, Maarten p9: "This remains opaque for me",
 %   "Formalize the optimization problem that you solve for each stage"):
 %   overview of the three stages first, drafted for Dirk to reword.
-\kwtwo{PS has three stages, each with its own optimisation problem.
-In S1, \eqref{eq:aug_loss} is minimised as before, and after each of its
+% FEEDBACK (own, 2026-10-22; IV-E issues 3 and 6): two stages, not three
+%   (minimising (22) afterwards is the hand-over); the S1 and S2 labels
+%   are introduced once, in the overview (Dirk 2026-10-22).
+\kwtwo{PS has \chg[own]{three}{two} stages, each with its own optimisation problem.
+\chg[own]{In S1,}{In the first stage (S1),} \eqref{eq:aug_loss} is minimised as before, and after each of its
 updates the added-state outputs of the encoder are trained to predict the
 residual of the model.
-In S2, $g^{\mathrm n}_{\mathrm{aug}}$ is trained to predict the next added state.
+\chg[own]{In S2,}{In the second stage (S2),} $g^{\mathrm n}_{\mathrm{aug}}$ is trained to predict the next added state.
 After S2, \eqref{eq:aug_loss} is minimised from the resulting parameters.}
-The first stage (S1) predicts the residual of the model, instead
+\chg[own]{The first stage (S1)}{S1} predicts the residual of the model, instead
 of \kw{features of future observations} as in~\cite{hefny2015supervised}.
-The second stage (S2) trains the nonlinear state update
+\chg[own]{The second stage (S2)}{S2} trains the nonlinear state update
 instead of a \kw{linear operator.}
 \kw{We continue \kwtwo{minimising $V$} during the first stage, while Downey et al.\ finish
 their initialisation before starting BPTT~\cite[Sec.~4.2]{downey2017psrnn}.}
@@ -1134,12 +1417,15 @@ are used for both stages.
  \resizebox{\columnwidth}{!}{\input{figures/tex/ps2_windows}}
  \caption{Windows of PS on one record, layout adapted
  from~\cite[Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the
- window $\chi_\tau$ to $\hat x^{\mathrm n}_{\tau|\tau}$, and the decoder $d$ maps its added part
+ window $\chi_\tau$ to $\hat x^{\mathrm n}_{\tau|\tau}$, and the decoder $p$ maps its added part
  $\bar x_{\tau|\tau}$ to the residuals $e_\tau$ of the next $H$ samples
  \eqref{eq:ps2_s1}. S2 (bottom): $g_{\mathrm{aug}}$ maps $\hat x^{\mathrm n}_{\tau|\tau}$ and the
  recorded $u_\tau$ to the added state encoded from the window shifted by one
  sample \eqref{eq:ps2_s2}.}
  \label{fig:ps2_windows}
+ % FEEDBACK (2026-10-22, Dirk revnote below): decoder d -> p in caption and
+ % figures/tex/ps2_windows.tex (node "dec"); caption: no marks. Revnote
+ % answered, left for Dirk to remove.
  \revnote{d is also a baseline parameter, need to change}
 \end{figure}
 
@@ -1150,33 +1436,43 @@ are used for both stages.
 Stage S1 trains the encoder's added-state outputs to predict the residual of
 the augmented model \eqref{eq:aug_transition} using the model parameters $\vartheta$
 from the latest $V$ update step.
-Each update of $V$ is followed by one S1 update with its own Adam optimiser.
-For the S1 update we select a minibatch $\mathcal B$ of samples $\tau$ from the training data.
+% FEEDBACK (own, 2026-10-22; E9): repeats the overview and eq:ps2_alt
+%   (Dirk 2026-10-22).
+\del[own]{Each update of $V$ is followed by one S1 update with its own Adam optimiser.}
+% FEEDBACK (own, 2026-10-22; Codex review F1): held-out part excluded from
+%   S1 (code: fit_ix) (Dirk 2026-10-22). F3 below: "with its own Adam
+%   optimiser" restored from the struck E9 sentence (code: separate Adam
+%   state on theta^a_enc, ps2_opening.py).
+For the S1 update we select a minibatch $\mathcal B$ of samples $\tau$ from the training data\add[own]{ without the held-out part}.
 % RESTRUCTURE (2026-10-19, Maarten mail): the held-out sentences moved to
 %   the paragraph that defines nu (it was used before its definition).
 \delmv[M-mail]{the $
 u$ paragraph}{The training data is divided into excitation classes, and for classes
 with at least three records one is left out of S1 and S2 to evaluate $\nu$ \eqref{eq:ps2_nu}.
 The left out data is still used in $V$.}
-For each sample $\tau$, the encoder uses the last $n+1$
-samples up to $\tau-1$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathrm n}_{\tau|\tau}$.
-From this state the augmented model is simulated in the closed loop of 
+% FEEDBACK (own, 2026-10-22; E10): repeats eq:aug_encoder (Dirk 2026-10-22).
+\del[own]{For each sample $\tau$, the encoder uses the last $n+1$
+samples up to $\tau-1$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathrm n}_{\tau|\tau}$.}
+From \chg[own]{this state}{\kwtwo{the encoder state $\hat x^{\mathrm n}_{\tau|\tau}$}} the augmented model is simulated in the closed loop of 
 Section~\ref{sec:aug_loop}.
 We calculate the residual from the next $H=n+1$ samples, from $\tau$ to $\tau+H-1$.
 The top of Fig.~\ref{fig:ps2_windows} shows the window $\chi_\tau$ and the
 samples of the residual $e_\tau$.
 We have chosen to use the same number of samples as the encoder window.
-Then a temporary decoder $d$ with only the added states as inputs
+% FEEDBACK (own, 2026-10-22; Dirk revnote "d is also a baseline parameter,
+%   need to change"): decoder d -> p (matches theta_p); in the equations
+%   without marks (Dirk 2026-10-22).
+Then a temporary decoder \chg[own]{$d$}{$p$} with only the added states as inputs
 $\bar x_{\tau|\tau}=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
 is used to predict this residual:
 \begin{equation}
 \begin{aligned}
  e_\tau&=\frac{1}{\sigma_e}\bigl[\,(y^{\mathrm n}_{\tau}-\hat y^{\mathrm n}_{\tau|\tau})^\top\;\cdots\;
   (y^{\mathrm n}_{\tau+H-1}-\hat y^{\mathrm n}_{\tau+H-1|\tau})^\top\bigr]^\top,\\
- d(\theta_{\mathrm p},\bar x)&=W_{\mathrm p,2}\tanh\bigl(W_{\mathrm p,1}\bar x+b_{\mathrm p,1}\bigr)+b_{\mathrm p,2},\\
+ p(\theta_{\mathrm p},\bar x)&=W_{\mathrm p,2}\tanh\bigl(W_{\mathrm p,1}\bar x+b_{\mathrm p,1}\bigr)+b_{\mathrm p,2},\\
  &\min_{\theta_{\mathrm p},\,\theta^a_{\mathrm{enc}}}\;
  \frac{1}{|\mathcal B|\,H\,n_y}\sum_{\tau\in\mathcal B}
- \norm{d\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2,
+ \norm{p\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2,
 \end{aligned}
 \label{eq:ps2_s1}
 \end{equation}
@@ -1199,13 +1495,15 @@ This simulated output is kept fixed during
 the S1 update.
 $\mathcal B$ is the minibatch of samples $\tau$ and
 $\sigma_e$ is the RMS of all residual values in $\mathcal B$.
-The decoder $d:\R^{n_{\bar x}}\to\R^{Hn_y}$ has parameters
+% RESTRUCTURE (2026-10-22, Dirk; E4): decoder dimensions and zero start
+%   moved to Appendix PS details (implementation; (28) defines p).
+\delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{The decoder $d:\R^{n_{\bar x}}\to\R^{Hn_y}$ has parameters
 $\theta_{\mathrm p}=(W_{\mathrm p,1},b_{\mathrm p,1},
 W_{\mathrm p,2},b_{\mathrm p,2})$, with
 $W_{\mathrm p,1}\in\R^{n_h\times n_{\bar x}}$ and
 $W_{\mathrm p,2}\in\R^{Hn_y\times n_h}$.
 Both $W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ are initially
-set to zero, so that the decoder starts by predicting zero residual.
+set to zero, so that the decoder starts by predicting zero residual.}
 Only $\theta_{\mathrm p}$ and $\theta^a_{\mathrm{enc}}$
 are updated by S1. 
 The parameters of $\vartheta$, including $\theta^a_{\mathrm{enc}}$
@@ -1220,36 +1518,52 @@ Instead of using features of future observations
 as Hefny et al.~\cite[Sec.~2]{hefny2015supervised} for predictive-state learning, 
 we use the model residual.
 }
-To avoid correlation between the history and future noise Hefny et al.\ separate
-the past and future samples~\cite[Sec.~2]{hefny2015supervised}. 
+% RESTRUCTURE (2026-10-22, Dirk; E5): noise remarks moved to Appendix PS
+%   details (revnote "appendix", not needed to follow the method).
+\delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{To avoid correlation between the history and future noise Hefny et al.\ separate
+the past and future samples~\mbox{\cite[Sec.~2]{hefny2015supervised}}.
 The encoder window ends at $\tau-1$, while the residual starts at $\tau$, so
 no measurement sample is reused on both sides.
 With filtered measurement noise, this separation does not guarantee noise
-independence.
+independence.}
 \todo{
 Venkatraman et al.\ use a similar approach by predicting
 future observations from the internal states during
 training~\ucite[Sec.~3]{venkatraman2017psd}.
 }
-For the PS implementation the decoder predicts the model residual and
-is removed after S1.
+% FEEDBACK (own, 2026-10-22; E6): repeats "a temporary decoder ... is used
+%   to predict this residual" and the hand-over ("since the decoder is
+%   removed") (Dirk 2026-10-22).
+\del[own]{For the PS implementation the decoder predicts the model residual and
+is removed after S1.}
 
-\mv[M-mail]{PS, S1}{The training data is divided into excitation classes\todo{see section}, and for classes
-with at least three records one is left out of S1 and S2 to evaluate \chg[M-mail]{$\nu$ \eqref{eq:ps2_nu}}{\kwtwo{S1}}.
-The left out data is still used in $V$.}
+% RESTRUCTURE (2026-10-22, Dirk; E7; revnote "appendix", Maarten p9 "Try
+%   to shorten it"): held-out split, nu (eq:ps2_nu) and the stopping
+%   sentences moved to Appendix PS details, where the stopping rule in nu
+%   already is. The earlier M-mail move and its marks are kept at the
+%   destination. One new sentence names what the rule decides; the
+%   held-out part is named in terms of D_N, not records or classes
+%   (experiment design, Section V) (Dirk 2026-10-22).
+\delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{The training data is divided into excitation classes, and for classes
+with at least three records one is left out of S1 and S2 to evaluate S1.
+The left out data is still used in $V$.
 To evaluate how well $\bar x_{\tau|\tau}$ performs at predicting the residual, a
-fixed \kwtwo{set of windows $\mathcal C$} from the held out data is used.
+fixed set of windows $\mathcal C$ from the held out data is used.
 For this set the squared prediction error of the decoder
 divided by the squared residual is computed,
-\begin{equation}
- \nu=\frac{\sum_{\tau\in\mathcal C}\norm{d\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2}
- {\sum_{\tau\in\mathcal C}\norm{e_\tau}_2^2}.
- \label{eq:ps2_nu}
-\end{equation}
+[equation \mbox{\eqref{eq:ps2_nu}} moved to Appendix~\mbox{\ref{app:ps_stop}}]
 S1 is stopped when a maximum number of updates is reached or when $\nu$ stops improving, or at an early check when $\nu$ is above $\nu_{\max}$.
-S2 starts only if $\nu$ is below a threshold $\nu_{\max}$, else the decoder is removed 
+S2 starts only if $\nu$ is below a threshold $\nu_{\max}$, else the decoder is removed
 and training continues. In both cases the encoder changes from S1 are kept.
-The threshold rule for S2 is given in Appendix~\ref{app:ps_stop}.
+The threshold rule for S2 is given in Appendix~\mbox{\ref{app:ps_stop}}.}
+% FEEDBACK (own, 2026-10-22; Codex review F1 + own): nu is the unexplained
+%   fraction of the residual (eq:ps2_nu), not a prediction error; the
+%   held-out part staying in V was only in the appendix, which Maarten does
+%   not read (code: calibration_split, fit_ix vs cal_ix) (Dirk 2026-10-22).
+\add[own]{\kwtwo{S1 ends by a stopping rule on \chg[own]{the prediction error $\nu$}{the unexplained fraction $\nu$ of the residual} on a
+held-out part of $\mathcal D_N$, which also decides whether S2 runs
+(Appendix~\ref{app:ps_stop}).}}
+\add[own]{\kwtwo{The held-out part is still used in $V$.}}
 % RESTRUCTURE (2026-10-19, Maarten p9 "Formalize the optimization problem
 %   that you solve for each stage"): S1 alternation written out; defines
 %   i_1, which eq:ps2_handover already uses. Drafted for Dirk to reword.
@@ -1264,7 +1578,7 @@ $i=0,1,\dots,i_1-1$,
 \label{eq:ps2_alt}
 \end{equation}
 where $\mathcal A_V$ is one Adam step on \eqref{eq:aug_loss},
-$\mathcal A_{\mathrm{S1}}$ one Adam step on \eqref{eq:ps2_s1}, the updated
+$\mathcal A_{\mathrm{S1}}$ one Adam step on \eqref{eq:ps2_s1}\add[own]{ with its own Adam optimiser}, the updated
 $\theta^a_{\mathrm{enc}}$ is written back into $\vartheta^{(i+1)}$, and $i_1$ is
 the update at which the stopping rule above ends S1.}
 \todo{Missing: basis of the PS switch and stop rules (S1 plateau and cap, screen update and threshold, S2 plateau and cap, snapshot sizes, calibration split as the last record of each class with three or more records). Candidate: rows of the hyperparameter table in Section~\ref{sec:setup}, all HEURISTIC (\texttt{PS2Spec}; \texttt{PS2-METHOD.md} Sec.~5), noting that the S1 cap, not the plateau, ended S1 in every run so far.}
@@ -1277,14 +1591,18 @@ S2 trains the state update itself.
 In S2 $g^{\mathrm n}_{\mathrm{aug}}$ is trained to predict the next
 added state $\bar x_{k+1}$ from the full state $\hat x^{\mathrm n}_k$ and the input
 $u^{\mathrm n}_k$.
-For S2 samples $k_i$\kwtwo{, $i=1,\dots,N_{\mathcal P}$,} from the training data are selected, 
-except the same held-out records from S1 are left out.
+% FEEDBACK (own, 2026-10-22; IV-E issue 2, E11): "records" -> "data" (the
+%   held-out part of D_N is named in the S1 stopping sentence); the
+%   figure-reading sentence repeats the caption of Fig. ps2_windows
+%   (Dirk 2026-10-22).
+For S2 samples $k_i$\kwtwo{, $i=1,\dots,N_{\mathcal P}$,} from the training data are selected,
+except the same held-out \chg[own]{records}{data} from S1 are left out.
 For each sample the encoder estimates $\hat x^{\mathrm n}_{k_i|k_i}$ from
 $\chi_{k_i}$ and $\bar x_{k_i+1|k_i+1}$ from the next window
 $\chi_{k_i+1}$.
 Fig.~\ref{fig:ps2_windows} shows an example with $k_i=\tau$.
-The window $\chi_\tau$ at the top is used for $\hat x^{\mathrm n}_{k_i|k_i}$,
-and the shifted window at the bottom is used for $\bar x_{k_i+1|k_i+1}$.
+\del[own]{The window $\chi_\tau$ at the top is used for $\hat x^{\mathrm n}_{k_i|k_i}$,
+and the shifted window at the bottom is used for $\bar x_{k_i+1|k_i+1}$.}
 We calculate these pairs once after S1, this set $\mathcal P$\kwtwo{ in \eqref{eq:ps2_s2}} is kept fixed.
 \\
 During S2 the model is not simulated in closed-loop \kw{and $V$ is paused.}
@@ -1308,24 +1626,36 @@ $\bar x_{j,\cdot}$ is the $j$th added state and $m_j$
 is the mean of $\bar x_{j,k_i+1|k_i+1}$ over $\mathcal B_{\mathcal P}$.
 The cost is the fraction of the variance in the
 next added states that is not explained by the prediction.
+% FEEDBACK (own, 2026-10-22; IV-E issue 5): the S2 input argument moved to
+%   the appendix (E13); one sentence keeps the reason in the main text
+%   (Dirk 2026-10-22).
+% FEEDBACK (own, 2026-10-22; Codex review F2): the sentence dropped the
+%   condition; with x^c=0 only the C_fb term vanishes, D_fb(y-yhat) stays
+%   (appendix derivation; closed_loop.py rollout u_t + u_fb) (Dirk 2026-10-22).
+\add[own]{\kwtwo{\chg[own]{The recorded force approximately equals the closed-loop input of
+$V$ at that sample}{At the start of a window, the recorded force equals the closed-loop input of $V$ when the encoder reproduces $y_{k_i}$} (Appendix~\ref{app:ps_stop}).}}
 \\
-The parameters with the lowest cost on the separate set of pairs 
-from the held-out records are kept.
-For S2 we use the recorded actuator force $u^{\mathrm n}_{k_i}$
+% FEEDBACK (own, 2026-10-22; IV-E issue 4): E12 kept in the main text, it
+%   defines theta^S2_aug in eq:ps2_handover; "records" -> "data" (method
+%   text names the held-out part of D_N, the record split is in the
+%   appendix) (Dirk 2026-10-22).
+The parameters with the lowest cost on the separate set of pairs
+from the held-out \chg[own]{records}{data} are kept.
+% RESTRUCTURE (2026-10-22, Dirk; E13; revnote "appendix", Maarten p9
+%   "Try to shorten it"): the S2 input derivation moved to Appendix PS
+%   details.
+\delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{For S2 we use the recorded actuator force $u^{\mathrm n}_{k_i}$
 applied to the system at $k_i$.
 The encoder estimates $\bar x_{k_i+1|k_i+1}$ from
 $\chi_{k_i+1}$, using the data up to $k_i+1$.
-At the start of a window in \eqref{eq:aug_residual_loop}
+At the start of a window in \mbox{\eqref{eq:aug_residual_loop}}
 $x^c=0$, resulting in the model input
-\begin{equation*}
- \hat u_{\mathrm{act},k_i}=u_{\mathrm{act},k_i}+D_{\mathrm{fb}}\bigl(y_{k_i}-\hat y_{k_i|k_i}\bigr),
-\end{equation*}
-
-when the encoder reproduces $y_{k_i}$ this equals the recorded input, 
+[equation moved to Appendix~\mbox{\ref{app:ps_stop}}]
+when the encoder reproduces $y_{k_i}$ this equals the recorded input,
 because at this sample only the controller feedthrough $D_{\mathrm{fb}}$
 acts on the output error.
 For S2 $g^{\mathrm n}_{\mathrm{aug}}$ is therefore trained with approximately
-the input it receives at that sample in the closed-loop simulation of $V$.
+the input it receives at that sample in the closed-loop simulation of $V$.}
 S2 updates all parameters $\theta_{\mathrm{aug}}$ of $\phi_{\mathrm{aug}}$.
 The cost only depends on the added-state rows, so the physical rows of $W_L$ and $b_L$
 are not changed.
