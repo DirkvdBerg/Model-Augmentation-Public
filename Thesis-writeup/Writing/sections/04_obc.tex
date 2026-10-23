@@ -318,19 +318,24 @@ Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$,
 we solve \eqref{eq:obc_coef} at every evaluation of $V$.
 At the start of each epoch $\beta_{\mathrm{lin}}$ is set to the current $\beta$, 
 and it is held fixed during the epoch.
-Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
+% CUT (2026-10-23, Maarten mail "het kan wel wat korter"; Dirk yes): the two
+%   alternatives of Gyorok 2025 Sec. 4 shortened to one sentence.
+\chg[M-mail]{Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
 which requires rebuilding $\Phi_\Gamma$ at each evaluation
-of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to 
-keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters, 
-assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to
+keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters,
+assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration
+or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
 \chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{Since training may start} from detuned parameters,
 we instead adapt their recomputation 
 at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
-We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.
+% CUT (2026-10-23, Maarten mail "korter"; Dirk yes): checkpoint and polish
+%   handling is run procedure, not method; no later section refers to it.
+\del[M-mail]{We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.
 The polish minimises the same projected objective, with $\Phi_\Gamma$ held
 fixed at this $\beta$.
 The polish is only kept if its validation error is lower than the selected
-checkpoint's.
+checkpoint's.}
 \revnote{Final OBC results pending (polish reruns of R1 and R2,
 2026-10-20, final evaluation not yet run).
 R1 and R13: the polish is kept, validation $\mathrm{NRMS}_e$ from
@@ -396,31 +401,39 @@ of~\cite[Eq.~(21)]{gyorok2026obc}?}
 \subsection{\texorpdfstring{\kwtwo{Orthogonality measures}}{Orthogonality measures}}\label{sec:obc_measures}
 We measure orthogonality using the normalised inner product,
 with the physical state normalised using \eqref{eq:aug_norm}:
+% CUT (2026-10-23, own; Dirk yes): c_neg is used in no later section (only rho,
+%   05_setup.tex), so its line and the separate cos-angle line are removed; the
+%   cosine is now inside rho. Old lines:
+%  \cos\angle(a,b)&=\frac{\langle a,b\rangle}{\norm{a}_2\norm{b}_2},\\
+%  \rho(d)&=\max_{v\in\ran\Phi\setminus\{0\}}\cos\angle(v,d)
+%  c_{\mathrm{neg}}&=\cos\angle\Bigl(F^{\mathrm n}_{\mathrm{aug}},
+%  \col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)-\tilde x^{\mathrm n}_i\bigr)_{i\in\mathcal I}\Bigr),
 \begin{equation}
 \begin{aligned}
- \cos\angle(a,b)&=\frac{\langle a,b\rangle}{\norm{a}_2\norm{b}_2},\\
- \rho(d)&=\max_{v\in\ran\Phi\setminus\{0\}}\cos\angle(v,d)
+ \rho(d)&=\max_{v\in\ran\Phi\setminus\{0\}}
+ \frac{\langle v,d\rangle}{\norm{v}_2\norm{d}_2}
  =\frac{\norm{\Pi d}_2}{\norm{d}_2},\\
- \Pi&=\Phi\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top,\\
- c_{\mathrm{neg}}&=\cos\angle\Bigl(F^{\mathrm n}_{\mathrm{aug}},
- \col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)-\tilde x^{\mathrm n}_i\bigr)_{i\in\mathcal I}\Bigr),
+ \Pi&=\Phi\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top,
 \end{aligned}
 \label{eq:obc_overlap}
 \end{equation}
+\revnote{Changed (own): the $\cos\angle(a,b)$ and $c_{\mathrm{neg}}$ lines
+were removed from \eqref{eq:obc_overlap}; the cosine is now written inside
+$\rho$.}
 % where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal projector
 % onto $\ran\Phi$.
 % $\rho(d)$ is the largest normalised inner product of $d$ with a parameter
 % direction, and $\rho(d)=0$ if and only if $\Phi^\top d=0$.
 % $c_{\mathrm{neg}}$ measures negation as the alignment of the network with the
 % one-step change of the state predicted by the baseline.
-where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal
+where \chg[own]{$a,b,d\in\R^{6N}$ are}{\kwtwo{$d\in\R^{6N}$ is}} nonzero and $\Pi$ is the orthogonal
 projector onto $\ran\Phi$.
 $\rho(d)$ gives the largest normalised inner product between $d$
 and a vector in $\ran\Phi$.
 It is zero if and only if $\Phi^\top d=0$.
-Negation is measured by $c_{\mathrm{neg}}$, which is the cosine between the network output 
+\del[own]{Negation is measured by $c_{\mathrm{neg}}$, which is the cosine between the network output
 and
-the one-step state change predicted by the baseline.
+the one-step state change predicted by the baseline.}
 
 \revnote{Lets use something else then d.}
 % ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  23 OCT 2026 18:30
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  23 OCT 2026 19:01
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1021,13 +1021,15 @@ Underfull \hbox (badness 3343) in paragraph at lines 1723--1791
  []
 
 [14]) (sections/04_obc.tex [15] [16]
-Underfull \hbox (badness 10000) in paragraph at lines 367--396
 
- []
+LaTeX Warning: Citation `[' on page 17 undefined on input line 328.
 
 
-Overfull \hbox (16.96844pt too wide) detected at line 409
-[][][][][]
+LaTeX Warning: Citation `[' on page 17 undefined on input line 328.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 372--401
+
  []
 
 ) (sections/05_setup.tex (tables/setup_numbers.tex) [17] (figures/gantry_system_with_absorber.tex) [18]
@@ -1054,13 +1056,7 @@ File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 175.
 (pdftex.def)             Requested size: 516.0pt x 344.66783pt.
- [21 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]
-Underfull \vbox (badness 1622) has occurred while \output is active []
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [22 <./figures/res_generalisation.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
+ [21 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
 Underfull \hbox (badness 1817) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
@@ -1070,7 +1066,10 @@ Underfull \hbox (badness 2158) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [23]) [24
+[22]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [23 <./figures/res_generalisation.pdf>]) [24
 
 ] (sections/99_appendix.tex (figures/lfr_loop.tex)
 
@@ -1123,63 +1122,77 @@ Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut)
-Underfull \hbox (badness 7925) in paragraph at lines 353--376
-[]$[]\OT1/ptm/m/n/10 (+20) The train-ing data is di-vided into ex-ci-ta-tion
+
+LaTeX Warning: Citation `[' on page 26 undefined on input line 360.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 354--378
+[]|   []   |   []   |   []   |   []
+ []
+
+
+Underfull \hbox (badness 3635) in paragraph at lines 354--378
+|   [][]$[]$ []|   [][] []\OT1/ptm/m/n/10 (+20) where[]$[]$ $\OML/cmm/m/it/10 W[]$ \OT1/ptm/m/n/10 (+20) and $\OML/cmm/m/it/10 b[]$ \OT1/ptm/m/n/10 (+20) are
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 354--378
+|   []   |   []   |   []   |   []
  []
 
 [26]
-Underfull \hbox (badness 10000) in paragraph at lines 425--426
+Underfull \hbox (badness 10000) in paragraph at lines 438--439
 []\OT1/ptm/m/n/10 (+20) Full $\OT1/cmr/m/n/10 3 \OMS/cmsy/m/n/10 ^^B \OT1/cmr/m/n/10 3$ \OT1/ptm/m/n/10 (+20) re-sponse of Fig. []8[]: same
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 425--426
+Underfull \hbox (badness 10000) in paragraph at lines 438--439
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
 <figures/res_frf_full.pdf, id=1120, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
-Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 434.
+Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 447.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
 (tables/res_all_splits.tex)
 <figures/res_lpv_lti.pdf, id=1124, 228.03192pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
-Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 464.
+Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 477.
 (pdftex.def)             Requested size: 252.0pt x 229.98064pt.
  (tables/res_structure_val.tex)
 <figures/res_ps_spectrum.pdf, id=1125, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
-Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 476.
+Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 489.
 (pdftex.def)             Requested size: 252.0pt x 146.03015pt.
  (tables/res_obc_combinations_test.tex) (tables/res_obc_na0.tex) (tables/res_bb_selection.tex)
-Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--497
+Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--510
  [][] 
  []
 
-[27]
-<figures/setup_band.pdf, id=1141, 239.52798pt x 194.67302pt>
+[27] [28 <./figures/res_frf_full.pdf>]
+<figures/setup_band.pdf, id=1175, 239.52798pt x 194.67302pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
-Package pdftex.def Info: figures/setup_band.pdf  used on input line 595.
+Package pdftex.def Info: figures/setup_band.pdf  used on input line 608.
 (pdftex.def)             Requested size: 252.0pt x 204.81667pt.
- [28 <./figures/res_frf_full.pdf>]
-<figures/setup_coverage.pdf, id=1179, 216.95761pt x 300.7344pt>
-File: figures/setup_coverage.pdf Graphic file (type pdf)
-<use figures/setup_coverage.pdf>
-Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 653.
-(pdftex.def)             Requested size: 252.0pt x 349.31104pt.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [29] [30 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>]
-Overfull \hbox (101.11467pt too wide) in paragraph at lines 796--844
+ [29]
+<figures/setup_coverage.pdf, id=1183, 216.95761pt x 300.7344pt>
+File: figures/setup_coverage.pdf Graphic file (type pdf)
+<use figures/setup_coverage.pdf>
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 666.
+(pdftex.def)             Requested size: 252.0pt x 349.31104pt.
+ [30 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>] [31 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>]
+Overfull \hbox (101.11467pt too wide) in paragraph at lines 809--857
  [][] 
  []
 
-[31 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>] Including 'wip' comment.
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut
@@ -1220,7 +1233,7 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (33 pages, 1621237 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (33 pages, 1631534 bytes).
 PDF statistics:
  1452 PDF objects out of 1728 (max. 8388607)
  195 named destinations out of 1000 (max. 500000)
