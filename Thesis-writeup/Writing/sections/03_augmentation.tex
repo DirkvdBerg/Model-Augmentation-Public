@@ -722,9 +722,22 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).}
 %   and the K_fb sentence below (Maarten mail "korter") (Dirk 2026-10-22).
 \del[own]{The data is measured in closed-loop, and the model is simulated in
 closed-loop.}
-Instead of using the recorded input as
-in~\cite[Eq.~(22)]{hoekstra2026lfr}, we include the
-feedback controller in the simulation\del[Jan49]{ for two reasons}.
+% RESTRUCTURE (2026-10-23, Dirk): IV-B opens with Dirk's own sentence from
+%   the next paragraph (subject first, the fact), with the Hoekstra
+%   contrast at its end; the old opening said the same and is struck.
+%   Earlier marks kept: M-p7, own (K_fb) on the moved sentence, Jan49 strike.
+\mv[Dirk]{IV-B, below}{\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with
+\chg[own]{the assumed known controller}{the controller $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}},
+as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}\add[Dirk]{, instead of using the recorded input as
+in~\cite[Eq.~(22)]{hoekstra2026lfr}}.
+\del[Dirk]{Instead of using the recorded input as
+in~\mbox{\cite[Eq.~(22)]{hoekstra2026lfr}}, we include the
+feedback controller in the simulation}\del[Jan49]{ for two reasons}\del[Dirk]{.}
+% FEEDBACK (Dirk, 2026-10-23: the paragraph did not state the reason and
+%   the problem): reason first, then the problem (no correction of the
+%   drift with the recorded input), then the solution; the closing
+%   "This motivates ..." sentence is struck below as a repeat.
+\add[own]{\kwtwo{The reason is that the open-loop model drifts.}}
 % RESTRUCTURE (2026-10-19, Dirk): one reason, marginal stability (Jan50
 %   "the main reason"); the noise-correlation reason struck (Jan49 "Is this
 %   a reason?", Maarten p6); consistency moved to the Discussion.
@@ -740,11 +753,16 @@ marginally stable.}
 \kwtwo{to ground }in \eqref{eq:damping_stiffness_matrices}, which are also
 affected by the learned correction.
 \kwtwo{The linearised RK4 step} has a pole at $z=1$ on each of these
-axes, making it marginally stable\kwtwo{: stable, but not asymptotically stable}.
+axes, \chg[own]{making it marginally stable: stable, but}{so it is} not asymptotically stable.
+% FEEDBACK (own, 2026-10-23; Codex math check 6): marginal stability also
+%   needs every other pole inside the unit circle, unchecked over Y; the
+%   drift argument needs only "not asymptotically stable". The poles at
+%   z = 1 are semisimple (positive damping) (Dirk 2026-10-23).
 Therefore these axes act as integrators: a \kwtwo{constant} error in the correction
 keeps \kwtwo{accumulating} in the position.
 The alternative to only correct the velocities would not prevent the integrator
 issue, because an error in the velocity also accumulates in the position.
+\add[own]{\kwtwo{When the model is driven by the recorded input, nothing corrects this drift.}}
 The feedback controller is able to correct this drift\chg[M-p6]{, which is why we have
 chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).}{.}}
 \delmv[M-p6]{IV-C}{SUBNET, the encoder-based identification method of Beintema
@@ -769,15 +787,18 @@ of the controller~\cite{kessels2025ai}.}
 \del[M-p6]{This bias is avoided in the indirect approach for linear systems with a known controller, which fits the closed-loop model using the reference.
 Because the reference is uncorrelated with the noise, the model
 can be identified from the output error~\cite{forssell1999revisited}.}
-\chg[Jan49]{These reasons motivate}{This motivates} the choice for simulating in closed-loop.
+% FEEDBACK (own, 2026-10-23): struck as a repeat of the new reason sentence
+%   at the start of IV-B; the earlier Jan49 change ("These reasons motivate"
+%   -> "This motivates") is folded into the strike (Dirk 2026-10-23).
+\del[own]{This motivates the choice for simulating in closed-loop.}
 \del[Jan49]{They do not prove that our estimate is consistent.}
 % RESTRUCTURE (2026-10-19): the D-140 todo on Kessels' Remark 5.6 removed;
 %   the argument is no longer in the text.
 \todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
 \\
-\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with
-\chg[own]{the \kwtwo{assumed known} controller}{the controller $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}},
-as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}.
+\delmv[Dirk]{IV-B start}{The model is simulated in closed-loop with
+the controller $K_{\mathrm{fb}}$ of \mbox{\eqref{eq:system_loop}},
+as in Kessels~\mbox{\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}.}
 \del[own]{The feedback controller is linear and time invariant, the model output is used to
 calculate the position error in actuator coordinates.
 The controller calculates the actuator forces from this error.}
@@ -787,10 +808,33 @@ The controller calculates the actuator forces from this error.}
 %   answers the removed \todo{qact?}. Figure labels C_fb -> K_fb, plant ->
 %   gantry, u_k -> u_act,k (Code/Figures/closed_loop_same_reference.tikz.tex,
 %   PDF rebuilt) (Dirk 2026-10-21).
+% RESTRUCTURE (2026-10-23, Dirk): figure block moved here from the end of
+%   IV-B, next to its first reference.
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{closed_loop_same_reference.pdf}
+ % FEEDBACK (Dirk, 2026-10-23): caption uses the terms of the text
+ % (closed-loop system, closed-loop model); the computation-order sentence
+ % removed, the figure cannot show it and the text states it with its
+ % reason. Captions take no marks. OLD: "Recorded system loop (top) and
+ % augmented model loop (bottom), both using the same controller K_fb,
+ % reference r_k and feedforward u_k^ff. The model output is calculated
+ % before the input updates the model state."
+ \caption{Closed-loop system (top) and closed-loop model (bottom).
+ Both use the same controller $K_{\mathrm{fb}}$, reference $r_k$
+ and feedforward $u_k^{\mathrm{ff}}$.
+ In the model, the controller uses the model output $\hat y_k$.}
+ \label{fig:aug_closed_loop}
+\end{figure}
 The system and model use the same reference $r$ and feedforward
 $u^{\mathrm{ff}}$, but use their own output for feedback, with controller
 states $x^{\mathrm{fb}}$ and $\hat x^{\mathrm{fb}}$
-(Fig.~\ref{fig:aug_closed_loop})\add[M-p3]{, with the system loop of \eqref{eq:system_loop}}:
+(Fig.~\ref{fig:aug_closed_loop})\del[M-p3]{, with the system loop of \mbox{\eqref{eq:system_loop}}}\add[own]{\kwtwo{.
+The closed-loop system is given by \eqref{eq:system} and \eqref{eq:system_loop}.
+In the closed-loop model, the controller uses the model output $\hat y_k$:}}
+% FEEDBACK (Dirk, 2026-10-23): "with ..., with the system loop of (2)" was
+%   unclear; closed-loop system = gantry (1) with K_fb (2); in the
+%   closed-loop model the same controller gets y-hat, which (18) shows.
 % RESTRUCTURE (2026-10-19, Maarten p3): the two system rows of this
 %   equation and their definition sentence moved to eq:system_loop in
 %   Section II; the model rows stay. Struck equation rows cannot be shown,
@@ -811,28 +855,51 @@ The model uses the calculated actuator force $\hat u_{\mathrm{act},k}$
 instead of the recorded $u_{\mathrm{act},k}$
 in \eqref{eq:aug_transition}.
 \\
-Since we use a linear controller we are able to subtract the system 
-and model controller equations to cancel $r$ and $u^{\mathrm{ff}}$.
+Since we use a linear controller we are able to subtract \chg[own]{the system 
+and model controller equations}{\eqref{eq:system_loop} from \eqref{eq:aug_two_loops}} to cancel $r$ and $u^{\mathrm{ff}}$.
 This leaves us with the controller state difference
 $x^c=\hat x^{\mathrm{fb}}-x^{\mathrm{fb}}$,
 driven by $y-\hat y$.
 The model is still simulated with respect to the reference $r$,
 but $r$ and $u^{\mathrm{ff}}$ are not used in simulation.
-If the controllers between the system and simulation differ, 
+% FEEDBACK (own, 2026-10-23; Codex math check 9, 9a-9d): answers the noise
+%   revnote of 2026-10-22 (removed). After tau the model loop is driven by
+%   r and u_ff, independent of v (Section II); v enters through the force
+%   difference of the controllers (appendix residual-form paragraph) and
+%   through the initial state: the encoder uses recorded u_act and y, and
+%   x^c_tau = 0 makes the model inherit the system controller state, which
+%   depends on earlier noisy y (Dirk 2026-10-23).
+% FEEDBACK (Dirk, 2026-10-23): rewritten from Dirk's own sentences (Section
+%   II "The noise v is independent of r and u_ff"; his IV-B "the equations
+%   are only approximate"); "driven by r and u_ff" dropped (read as a
+%   contradiction with "not used in simulation"). The controller state at
+%   tau is the system controller's, built from earlier y.
+% RESTRUCTURE (2026-10-23, Dirk): noise paragraph moved below (19) and the
+%   derivation it relies on (moved in from the appendix).
+\delmv[own]{below \mbox{\eqref{eq:aug_residual_loop}}}{If the controllers between the system and simulation differ,
 the equations are only approximate and noise-induced bias
-cannot be ruled out.
-% REVNOTE (2026-10-22, Dirk): noise assumptions to be discussed in the IV-B
-%   walk; the cut pass leaves this sentence as it is.
-\revnote{Noise (Section II: $u_{\mathrm{act}}$ correlated with $v$): state here which assumption holds, with the appendix result (model loop driven by $r$, $u^{\mathrm{ff}}$; $v$ enters through the encoder start and the controller difference). Discuss in the IV-B walk.}
+cannot be ruled out.}
 \\
-At the start of \chg[M-p7]{each training window}{a simulation at sample $\tau$} we set $x^c_\tau=0$,
-which sets the model's controller state equal to that of the system at $\tau$.
+At the start of \chg[M-p7]{each training window}{a simulation at sample $\tau$} we set $x^c_\tau=0$\chg[own]{,
+which sets}{\kwtwo{. This sets}} the model's controller state equal to that of the system at $\tau$\add[own]{\kwtwo{, because $x^c$ is the difference between the two controller states}}.
+% FEEDBACK (Dirk, 2026-10-23): reason after "because", in Dirk's sentence
+%   order (Dirk 2026-10-23).
 % RESTRUCTURE (2026-10-19, Maarten p7: "This discussion comes to early. I
 %   haven't heard anything about an encoder at this point."): moved to IV-C.
 \delmv[M-p7]{IV-C}{Therefore the encoder only has to initialise the states of the model.
 Kessels instead needs the system's controller state at the start of each
 window, either measured directly or calculated by simulating the
 controller from the start of the record~\cite{kessels2025ai}.}
+% RESTRUCTURE (2026-10-23, Dirk): moved back from IV-C. Maarten p7's
+%   objection (encoder not yet introduced) no longer holds: Section II now
+%   introduces the encoder and the windows. The reason for x^c_tau = 0 sits
+%   where the step is introduced. "the encoder" -> "the encoder of Section
+%   II"; the 2026-10-19 "With x^c_tau = 0," opening reverted to Dirk's
+%   "Therefore" (Dirk 2026-10-23).
+\mv[M-p7]{IV-C}{Therefore the encoder\add[own]{ of Section~\ref{sec:problem}} only has to initialise the states of the model.
+Kessels instead needs the system's controller state at the start of each
+window, either measured directly or calculated by simulating the
+controller from the start of the record~\cite[Remark~5.4]{kessels2025ai}.}
 We then write the closed-loop model in \eqref{eq:aug_two_loops} as
 \revnote{ZOH eigenlijk beter dan tustin. en tustin is voor een frequency domein het beste.
 dus tustin niet de beste keuze.
@@ -860,11 +927,44 @@ A rollout with $\hat y=y$ gives $\hat u=u$
 by construction and checks nothing. 
 Related: \texttt{FINAL-RUN-FIXES.md} item~3, 
 the D-232 leak check on the lowpass data, passed (0.22 to 0.50~nm).}
+% RESTRUCTURE (2026-10-23, Dirk): derivation moved here from Appendix
+%   Processing and checks (it is method, and IV-B relies on it; Maarten does
+%   not read the appendix). "model loop" -> "closed-loop model" as in the
+%   text; "the force error of K_1 at T_s above" -> Dirk's sentence on the
+%   controller forces; the two noise sentences of the appendix version are
+%   covered by the noise paragraph below. The number stays in the appendix.
+% NOTATION (2026-10-23, Dirk): bar -> check for the force and state of K_fb
+%   on the recorded r - y; the bar means the added states in Section IV.
+%   Equations take no marks; the struck appendix copy keeps the bar.
+\mv[own]{App.~\ref{app:setup_checks}}{Let \chg[own]{$\bar u_{\mathrm{act},k}$}{$\check u_{\mathrm{act},k}$} be the force that $K_{\mathrm{fb}}$
+computes from the recorded $r_k$ and $y_k$, with state
+\chg[own]{$\bar x^{\mathrm{fb}}_k$}{$\check x^{\mathrm{fb}}_k$}, plus $u^{\mathrm{ff}}_k$.
+With \chg[own]{$\hat x^{\mathrm{fb}}_k=\bar x^{\mathrm{fb}}_k+x^c_k$}{$\hat x^{\mathrm{fb}}_k=\check x^{\mathrm{fb}}_k+x^c_k$},
+\eqref{eq:aug_residual_loop} gives
+\begin{equation}
+ \hat u_{\mathrm{act},k}=C_{\mathrm{fb}}\hat x^{\mathrm{fb}}_k
+ +D_{\mathrm{fb}}(r_k-\hat y_k)+u^{\mathrm{ff}}_k
+ +\bigl(u_{\mathrm{act},k}-\check u_{\mathrm{act},k}\bigr).
+ \label{eq:aug_residual_split}
+\end{equation}
+The first three terms are the \chg[own]{model loop}{closed-loop model}.
+The last term is \chg[Dirk]{the force error of $K_1$ at $T_s$ above}{the difference between the forces from the
+system and model controllers}.}
+\mv[own]{above}{\add[own]{\kwtwo{The noise $v$ is independent of $r$ and $u^{\mathrm{ff}}$ (Section~\ref{sec:problem}).}}
+If the controllers between the system and simulation differ,
+the equations are only approximate \chg[own]{and noise-induced bias
+cannot be ruled out}{\kwtwo{and the noise enters through this last term}}.
+\add[own]{\kwtwo{The noise also enters through the initial state at $\tau$.
+The encoder computes it from the recorded $u_{\mathrm{act}}$ and $y$, and the controller
+state at $\tau$ depends on earlier measurements $y$.}}}
 \\
 The model output\kwtwo{ $\hat y_k$} depends only on the state\kwtwo{ $\tilde x_k$,
-not on the input $\hat u_k$}.
-For each sample we first calculate the output and then
-the error and model input before updating the states.
+not on the input \chg[own]{$\hat u_k$}{$\hat u_{\mathrm{act},k}$}}\add[Js98]{ at the same sample}.
+% FEEDBACK (2026-10-23, Dirk): notation as in (18), (19); "at the same
+%   sample" answers Js98 ("Indirectly it depends on other things right?
+%   Are you talking about a single step here?") (Dirk 2026-10-23).
+For each sample we first calculate the output\chg[own]{ and then}{, then}
+the error and \add[own]{the }model input\add[own]{,} before updating the states.
 This avoids an algebraic loop through $D_{\mathrm{fb}}$,
 for the same reason as Kessels~\cite[Remark~5.1]{kessels2025ai}.
 For a \chg[M-p7]{window}{simulation} starting at $\tau$, the model equations
@@ -900,18 +1000,8 @@ Each window starts from a new encoder estimate and $x^c_\tau=0$,
 so the window is not affected by model errors before $\tau$.
 The validation of Section~\ref{sec:aug_closed_loop} is simulated
 in closed-loop and only initialised at the start.}
-\begin{figure}[t]
- \centering
- \includegraphics[width=\columnwidth]{closed_loop_same_reference.pdf}
- \caption{
-Recorded system loop (top) and augmented model loop (bottom),
-both using the same controller $K_{\mathrm{fb}}$, reference $r_k$
-and feedforward $u_k^{\mathrm{ff}}$.
-The model output is calculated before the input updates
-the model state.
-}
- \label{fig:aug_closed_loop}
-\end{figure}
+% RESTRUCTURE (2026-10-23, Dirk): the figure block of fig:aug_closed_loop
+%   moved up, before the paragraph that first refers to it.
 
 \subsection{Identification}\label{sec:aug_closed_loop}
 \ifdraft
@@ -1122,10 +1212,11 @@ a mismatch in the initial velocity will create a permanent position offset.
 In closed-loop the feedback controller is able to correct this offset\add[M-p7]{, which is why each window is simulated in the closed loop of Section~\ref{sec:aug_loop}}.}
 \\
 % RESTRUCTURE (2026-10-19): window start sentences moved here from IV-B (Maarten p7, p8).
-\mv[M-p7]{IV-B}{\chg[M-p7]{Therefore the}{With $x^c_\tau=0$, the} encoder only has to initialise the states of the model.
+% RESTRUCTURE (2026-10-23, Dirk): moved back to IV-B (see the comment there).
+\delmv[M-p7]{IV-B}{With $x^c_\tau=0$, the encoder only has to initialise the states of the model.
 Kessels instead needs the system's controller state at the start of each
 window, either measured directly or calculated by simulating the
-controller from the start of the record~\cite[Remark~5.4]{kessels2025ai}.}
+controller from the start of the record~\mbox{\cite[Remark~5.4]{kessels2025ai}}.}
 \mv[M-p8]{IV-B}{The controller uses the output error to correct the model input
 within the training window, as in the closed loop system.
 Each window starts from a new encoder estimate and $x^c_\tau=0$,
@@ -1167,7 +1258,7 @@ unconstrained L-BFGS works without a bound.
 $\mathcal D_{\mathrm{val}}$, measured on the same system.}}
 During the optimisation with Adam the parameters with the lowest validation
 error are kept.
-The error is the mean \chg[M-mail]{$\mathrm{NRMS}_{e,j}$ \eqref{eq:setup_rms}}{RMS simulation error divided by the RMS servo error, $\mathrm{NRMS}_{e,j}$,} over the
+The error is the mean \chg[M-mail]{$\mathrm{NRMS}_{e,j}$ \eqref{eq:setup_rms}}{RMS simulation error divided by the \chg[own]{RMS}{standard deviation of the} servo error, $\mathrm{NRMS}_{e,j}$,} over the
 complete \chg[own]{validation records}{records of $\mathcal D_{\mathrm{val}}$} and axes,
 simulated in closed loop with the initial state estimated
 once by the encoder and $x^c=0$.
@@ -1512,7 +1603,10 @@ are still trained through $V$.
 The expected squared error is minimised by
 the conditional mean $\mathbb E[e_\tau\mid\chi_\tau]$.
 The decoder only sees up to $\bar x_{\tau|\tau}$, not the full history $\chi_\tau$, 
-this forces the encoder to use the added states to predict the future residual.
+this \chg[own]{forces}{encourages} the encoder to use the added states to predict the future residual.
+% FEEDBACK (own, 2026-10-23; Codex math check 18): the decoder loss
+%   encourages, but does not guarantee, predictive information in x-bar
+%   (Dirk 2026-10-23).
 \todo{
 Instead of using features of future observations 
 as Hefny et al.~\cite[Sec.~2]{hefny2015supervised} for predictive-state learning, 

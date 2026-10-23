@@ -372,7 +372,10 @@ $i_c$th update of $V$, with $\nu_i$ its value after update $i$.
 S1 ends at update
 \begin{equation*}
 \begin{aligned}
- i_1&=\min\bigl\{i\in\mathcal J:\ i=i_{\max}\ \text{or}\\
+ % FEEDBACK (own, 2026-10-23; Codex math check 22, finding 6): the screen
+ % failure case (PS ends at i_s) added to the set; it was only in the prose,
+ % while eq:ps2_handover hands over at i_1 (code ps2_opening.py:85-98).
+ i_1&=\min\bigl\{i\in\mathcal J:\ i=i_{\max}\ \text{or}\ (i=i_s\ \text{and}\ \nu_i>\nu_{\max})\ \text{or}\\
  &\qquad\bigl(i\ge i_{\min}\ \text{and}\ \nu^{\mathrm{new}}_i>(1-\delta_\nu)\,\nu^{\mathrm{old}}_i\bigr)\bigr\},\\
  \nu^{\mathrm{new}}_i&=\min_{j\in\mathcal W_i}\nu_j,\qquad
  \nu^{\mathrm{old}}_i=\min_{j\in\mathcal J_i\setminus\mathcal W_i}\nu_j,
@@ -719,21 +722,23 @@ its feedback force differs from that of the system by a median of
 Within one hold of $T_s$, the force of the system changes by a median of
 \SetupKholdMed\,\% RMS, which is the cost of closing the loop at $T_s$ in
 simulation.}
-\add[own]{\kwtwo{The residual form \eqref{eq:aug_residual_loop} equals the model
-loop of \eqref{eq:aug_two_loops} up to one term.
+% RESTRUCTURE (2026-10-23, Dirk): the residual-form derivation moved to
+%   Section IV-B (eq:aug_residual_split); the number above stays here, with
+%   a one-line link to the term it measures.
+\delmv[own]{IV-B}{The residual form \mbox{\eqref{eq:aug_residual_loop}} equals the model
+loop of \mbox{\eqref{eq:aug_two_loops}} up to one term.
 Let $\bar u_{\mathrm{act},k}$ be the force that $K_{\mathrm{fb}}$
 computes from the recorded $r_k$ and $y_k$, with state
-$\bar x^{\mathrm{fb}}_k$.
-With $\hat x^{\mathrm{fb}}_k=\bar x^{\mathrm{fb}}_k+x^c_k$,
-\eqref{eq:aug_residual_loop} gives
-\begin{equation*}
- \hat u_{\mathrm{act},k}=C_{\mathrm{fb}}\hat x^{\mathrm{fb}}_k
- +D_{\mathrm{fb}}(r_k-\hat y_k)+u^{\mathrm{ff}}_k
- +\bigl(u_{\mathrm{act},k}-\bar u_{\mathrm{act},k}\bigr).
-\end{equation*}
-The first three terms are the model loop, which contains no noise.
+$\bar x^{\mathrm{fb}}_k$, plus $u^{\mathrm{ff}}_k$.
+[derivation moved to Section~\mbox{\ref{sec:aug_loop}}]
+The first three terms are the model loop, which contains no noise after $\tau$.
 The last term is the force error of $K_1$ at $T_s$ above.
-Only through this term does the measurement noise reach the model.}}
+After $\tau$, the noise reaches the model only through this term.}
+\add[own]{\kwtwo{This force error is the last term of \eqref{eq:aug_residual_split}.}}
+% FEEDBACK (own, 2026-10-23; Codex math check 9, finding 7): u_bar must
+%   include u_ff, otherwise u_ff is counted twice; "after tau": the initial
+%   state (encoder, inherited controller state x-bar^fb_tau) carries earlier
+%   noise, stated in IV-B (Dirk 2026-10-23).
 % FEEDBACK (own, 2026-10-21): derivation checked against
 %   eq:aug_residual_loop and Clean/model_augmentation/fit_systems/
 %   closed_loop.py (controller stepped on y_t - y_model from xc = 0, model
