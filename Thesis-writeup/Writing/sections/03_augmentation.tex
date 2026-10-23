@@ -1346,25 +1346,33 @@ We only keep the polish if it lowers the validation error.
 \item The fitted physical rows only set the start and are trained jointly with $\theta_{\mathrm{base}}$ (2026 Eq.~(22)); least-squares start (D-271)
 \end{itemize}
 \fi
-\kwtwo{A fully random initialisation} can \kwtwo{be unstable and give poor optimisation results}\kwtwo{. To resolve this,} training starts
-from \kwtwo{a model that behaves as the baseline}~\cite[Sec.~5.4]{hoekstra2026lfr}.
+\kwtwo{A fully random initialisation} can \kwtwo{make the model unstable
+and lead to poor optimisation results}\kwtwo{. We therefore} start
+training from \kwtwo{a model that behaves as the baseline}
+~\cite[Sec.~5.4]{hoekstra2026lfr}.
 \todo{Word different, look at Quinten his comment.}
 \\
 The physical rows are initialised from the baseline model.
-Because solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$ 
-and $Y$ is a state (Section~\ref{sec:lfr}), the baseline is nonlinear.
-To create a model-based state reconstruction map for the nonlinear baseline, 
-a linearisation point has to be chosen, 
-making the map only accurate around that 
-point~\cite[Sec.~3.1]{hoekstra2026encoder}.
+% FEEDBACK (Dirk, 2026-10-23): fact first, reason after "because"; the
+%   "To create ..., making ..." sentence turned around the same way.
+\add[own]{\kwtwo{The baseline is nonlinear, because solving}}\del[own]{Because solving} \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$
+and $Y$ is a state (Section~\ref{sec:lfr})\del[own]{, the baseline is nonlinear}.
+\chg[own]{To create a model-based state reconstruction map for the nonlinear baseline,
+a linearisation point has to be chosen,
+making the map only accurate around that
+point}{\kwtwo{A model-based state reconstruction map for the nonlinear baseline needs a
+linearisation point, so the map is only accurate around that point}}~\cite[Sec.~3.1]{hoekstra2026encoder}.
 Hoekstra et al.\ therefore suggest fitting the encoder to 
 states simulated with the 
 baseline~\cite[Sec.~3.2, Eq.~(35)]{hoekstra2026encoder}, as their 
 augmentation method does~\cite[Eq.~(30)]{hoekstra2026lfr}.
 We apply this approach and simulate the baseline model once before training 
-to obtain the physical state at every sample $\tau$.
+to obtain the physical state at every sample \chg[M-p8]{$\tau$}{$k$}.
+% FEEDBACK v2 (2026-10-23, Maarten p8 on this tau: "\tau or k? you normally
+%   use k to denote the sample time."): every sample, not a window start
+%   (Dirk 2026-10-23).
 The recorded actuator forces $\uact$ and positions $y$
-from the training records with the known controller in
+from \chg[own]{the training records}{the records of $\mathcal D_N$} with the known controller in
 \eqref{eq:aug_cl_step} are used to simulate the physical states in closed-loop:
 \begin{equation}
  \tilde x^{\mathrm n,0}_{k+1}=f^{\mathrm n}_{\mathrm{base}}\bigl(\theta^0_{\mathrm{base}},
@@ -1386,9 +1394,13 @@ recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.}
 We use $\hat y^{\mathrm n,0}_k$ as the model output\del[own]{
 and set the controller state $x^c$ to zero at the
 start of each record (see Section~\mbox{\ref{sec:aug_loop}})}.
+% FEEDBACK (Dirk, 2026-10-23): fewer commas; formula next to "positions",
+%   the zero list as its own sentence (matches model.py fit_encoder: q_0
+%   from the first output, zero physical velocity, zero added states).
 For our closed-loop simulation, each record starts from the measured
-positions in generalised coordinates, $q=P^{-\top}y$, with zero
-velocities, zero added states and $x^c=0$.
+positions\add[own]{ $q=P^{-\top}y$} in generalised coordinates\del[own]{, $q=P^{-\top}y$, with zero
+velocities, zero added states and $x^c=0$}.
+\add[own]{\kwtwo{The velocities, the added states and $x^c$ start at zero.}}
 \todo{Check what Hoekstra et al.\ use as the initial state of the baseline
 simulation that generates the encoder-fitting data (2026 Sec.~5.4.2,
 encoder paper Sec.~3.2, and their public code), and whether our records
@@ -1401,33 +1413,50 @@ states by least squares~\cite[Eq.~(33)]{hoekstra2026encoder}:
  \bigl\|W^b\chi^{0}_\tau+b-\tilde x^{\mathrm n,0}_\tau\bigr\|_2^2,
  \label{eq:aug_enc_fit}
 \end{equation}
-where $b\in\R^6$ is an intercept.
+where $b\in\R^6$ is \chg[own]{an intercept}{a constant offset}.
+% (2026-10-23, Dirk): "intercept" is regression jargon.
 % RESTRUCTURE (2026-10-22, Dirk; D7): the definitions of chi^0 and D moved
 %   here from eight sentences below, next to (26) that uses them.
-\mv[own]{below}{$\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
+% FEEDBACK (Dirk, 2026-10-23): "is formed as we do", "window ends" and the
+%   stride value removed (the stride is a set-up value, Section V); D is the
+%   grid of fit_encoder (model.py), defined through its role in (26).
+\mv[own]{below}{\chg[own]{$\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
 using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
 $\mathcal D$ is the set of window ends $\tau$ at the training stride of
-10 samples.}
+10 samples.}{\kwtwo{$\chi^0_\tau$ is built as $\chi_\tau$ in \eqref{eq:aug_encoder}, with $\hat y^{\mathrm n,0}$ and
+$\hat u^{\mathrm n,0}$ instead of the recorded $y^{\mathrm n}$ and $u^{\mathrm n}$.
+$\mathcal D$ is the set of samples $\tau$ where we fit the encoder in \eqref{eq:aug_enc_fit}.}}}
 Hoekstra et al.\ use this linear fit for LTI baselines and fit a
 neural network for nonlinear baselines~\cite[Eqs.~(33), (35)]{hoekstra2026encoder}.
-We use the linear fit as a linear restriction of their data-based
+% FEEDBACK (Dirk, 2026-10-23): abstract "linear restriction" wording
+%   replaced by what we do (Dirk 2026-10-23).
+\chg[own]{We use the linear fit as a linear restriction of their data-based
 initialisation, and learn the nonlinear correction $\tilde\psi$ during
-training.
+training.}{\kwtwo{We only fit the linear map $W^b$.
+The nonlinear correction $\tilde\psi$ is learned during training.}}
 % FEEDBACK (own, 2026-10-22; D3): solver detail cut, the reader needs the
 %   problem (26), not the solver (Maarten mail "korter") (Dirk 2026-10-22).
 \del[own]{The affine fit is computed by a single numerical-rank-truncated
 SVD solve in centred and standardised regressors, without
 gradient-based pre-training.}
-The intercept $b^{b,0}$ is placed in the output bias of the physical rows
-of $\tilde\psi$, whose output weights start at zero, so that
+% FEEDBACK (Dirk, 2026-10-23): "is placed" and the relative/purpose chain
+%   replaced by "starts at" for both bias and weights; the "intercept" ->
+%   "offset" change of the same day is folded into the strike.
+\chg[own]{The intercept $b^{b,0}$ is placed in the output bias of the physical rows
+of $\tilde\psi$, whose output weights start at zero, so that}{\kwtwo{The output bias of the physical rows of $\tilde\psi$ starts at the offset $b^{b,0}$,
+and their output weights start at zero.
+This gives}}
 $\psi_b=W^{b,0}\chi_\tau+b^{b,0}$ at the start.
 % FEEDBACK (own, 2026-10-22; D4): same distribution as for phi_aug below;
 %   both now in one sentence there (Dirk 2026-10-22).
 \del[own]{The hidden layers of $\tilde\psi$ are drawn from
 $\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input size of the layer.}
-We write $\theta^{b,0}_{\mathrm{enc}}$ for this start of
+% FEEDBACK (Dirk, 2026-10-23: "vague"): the sentence only introduced the
+%   symbol theta^{b,0}_enc, used once, in (27); (27) now writes the
+%   physical encoder rows out instead (Dirk 2026-10-23).
+\del[own]{We write $\theta^{b,0}_{\mathrm{enc}}$ for this start of
 $\theta^b_{\mathrm{enc}}$, which consists of $W^b$, the hidden layers of
-$\tilde\psi$ and its physical output rows, and use it to \kwtwo{start minimising \eqref{eq:aug_loss}}.
+$\tilde\psi$ and its physical output rows, and use it to start minimising \mbox{\eqref{eq:aug_loss}}.}
 \delmv[own]{after \mbox{\eqref{eq:aug_enc_fit}}}{$\chi^0_\tau$ is formed as we do in \mbox{\eqref{eq:aug_encoder}}
 using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
 $\mathcal D$ is the set of window ends $\tau$ at the training stride of
@@ -1452,27 +1481,40 @@ output as the baseline model from the same initial state, as posed
 by~\mbox{\cite[Eq.~(29)]{hoekstra2026lfr}}.} \revnote{I use the encoder
 for my augmented model, so i state: model from the same initial state.
 But i could leave it out.}
-\chg[M-p8]{Therefore we}{\kwtwo{To start from the baseline, we}} zero the physical rows of $\phi_{\mathrm{aug}}$ its output layer, 
-and the added-state rows are kept random:
+\chg[M-p8]{Therefore we}{\kwtwo{To start from the baseline, we}} zero the physical-state rows
+of the output layer of $\phi_{\mathrm{aug}}$ and keep the
+added-state rows random:
 \begin{equation}
 \begin{aligned}
  &\text{baseline:} &&\beta=0,\\
  &\text{network:}  &&W^{\tilde x}_L=0,\quad b_L=0,\quad W^{\bar x}_L\sim\mathcal U\bigl(-1/\sqrt{n_h},1/\sqrt{n_h}\bigr),\\
- &\text{encoder:}  &&\theta^{b,0}_{\mathrm{enc}}\text{ from \eqref{eq:aug_enc_fit}},\\
+ % REWRITE (2026-10-23, Dirk): physical encoder rows written out (same values
+ % as the former symbol theta^{b,0}_enc from (26)). OLD row:
+ %  &\text{encoder:}  &&\theta^{b,0}_{\mathrm{enc}}\text{ from \eqref{eq:aug_enc_fit}},\\
+ &\text{encoder:}  &&W^b=W^{b,0},\quad \tilde W^{\tilde x}_L=0,\quad \tilde b^{\tilde x}_L=b^{b,0},\\
  &                 &&W^a\sim\mathcal U(-a,a),\quad \tilde W^{\bar x}_L=0,\quad \tilde b^{\bar x}_L=0,\\
  &                 &&a=\sqrt{6/(n_{\bar x}+6(n+1))},
 \end{aligned}
  \label{eq:aug_init}
 \end{equation}
+\revnote{(27) encoder row written out (was $\theta^{b,0}_{\mathrm{enc}}$ from (26)); same values. Remove this note after checking.}
+% FEEDBACK (Dirk, 2026-10-23): Dirk's own rewrite of the where-clause of
+%   (27): one statement per sentence; "Here" kept in the last sentence.
 where $W_L$ and $b_L$ are the output layer weights and bias of
-$\phi_{\mathrm{aug}}$, with rows $W^{\tilde x}_L$ for
+$\phi_{\mathrm{aug}}$\chg[Dirk]{, with rows $W^{\tilde x}_L$ for
 $f^{\mathrm n}_{\mathrm{aug}}$ and $W^{\bar x}_L$ for
-$g^{\mathrm n}_{\mathrm{aug}}$.
-\kwtwo{$n_h$ is the number of neurons per hidden layer, and}
-$\tilde W^{\bar x}_L$ and $\tilde b^{\bar x}_L$
-are the added-state rows of the output layer weights and bias of $\tilde\psi$\kwtwo{, respectively}.
-\kwtwo{Here $W\sim\mathcal U(-a,a)$ means that every entry of $W$ is drawn
-independently from the uniform distribution on $[-a,a]$.}
+$g^{\mathrm n}_{\mathrm{aug}}$}{.
+The rows $W^{\tilde x}_L$ and $W^{\bar x}_L$ are for
+$f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$,
+respectively}.
+\chg[Dirk]{$n_h$ is the number of neurons per hidden layer, and}{\kwtwo{$n_h$ is the number of neurons in each hidden layer.}}
+\chg[Dirk]{$\tilde W^{\bar x}_L$ and $\tilde b^{\bar x}_L$
+are the added-state rows of the output layer weights and bias of $\tilde\psi$, respectively}{\kwtwo{For $\tilde\psi$, the output layer weights and bias are split into
+$\tilde W^{\tilde x}_L$, $\tilde b^{\tilde x}_L$ for the physical states
+and $\tilde W^{\bar x}_L$, $\tilde b^{\bar x}_L$ for the added states}}.
+\kwtwo{Here $W\sim\mathcal U(-a,a)$ means \chg[Dirk]{that every entry of $W$ is drawn
+independently from the uniform distribution}{each entry of $W$
+is drawn independently from a uniform distribution} on $[-a,a]$.}
 We initialise $W^{\bar x}_L$ and the hidden layers of $\phi_{\mathrm{aug}}$\add[own]{ and $\tilde\psi$}
 from $\mathcal U(-1/\sqrt{m},1/\sqrt{m})$,
 where $m$ is the input size of the layer.
