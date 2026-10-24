@@ -441,7 +441,7 @@ with the physical state normalised using \eqref{eq:aug_norm}:
 %  \col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)-\tilde x^{\mathrm n}_i\bigr)_{i\in\mathcal I}\Bigr),
 \begin{equation}
 \begin{aligned}
- \rho(Z)&=\max_{\mathclap{Q\in\ran\Phi\smallsetminus\{0\}}}
+ \rho(Z)&=\max_{Q\in\ran\Phi\setminus\{0\}}
  \frac{\langle Q,Z\rangle}{\norm{Q}_2\norm{Z}_2}
  =\frac{\norm{\Pi Z}_2}{\norm{Z}_2},\\
  \Pi&=\Phi\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top,
@@ -450,7 +450,7 @@ with the physical state normalised using \eqref{eq:aug_norm}:
 \end{equation}
 \revnote{Changed (own): the $\cos\angle(a,b)$ and $c_{\mathrm{neg}}$ lines
 were removed from \eqref{eq:obc_overlap}; the cosine is now written inside
-$\rho$. Changed (Dirk): $\smallsetminus$ instead of $\setminus$ in the max; $d$ renamed
+$\rho$. Changed (Dirk): $d$ renamed
 $Z$ (d is a physical parameter; Z is unused in the thesis); max variable $v$
 renamed $Q$ ($v_k$ is the measurement noise).}
 % where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal projector

@@ -1292,23 +1292,15 @@ Each update uses a minibatch of windows}}, and
 the gradient is calculated over the full window.
 % FEEDBACK (Dirk, 2026-10-23): the "with Adam on minibatches of windows"
 %   chain split into two statements (Dirk 2026-10-23).
-% FEEDBACK (Dirk, 2026-10-23): Dirk's wording; "polish" defined as the
-%   continued minimisation of V with L-BFGS; "sequence" removed. The fixed
-%   window set is one deterministic batch (lbfgs_polish.py FixedWindowBatch).
-\chg[own]{We then polish with L-BFGS on a fixed set of windows.}{\kwtwo{After Adam, we continue to minimise $V$ with L-BFGS on a fixed set of windows.
-We call this step polish.}}
-\chg[own]{This is adapted from the Adam and L-BFGS-B sequence of Drenth
-et al.}{\kwtwo{Drenth et al.\ also use Adam followed by L-BFGS-B}}~\cite[Sec.~4.1]{drenth2025lpvlfr}.
-Because every $\beta$ satisfies \eqref{eq:lfr_admissibility}, 
-unconstrained L-BFGS works without a bound.
+% FEEDBACK (Dirk, 2026-10-24): order changed so every sentence uses only what
+%   came before: the validation set and error, the kept Adam parameters, then
+%   the polish, which starts from them and is kept only if it lowers the
+%   validation error (as run: D-255, D-276). The acceptance is Dirk's wording,
+%   merged into the polish sentence; "After Adam," -> "From these parameters,".
 % FEEDBACK (own, 2026-10-23): the validation set is defined here, at its
 %   only use in the method (checkpoint selection), without a pointer to
 %   Section V (Maarten mail, forward references); D_N is the estimation set
 %   (convention A, Dirk 2026-10-23).
-\add[own]{\kwtwo{The parameters are selected on a separate validation set
-$\mathcal D_{\mathrm{val}}$.}}
-During the optimisation with Adam the parameters with the lowest validation
-error are kept.
 % FEEDBACK (Dirk, 2026-10-23): the metric details (NRMS_e, normalisation by
 %   the servo error, mean over axes) are evaluation set-up and stay in
 %   Section V (eq:setup_rms); IV-C keeps what matters for the method: whole
@@ -1316,17 +1308,37 @@ error are kept.
 %   on this sentence (M-mail: forward reference to eq:setup_rms replaced by
 %   words; own: RMS -> standard deviation, validation records -> records of
 %   D_val) folded into the strike (Dirk 2026-10-23).
+% FEEDBACK (Dirk, 2026-10-23; Codex IV-C check, finding 1): validation scores
+%   each record after the encoder history (closed_loop.py k0); sentence 1 is
+%   Dirk's own earlier wording ("simulated in closed-loop and only
+%   initialised at the start").
+\mv[own]{below}{\add[own]{\kwtwo{The parameters are selected on a separate validation set
+$\mathcal D_{\mathrm{val}}$.}}
 \chg[own]{The error is the mean RMS simulation error divided by the standard deviation of the servo error, $\mathrm{NRMS}_{e,j}$, over the
 complete records of $\mathcal D_{\mathrm{val}}$ and axes,
 simulated in closed loop with the initial state estimated
 once by the encoder and $x^c=0$.}{\kwtwo{The records of $\mathcal D_{\mathrm{val}}$ are simulated in closed-loop and only
 initialised at the start. The encoder uses the first $n+1$ samples for this, and the
 validation error is calculated over the remaining samples.}}
-% FEEDBACK (Dirk, 2026-10-23; Codex IV-C check, finding 1): validation scores
-%   each record after the encoder history (closed_loop.py k0); sentence 1 is
-%   Dirk's own earlier wording ("simulated in closed-loop and only
-%   initialised at the start").
-We only keep the polish if it lowers the validation error.
+During the optimisation with Adam the parameters with the lowest validation
+error are kept.}
+% FEEDBACK (Dirk, 2026-10-23): Dirk's wording; "polish" defined as the
+%   continued minimisation of V with L-BFGS; "sequence" removed. The fixed
+%   window set is one deterministic batch (lbfgs_polish.py FixedWindowBatch).
+\chg[own]{We then polish with L-BFGS on a fixed set of windows.}{\kwtwo{\chg[own]{After Adam,}{From these parameters,} we continue to minimise $V$ with L-BFGS on a fixed set of windows.
+We call this step polish\chg[own]{.}{, and the parameter updates from this step are only kept if they lower the validation error.}}}
+\chg[own]{This is adapted from the Adam and L-BFGS-B sequence of Drenth
+et al.}{\kwtwo{Drenth et al.\ also use Adam followed by L-BFGS-B}}~\cite[Sec.~4.1]{drenth2025lpvlfr}.
+Because every $\beta$ satisfies \eqref{eq:lfr_admissibility},
+unconstrained L-BFGS works without a bound.
+\delmv[own]{above}{The parameters are selected on a separate validation set
+$\mathcal D_{\mathrm{val}}$.
+During the optimisation with Adam the parameters with the lowest validation
+error are kept.
+The records of $\mathcal D_{\mathrm{val}}$ are simulated in closed-loop and only
+initialised at the start. The encoder uses the first $n+1$ samples for this, and the
+validation error is calculated over the remaining samples.}
+\del[own]{We only keep the polish if it lowers the validation error.}
 % \revnote{Final runs (2026-10-18): the polish ran out of GPU memory on the
 % 11~GB cards and aborted with the Adam result kept in R3, R5, R6 and R14
 % (the OBC polish of R13 peaked at 27.9~GB). Where it ran, it changed little:
