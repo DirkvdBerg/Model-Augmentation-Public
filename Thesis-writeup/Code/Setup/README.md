@@ -20,6 +20,7 @@ Run from this folder, one at a time: `conda run -n GraduationProject python <scr
 | `rail_velocity.py` | g = 1000 s/m is Coulomb-like at the excited rail velocities (V-A, D-259) | noise-free training records (simulated states) | `SetupFricVzero`, `SetupRailShare{Min,Med}`, `SetupRailVrmsMin` |
 | `band_frf.py` | band placement: anti-resonance, coupled mode, closed-loop peak inside 106 to 297 Hz; data of Fig. setup_band (V-B, appendix) | meta.truth (simulation only) | `SetupClPeak` |
 | `gap_snr.py` | excitation between the motion band and the multisine band, 24 to 105 Hz (T3 stand-in, D-219 amendment) | training records + twins | `SetupGapSnr{Min,Med}{Motion,Ms}` |
+| `noise_floor.py` | noise floor in metres, nearly constant per axis (V-D) | `Results/24-10-2026/CSV/res_errors.csv`, model `floor` (final evaluation, not the dataset) | `SetupFloor{Min,Max}{X,Y}` |
 | `coverage.py` | training range, E records, coverage figure data (V-B) | all 36 records (references) | `SetupTrain{Y,Vel,Acc}`, `SetupE{Y,Acc,Vel}`, `SetupESixAcc` |
 
 `_setup_common.py`: paths, record loading, the linear models built from `meta.truth` (rigid baseline,

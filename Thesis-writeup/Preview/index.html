@@ -1,0 +1,136 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Results preview</title><style>
+body{font-family:Georgia,'Times New Roman',serif;max-width:1120px;margin:0 auto;padding:16px;background:#fff;color:#1a1a1a;line-height:1.45}
+h1{font-size:22px;margin:8px 0 4px} h2{font-size:18px;margin:34px 0 6px;border-bottom:1px solid #ccc;padding-bottom:4px}
+.item{border:1px solid #e3e3e3;border-radius:6px;padding:14px 16px;margin:16px 0;background:#fcfcfb}
+.tag{display:inline-block;font:12px/1.6 system-ui,sans-serif;padding:0 8px;border-radius:10px;margin-right:6px;background:#eef}
+.new{background:#e3f4e3}.chg{background:#fff1d6}.kept{background:#eee}.cut{background:#f8dddd}
+.item h3{font-size:16px;margin:4px 0 8px}
+.cap{font-size:14px;margin:8px 0;padding:6px 10px;background:#f4f4f4;border-left:3px solid #999}
+.notes{font:14px/1.5 system-ui,sans-serif;margin:8px 0 0} .notes li{margin:3px 0}
+.figref{font:14px system-ui,sans-serif;background:#eef4fb;padding:6px 10px;border-radius:4px}
+table.bt{border-collapse:collapse;font-size:14px;margin:8px 0;border-top:2px solid #000;border-bottom:2px solid #000}
+table.bt th{border-bottom:1px solid #000;padding:3px 10px;font-weight:normal;text-align:center}
+table.bt td{padding:2px 10px;text-align:right} table.bt td:first-child{text-align:left}
+table.bt tr.grp td{font-style:italic;text-align:left;padding-top:8px}
+table.bt tr.sep td{border-top:1px solid #000}
+.tnote{font-size:12px;color:#555}
+</style></head><body>
+<h1>Results preview (final CSVs, 2026-10-24)</h1>
+<p>Proposed floats of Section VII, in reading order. Nothing here is in <code>Writing/</code> yet. All errors are normalised (NRMS<sub>e</sub> or divided by &sigma;<sub>e</sub>), frequencies in Hz, positions relative to Y<sub>tr</sub>, and no noise floor is shown (Section V states it through the SNR). Figures are sent as separate images; their file names are given at their place.</p>
+<h2>Aspect 1: structure and training method</h2>
+<div class="item"><span class="tag chg">Changed: replaces Table I</span><h3>Table A: NRMS<sub>e</sub> of every structure, all test records</h3><table class="bt">
+<tr><th colspan="1"></th><th colspan="3">With multisine (I1, I2, E1)</th><th colspan="3">Without multisine (8 records)</th></tr>
+<tr><th colspan="1">NRMS<sub>e</sub> (%)</th><th colspan="1">X<sub>1</sub></th><th colspan="1">X<sub>2</sub></th><th colspan="1">Y</th><th colspan="1">X<sub>1</sub></th><th colspan="1">X<sub>2</sub></th><th colspan="1">Y</th></tr>
+<tr><td>Baseline &#8499;<sub>LPV</sub></td><td>20.7</td><td>22.2</td><td>121.5</td><td>4.3</td><td>4.3</td><td>3.3</td></tr>
+<tr><td>n<sub>x&#772;</sub> = 0</td><td>13.9</td><td>13.1</td><td>84.7</td><td>5.0</td><td>4.3</td><td>19.9</td></tr>
+<tr><td>n<sub>x&#772;</sub> = 2, plain</td><td>11.4</td><td>10.6</td><td>76.5</td><td>4.3</td><td>4.2</td><td>13.4</td></tr>
+<tr><td>n<sub>x&#772;</sub> = 2, PS</td><td>10.4</td><td>10.2</td><td>6.1</td><td>4.0</td><td>3.9</td><td>4.0</td></tr>
+<tr><td>n<sub>x&#772;</sub> = 8, PS</td><td>9.5</td><td>8.5</td><td>6.6</td><td>3.9</td><td>3.9</td><td>4.0</td></tr>
+<tr class="sep"><td>Final &#8499;<sub>OBC</sub></td><td>10.8</td><td>10.2</td><td>6.6</td><td>4.5</td><td>4.5</td><td>3.7</td></tr>
+<tr><td>Black box &#8499;<sub>BB</sub></td><td>41.4</td><td>36.3</td><td>27.2</td><td>106.7</td><td>98.4</td><td>127.4</td></tr>
+</table><div class="cap"><b>Caption:</b> NRMS<sub>e</sub> per axis, mean over the test records with the training multisine (I1, I2, E1) and without it (I3 to I6, E2 to E4, E6). Rows 2 to 5 start from the true parameters, the final model from the detuned start.</div><ul class="notes"><li><b>Claim:</b> only added states with PS capture the missing dynamics. Y with multisine: Baseline &#8499;<sub>LPV</sub> 121.5, n<sub>x&#772;</sub> = 0 84.7, n<sub>x&#772;</sub> = 2, plain 76.5, n<sub>x&#772;</sub> = 2, PS 6.1, n<sub>x&#772;</sub> = 8, PS 6.6, Final &#8499;<sub>OBC</sub> 6.6, Black box &#8499;<sub>BB</sub> 27.2.</li><li><b>Criterion:</b> the Y error with multisine reaches the level of the records without multisine. Only the PS rows meet it.</li><li><b>Change:</b> all 11 test records instead of I1 to I6 only, so the multisine mean is over three records instead of two; no noise-floor row.</li><li><b>Critical:</b> without multisine, n=0 and plain are clearly worse than the baseline on Y: a static or badly started network damages what the baseline already has right. Worth one sentence.</li><li><b>Critical:</b> the structure rows start from the true parameters and the final model from the detuned start; the detuned PS run (R4) gives the same conclusion.</li></ul></div>
+<div class="item"><span class="tag kept">Kept (regenerated, restyled)</span><h3>Time trace on I1, Y axis</h3><p class="figref">Figure file: <b>A_time_trace.png</b></p><div class="cap"><b>Caption:</b> Test record I1, Y axis. Top: moving NRMS<sub>e,Y</sub> (50 ms). Bottom: servo error relative to &sigma;<sub>e,Y</sub> from 7.84 to 7.95 s.</div><ul class="notes"><li><b>Claim:</b> the final model follows the absorber oscillation that the baseline misses. In the window, the error relative to &sigma;<sub>e,Y</sub> is 115 % (baseline) against 8 % (final).</li><li><b>Changes:</b> normalised by &sigma;<sub>e,Y</sub> of I1 (no metres); no shaded window, the bottom panel is in the record's own time; system as a thick light band, both models thin solid lines.</li></ul></div>
+<div class="item"><span class="tag new">New</span><h3>Figure B: validation error during training</h3><p class="figref">Figure file: <b>B_validation_curves.png</b></p><div class="cap"><b>Caption:</b> Validation NRMS<sub>e</sub>, mean over the validation records and axes, during training. All four start from the true parameters. Update 0: the baseline before training.</div><ul class="notes"><li><b>Claim:</b> the gap between PS and the other structures is not a matter of training budget: it appears in the first 1300 updates and stays.</li><li><b>Source:</b> the &ldquo;Val sim-NRMSe&rdquo; lines of the final-run logs (every 1300 updates), the selection score over the whole validation records.</li><li><b>Critical:</b> the plain run is still decreasing slowly at the end (29.6 to 25.2 % over 31000 updates); an examiner can ask whether it would converge with more updates.</li><li><b>Open (?):</b> add the black box (its log is on the server) or keep this figure to the grey-box structures.</li></ul></div>
+<div class="item"><span class="tag chg">Changed</span><h3>Frequency response F<sub>Y</sub> to Y</h3><p class="figref">Figure file: <b>A_frf.png</b></p><div class="cap"><b>Caption:</b> Bode magnitude from F<sub>Y</sub> to Y at Y = 0, linearised at rest, relative to the system at 20 Hz. Shaded: range of the final model over Y. The system and the baseline vary by less than 0.3 dB over Y.</div><ul class="notes"><li><b>Claim:</b> the final model has the absorber mode that the baseline lacks: 211 to 214 Hz against 212 Hz.</li><li><b>For the text, not the figure:</b> the learned damping of that mode varies with Y (0.017 to 0.092) while the system's is constant (0.043).</li><li><b>Changes:</b> relative dB (no absolute plant gain), frequency in Hz; lines at Y = 0, only the final model's range over Y shaded; the two small mode and damping plots removed.</li></ul></div>
+<h2>Aspect 2: interpretability</h2>
+<div class="item"><span class="tag new">New: main OBC result</span><h3>Table C: the ten combinations from both starts</h3><table class="bt">
+<tr><th colspan="1"></th><th colspan="1"></th><th colspan="2">&#8499;<sub>U</sub></th><th colspan="2">&#8499;<sub>OBC</sub></th></tr>
+<tr><th colspan="1">Relative error (%)</th><th colspan="1">Detuned initial value</th><th colspan="1">detuned start</th><th colspan="1">true start</th><th colspan="1">detuned start</th><th colspan="1">true start</th></tr>
+<tr><td>k<sub>b,&Sigma;</sub></td><td>-10.0</td><td>-21.8</td><td>-7.6</td><td>-7.1</td><td>-9.7</td></tr>
+<tr class="sep"><td>c<sub>g1</sub></td><td>+10.0</td><td>+45.6</td><td>+27.7</td><td>+34.0</td><td>+23.6</td></tr>
+<tr><td>c<sub>g2</sub></td><td>+10.0</td><td>+45.9</td><td>+27.2</td><td>+28.4</td><td>+16.2</td></tr>
+<tr><td>c<sub>y</sub></td><td>+10.0</td><td>+43.3</td><td>+29.5</td><td>+47.4</td><td>+34.1</td></tr>
+<tr><td>c<sub>b,&Sigma;</sub></td><td>-10.0</td><td>+14.7</td><td>+29.2</td><td>+21.8</td><td>+35.7</td></tr>
+<tr class="sep"><td>m<sub>h</sub></td><td>-10.0</td><td>-1.3</td><td>+1.4</td><td>-2.0</td><td>+1.8</td></tr>
+<tr><td>m<sub>&Sigma;</sub></td><td>+10.0</td><td>+2.6</td><td>+1.3</td><td>+0.5</td><td>-0.6</td></tr>
+<tr><td>m<sub>&Delta;</sub><sup>*</sup></td><td>-0.5</td><td>-0.5</td><td>-0.1</td><td>-2.1</td><td>-1.6</td></tr>
+<tr><td>J<sub>eff</sub></td><td>-10.0</td><td>-2.2</td><td>+4.1</td><td>-2.7</td><td>+4.7</td></tr>
+<tr class="sep"><td>d</td><td>-10.0</td><td>-11.7</td><td>-9.1</td><td>+3.7</td><td>-12.7</td></tr>
+<tr class="sep"><td>Norm to the truth</td><td>30.0</td><td>83.1</td><td>58.3</td><td>69.1</td><td>59.5</td></tr>
+<tr><td>Norm of the difference between the starts</td><td></td><td colspan="2" style="text-align:center">36.4</td><td colspan="2" style="text-align:center">31.3</td></tr>
+</table>
+<p class="tnote"><sup>*</sup> m<sub>&Delta;</sub> relative to the mean actuator mass (D-259), the others to their true value.</p><div class="cap"><b>Caption:</b> Relative error of the ten identifiable combinations after training, unconstrained and OBC, from the detuned and from the true start.</div><ul class="notes"><li><b>Claim:</b> uniqueness is the difference between the two starts of one model (Section I definition). OBC makes it smaller for k<sub>b,&Sigma;</sub>, c<sub>g1</sub>, c<sub>g2</sub>, about equal for c<sub>y</sub>, c<sub>b,&Sigma;</sub>, J<sub>eff</sub>, and larger for m<sub>h</sub>, d. Per combination, unconstrained / OBC: k<sub>b,&Sigma;</sub> 14.2 / 2.6; c<sub>g1</sub> 17.8 / 10.4; c<sub>g2</sub> 18.6 / 12.2; c<sub>y</sub> 13.8 / 13.4; c<sub>b,&Sigma;</sub> 14.5 / 13.9; m<sub>h</sub> 2.7 / 3.8; m<sub>&Sigma;</sub> 1.3 / 1.1; m<sub>&Delta;</sub> 0.4 / 0.5; J<sub>eff</sub> 6.3 / 7.4; d 2.6 / 16.4.</li><li><b>Claim:</b> both models move the dampers far from the truth (up to +47 %); the masses stay within 3 %.</li><li><b>Critical:</b> two starts per model is the minimum to show (non-)uniqueness; Gy&ouml;r&ouml;k et al. use 10.</li></ul></div>
+<div class="item"><span class="tag chg">Changed: replaces Table II</span><h3>Table D: constraint and accuracy</h3><table class="bt">
+<tr><th colspan="1"></th><th colspan="1">&#8499;<sub>U</sub></th><th colspan="1">&#8499;<sub>OBC</sub></th></tr>
+<tr class="grp"><td colspan="20">Constraint</td></tr>
+<tr><td>Network overlap &rho;(F<sub>aug</sub>), training records</td><td>0.85</td><td>0.00</td></tr>
+<tr><td>Network overlap &rho;(F<sub>aug</sub>), test records</td><td>0.84</td><td>0.24</td></tr>
+<tr><td>Truth overlap &rho;(&Xi;), test records</td><td>0.59</td><td>0.59</td></tr>
+<tr class="grp"><td colspan="20">Accuracy, test records, NRMS<sub>e</sub> (%) X<sub>1</sub> / X<sub>2</sub> / Y</td></tr>
+<tr><td>Full model</td><td>5.7 / 5.6 / 4.8</td><td>6.3 / 6.2 / 4.6</td></tr>
+<tr><td>Physical part only</td><td>10.3 / 9.3 / 41.8</td><td>9.5 / 10.2 / 42.3</td></tr>
+</table><div class="cap"><b>Caption:</b> OBC against unconstrained estimation: overlaps of (eq:obc_overlap) and accuracy on the test records.</div><ul class="notes"><li><b>Criteria, in order:</b> the constraint holds (overlap near 0), uniqueness (Table C), equal accuracy, and, only in simulation, the distance to the truth (Table C).</li><li><b>Critical:</b> the network overlap of OBC is 0.00 on the training records but 0.24 on the test records: the constraint holds on the data it is imposed on.</li><li><b>Critical:</b> the physical part alone is far off on Y for both models, so a better physical part (Gy&ouml;r&ouml;k 2025's argument) does not separate them here.</li></ul></div>
+<h2>Aspect 3: generalisation</h2>
+<div class="item"><span class="tag chg">Changed: replaces the figure</span><h3>Table E: interpolation against extrapolation</h3><table class="bt">
+<tr><th colspan="2"></th><th colspan="2">With multisine</th><th colspan="2">Without multisine</th><th colspan="2">Multisine added</th></tr>
+<tr><th colspan="1">NRMS<sub>e</sub> (%)</th><th colspan="1">Axis</th><th colspan="1">I</th><th colspan="1">E</th><th colspan="1">I</th><th colspan="1">E</th><th colspan="1">I</th><th colspan="1">E</th></tr>
+<tr><td>Baseline &#8499;<sub>LPV</sub></td><td>X<sub>1</sub></td><td>18.8</td><td>24.6</td><td>4.5</td><td>4.1</td><td>11.3</td><td>9.2</td></tr>
+<tr><td></td><td>X<sub>2</sub></td><td>20.7</td><td>25.3</td><td>4.6</td><td>4.1</td><td>10.5</td><td>8.6</td></tr>
+<tr><td></td><td>Y</td><td>116.6</td><td>131.5</td><td>3.4</td><td>3.1</td><td>71.3</td><td>64.6</td></tr>
+<tr class="sep"><td>Final &#8499;<sub>OBC</sub></td><td>X<sub>1</sub></td><td>9.4</td><td>13.6</td><td>4.7</td><td>4.3</td><td>6.8</td><td>5.9</td></tr>
+<tr><td></td><td>X<sub>2</sub></td><td>9.2</td><td>12.4</td><td>4.7</td><td>4.3</td><td>6.1</td><td>5.4</td></tr>
+<tr><td></td><td>Y</td><td>6.1</td><td>7.4</td><td>3.8</td><td>3.5</td><td>6.0</td><td>6.0</td></tr>
+<tr class="sep"><td>Black box &#8499;<sub>BB</sub></td><td>X<sub>1</sub></td><td>47.8</td><td>28.5</td><td>104.8</td><td>108.5</td><td>99.0</td><td>95.9</td></tr>
+<tr><td></td><td>X<sub>2</sub></td><td>47.8</td><td>13.2</td><td>97.0</td><td>99.8</td><td>100.2</td><td>98.1</td></tr>
+<tr><td></td><td>Y</td><td>35.9</td><td>9.9</td><td>127.7</td><td>127.0</td><td>85.9</td><td>90.9</td></tr>
+</table>
+<p class="tnote">I: I1, I2 | I3 to I6 | I3, I5, I6. E: E1 | E2, E3, E4, E6 | E2, E3, E4, E6. Each E record has the motion of an I record (E1: I2, E2 and E6: I3, E3: I5, E4: I6).</p><div class="cap"><b>Caption:</b> NRMS<sub>e</sub> per axis, mean over the interpolation (I) and extrapolation (E) test records, with and without the training multisine, and with the training multisine added to the records without it.</div><ul class="notes"><li><b>Claim:</b> leaving the training range does not raise the error of the final model. E minus I on Y: with multisine +1.3; without multisine -0.3; multisine added -0.0 points.</li><li><b>Claim:</b> with the multisine added, the final model stays far below the baseline and the black box on Y.</li><li><b>Critical:</b> the E-I criterion needs a margin; a data-derived one is the spread of the final model over the I records without multisine.</li><li><b>Critical:</b> the black box is above the baseline on every record without multisine; it is a weak reference (not converged, D-264), and the text must say so where it is compared.</li></ul></div>
+<h2>Appendix</h2>
+<div class="item"><span class="tag kept">Kept (regenerated)</span><h3>Training, validation and test (app:splits)</h3><table class="bt">
+<tr><th colspan="1"></th><th colspan="3">With multisine</th><th colspan="3">Without multisine</th></tr>
+<tr><th colspan="1">NRMS<sub>e</sub> (%)</th><th colspan="1">X<sub>1</sub></th><th colspan="1">X<sub>2</sub></th><th colspan="1">Y</th><th colspan="1">X<sub>1</sub></th><th colspan="1">X<sub>2</sub></th><th colspan="1">Y</th></tr>
+<tr class="grp"><td colspan="20">Training records (14 with, 4 without multisine)</td></tr>
+<tr><td>Baseline &#8499;<sub>LPV</sub></td><td>21.9</td><td>24.5</td><td>120.0</td><td>4.6</td><td>5.0</td><td>3.7</td></tr>
+<tr><td>&#8499;<sub>U</sub></td><td>9.4</td><td>10.2</td><td>6.6</td><td>4.1</td><td>4.3</td><td>4.3</td></tr>
+<tr><td>&nbsp;&nbsp;physical part</td><td>21.0</td><td>23.7</td><td>120.8</td><td>5.9</td><td>4.3</td><td>4.2</td></tr>
+<tr><td>&#8499;<sub>OBC</sub></td><td>10.2</td><td>10.8</td><td>6.3</td><td>4.5</td><td>4.8</td><td>4.2</td></tr>
+<tr><td>&nbsp;&nbsp;physical part</td><td>24.0</td><td>26.6</td><td>121.6</td><td>4.4</td><td>4.7</td><td>4.6</td></tr>
+<tr><td>&#8499;<sub>BB</sub></td><td>32.4</td><td>34.5</td><td>25.2</td><td>75.6</td><td>76.9</td><td>104.4</td></tr>
+<tr class="grp"><td colspan="20">Validation records (4 with, 2 without multisine)</td></tr>
+<tr><td>Baseline &#8499;<sub>LPV</sub></td><td>23.0</td><td>24.9</td><td>121.8</td><td>4.7</td><td>4.9</td><td>3.7</td></tr>
+<tr><td>&#8499;<sub>U</sub></td><td>9.9</td><td>10.2</td><td>6.6</td><td>4.1</td><td>4.2</td><td>4.3</td></tr>
+<tr><td>&nbsp;&nbsp;physical part</td><td>22.1</td><td>24.1</td><td>122.7</td><td>5.9</td><td>4.2</td><td>4.2</td></tr>
+<tr><td>&#8499;<sub>OBC</sub></td><td>10.8</td><td>10.8</td><td>6.5</td><td>4.5</td><td>4.8</td><td>4.2</td></tr>
+<tr><td>&nbsp;&nbsp;physical part</td><td>25.3</td><td>27.1</td><td>123.4</td><td>4.5</td><td>4.6</td><td>4.6</td></tr>
+<tr><td>&#8499;<sub>BB</sub></td><td>31.6</td><td>33.6</td><td>23.8</td><td>75.6</td><td>76.9</td><td>103.3</td></tr>
+<tr class="grp"><td colspan="20">Test records (3 with, 8 without multisine)</td></tr>
+<tr><td>Baseline &#8499;<sub>LPV</sub></td><td>20.7</td><td>22.2</td><td>121.5</td><td>4.3</td><td>4.3</td><td>3.3</td></tr>
+<tr><td>&#8499;<sub>U</sub></td><td>10.5</td><td>9.4</td><td>6.5</td><td>4.0</td><td>3.9</td><td>4.0</td></tr>
+<tr><td>&nbsp;&nbsp;physical part</td><td>19.7</td><td>20.7</td><td>122.4</td><td>6.3</td><td>3.9</td><td>3.8</td></tr>
+<tr><td>&#8499;<sub>OBC</sub></td><td>10.8</td><td>10.2</td><td>6.6</td><td>4.5</td><td>4.5</td><td>3.7</td></tr>
+<tr><td>&nbsp;&nbsp;physical part</td><td>21.7</td><td>23.4</td><td>123.3</td><td>4.1</td><td>4.0</td><td>4.2</td></tr>
+<tr><td>&#8499;<sub>BB</sub></td><td>41.4</td><td>36.3</td><td>27.2</td><td>106.7</td><td>98.4</td><td>127.4</td></tr>
+</table><div class="cap"><b>Caption:</b> NRMS<sub>e</sub> per axis on the training, validation and test records, mean over each set, with and without multisine. Physical part: the trained model with the learned block switched off.</div><ul class="notes"><li>Required by D-269. Test now over all 11 records (as Table A); no noise-floor row.</li></ul></div>
+<div class="item"><span class="tag kept">Kept (regenerated, normalised)</span><h3>Full 3&times;3 frequency response (app:frf)</h3><p class="figref">Figure file: <b>App_frf_full.png</b></p><div class="cap"><b>Caption:</b> Bode magnitude from the stage forces (columns) to the stage positions (rows), linearised at rest, relative to the system F<sub>Y</sub> to Y at the lowest frequency.</div><ul class="notes"><li>Same normalisation and styles as the main FRF figure.</li></ul></div>
+<div class="item"><span class="tag kept">Kept (regenerated)</span><h3>LPV against LTI baseline (app:choices)</h3><p class="figref">Figure file: <b>App_lpv_lti.png</b></p><div class="cap"><b>Caption:</b> NRMS<sub>e</sub> on the X axes of the LPV baseline and the LTI baseline at Y = 0, both at the true parameters.</div><ul class="notes"><li>Positions relative to Y<sub>tr</sub>; linear axis (bars on a log axis mislead).</li></ul></div>
+<div class="item"><span class="tag kept">Kept, or cut (?)</span><h3>Spectrum of the Y error, plain against PS (app:choices)</h3><p class="figref">Figure file: <b>App_ps_spectrum.png</b></p><div class="cap"><b>Caption:</b> Amplitude spectral density of the Y simulation error on the validation records with multisine, relative to the baseline's peak in the multisine band (shaded).</div><ul class="notes"><li><b>Open (?):</b> Table A and Fig. B already show that PS is needed; this figure adds where in frequency the gain is. Keep only if the text uses it.</li></ul></div>
+<div class="item"><span class="tag kept">Kept</span><h3>Combinations without added states (app:choices)</h3><table class="bt">
+<tr><th colspan="1">Relative error (%)</th><th colspan="1">Start</th><th colspan="1">Unconstrained</th><th colspan="1">OBC</th></tr>
+<tr><td>k<sub>b,&Sigma;</sub></td><td>-10.0</td><td>-10.2</td><td>-1.5</td></tr>
+<tr><td>c<sub>g1</sub></td><td>+10.0</td><td>+42.4</td><td>+39.3</td></tr>
+<tr><td>c<sub>g2</sub></td><td>+10.0</td><td>+12.6</td><td>+31.7</td></tr>
+<tr><td>c<sub>y</sub></td><td>+10.0</td><td>+2.9</td><td>+38.4</td></tr>
+<tr><td>c<sub>b,&Sigma;</sub></td><td>-10.0</td><td>-12.9</td><td>+22.2</td></tr>
+<tr><td>m<sub>h</sub></td><td>-10.0</td><td>-7.3</td><td>-3.9</td></tr>
+<tr><td>m<sub>&Sigma;</sub></td><td>+10.0</td><td>-0.6</td><td>+2.9</td></tr>
+<tr><td>m<sub>&Delta;</sub></td><td>-0.5</td><td>+0.4</td><td>-2.0</td></tr>
+<tr><td>J<sub>eff</sub></td><td>-10.0</td><td>-4.8</td><td>-4.0</td></tr>
+<tr><td>d</td><td>-10.0</td><td>-8.2</td><td>+10.9</td></tr>
+<tr class="sep"><td>Norm</td><td>30.0</td><td>48.8</td><td>68.4</td></tr>
+</table><div class="cap"><b>Caption:</b> Relative error of the ten combinations without added states, unconstrained and OBC, from the detuned start.</div><ul class="notes"><li>Here the unconstrained estimate ends closer to the truth. Supports the Discussion, not an aspect.</li></ul></div>
+<div class="item"><span class="tag kept">Kept (regenerated)</span><h3>Black-box search (app:choices)</h3><table class="bt">
+<tr><th colspan="1">Index</th><th colspan="1">n<sub>x</sub></th><th colspan="1">Width</th><th colspan="1">Learning rate</th><th colspan="1">Best val. NRMS<sub>e</sub> (%)</th><th colspan="1">At update</th><th colspan="1">Status</th></tr>
+<tr><td>0</td><td>8</td><td>8</td><td>3e-03</td><td>63.4</td><td>8000</td><td>completed</td></tr>
+<tr><td>1</td><td>8</td><td>16</td><td>3e-03</td><td>59.9</td><td>28000</td><td>completed</td></tr>
+<tr><td>2</td><td>8</td><td>32</td><td>3e-03</td><td>63.4</td><td>20000</td><td>completed</td></tr>
+<tr><td>3</td><td>16</td><td>8</td><td>3e-03</td><td>52.5</td><td>50000</td><td>completed</td></tr>
+<tr><td>4</td><td>16</td><td>16</td><td>3e-03</td><td>56.2</td><td>11000</td><td>failed</td></tr>
+<tr><td>5</td><td>16</td><td>32</td><td>3e-03</td><td>54.8</td><td>75000</td><td>completed</td></tr>
+<tr><td>6</td><td>32</td><td>8</td><td>3e-03</td><td>58.2</td><td>9000</td><td>completed</td></tr>
+<tr><td>7</td><td>32</td><td>16</td><td>3e-03</td><td>57.5</td><td>3000</td><td>completed</td></tr>
+<tr><td>8</td><td>32</td><td>32</td><td>3e-03</td><td>59.1</td><td>4000</td><td>completed</td></tr>
+<tr><td>9</td><td>16</td><td>16</td><td>1e-03</td><td>48.2</td><td>78000</td><td>completed (selected)</td></tr>
+<tr><td>10</td><td>16</td><td>16</td><td>1e-02</td><td>66.4</td><td>1000</td><td>failed</td></tr>
+</table><div class="cap"><b>Caption:</b> Black-box search: the 11 configurations and their best validation NRMS<sub>e</sub>.</div><ul class="notes"><li><b>Critical:</b> indices 1 and 8 diverged with a finite loss but are listed &ldquo;completed&rdquo;. The status column should say so.</li></ul></div>
+</body></html>

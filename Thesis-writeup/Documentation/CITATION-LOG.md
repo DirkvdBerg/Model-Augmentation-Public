@@ -121,3 +121,4 @@ Passages read in the PDF under `literature/` and what each supports. One row per
 | gyorok2026obc | Sec. 3.2, p. 3 (arXiv 2511.01321v3) | with non-unique theta_b the baseline could lose its physical meaning (IV opening) | 2026-10-14 |
 | kessels2025ai | Sec. 5.3.1.3, thesis p. 166 (PDF p. 193) | FP terms retained (fixed); trained NNs may (partially) negate them, called negation; recommended for future work (IV-A) | 2026-10-14 |
 | gyorok2026obc | Sec. 2, Eq. (5), p. 3 (arXiv 2511.01321v3) | the regressor stack Phi is formed from phi(x_k) at the data points x_k of D_N (lagged measured IO); thesis IV-A: regressor evaluated at measured data | 2026-10-14 |
+| hoekstra2026lfr | Sec. 5.4, p. 9 to 10 | standard start: parameters initialised so the model equals the baseline at initialisation, augmented-state encoder part Xavier, remaining LFR matrices random (VI-D, "standard start of Hoekstra et al. without PS") | 2026-10-24 |

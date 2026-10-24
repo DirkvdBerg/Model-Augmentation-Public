@@ -24,8 +24,9 @@
 %     drawn for legibility.  The absorber rides on the payload, so it may
 %     overhang the beam end.
 %   * Colours: red = measured coordinates, blue = generalized coordinates,
-%     grey = absorber (m_a, k_a, c_a, q_a), present only in the simulated
-%     plant and not in the baseline.  Theta is drawn once, at the CoM.
+%     grey = absorber (m_a, k_a, c_a, q_a) and rail friction F_fr, present
+%     only in the simulated plant and not in the baseline.  Theta is drawn
+%     once, at the CoM.
 %
 % \gantryabsorber: 0 draws the baseline only (Section II), 1 adds the grey
 % absorber (Section III).
@@ -112,8 +113,18 @@
     \fi
 
     % ==== payload force F_Y ====
+    % With the absorber on, the label carries the rail friction (grey, not in
+    % the baseline) and is anchored at the arrow tail so it grows away from it
+    % (Jasper v1 p. 9, "indicate the friction too"; Dirk 2026-10-24).
     \draw[->] ({\ud+\sd*11},\vh+4) -- ({\Yp+\sd*\Lh/2},\vh+4);
-    \node[inner sep=2pt] at ({\ud+\sd*20},\vh+4) {$F_Y$};
+    \ifnum\gantryabsorber>0
+      \ifdim\Yp pt<0pt \def\FYanchor{west}\else \def\FYanchor{east}\fi
+      \node[inner sep=2pt, anchor=\FYanchor]
+            at ({\ud+\sd*12},\vh+4)
+            {$F_Y$\textcolor{black!55}{$\,-\,F_{\mathrm{fr},Y}$}};
+    \else
+      \node[inner sep=2pt] at ({\ud+\sd*20},\vh+4) {$F_Y$};
+    \fi
 
     % ==== d : centreline to payload centre of mass ====
     \draw[<->] (\ud,0) -- (\ud,\vh);
@@ -175,7 +186,14 @@
 
     % actuator force
     \draw[->] (\s*\xM,\y+\Mw/2+30) -- (\s*\xM,\y+\Mw/2);
-    \node[anchor=south] at (\s*\xM,\y+\Mw/2+31) {$F_{X\i}$};
+    \ifnum\gantryabsorber>0                   % rail friction, grey; the label
+      \ifnum\i=2 \def\FXanchor{south east}\def\FXdx{\Mw/2}% grows outward,
+      \else \def\FXanchor{south}\def\FXdx{0}\fi          % clear of q_a
+      \node[anchor=\FXanchor] at (\s*\xM+\FXdx,\y+\Mw/2+31)
+            {$F_{X\i}$\textcolor{black!55}{$\,-\,F_{\mathrm{fr},X_\i}$}};
+    \else
+      \node[anchor=south] at (\s*\xM,\y+\Mw/2+31) {$F_{X\i}$};
+    \fi
 
     % measured position X_i (red), drawn from the carriage so that it does
     % not start at the fixed world (feedback Js24, 2026-10-18); was a tick

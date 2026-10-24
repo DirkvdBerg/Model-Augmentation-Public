@@ -198,20 +198,38 @@ show that the remaining error is caused by friction.
 Question: is ``consistent with the unmodelled friction'' the right
 wording for this remaining error?}
 \\
+% FEEDBACK (own, 2026-10-24): final R1 norm (Results/24-10-2026/CSV/res_obc_combinations.csv,
+%   D-259 scaling); final R2 59.5 % against R5 58.3 % from the correct start.
+% FEEDBACK (Dirk, 2026-10-24): the constraint holds, but the missing dynamics are not
+%   orthogonal to the baseline; selection uses the validation error only, because the
+%   truth is unknown. The todo "Use this?" is answered: the sentence is kept.
 OBC reduces the final combination error compared with the
-unconstrained model (47.7 against 83.1\,\%), but the parameters
+unconstrained model (\chg[own]{47.7}{\kwtwo{69.1}} against 83.1\,\%), but the parameters
 still end up further from the truth than at their initial values
 (Table~\ref{tab:res_obc}).
-The missing dynamics have a truth overlap of 0.59 with the
+\chg[own]{The missing dynamics have a truth overlap of 0.59 with the
 parameter directions.
-The truth overlap of 0.59 means $\Phi^\top\Xi\neq0$, so the recovery
-condition of Section~\ref{sec:obc_ident} is not met and OBC is not
-expected to recover the true values.
-\todo{Use this?}
+The truth overlap of 0.59 means}{\kwtwo{The network overlap of OBC is much lower than that of
+the unconstrained model, which shows that the constraint holds.
+The missing dynamics themselves are not orthogonal to the parameter directions.
+Their truth overlap is 0.59.
+This means}} $\Phi^\top\Xi\neq0$, \chg[own]{so the recovery
+condition of Section~\mbox{\ref{sec:obc_ident}} is not met and OBC is not
+expected to recover the true values.}{\kwtwo{and the recovery condition of
+Section~\ref{sec:obc_ident} is not met.
+OBC keeps this part of the missing dynamics out of the network, and the
+physical parameters absorb it instead.
+From the correct start, OBC therefore also moves away from the true values
+(Table~\ref{tab:app_obc_full}).}}
 The orthogonality holds only to first order and at $\bar x=0$.
 During training, the added states enter the physical states through
 $f_{\mathrm{aug}}$ without projection.
 This is a limitation of imposing the constraint at $\bar x=0$.
+\add[own]{\kwtwo{The model is selected on the validation error only
+(Section~\ref{sec:aug_closed_loop}), because the true parameters are unknown
+outside simulation.
+A small decrease in the validation error can therefore come with a large
+drift of the damper combinations.}}
 With OBC the estimates from the true and detuned starts are closer together, 
 but still differ (Table~\ref{tab:app_obc_full}).
 The results therefore show less dependence on initialisation,

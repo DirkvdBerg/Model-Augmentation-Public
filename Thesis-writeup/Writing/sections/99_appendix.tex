@@ -526,12 +526,29 @@ The checks use the known simulated system where the text says so.
 \item The definition of the signal-to-noise ratio
 \end{itemize}
 \fi
-\revnote{Issue: some details may be confidential: the controller ratios
-of \eqref{eq:setup_K1}, the fitted noise parameters $f_{v,j}$,
-$\lambda_j$, $\sigma_{v,j}$, the description of record E6, and $f_b$,
-which already follows from $f_a=150$~Hz in
-Table~\ref{tab:nominal_parameters} and the resonance at $2.12\,f_b$.
-Question: which of these may I show?}
+% REVNOTE RESOLVED (Dirk 2026-10-24): K_1 ratios shown (simulation
+%   controller); f_b shown (Jasper); noise parameters not shown; E6 discreet.
+% RESTRUCTURE (own, 2026-10-24): matrix block moved verbatim from
+%   Section VI-A with its symbol sentences (Dirk 2026-10-24).
+\add[own]{\kwtwo{The matrices of \eqref{eq:setup_abs} are}}
+{\footnotesize
+\setlength{\arraycolsep}{3pt}
+\begin{equation*}
+\begin{gathered}
+ M_{\mathrm e}(Y,q_a)=\begin{bmatrix}M(Y)+M_a(Y,\ell)&m_a\begin{bmatrix}0&-d&1\end{bmatrix}^\top\\m_a\begin{bmatrix}0&-d&1\end{bmatrix}&m_a\end{bmatrix},\\
+ M_a(Y,\ell)=m_a\ell\begin{bmatrix}0&-1&0\\-1&2Y+\ell&0\\0&0&0\end{bmatrix},\\
+ C_{\mathrm e}=\operatorname{diag}(C,c_a),\quad
+ K_{\mathrm e}=\operatorname{diag}(K,k_a),
+\end{gathered}
+\end{equation*}}
+\mv[own]{VI-A}{where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total payload mass.
+$M_a(Y,\ell)$ corrects it for $m_a$ being at $Y+\ell$ instead of $Y$,
+where $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.}
+% FEEDBACK (Dirk 2026-10-24): k_a, c_a moved here from Section VI-A.
+\mv[own]{VI-A}{$k_a=m_a(2\pi f_a)^2$ and
+$c_a=2\zeta_a\sqrt{k_am_a}$, with natural frequency $f_a$
+and damping ratio $\zeta_a$.}
+
 The controller of every record is, per stage axis $j$,
 \begin{equation}
  K_{1,j}(s)=\kappa_j\,\frac{s+\omega_b/6}{s}\,
@@ -614,10 +631,12 @@ edges.
   \label{fig:setup_band}
 \end{figure}
 
-The five types of motion profile are standstill at a fixed $Y$, slow
+% FEEDBACK (own, 2026-10-24): the five motion types now in Section VI-B
+%   (Dirk 2026-10-24).
+\delmv[own]{VI-B}{The five types of motion profile are standstill at a fixed $Y$, slow
 sweeps of $Y$, $X$-$Y$ Lissajous paths, point-to-point moves with S-curve
 profiles, and operational motion profiles, which are sine-shaped moves
-representative of machine operation.
+representative of machine operation.}
 The test records I3 to I6 add new operational motion profiles: sine-shaped
 routes with $X$ and $Y$ together, alternating $X$-only and $Y$-only moves,
 an S-curve route and long strokes.
@@ -705,6 +724,12 @@ Its impulse response falls below 1\,\% of its peak within
 its edge transient.
 \todo{Missing: source for the cutoff at 0.8 times the Nyquist frequency and for the order 8. Candidate: Gautier, Janot and Vandanjon, IEEE TCST 2013 (decimation at 0.8 of the Nyquist frequency; no cite key yet); order 8 heuristic (D-232).}
 
+% FEEDBACK (own, 2026-10-24): v_fr tuning moved here from Section VI-A,
+%   next to its check (Dirk 2026-10-24).
+\mv[own]{VI-A}{$v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating
+the loop with values between 0.1 and 10~mm/s.
+Higher values turn the friction into viscous damping under the multisine,
+and lower values keep the standstill servo error above the noise level.}
 For $\lvert v_i\rvert\ge3v_{\mathrm{fr}}$, the friction of
 \eqref{eq:setup_fric} is within 0.5\,\% of the Coulomb law.
 Table~\ref{tab:setup_checks} gives the checks of the design, including the
