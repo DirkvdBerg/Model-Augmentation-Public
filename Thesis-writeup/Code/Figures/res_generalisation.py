@@ -1,79 +1,38 @@
-"""Fig. (Aspect 4): NRMS_e per axis (the primary metric, 05_setup eq:setup_rms) of the baseline,
-the augmented model (OBC) and the black-box model per record, one row of panels per axis X1, X2, Y.
+"""Table E (Aspect 3): NRMS_e per axis in % of the baseline at the true parameters, the final model and
+the black box, mean over the interpolation (I) and the extrapolation (E) test records, with the training
+multisine, without it, and with the training multisine added to the records without it. Replaces the
+per-record figure (Dirk 2026-10-24). Each E record has the motion of an I record (E1: I2, E2 and E6: I3,
+E3: I5, E4: I6; Appendix tab:setup_records).
 
-Reads Results/res_generalisation.csv (Code/Evaluation/make_results.py).
-Writes Writing/figures/res_generalisation.pdf: the interpolation (I) and extrapolation (E) test
-records and, once evaluated, the multisine twins of the test records (D-258); and
-res_generalisation_train.pdf, res_generalisation_val.pdf with the same bars per training and
-validation record (D-269). Red marks: the noise floor of the same record. E records are ordered by
-the property in which they differ from their I partner (Y position, Y moving, acceleration,
-velocity, ILC move). E5 (changed controller) is not scored (user 2026-10-11).
-BASELINE: the physics model alone at the TRUE parameters (M_LPV of 05_setup; Dirk 2026-10-18), so
-its error is the missing dynamics only; the legend says "true theta" explicitly. The CSV also holds
-the detuned start (baseline_detuned), shown in Table I.
+Reads Results/res_generalisation.csv (Code/Evaluation/make_results.py), writes
+Writing/tables/res_generalisation.tex.
 """
-import csv
+import numpy as np
 
-import matplotlib.pyplot as plt
-
-from _fig_common import FULL_WIDTH, COLOR, FLOOR, RESULTS_DIR, mark_preliminary, nrms_pct, save, use_paper_style
+from _fig_common import AXES, AXTEX, read_csv, save_table
 
 STEM = "res_generalisation"
-BASELINE = "baseline_true"           # Dirk 2026-10-18; "baseline_detuned" is in the CSV too
-TEST_PANELS = [("Interpolation", ["I1", "I2", "I3", "I4", "I5", "I6"]),
-               ("Extrapolation", ["E1", "E2", "E3", "E4", "E6"])]
-LABEL = {"baseline_detuned": r"Baseline model, detuned $\theta$", "baseline_true": r"Baseline model (true parameters $\theta^\star$)"}
-MODELS = [(BASELINE, LABEL[BASELINE]), ("final", "Augmented model (OBC)"), ("bb", "Black-box model")]
-AX = ("X1", "X2", "Y")
-AXTEX = {"X1": "X_1", "X2": "X_2", "Y": "Y"}
-
-
-def color(m):
-    return COLOR["ps" if m == "final" else "baseline" if m.startswith("baseline") else m]
-
-
-def figure(rows, panels, stem):
-    val = {(r["record"], r["model"], a): nrms_pct(r["nrms_e_%s" % a]) for r in rows for a in AX}
-    w = 0.27
-    fig, axs = plt.subplots(len(AX), len(panels), figsize=(FULL_WIDTH, 1.25 * len(AX) + 0.3), sharey="row",
-                            squeeze=False,
-                            gridspec_kw=dict(width_ratios=[len(r) for _, r in panels], wspace=0.06, hspace=0.25))
-    for i, a in enumerate(AX):
-        for ax, (title, recs) in zip(axs[i], panels):
-            for x, rec in enumerate(recs):
-                for k, (m, _) in enumerate(MODELS):
-                    ax.bar(x + (k - 1) * w, val[(rec, m, a)], w, color=color(m), edgecolor="none", zorder=2)
-                ax.plot([x - 1.5 * w, x + 1.5 * w], [val[(rec, "floor", a)]] * 2, zorder=3, **FLOOR)
-            ax.set_yscale("log")
-            ax.set_xticks(range(len(recs)), recs if i == len(AX) - 1 else [""] * len(recs))
-            ax.tick_params(axis="x", length=0, pad=2, labelsize=6 if len(recs) > 12 else 7)
-            ax.set_xlim(-0.6, len(recs) - 0.4)
-            if i == 0:
-                ax.set_title(title, fontsize=8, pad=3)
-            ax.grid(True, which="major", axis="y", alpha=0.3, zorder=0)
-            ax.grid(False, axis="x")
-        axs[i][0].set_ylabel(r"$\mathrm{NRMS}_{e,%s}$ (%%)" % AXTEX[a])
-    handles = [plt.Rectangle((0, 0), 1, 1, color=color(m), label=lbl) for m, lbl in MODELS] \
-        + [plt.Line2D([], [], label="Noise floor", **FLOOR)]
-    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.98), ncol=4, frameon=False,
-               handlelength=1.4, columnspacing=1.2)
-    mark_preliminary(fig, [r["status"] for r in rows if r["model"] == "final"], "augmented model (R1)")
-    save(fig, stem)
-    plt.close(fig)
+COLS = [("test", "Multisine", ["I1", "I2"], ["E1"]),
+        ("test", "No multisine", ["I3", "I4", "I5", "I6"], ["E2", "E3", "E4", "E6"]),
+        ("twins", "Multisine added", ["I3M", "I5M", "I6M"], ["E2M", "E3M", "E4M", "E6M"])]
+MODELS = [("baseline_true", r"$\mathcal{M}_{\mathrm{LPV}}$"), ("final", r"$\mathcal{M}_{\mathrm{OBC}}$"),
+          ("bb", r"$\mathcal{M}_{\mathrm{BB}}$")]
 
 
 def main():
-    use_paper_style()
-    with open(RESULTS_DIR / f"{STEM}.csv", newline="") as fh:
-        rows = list(csv.DictReader(fh))
-    split = lambda s: [r for r in rows if r["split"] == s]                 # noqa: E731
-    recs = lambda rs: list(dict.fromkeys(r["record"] for r in rs))         # noqa: E731
-    test, twins = split("test"), split("twins")
-    panels = TEST_PANELS + ([("Multisine twins", recs(twins))] if twins else [])
-    figure(test + twins, panels, STEM)
-    for s, title in (("train", "Training records"), ("val", "Validation records")):
-        if split(s):
-            figure(split(s), [(title, recs(split(s)))], "%s_%s" % (STEM, s))
+    val = {(r["split"], r["record"], r["model"]): r for r in read_csv(STEM) if r["split"] in ("test", "twins")}
+    mean = lambda split, recs, m, a: np.mean([100 * float(val[(split, x, m)]["nrms_e_%s" % a]) for x in recs])  # noqa: E731
+    lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l l r r r r r r}", r"\toprule",
+             " & & " + " & ".join(r"\multicolumn{2}{c}{%s}" % t for _, t, _, _ in COLS) + r"\\",
+             r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
+             r"$\mathrm{NRMS}_e$ (\%) & & I & E & I & E & I & E\\"]
+    for m, name in MODELS:
+        lines.append(r"\midrule")
+        for k, a in enumerate(AXES):
+            cells = [r"$%.1f$" % mean(split, recs, m, a) for split, _, irecs, erecs in COLS for recs in (irecs, erecs)]
+            lines.append(" & ".join([name if k == 0 else "", "$%s$" % AXTEX[a]] + cells) + r"\\")
+    lines += [r"\bottomrule", r"\end{tabular}", ""]
+    save_table("\n".join(lines), STEM)
 
 
 if __name__ == "__main__":

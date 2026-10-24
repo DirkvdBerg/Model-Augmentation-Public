@@ -282,6 +282,11 @@ for all training positions (Fig.~\mbox{\ref{fig:setup_band}}).}{
 with $K_1$ at $\SetupCrossMax$~Hz up to $297$~Hz (Fig.~\ref{fig:setup_band}).
 Above the crossover, this band covers 90\,\% of the squared difference between the
 frequency responses of the system and the baseline.}}
+% FEEDBACK (Dirk, 2026-10-24): phases per record stated where the
+%   multisine is introduced, so VI-C does not suggest the training signal
+%   is reused; draw count and selection stay in Appendix F-B.
+\add[own]{\kwtwo{Each record has its own random multisine phases, chosen for a
+low crest factor (Appendix~\ref{app:setup_records}).}}
 
 % RESTRUCTURE (own, 2026-10-24): noise paragraph from Section VI-A; second
 %   sentence reworded (Dirk 2026-10-24).
@@ -352,37 +357,37 @@ each training position.}
 
 We use 18 records for training, 6 for validation and 11 for testing
 (Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).
-% RESTRUCTURE (own, 2026-10-24): the "Seven ..." sentence moved to the
-%   two-question paragraph below with its reason (Dirk 2026-10-24).
-\delmv[own]{below}{Seven of the test records without multisine are also evaluated with the
+% FEEDBACK (own, 2026-10-24): replaced by the paired-records sentence
+%   below (Jasper: "twins" unclear; Dirk 2026-10-24).
+\del[own]{Seven of the test records without multisine are also evaluated with the
 training multisine added.}
-Training and validation include all five motion types, with
-$\lvert Y\rvert\le Y_{\mathrm{tr}}$, up to \SetupTrainAcc\,\% of the
+% FEEDBACK (own, 2026-10-24): one fact per sentence; the black box is
+%   introduced only in VI-D (Dirk 2026-10-24).
+Training and validation include all five motion types\chg[own]{, with}{\kwtwo{.
+Their records stay within}}
+$\lvert Y\rvert\le Y_{\mathrm{tr}}$, \del[own]{up to }\SetupTrainAcc\,\% of the
 acceleration limit and \SetupTrainVel\,\% of the velocity limit.
-The validation records are used to select the best-performing checkpoints
-and the hyperparameters for the black box.
+The validation records are \add[own]{\kwtwo{only }}used to select \del[own]{the best-performing }checkpoints
+and \del[own]{the }hyperparameters\del[own]{ for the black box}.
 
 We separate the test records into interpolation and extrapolation.
-% FEEDBACK (own, 2026-10-24): E6 exceeds several limits (Table
-%   setup_records); pair sentence from MUST ESTABLISH 3 (Dirk 2026-10-24).
+% FEEDBACK (own, 2026-10-24): E6 exceeds multiple limits (Table
+%   setup_records); "at least one" avoids a contradiction with E6; the
+%   pairs explain the extrapolation test; the multisine is added to the
+%   paired records without it (I3, I5, I6, E2, E3, E4, E6; I4 has no
+%   pair, I2 and E1 already have multisine) (Dirk 2026-10-24).
+% FEEDBACK (Dirk, 2026-10-24): "difference in error" sentence merged into
+%   the same-motion sentence as a "to" clause.
 Interpolation stays within the training range, while each
-extrapolation record\add[own]{\kwtwo{ except E6}} exceeds one of the limits on $Y$,
+extrapolation record exceeds \add[own]{\kwtwo{at least }}one of the limits on $Y$,
 acceleration or velocity.
-\add[own]{\kwtwo{Each of these has the motion of an interpolation record, so
-the pair shows the effect of leaving the training range.
-E6 exceeds several limits and is a stress test.}}
+\add[own]{\kwtwo{E6 exceeds multiple limits.
+Each extrapolation record has the same motion as one interpolation record,
+to show the effect of leaving the training range.
+We also simulate their motion with a multisine, because the motion
+profiles barely excite the added mass.}}
 % TODO RESOLVED (Dirk 2026-10-24): limits relative, E6 described only as a
 %   stress record.
-
-% FEEDBACK (own, 2026-10-24): what each test evaluation answers; the
-%   reason that only the multisine excites the added mass is in VI-B
-%   (Jasper: "twins" unclear; Dirk 2026-10-24).
-\add[own]{\kwtwo{The test records answer two questions.
-The records with multisine test whether the added dynamics are learned.
-The records without multisine test the models on the motion of the
-machine.}}
-\mv[own]{above}{Seven of}\add[own]{\kwtwo{ them}}\mv[own]{above}{ are also evaluated with the
-training multisine added}\add[own]{\kwtwo{, to test the learned dynamics on unseen motion}}.
 The results for all three sets are reported, but performance is evaluated on
 the test set.
 % RESTRUCTURE (own, 2026-10-24): rate paragraph moved to the end of
@@ -411,7 +416,9 @@ output by at most $\SetupFiltDist$~m~RMS (Table~\mbox{\ref{tab:setup_checks}}).}
 \delmv[own]{VI-B}{The rate, its anti-alias filter and the window length are supported by the
 checks in Table~\mbox{\ref{tab:setup_checks}}.}
 
-\subsection{Compared models}\label{sec:setup_models}
+% FEEDBACK (Dirk, 2026-10-24): "Compared" cut from the title; no marks in
+%   a section title. Was: "Compared models".
+\subsection{Models}\label{sec:setup_models}
 % Sources: THESIS-RESULTS.md "Presentation agreed 2026-10-16"; D-191, D-243 (detuned start);
 % D-242, thesis_r8_grid.conf (black box); D-259 (single seed).
 \ifdraft
@@ -428,32 +435,55 @@ checks in Table~\mbox{\ref{tab:setup_checks}}.}
 %   standard initialization of [4])"); plain training = the standard start
 %   of Hoekstra et al. without PS (Dirk 2026-10-24); the appendix-label todo
 %   is answered by it; the commented-out black-box duplicate deleted.
-\add[own]{\kwtwo{Table~\ref{tab:setup_models} lists the compared models.}}
-\mv[own]{below}{$\mathcal M_{\mathrm{LPV}}$ is the baseline at the true parameters.}
+% FEEDBACK (Dirk, 2026-10-24): table rebuilt with two columns that apply to
+%   every model (baseline, learned component; terms of Sections I and III),
+%   since the old columns (added states, OBC, theta_base at start) did not
+%   fit the black box or M_LPV. The table defines all four names, so the
+%   "M_U is the unconstrained model" sentence is not needed. No marks in
+%   captions or floats. Old table: added states 0/2/2/black box, OBC
+%   no/no/yes/no, theta_base at start true, not trained/10 % detuned/10 %
+%   detuned/none.
+\add[own]{\kwtwo{Table~\ref{tab:setup_models} lists the models.}}
+% FEEDBACK (Dirk, 2026-10-24): bottom half added for the models that choose
+%   the structure (res_structure rows; Maarten v2 p. 13 on the PS start),
+%   with its own header; the shared facts are in the caption. M_U and M_OBC
+%   are trained from both starts (tab:res_obc). "Plain" is called
+%   random, after "random rows W^a" in Section III-D.
 \begin{table}[t]
-\caption{Compared models. Start: the ten combinations at the start of
-training; final model: $\mathcal M_{\mathrm{OBC}}$.}
+\caption{Models. Top: the models of the results. Bottom: the models used
+to choose the structure, trained without OBC from the true parameters.}
 \label{tab:setup_models}
 \centering
 \footnotesize
-\begin{tabular}{@{}llll@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
-Model & Added states & OBC & Start\\
+Model & Baseline & Learned component\\
 \midrule
-$\mathcal M_{\mathrm{LPV}}$ & 0 & no & true, untrained\\
-$\mathcal M_{\mathrm{U}}$ & 2 & no & 10\,\% detuned\\
-$\mathcal M_{\mathrm{OBC}}$ & 2 & yes & 10\,\% detuned\\
-$\mathcal M_{\mathrm{BB}}$ & black box & no & no physics\\
+$\mathcal M_{\mathrm{LPV}}$ & true parameters & none\\
+$\mathcal M_{\mathrm{U}}$ & 10\,\% detuned or true & 2 added states, without OBC\\
+$\mathcal M_{\mathrm{OBC}}$ & 10\,\% detuned or true & 2 added states, with OBC\\
+$\mathcal M_{\mathrm{BB}}$ & none & SUBNET black box\\
+\midrule
+Structure & Added states & Start of added states\\
+\midrule
+$n_{\bar x}=0$ & 0 & none\\
+$n_{\bar x}=2$, random & 2 & random $W^a$\\
+$n_{\bar x}=2$, PS & 2 & PS\\
+$n_{\bar x}=8$, PS & 8 & PS\\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{Missing: model notation. Candidate: the calligraphic 
-names of the table (README open conflict on model names; same 
-\texttt{\textbackslash todo} as in Section~\ref{sec:obc}).}
+% TODO RESOLVED (Dirk, 2026-10-24): model notation = the names of
+%   Table setup_models; the same todo in Section IV is still open.
 
 % FEEDBACK (own, 2026-10-24): Section I now has three aspects, so
 %   "Aspect 4" was stale; each comparison is tied to its aspect, and the PS
 %   comparison moved here from the training paragraph (Dirk 2026-10-24).
+% FEEDBACK (Dirk, 2026-10-24): each comparison says what it is for; the
+%   structure (n_x-bar, PS against the random start of Section III-D, as
+%   "random W^a" there) is chosen without OBC from the true parameters; the
+%   split is set by the VI-C sentences on validation and test, so no split
+%   words here. Edited inside the unaccepted \add.
 \del[own]{The models of Table~\mbox{\ref{tab:setup_models}} are compared in pairs,
 each answering one aspect of the research question.
 The pairs are the final model $\mathcal M_{\mathrm{OBC}}$ with the
@@ -465,17 +495,20 @@ The extrapolation records compare the final model with the black box
 (Aspect~4).}
 \add[own]{\kwtwo{The comparisons follow the three aspects of
 Section~\ref{sec:intro}.
-For the first, the final model $\mathcal M_{\mathrm{OBC}}$ is compared
-with the baseline $\mathcal M_{\mathrm{LPV}}$, the PS start with the
-standard start of Hoekstra et al.~\cite[Sec.~5.4]{hoekstra2026lfr}, and
-$n_{\bar x}=2$ with zero and eight added states
-(Appendix~\ref{app:choices}).
+For the first, $\mathcal M_{\mathrm{OBC}}$ is compared with
+$\mathcal M_{\mathrm{LPV}}$.
+Its structure is chosen by comparing zero, two and eight added states,
+and PS with the random start of Section~\ref{sec:aug_encoder}.
+These models are trained without OBC from the true parameters, to
+separate the structure from the parameter error.
 For the second, $\mathcal M_{\mathrm{OBC}}$ is compared with
-$\mathcal M_{\mathrm U}$.
+$\mathcal M_{\mathrm U}$ from the 10\,\% detuned and the true parameters,
+to show whether the estimates depend on the start.
 For the third, $\mathcal M_{\mathrm{OBC}}$ is compared with
-$\mathcal M_{\mathrm{LPV}}$ and the black box $\mathcal M_{\mathrm{BB}}$
-on the test records, including the extrapolation records.}}
-\delmv[own]{above}{$\mathcal M_{\mathrm{LPV}}$ is the baseline at the true parameters.}
+$\mathcal M_{\mathrm{LPV}}$ and the black box $\mathcal M_{\mathrm{BB}}$,
+including on the extrapolation records.}}
+% FEEDBACK (Dirk, 2026-10-24): deleted, the table row states it.
+\del[own]{$\mathcal M_{\mathrm{LPV}}$ is the baseline at the true parameters.}
 
 We identify $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$
 by minimising the loss of Section~\ref{sec:aug_closed_loop} 

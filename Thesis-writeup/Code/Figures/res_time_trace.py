@@ -1,23 +1,22 @@
-"""Fig. 4: the prediction on test record I1, Y axis.
+"""Figure (Aspect 1): the prediction on test record I1, Y axis, normalised by sigma_e,Y of the record
+(05_setup eq:setup_rms; no metres, confidentiality, Dirk 2026-10-24).
 
 Reads Results/res_time_trace.csv (Code/Evaluation/make_results.py), writes
 Writing/figures/res_time_trace.pdf.
-Top: moving RMS (50 ms) of the prediction error y_hat - y of the baseline and the final model over
-the whole record, the zoom window shaded. Bottom: inside the zoom window, the servo error
-e = y - r as measured and as predicted by both models. The window is the move with the largest
+Top: moving NRMS_e,Y (50 ms) of the baseline and the final model over the whole record. Bottom: the
+servo error over sigma_e,Y in the zoom window, in the record's own time: the system as a thick light
+band, both models as thin lines on top (Dirk 2026-10-24). The window is the move with the largest
 baseline error, to 50 ms after it stops (chosen from the baseline and the reference only).
 """
-import csv
-
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 
-from _fig_common import COL_WIDTH, COLOR, RESULTS_DIR, mark_preliminary, save, use_paper_style
+from _fig_common import BASE, COL_WIDTH, MOD, NAME, SYS, mark_preliminary, read_csv, save, use_paper_style
 
 STEM = "res_time_trace"
 FS = 4000.0
 WIN = int(0.05 * FS)          # HEURISTIC: 50 ms moving RMS, a display smoothing only
-DOT = (0, (0.1, 2.2))       # round dots; the system line shows through the gaps
 
 
 def moving_rms(e):
@@ -26,41 +25,35 @@ def moving_rms(e):
 
 def main():
     use_paper_style()
-    with open(RESULTS_DIR / f"{STEM}.csv", newline="") as fh:
-        rows = list(csv.DictReader(fh))
+    rows = read_csv(STEM)
     c = lambda k: np.array([float(r[k]) for r in rows])          # noqa: E731
     t, r, y, b, m = c("t_s"), c("r_Y"), c("y_Y"), c("baseline_Y"), c("final_Y")
-    z = np.array([int(r_["zoom"]) for r_ in rows], bool)
+    z = np.array([int(q["zoom"]) for q in rows], bool)
+    sig = np.std(y - r)                                          # population sd over the scored samples
 
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(COL_WIDTH, 2.8), gridspec_kw=dict(hspace=0.62))
-    a1.axvspan(t[z][0], t[z][-1], color="0.80", lw=0, zorder=0)
-    a1.semilogy(t, moving_rms(b - y), color=COLOR["baseline"], lw=0.8)
-    a1.semilogy(t, moving_rms(m - y), color=COLOR["ps"], lw=0.8)
+    a1.semilogy(t, 100 * moving_rms(b - y) / sig, **BASE)
+    a1.semilogy(t, 100 * moving_rms(m - y) / sig, **MOD)
     a1.set_xlim(t[0], t[-1])
     a1.set_xlabel("Time (s)")
-    a1.set_ylabel("Sim. error RMS (m)")
+    a1.set_ylabel(r"Moving $\mathrm{NRMS}_{e,Y}$ (%)")
+    a1.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: "%g" % v))
     a1.grid(False, which="minor")
 
-    tz = (t[z] - t[z][0]) * 1e3
-    # solid in both panels (Dirk 2026-10-18): a thin model line on top of a thicker system line,
-    # so the system stays visible underneath where the two coincide
-    a2.plot(tz, (y - r)[z], color="k", lw=1.6, zorder=2)
-    a2.plot(tz, (b - r)[z], color=COLOR["baseline"], lw=0.7, zorder=1)
-    a2.plot(tz, (m - r)[z], color=COLOR["ps"], lw=0.7, zorder=3)
-    a2.set_xlim(tz[0], tz[-1])
-    a2.set_xlabel("Time in shaded window (ms)")
-    a2.set_ylabel("Servo error (m)")
-    a2.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-    a2.yaxis.get_offset_text().set_fontsize(7)
+    a2.plot(t[z], ((y - r) / sig)[z], zorder=1, **SYS)
+    a2.plot(t[z], ((b - r) / sig)[z], zorder=2, **BASE)
+    a2.plot(t[z], ((m - r) / sig)[z], zorder=3, **MOD)
+    a2.set_xlim(t[z][0], t[z][-1])
+    a2.set_xlabel("Time (s)")
+    a2.set_ylabel(r"$e_Y/\sigma_{e,Y}$")
 
-    handles = [plt.Line2D([], [], color="k", lw=1.6, label="System"),
-               plt.Line2D([], [], color=COLOR["baseline"], lw=0.7, label="Baseline model"),
-               plt.Line2D([], [], color=COLOR["ps"], lw=0.8, label="Augmented model")]
-    a1.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False,
-              handlelength=1.8, borderaxespad=0.1)
+    hs = [plt.Line2D([], [], label=NAME[k], **s) for k, s in (("sys", SYS), ("base", BASE), ("model", MOD))]
+    a1.legend(handles=hs, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False, handlelength=2.2,
+              borderaxespad=0.1)
     fig.align_ylabels((a1, a2))
     mark_preliminary(fig, [r_.get("status_final", "") for r_ in rows[:1]], "augmented model (R1)")
     save(fig, STEM)
+    print("zoom window %.2f to %.2f s" % (t[z][0], t[z][-1]))
 
 
 if __name__ == "__main__":

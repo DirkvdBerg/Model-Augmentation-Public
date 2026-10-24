@@ -79,9 +79,10 @@ Question: should I add such a figure, in the main text or the appendix?}
 
 \revnote{Figuur heeft meerwaarde. om iets te laten zien niet de 3x3 frf.}
 
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
 \begin{table}[t]
   \centering
-  \caption{$\mathrm{NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine.}
+  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the records with the training multisine (I1, I2, E1) and without it. The structure rows start from the true parameters, $\mathcal M_{\mathrm{OBC}}$ from the detuned start.}
   \label{tab:res_structure}
   \input{tables/res_structure}
 \end{table}
@@ -89,14 +90,22 @@ Question: should I add such a figure, in the main text or the appendix?}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_time_trace.pdf}
-  \caption{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}
+  \caption{Test record I1, $Y$ axis. Top: moving $\mathrm{NRMS}_{e,Y}$ (50~ms). Bottom: servo error relative to $\sigma_{e,Y}$ from 7.84 to 7.95~s.}
   \label{fig:res_time_trace}
+\end{figure}
+
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_val_curves.pdf}
+  \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. All four models start from the true parameters; update 0 is the baseline.}
+  \label{fig:res_val_curves}
 \end{figure}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_frf.pdf}
-  \caption{Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
+  \caption{Bode magnitude from $F_Y$ to $Y$ at $Y=0$, linearised at rest, relative to the system at 20~Hz. Shaded: range of the final model over $Y$. The system and the baseline vary by less than 0.3~dB over $Y$.}
   \label{fig:res_frf}
 \end{figure}
 \revnote{Issue: Fig.~\ref{fig:res_frf} shows the final model over $Y$ as a
@@ -130,11 +139,21 @@ The missing dynamics are not orthogonal to these directions, their overlap is 0.
 From the correct start, OBC also ends closer to the true values (Appendix~\ref{app:choices}).
 Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
 
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
+%   tab:app_obc_full (cut from the appendix) is kept as a second label: this table now holds both starts.
 \begin{table}[t]
   \centering
-  \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned start.}
-  \label{tab:res_obc}
+  \caption{Relative error of the ten identifiable combinations after training, unconstrained and OBC, from the detuned and from the true start.}
+  \label{tab:res_obc}\label{tab:app_obc_full}
   \input{tables/res_obc_combinations}
+\end{table}
+
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
+\begin{table}[t]
+  \centering
+  \caption{Network and truth overlaps of \eqref{eq:obc_overlap}, and accuracy of the full model and of its physical part alone, unconstrained and OBC, from the detuned start.}
+  \label{tab:res_obc_constraint}
+  \input{tables/res_obc_constraint}
 \end{table}
 \revnote{Issue: Table~\ref{tab:res_obc} shows the detuned start only, so
 whether OBC makes the estimate independent of the start is visible only
@@ -152,7 +171,8 @@ than this table?}
 \item Multisine twins of the records without multisine
 \end{itemize}
 \fi
-The error per test record are shown in Fig.~\ref{fig:res_generalisation}, 
+% FEEDBACK (own, 2026-10-24): the figure is now a table; only the reference changes.
+The error per test record are shown in \chg[own]{Fig.~\mbox{\ref{fig:res_generalisation}}}{\kwtwo{Table~\ref{tab:res_generalisation}}}, 
 for extrapolation (E) and interpolation (I) (Aspect~3).
 Without multisine the model performs as well or slightly above the baseline.
 The black box has 74 to 193\,\% on the records without multisine, and it is
@@ -170,12 +190,15 @@ Plan: drop the floor, use a log axis from 1 to 300\,\%, title the panel
 ``Multisine added'' and keep the original record names.
 Question: is this clear, or would you show these records differently?}
 
-\begin{figure*}[t]
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
+%   The per-record figure is replaced by this table (Dirk 2026-10-24); fig:res_generalisation is kept as a
+%   second label so the notes that still name it resolve.
+\begin{table}[t]
   \centering
-  \includegraphics[width=\textwidth]{res_generalisation.pdf}
-  \caption{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}
-  \label{fig:res_generalisation}
-\end{figure*}
+  \caption{$\mathrm{NRMS}_e$ per axis, mean over the interpolation (I) and extrapolation (E) test records, with and without the training multisine, and with the training multisine added to the records without it.}
+  \label{tab:res_generalisation}\label{fig:res_generalisation}
+  \input{tables/res_generalisation}
+\end{table}
 
 
 \subsection{Discussion}\label{sec:discussion}

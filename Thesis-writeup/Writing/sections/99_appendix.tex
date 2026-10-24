@@ -442,10 +442,11 @@ the input it receives at that sample in the closed-loop simulation of $V$.}}
 \fi
 Fig.~\ref{fig:res_frf_full} gives all nine entries of the response in
 Fig.~\ref{fig:res_frf}, with the same linearisation and positions.
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); no metres, no absolute plant gain.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{res_frf_full.pdf}
-  \caption{Bode magnitude from the stage forces (columns) to the stage positions (rows), linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
+  \caption{Bode magnitude from the stage forces (columns) to the stage positions (rows) at $Y=0$, linearised at rest, relative to the system from $F_Y$ to $Y$ at 20~Hz. Shaded: range over $Y$ of the system (grey) and the final model (blue).}
   \label{fig:res_frf_full}
 \end{figure*}
 
@@ -453,9 +454,10 @@ Fig.~\ref{fig:res_frf}, with the same linearisation and positions.
 % D-269: every result for every split (Dirk 2026-10-18); Code/Figures/res_all_splits.py.
 Table~\ref{tab:app_splits} gives the models of Section~\ref{sec:results} on
 the training, validation and test records.
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); no metres, no absolute plant gain.
 \begin{table}[t]
   \centering
-  \caption{$\mathrm{NRMS}_e$ per axis on the training, validation and test records, mean over each set, with and without multisine. Physical part: the trained model with the learned block switched off.}
+  \caption{$\mathrm{NRMS}_e$ per axis on the training, validation and test records, mean over the records of each set with and without multisine. Physical part: the trained model with the learned block switched off.}
   \label{tab:app_splits}
   \input{tables/res_all_splits}
 \end{table}
@@ -475,30 +477,27 @@ baseline frozen at $Y=0$.}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_lpv_lti.pdf}
-  \caption{Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}
+  \caption{$\mathrm{NRMS}_e$ on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}
   \label{fig:res_lpv_lti}
 \end{figure}
-\begin{table*}[t]
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); no metres, no absolute plant gain.
+\begin{table}[t]
   \centering
-  \caption{$\mathrm{NRMS}_e$ per axis of every model, mean over the validation records, with and without multisine.}
+  \caption{$\mathrm{NRMS}_e$ per axis of the models of Table~\ref{tab:res_structure} on the validation records, mean over the records with and without multisine.}
   \label{tab:app_structure}
   \input{tables/res_structure_val}
-\end{table*}
+\end{table}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_ps_spectrum.pdf}
-  \caption{Amplitude spectral density of the $Y$ simulation error on the validation records with multisine. Shaded: multisine band. Dotted: absorber pole.}
+  \caption{Amplitude spectral density of the $Y$ simulation error on the validation records with multisine, relative to the baseline's peak in the multisine band (shaded).}
   \label{fig:res_ps_spectrum}
 \end{figure}
-\begin{table*}[t]
-  \centering
-  \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start.}
-  \label{tab:app_obc_full}
-  \input{tables/res_obc_combinations_test}
-\end{table*}
+% FEEDBACK (own, 2026-10-24): table cut; Table tab:res_obc in Section VII now
+%   holds both starts and carries the label tab:app_obc_full (Dirk 2026-10-24).
 \begin{table}[t]
   \centering
-  \caption{Relative error of the ten combinations without added states ($n_a=0$), unconstrained and OBC, from the detuned start.}
+  \caption{Relative error of the ten combinations without added states ($n_{\bar x}=0$), unconstrained and OBC, from the detuned start.}
   \label{tab:app_obc_na0}
   \input{tables/res_obc_na0}
 \end{table}
@@ -675,7 +674,10 @@ I: interpolation, inside the training range. E: extrapolation, outside
 it in the setting under New, with the motion of the Pair record. New:
 what differs from the training records, for E from the Pair record.
 E6 differs in more than one setting and is a stress record.
-$^\dagger$Also evaluated with the training multisine added (I3M, E2M,
+% FEEDBACK (Dirk, 2026-10-24): the M records are simulated with their own
+%   multisine phases, not the training multisine added afterwards (as in
+%   Section VI-C).
+$^\dagger$Also \chg[own]{evaluated with the training multisine added}{\kwtwo{simulated with a multisine}} (I3M, E2M,
 and so on), at equal amplitude within a pair and 0.30 of the training
 amplitude for I6 and E4.
 \end{minipage}

@@ -1,91 +1,58 @@
-"""Table I (Aspect 2, with the black box of Aspect 4): NRMS_e per axis in % (the primary metric,
-05_setup eq:setup_rms) and, in a second table, the RMS in m, each the mean over the records of one
-split and record group: with and without the training multisine reported separately (D-256), on
-test over I1 to I6 only. One table per split (D-269).
+"""Table A (Aspect 1): NRMS_e per axis in % (05_setup eq:setup_rms) of every structure, the baseline at
+the true parameters, the final model and the black box, mean over the records with the training
+multisine and over the records without it (D-256). No noise-floor row: Section V states the floor
+through the SNR (Dirk 2026-10-24).
 
-Reads Results/res_structure.csv (Code/Evaluation/make_results.py), writes
-  res_structure.tex             MAIN TEXT (result B, Dirk 2026-10-18): test records I1 to I6, only the
-                                baseline at the true parameters, the final model, the black box, the floor
-  res_structure_<split>.tex     APPENDIX: every model, NRMS_e (the validation table decides the choices)
-  res_structure_<split>_m.tex   the same in metres
-Rows from a run that has not finished are marked with a dagger and its label is stated below the table.
+Rows: baseline (R5 base_true), n_xbar = 0 (R6), n_xbar = 2 plain (R3), n_xbar = 2 PS (R5), n_xbar = 8
+PS (R7), all from the true parameters, then the final model M_OBC (R1, detuned start) and the black box
+(R8).
+
+Reads Results/res_errors.csv (per record, Code/Evaluation/make_results.py), writes
+  res_structure.tex          MAIN TEXT: all 11 test records (Dirk 2026-10-24)
+  res_structure_<split>.tex  APPENDIX: the same rows on the training, validation and test records
 """
-import csv
-
-import numpy as np
-
-from _fig_common import RESULTS_DIR, nrms_pct, preliminary, save_table
+from _fig_common import AXES, AXTEX, errors, mean_over, save_table
 
 STEM = "res_structure"
-MAIN_SPLIT = "test"
-MAIN_LABELS = ("Baseline, true parameters", "Final model (OBC), detuned start", "Black box", "Noise floor")
-SPLIT_NAME = {"train": "training", "val": "validation", "test": "test (I1 to I6)", "twins": "multisine twins"}
-SHORT = {"Baseline, true parameters": r"Baseline, true $\theta$",
-         "Baseline, detuned start": r"Baseline, detuned $\theta$",
-         "Static parallel, $n_a=0$": r"Static parallel, $n_a{=}0$",
-         "Static parallel, $n_a=0$, detuned start": r"Static parallel, $n_a{=}0$, detuned $\theta$",
-         "Static parallel (OBC), $n_a=0$, detuned start": r"Static parallel (OBC), $n_a{=}0$, detuned $\theta$",
-         "Plain start, $n_a=2$": r"Plain training, $n_a{=}2$",
-         "PS start, $n_a=2$": r"PS init., $n_a{=}2$",
-         "PS start, $n_a=2$, physics part only": r"PS init., baseline part only",
-         "PS start, $n_a=8$": r"PS init., $n_a{=}8$",
-         "PS start, $n_a=2$, detuned start": r"PS init., detuned $\theta$",
-         "Final model (OBC), detuned start": r"Augmented (OBC), detuned $\theta$",
-         "Noise floor": "Noise floor",
-         "Black box": "Black-box model"}
-AX = ("X1", "X2", "Y")
-AXTEX = {"X1": "$X_1$", "X2": "$X_2$", "Y": "$Y$"}
+ROWS = [("R5", "base_true", r"$\mathcal{M}_{\mathrm{LPV}}$"),
+        ("R6", "model", r"$n_{\bar x}=0$"),
+        ("R3", "model", r"$n_{\bar x}=2$, plain"),
+        ("R5", "model", r"$n_{\bar x}=2$, PS"),
+        ("R7", "model", r"$n_{\bar x}=8$, PS"),
+        ("R1", "model", r"$\mathcal{M}_{\mathrm{OBC}}$"),
+        ("R8", "bb", r"$\mathcal{M}_{\mathrm{BB}}$")]
+MIDRULE_BEFORE = ("R1",)
 
 
-def sci(x):
-    e = int(np.floor(np.log10(abs(x))))
-    return r"$%.2f\times10^{%d}$" % (x / 10 ** e, e)
+def records(e, ms, split):
+    recs = sorted({k[3] for k in e if k[0] == split and k[1] == "R1" and k[2] == "model"})
+    return [r for r in recs if ms[r]], [r for r in recs if not ms[r]]
 
 
-def table(rows, metric, seps=("Black box", "Noise floor", "Final model (OBC), detuned start")):
-    groups = list(dict.fromkeys(r["group"] for r in rows))
-    labels = list(dict.fromkeys(r["label"] for r in rows))
-    val = {(r["label"], r["group"]): r for r in rows}
-    n = len(AX) * len(groups)
-    lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l %s}" % " ".join(["r"] * n), r"\toprule",
-             " & " + " & ".join(r"\multicolumn{3}{c}{%s}" % g.capitalize() for g in groups) + r"\\",
-             "".join(r"\cmidrule(lr){%d-%d}" % (2 + 3 * k, 4 + 3 * k) for k in range(len(groups))),
-             (r"$\mathrm{NRMS}_e$ (\%)" if metric == "nrms_e" else "RMS (m)") + " & "
-             + " & ".join(AXTEX[a] for _ in groups for a in AX) + r"\\", r"\midrule"]
-    for lbl in labels:
-        if lbl in seps and not lines[-1].endswith(r"\midrule"):
+def table(e, ms, split):
+    r_ms, r_no = records(e, ms, split)
+    lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l r r r r r r}", r"\toprule",
+             r" & \multicolumn{3}{c}{Multisine} & \multicolumn{3}{c}{No multisine}\\",
+             r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}",
+             r"$\mathrm{NRMS}_e$ (\%) & " + " & ".join("$%s$" % AXTEX[a] for _ in range(2) for a in AXES) + r"\\",
+             r"\midrule"]
+    for run, model, name in ROWS:
+        if run in MIDRULE_BEFORE:
             lines.append(r"\midrule")
-        any_row = next(val[(lbl, g)] for g in groups if (lbl, g) in val)
-        dag = r"$^\dagger$" if any_row["status"].startswith("preliminary") else ""
-        cells = []
-        for g in groups:
-            r = val.get((lbl, g))
-            for a in AX:
-                if r is None:
-                    cells.append("")
-                elif metric == "nrms_e":
-                    v = nrms_pct(r["nrms_e_%s" % a])
-                    cells.append((r"$%.1f$" if v >= 0.1 else r"$%.2f$") % v)    # the floor is about 0.05 %
-                else:
-                    cells.append(sci(float(r["rms_%s" % a])))
-        lines.append(" & ".join([SHORT.get(lbl, lbl) + dag] + cells) + r"\\")
-    lines += [r"\bottomrule"]
-    for lab in preliminary(r["status"] for r in rows):
-        lines.append(r"\multicolumn{%d}{l}{\footnotesize $^\dagger$ %s}\\" % (n + 1, lab))
-    lines += [r"\end{tabular}", ""]
-    return "\n".join(lines)
+        cells = [r"$%.1f$" % v for recs in (r_ms, r_no) for v in mean_over(e, split, run, model, recs)]
+        lines.append(" & ".join([name] + cells) + r"\\")
+    lines += [r"\bottomrule", r"\end{tabular}", ""]
+    head = "%% %s records: %d with multisine (%s), %d without\n" % (split, len(r_ms), ", ".join(r_ms), len(r_no))
+    return head + "\n".join(lines)
 
 
 def main():
-    with open(RESULTS_DIR / f"{STEM}.csv", newline="") as fh:
-        rows = list(csv.DictReader(fh))
-    for split in dict.fromkeys(r["split"] for r in rows):
-        sub = [r for r in rows if r["split"] == split]
-        save_table("%% %s records\n" % SPLIT_NAME.get(split, split) + table(sub, "nrms_e"), "%s_%s" % (STEM, split))
-        save_table("%% %s records\n" % SPLIT_NAME.get(split, split) + table(sub, "rms"), "%s_%s_m" % (STEM, split))
-        if split == MAIN_SPLIT:
-            main_rows = [r for r in sub if r["label"] in MAIN_LABELS]
-            save_table("%% main text: %s records\n" % SPLIT_NAME[split] + table(main_rows, "nrms_e", seps=("Noise floor",)), STEM)
+    e, ms = errors()
+    for split in ("train", "val", "test"):
+        body = table(e, ms, split)
+        save_table(body, "%s_%s" % (STEM, split))
+        if split == "test":
+            save_table(body, STEM)
 
 
 if __name__ == "__main__":

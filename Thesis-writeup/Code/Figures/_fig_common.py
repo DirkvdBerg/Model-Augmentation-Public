@@ -34,6 +34,40 @@ COLOR = {
 }
 FLOOR = dict(color="#d62728", linestyle="--", linewidth=0.9)   # noise floor
 
+# Line styles of the final results figures (Dirk 2026-10-24): the system is a thick light-grey band, the
+# models are thin solid lines on top of it; the baseline dark grey, the final model blue.
+SYS = dict(color="#c8c8c8", lw=2.6, solid_capstyle="round")
+BASE = dict(color="#4d4d4d", lw=0.8)
+MOD = dict(color="#1f77b4", lw=0.9)
+NAME = {"sys": "System", "base": r"Baseline $\mathcal{M}_{\mathrm{LPV}}$",
+        "model": r"Final $\mathcal{M}_{\mathrm{OBC}}$"}
+Y_TR = 0.30      # training range Y_tr [m], Writing/tables/setup_numbers.tex SetupTrainY
+AXES = ("X1", "X2", "Y")
+AXTEX = {"X1": "X_1", "X2": "X_2", "Y": "Y"}
+
+
+def read_csv(stem):
+    """Rows of Results/<stem>.csv as dicts."""
+    import csv
+    with open(RESULTS_DIR / f"{stem}.csv", newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
+def errors():
+    """Per-record NRMS_e in %: {(split, run, model, record): (X1, X2, Y)} and {record: has multisine},
+    from Results/res_errors.csv (Code/Evaluation/make_results.py)."""
+    e, ms = {}, {}
+    for r in read_csv("res_errors"):
+        e[(r["split"], r["run"], r["model"], r["record"])] = tuple(100.0 * float(r["nrms_e_%s" % a]) for a in AXES)
+        ms[r["record"]] = r["multisine"] == "1"
+    return e, ms
+
+
+def mean_over(e, split, run, model, recs):
+    """Mean NRMS_e per axis over the records `recs` (the per-record mean, as res_structure.csv)."""
+    import numpy as np
+    return np.mean([e[(split, run, model, rec)] for rec in recs], axis=0)
+
 
 def use_paper_style():
     """Match the IEEEtran body font size so no figure needs rescaling in LaTeX."""

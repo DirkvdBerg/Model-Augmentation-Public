@@ -25,7 +25,26 @@ The author-edited architecture is currently maintained directly in
 not overwrite it from the older `augmentation_structure.tex` in this directory.
 `augmentation_horizons.tex` and `augmentation_closed_loop.tex` are inactive drafts.
 
-# Results figures and tables (2026-10-11 runs)
+# Results figures and tables, final set (2026-10-24)
+
+Agreed with Dirk on 2026-10-24 (results preview, `Thesis-writeup/Preview/`). All from the final CSVs:
+`THESIS_RESULTS_DIR="$PWD/Thesis-writeup/Results/24-10-2026/CSV" conda run -n GraduationProject python Thesis-writeup/Code/Figures/<stem>.py`.
+No metres, no absolute plant gain (confidentiality); frequencies in Hz; no noise-floor rows.
+
+| Output (`Writing/`) | Script | Source | Float |
+|-|-|-|-|
+| `tables/res_structure.tex` (+ `_train/_val/_test`) | `res_structure.py` | `res_errors.csv` | Table A, all structures, all 11 test records (`tab:res_structure`); `_val` = `tab:app_structure` |
+| `figures/res_time_trace.pdf` | `res_time_trace.py` | `res_time_trace.csv` | I1, Y, normalised by sigma_e (`fig:res_time_trace`) |
+| `figures/res_val_curves.pdf` | `res_val_curves.py` | run logs `Results/18-10-2026/thesis-results-4` | validation curves R3, R5, R6, R7 (`fig:res_val_curves`) |
+| `figures/res_frf.pdf` | `res_frf.py` | `res_frf.csv` | F_Y to Y at Y = 0, relative dB (`fig:res_frf`) |
+| `tables/res_obc_combinations.tex` | `res_obc_combinations.py` | `res_obc_combinations.csv` | Table C, ten combinations, both starts (`tab:res_obc`) |
+| `tables/res_obc_constraint.tex` | `res_obc_constraint.py` | `res_obc_overlap.csv`, `res_obc_accuracy.csv` | Table D, overlaps and accuracy (`tab:res_obc_constraint`) |
+| `tables/res_generalisation.tex` | `res_generalisation.py` | `res_generalisation.csv` | Table E, I against E (`tab:res_generalisation`) |
+| `tables/res_all_splits.tex` | `res_all_splits.py` | `res_errors.csv` | appendix, all splits (`tab:app_splits`) |
+| `figures/res_frf_full.pdf`, `res_lpv_lti.pdf`, `res_ps_spectrum.pdf` | same stems | same stems | appendix |
+| `tables/res_obc_na0.tex`, `res_bb_selection.tex` | same stems | same stems | appendix |
+
+# Results figures and tables (2026-10-11 runs, superseded by the final set above)
 
 Agreed set with Dirk on 2026-10-11 (D-247). Each output comes from one script, which reads one CSV:
 

@@ -1,4 +1,4 @@
-% validation records
+% val records: 4 with multisine (VA-L1, VA-P1, VA-S1, VA-Y1), 2 without
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{l r r r r r r}
 \toprule
@@ -6,22 +6,13 @@
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 $\mathrm{NRMS}_e$ (\%) & $X_1$ & $X_2$ & $Y$ & $X_1$ & $X_2$ & $Y$\\
 \midrule
-Baseline, true $\theta$ & $23.0$ & $24.9$ & $121.8$ & $4.7$ & $4.9$ & $3.7$\\
-Baseline, detuned $\theta$$^\dagger$ & $30.6$ & $34.0$ & $131.2$ & $10.2$ & $5.5$ & $11.4$\\
-Static parallel, $n_a{=}0$ & $14.3$ & $14.3$ & $86.5$ & $4.9$ & $4.6$ & $18.4$\\
-Static parallel, $n_a{=}0$, detuned $\theta$ & $14.2$ & $14.2$ & $86.5$ & $5.0$ & $4.7$ & $18.7$\\
-Static parallel (OBC), $n_a{=}0$, detuned $\theta$ & $14.9$ & $14.9$ & $86.6$ & $5.5$ & $5.2$ & $19.7$\\
-Plain training, $n_a{=}2$ & $11.6$ & $12.0$ & $78.1$ & $4.5$ & $4.6$ & $14.6$\\
-PS init., $n_a{=}2$ & $9.9$ & $10.5$ & $6.4$ & $4.1$ & $4.3$ & $4.3$\\
-PS init., baseline part only & $21.1$ & $21.6$ & $120.5$ & $5.5$ & $4.3$ & $3.7$\\
-PS init., $n_a{=}8$ & $9.5$ & $9.9$ & $6.3$ & $4.1$ & $4.2$ & $4.3$\\
-PS init., detuned $\theta$ & $9.9$ & $10.2$ & $6.6$ & $4.1$ & $4.2$ & $4.3$\\
+$\mathcal{M}_{\mathrm{LPV}}$ & $23.0$ & $24.9$ & $121.8$ & $4.7$ & $4.9$ & $3.7$\\
+$n_{\bar x}=0$ & $14.3$ & $14.3$ & $86.5$ & $4.9$ & $4.6$ & $18.4$\\
+$n_{\bar x}=2$, plain & $11.6$ & $12.0$ & $78.1$ & $4.5$ & $4.6$ & $14.6$\\
+$n_{\bar x}=2$, PS & $9.9$ & $10.5$ & $6.4$ & $4.1$ & $4.3$ & $4.3$\\
+$n_{\bar x}=8$, PS & $9.5$ & $9.9$ & $6.3$ & $4.1$ & $4.2$ & $4.3$\\
 \midrule
-Augmented (OBC), detuned $\theta$$^\dagger$ & $11.0$ & $11.1$ & $7.1$ & $4.6$ & $4.9$ & $4.1$\\
-\midrule
-Black-box model & $31.6$ & $33.6$ & $23.8$ & $75.6$ & $76.9$ & $103.3$\\
-\midrule
-Noise floor & $0.06$ & $0.07$ & $0.01$ & $0.04$ & $0.04$ & $0.01$\\
+$\mathcal{M}_{\mathrm{OBC}}$ & $10.8$ & $10.8$ & $6.5$ & $4.5$ & $4.8$ & $4.2$\\
+$\mathcal{M}_{\mathrm{BB}}$ & $31.6$ & $33.6$ & $23.8$ & $75.6$ & $76.9$ & $103.3$\\
 \bottomrule
-\multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\
 \end{tabular}
