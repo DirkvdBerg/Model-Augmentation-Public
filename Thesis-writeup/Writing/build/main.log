@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  24 OCT 2026 15:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  24 OCT 2026 15:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1086,13 +1086,18 @@ Underfull \hbox (badness 10000) in paragraph at lines 251--256
 []$\OT1/cmr/m/n/10 212$ \OT1/ptm/m/n/10 (+20) Hz[]$[]$[]|   [][]$[]$$[]$[]in the[]$[]$[][]open-loop[][]$[]$$[]$[]transfer
  []
 
+
+Underfull \hbox (badness 4647) in paragraph at lines 314--319
+[]|   []   |   []   |   []   |   [][] [][]\OT1/ptm/m/n/10 (+20) The records are down-sam-pled
+ []
+
 [19]
-LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 444.
+LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 452.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 444.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 452.
  [20]) (sections/06_results.tex (tables/res_structure.tex)
 <figures/res_time_trace.pdf, id=962, 254.3515pt x 207.31088pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
@@ -1110,13 +1115,7 @@ File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 175.
 (pdftex.def)             Requested size: 516.0pt x 344.66783pt.
- [22 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]
-Underfull \vbox (badness 1622) has occurred while \output is active []
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [23 <./figures/res_generalisation.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
+ [22 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>]) (sections/07_discussion.tex) (sections/08_conclusion.tex
 Underfull \hbox (badness 1817) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
@@ -1126,7 +1125,10 @@ Underfull \hbox (badness 2158) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [24]) [25
+[23]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [24 <./figures/res_generalisation.pdf>]) [25
 
 ] (sections/99_appendix.tex (figures/lfr_loop.tex)
 
@@ -1292,15 +1294,15 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 1ACE96CA5E6E4465102B8289380B268D;8264.
  ) 
 Here is how much of TeX's memory you used:
- 28266 strings out of 467867
- 541695 string characters out of 5416882
+ 28263 strings out of 467867
+ 541671 string characters out of 5416882
  1067856 words of memory out of 5000000
  56067 multiletter control sequences out of 15000+600000
- 693411 words of font info for 369 fonts, out of 8000000 for 9000
+ 693295 words of font info for 367 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,986s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (35 pages, 1675698 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (35 pages, 1676026 bytes).
 PDF statistics:
  1486 PDF objects out of 1728 (max. 8388607)
  198 named destinations out of 1000 (max. 500000)

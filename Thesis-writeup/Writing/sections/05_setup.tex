@@ -290,25 +290,32 @@ of each axis, $y=\qact+v$.}
 \chg[own]{The simulated servo error matches at standstill the noise level
 and spectral shape of the industrial gantry, but its resonances are left
 out}{\kwtwo{At standstill, the simulated servo error matches the noise
-level and spectral shape of the ASMPT gantry. 
-The noise is not modeled to capture the machine's resonances. 
-}}\mv[own]{VI-A}{ (Appendix~\ref{app:setup_system}).
-The servo-error signal-to-noise ratio (SNR) ranges from
+level and spectral shape of the ASMPT gantry}}\mv[own]{VI-A}{ (Appendix~\ref{app:setup_system}).}
+% FEEDBACK (Dirk 2026-10-24): resonance sentence in Dirk's words; the SNR
+%   range is over the training records (snr.py) and depends on the motion
+%   profile and the multisine.
+\add[own]{\kwtwo{The noise is not modelled to capture the machine's resonances.}}
+\mv[own]{VI-A}{The servo-error signal-to-noise ratio (SNR)}\add[own]{\kwtwo{ of the
+training records}}\mv[own]{VI-A}{ ranges from
 \SetupSnrMinX{} to \SetupSnrMaxX~dB on the $X$ actuators
 and \SetupSnrMinY{} to \SetupSnrMaxY~dB on $Y$,
-depending on the motion of the record.
-The data is also generated without measurement noise, with output $y^\circ$.}
+depending on the motion profile}\add[own]{\kwtwo{ and the multisine}}\mv[own]{VI-A}{.}
+% FEEDBACK (own, 2026-10-24): y-circ is used only in VI-E; moved there
+%   (Dirk 2026-10-24).
+\delmv[own]{VI-E}{The data is also generated without measurement noise, with output $y^\circ$.}
 
 % RESTRUCTURE (own, 2026-10-24): rate paragraph from Section VI-C,
 %   shortened (Dirk 2026-10-24).
 % FEEDBACK (own, 2026-10-24): "giving five times fewer samples per window"
 %   cut, implementation detail (VI-B walk, Dirk 2026-10-24).
-\mv[own]{VI-C}{The models run at $T_s=0.25$~ms.}
+% FEEDBACK (Dirk 2026-10-24): paragraph in Dirk's words; "models" are
+%   introduced only in VI-D, so the sentence is about the records; the
+%   filter and window are not introduced in the main text.
+\chg[own]{The models run at}{\kwtwo{The records are downsampled to}}\mv[own]{VI-C}{ $T_s=0.25$~ms.}
 \add[own]{\kwtwo{The simulated system and controller $K_1$ run at
-$f_{\mathrm{sim}}=20$~kHz, while Section~\ref{sec:problem} assumes
-the loop runs at $T_s$.
-We check the difference in sampling rates, the anti-alias filter
-and the window length in Table~\ref{tab:setup_checks}.}}
+$f_{\mathrm{sim}}=20$~kHz, while Section~\ref{sec:problem}
+assumes the loop runs at $T_s$.
+We evaluate the effect of this difference in Table~\ref{tab:setup_checks}.}}
 
 \subsection{Records}\label{sec:setup_data}
 % Sources: D-219, D-226 (band), D-221 (split), D-258 (twins), README validation story;
@@ -523,6 +530,7 @@ the reference motion dominates the output.
 On the servo error the BFR equals $100-\mathrm{NRMS}_e$, so I report
 $\mathrm{NRMS}_e$.
 Question: is this departure from the research plan acceptable?}
+\mv[own]{VI-B}{The data is also generated without measurement noise, with output $y^\circ$.}
 % FEEDBACK (own, 2026-10-24): no errors in metres, confidentiality
 %   (Dirk 2026-10-24).
 We also report \del[own]{the RMS in metres and }the noise floor:
@@ -548,7 +556,10 @@ outputs.}
 %   standstill noise of the machine, so all errors stay normalised and the
 %   floor is stated through the SNR of Section VI-B (confidentiality,
 %   Dirk 2026-10-24).
-\add[own]{\kwtwo{In $\mathrm{NRMS}_e$, the noise floor is approximately
+% FEEDBACK (own, 2026-10-24): "of the order of": about equal on X, about
+%   5 dB lower on Y, since the SNR is on the raw 20 kHz signals and the
+%   floor after the anti-alias filter (Dirk 2026-10-24).
+\add[own]{\kwtwo{In $\mathrm{NRMS}_e$, the noise floor is of the order of
 $10^{-\mathrm{SNR}/20}$.
 It differs per record because the servo error changes with the motion
 of the record, while the noise does not.}}
