@@ -1,6 +1,6 @@
 """Appendix: full 3 x 3 frequency response of the final model, the system and the baseline, linearised at
-rest. Row = output (stage position), column = input (stage force). Lines at Y = 0, in dB relative to the
-system F_Y -> Y at the lowest frequency (one reference for all nine entries, no absolute plant gain);
+rest. Row = output (stage position), column = input (stage force). Lines at Y = 0, in dB re 1 m/N (absolute,
+normalisation dropped, Dirk 2026-10-24);
 bands: range over the seven positions Y = -0.39 to 0.39 m of the system (grey) and the final model (blue).
 
 Reads Results/res_frf_full.csv (Code/Evaluation/eval_frf.py), writes Writing/figures/res_frf_full.pdf.
@@ -19,8 +19,8 @@ def main():
     cols = ["%s_%s_%s" % (m, a, b) for m in ("model", "truth", "base") for a in AXES for b in AXES]
     f, Ys, G = load(STEM, cols)
     i0 = Ys.index(0.0)
-    ref = G["truth_Y_Y"][i0, 0]
-    db = lambda a: 20 * np.log10(a / ref)                         # noqa: E731
+    # absolute magnitude in dB re 1 m/N, no normalisation, as Fig. res_frf (Dirk 2026-10-24)
+    db = lambda a: 20 * np.log10(a)                         # noqa: E731
     fig, axs = plt.subplots(3, 3, figsize=(FULL_WIDTH, 4.6), sharex=True)
     for j, a in enumerate(AXES):
         for l, b in enumerate(AXES):
@@ -39,7 +39,7 @@ def main():
             if j == 2:
                 ax.set_xlabel("Frequency (Hz)")
             if l == 0:
-                ax.set_ylabel("Output $%s$\nMagnitude (dB, rel.)" % AXTEX[a])
+                ax.set_ylabel("Output $%s$\nMagnitude (dB re 1 m/N)" % AXTEX[a])
     hs = [plt.Line2D([], [], label=NAME[k], **s) for k, s in (("sys", SYS), ("base", BASE), ("model", MOD))]
     fig.legend(handles=hs, loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.02), handlelength=2.2)
     fig.tight_layout(rect=(0, 0, 1, 0.97))

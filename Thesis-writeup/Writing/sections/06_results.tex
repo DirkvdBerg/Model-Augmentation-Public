@@ -91,8 +91,8 @@ The \chg[own]{augmented}{final} model is able to capture the resonance of the sy
 Without added states or without PS, the error on $Y$ with multisine stays 
 above 50\,\%. Two added states with PS reach 6.1\,\% 
 and eight added states gives no significant improvement.
-Fig.~\ref{fig:res_val_curves} shows that the runs with PS have a significantly
-lower validation error, compared to the other runs during training. 
+Fig.~\ref{fig:res_val_curves} shows that the models trained with PS have a significantly
+lower validation error, compared to the other models during training. 
 }}
 % FEEDBACK (own, 2026-10-24): verdict for Aspect 1 (Maarten: argue every result).
 \add[own]{\kwtwo{The missing dynamics are therefore only captured with added states and PS.}}
@@ -149,36 +149,43 @@ lower validation error, compared to the other runs during training.
 \fi
 % FEEDBACK (own, 2026-10-24): subsection opens with what it tests (Hoekstra 2026 Sec. 6.3), wording of Section VI-D.
 \add[own]{\kwtwo{For Aspect~2, we compare the estimates of $\mathcal M_{\mathrm{OBC}}$ and $\mathcal M_{\mathrm U}$.}}
-Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with
-$\mathcal M_{\mathrm U}$, \chg[own]{both from the detuned start}{\kwtwo{from the detuned and from the true start}}\del[own]{ (Aspect~2)}.
-% FEEDBACK (own, 2026-10-24): comma before "than" removed (grammar).
-Both models have deviated further from the true combinations\del[own]{,} than their initial values.
-% FEEDBACK (own, 2026-10-24): final numbers (Results/24-10-2026/CSV): 83.1 against 69.1 is not double.
-\chg[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}{\kwtwo{From the detuned start, $\mathcal M_{\mathrm U}$ ends at 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ at 69.1\,\%.}}
-The combinations describing the damping deviate the most,
-while the mass combinations stay close to their true values.
-% FEEDBACK (own, 2026-10-24): uniqueness from the two starts, the criterion of Section I and the
-%   evidence for the verdict.
-\add[own]{\kwtwo{From the two starts, the estimates of $\mathcal M_{\mathrm{OBC}}$ differ by 31.3\,\%, against 36.4\,\% for $\mathcal M_{\mathrm U}$.}}
+% FEEDBACK (own, 2026-10-24): sentences in the order of the criteria (uniqueness, accuracy, constraint), then
+%   the truth after the overlap that explains it; "compares ... with ..." repeated the opening (Dirk 2026-10-24).
+Table~\ref{tab:res_obc} \chg[own]{compares $\mathcal M_{\mathrm{OBC}}$ with
+$\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2)}{\kwtwo{gives the estimates from the detuned and the true start}}.
+\delmv[own]{below}{Both models have deviated further from the true combinations, than their initial values.}
+\del[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}
+\delmv[own]{below}{The combinations describing the damping deviate the most,
+while the mass combinations stay close to their true values.}
+% FEEDBACK (own, 2026-10-24): uniqueness from the two starts, the criterion of Section I.
+\add[own]{\kwtwo{The estimates of $\mathcal M_{\mathrm{OBC}}$ from the two starts differ by 31.3\,\%, while those of $\mathcal M_{\mathrm U}$ differ by 36.4\,\%.}}
 % FEEDBACK (own, 2026-10-24): OBC is 0.6 points worse on X (Table res_obc_constraint).
 The final model with the orthogonality constraint and the unconstrained model
-perform \add[own]{\kwtwo{about }}equally well.
+\chg[Dirk]{perform equally well}{\kwtwo{have similar performance}}.
 % FEEDBACK (own, 2026-10-24): Table res_obc_constraint referenced; "From the correct start" struck,
 %   no longer true in the final CSVs (59.5 against 58.3).
-\kw{OBC keeps the network out of the parameter directions: its network overlap is
+% FEEDBACK (own, 2026-10-24): overlap 0.00 on training, 0.24 on test; "However" links the limitation (Dirk 2026-10-24).
+\kw{OBC keeps the network out of the parameter directions\add[own]{\kwtwo{ on the training records}}: its network overlap is
 much lower than that of $\mathcal M_{\mathrm U}$\add[own]{\kwtwo{ (Table~\ref{tab:res_obc_constraint})}}.
-The missing dynamics are not orthogonal to these directions, their overlap is 0.59.
+\chg[own]{The}{\kwtwo{However, the}} missing dynamics are not orthogonal to these directions, their overlap is 0.59.
 \del[own]{From the correct start, OBC also ends closer to the true values (Appendix~\mbox{\ref{app:choices}}).}
-Without added states, $\mathcal M_{\mathrm U}$ ends closer instead\add[own]{\kwtwo{ (Table~\ref{tab:app_obc_na0})}}.}
-% FEEDBACK (own, 2026-10-24): the only reference to Table app_obc_na0.
-% FEEDBACK (own, 2026-10-24): verdict for Aspect 2 (Maarten: argue every result).
-\add[own]{\kwtwo{OBC therefore keeps the parameters interpretable to a limited extent.}}
+\delmv[own]{below}{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}}
+\mv[own]{above}{Both models have deviated further from the true combinations\del[own]{,} than their initial values.}
+% FEEDBACK (own, 2026-10-24): final numbers (Results/24-10-2026/CSV): 83.1 against 69.1 is not double.
+\add[own]{\kwtwo{With the detuned start, $\mathcal M_{\mathrm U}$ deviates 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ 69.1\,\%.}}
+% FEEDBACK (own, 2026-10-24): the only reference to Table app_obc_na0; after the detuned numbers it contrasts with.
+\mv[own]{above}{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead\add[own]{\kwtwo{ (Table~\ref{tab:app_obc_na0})}}.}
+\mv[own]{above}{The \add[Dirk]{\kwtwo{parameter }}combinations describing the damping deviate the most,
+while the mass combinations stay close to their true values.}
+% FEEDBACK (own, 2026-10-24): verdict for Aspect 2 with its reason (Maarten: argue every result).
+\add[own]{\kwtwo{OBC does not make the estimates unique, because they still depend on where training starts.}}
 
 % FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
 %   tab:app_obc_full (cut from the appendix) is kept as a second label: this table now holds both starts.
 \begin{table}[t]
   \centering
-  \caption{Relative error of the ten identifiable combinations after training, unconstrained and OBC, from the detuned and from the true start.}
+  % FEEDBACK (own, 2026-10-24): "after training" and the comma chain replaced (Dirk 2026-10-24).
+  \caption{Relative error of the ten estimated combinations of $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$, trained from the detuned and from the true start. Distances: Euclidean norm over the ten combinations.}
   \label{tab:res_obc}\label{tab:app_obc_full}
   \input{tables/res_obc_combinations}
 \end{table}
@@ -188,7 +195,8 @@ Without added states, $\mathcal M_{\mathrm U}$ ends closer instead\add[own]{\kwt
   \centering
   % FEEDBACK (own, 2026-10-24): physical-part rows removed from the table and caption (Dirk 2026-10-24).
   % FEEDBACK (own, 2026-10-24): accuracy rows average all test records, unlike Table tab:res_structure; caption says so (float critique, Dirk yes).
-  \caption{Network and truth overlaps of \eqref{eq:obc_overlap}, and accuracy, unconstrained and OBC, from the detuned start. The $\mathrm{NRMS}_e$ is the mean over all 11 test records.}
+  % FEEDBACK (own, 2026-10-24): comma chain replaced; NRMS_e over the records of Table res_structure (Dirk 2026-10-24).
+  \caption{Overlaps of \eqref{eq:obc_overlap} and $\mathrm{NRMS}_e$ of $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$, trained from the detuned start. The $\mathrm{NRMS}_e$ is the mean over the records with and without multisine.}
   \label{tab:res_obc_constraint}
   \input{tables/res_obc_constraint}
 \end{table}
@@ -205,22 +213,21 @@ Without added states, $\mathcal M_{\mathrm U}$ ends closer instead\add[own]{\kwt
 \end{itemize}
 \fi
 % FEEDBACK (own, 2026-10-24): subsection opens with what it tests (Hoekstra 2026 Sec. 6.3), wording of Section VI-D.
-\add[own]{\kwtwo{For Aspect~3, we compare the final model with the baseline and the black box on the interpolation and extrapolation records.}}
-% FEEDBACK (own, 2026-10-24): the figure is now a table; only the reference changes.
-% FEEDBACK (own, 2026-10-24): the table gives means over the records.
-The \chg[own]{error per test record are}{\kwtwo{mean errors are}} shown in \chg[own]{Fig.~\mbox{\ref{fig:res_generalisation}}}{\kwtwo{Table~\ref{tab:res_generalisation}}},
-for extrapolation (E) and interpolation (I)\del[own]{ (Aspect~3)}.
-% FEEDBACK (own, 2026-10-24): E against I, what Aspect 3 asks and the evidence for the verdict.
-\add[own]{\kwtwo{On $Y$, the error of the final model on the E records is within 0.3 points of that on the I records.}}
-% FEEDBACK (own, 2026-10-24): the error is above the baseline, not the performance.
+\add[own]{\kwtwo{For Aspect~3, we compare the final model with the baseline and the black box on the interpolation (I) and extrapolation (E) records (Table~\ref{tab:res_generalisation}).}}
+% FEEDBACK (own, 2026-10-24): one sentence per finding, not per table cell; the table pointer is in the
+%   opening; Dirk's two sentences with two corrections (E is up to 0.5 points lower on X; the black box
+%   is better than the baseline on Y with multisine) (Dirk 2026-10-24).
+\del[own]{The error per test record are shown in Fig.~\mbox{\ref{fig:res_generalisation}},
+for extrapolation (E) and interpolation (I) (Aspect~3).}
+\add[Dirk]{\kwtwo{The errors between E and I differ only by at most 0.5 points.}}
 Without multisine the model performs \chg[own]{as well or slightly above}{\kwtwo{as well as or slightly worse than}} the baseline.
-The black box has 74 to 193\,\% on the records without multisine, and it is
-below the final model only on I2 $X_2$.
-% FEEDBACK (own, 2026-10-24): "multisine twins" was unclear (Jasper).
-On the \chg[own]{\kw{multisine twins}}{\kwtwo{motion records simulated with a multisine}}, the final model stays below 10\,\% on $Y$, while the
-baseline and the black box are above 47\,\%.
-% FEEDBACK (own, 2026-10-24): verdict for Aspect 3 (Maarten: argue every result).
-\add[own]{\kwtwo{The final model therefore generalises to the held-out positions and unseen motion profiles.}}
+\chg[own]{The black box has 74 to 193\,\% on the records without multisine, and it is
+below the final model only on I2 $X_2$.}{\kwtwo{The black box is worse than the final model with and without multisine, and reaches 97 to 128\,\% without it.}}
+\add[Dirk]{\kwtwo{It even performs worse than the baseline model, except on $Y$ with multisine.}}
+\chg[own]{On the \kw{multisine twins}, the final model stays below 10\,\% on $Y$, while the
+baseline and the black box are above 47\,\%.}{\kwtwo{With multisine, the final model stays below 8\,\% on all axes, while the errors of the baseline and the black box exceed 65\,\% on $Y$.}}
+% FEEDBACK (own, 2026-10-24): verdict for Aspect 3 with its condition (Maarten: argue every result).
+\add[own]{\kwtwo{The final model generalises to the held-out positions and unseen motion profiles, but only improves on the baseline when the multisine excites the missing dynamics.}}
 % REMOVED (own, 2026-10-24): revnote on the generalisation figure; the figure is now Table
 %   res_generalisation.
 
@@ -231,7 +238,8 @@ baseline and the black box are above 47\,\%.
   \centering
   % FEEDBACK (own, 2026-10-24): the number of records differs per column; caption gives it (float critique, Dirk yes).
   % FEEDBACK (own, 2026-10-24): every record with a multisine in one group (Dirk 2026-10-24).
-  \caption{$\mathrm{NRMS}_e$ per axis, mean over the interpolation (I) and extrapolation (E) test records with and without a multisine. Records per mean: 5 I and 5 E with multisine, 4 I and 4 E without.}
+  % FEEDBACK (own, 2026-10-24): record counts dropped, Table res_structure gives them (Dirk 2026-10-24).
+  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the interpolation (I) and extrapolation (E) records with and without a multisine.}
   \label{tab:res_generalisation}\label{fig:res_generalisation}
   \input{tables/res_generalisation}
 \end{table}

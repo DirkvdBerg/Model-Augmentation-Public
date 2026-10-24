@@ -40,20 +40,22 @@ def main():
     lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l r r r r r}", r"\toprule",
              r" & & \multicolumn{2}{c}{$\mathcal{M}_{\mathrm{U}}$} & \multicolumn{2}{c}{$\mathcal{M}_{\mathrm{OBC}}$}\\",
              r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
-             r"Rel.\ error (\%) & Initial & Detuned & True & Detuned & True\\"]
+             r"Rel.\ error (\%) & Detuned start & Detuned & True & Detuned & True\\"]   # was "Initial" (Dirk 2026-10-24)
     for g in GROUPS:
         lines.append(r"\midrule")
         for c in g:
             name = SYMBOL[c] + (r"$^*$" if c == "m_diff" else "")
             lines.append(" & ".join([name, fmt(start[c])] + [fmt(rel[c][r]) for r in COLS]) + r"\\")
     lines += [r"\midrule",
-              " & ".join(["Norm to truth", r"$%.1f$" % norm(start.values())]
+              " & ".join(["Distance to truth", r"$%.1f$" % norm(start.values())]
                          + [r"$%.1f$" % norm(rel[c][r] for c in SYMBOL) for r in COLS]) + r"\\",
-              " & ".join(["Start difference", ""]
+              " & ".join(["Distance between starts", ""]
                          + [r"\multicolumn{2}{c}{$%.1f$}" % norm(rel[c][a] - rel[c][b] for c in SYMBOL)
                             for a, b in (("R4", "R5"), ("R1", "R2"))]) + r"\\",
               r"\bottomrule",
-              r"\multicolumn{6}{l}{\footnotesize $^*$ relative to the mean actuator mass, because its true value is close to zero.}\\",
+              # two rows: one long row widened the last column (Dirk 2026-10-24)
+              r"\multicolumn{6}{l}{\footnotesize $^*$ relative to the mean actuator mass,}\\",
+              r"\multicolumn{6}{l}{\footnotesize because its true value is close to zero.}\\",
               r"\end{tabular}", ""]
     save_table("\n".join(lines), STEM)
 

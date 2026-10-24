@@ -1,12 +1,13 @@
 """Table D (Aspect 2): whether the orthogonality constraint holds and what it costs, unconstrained (R4)
 against OBC (R1), both from the detuned start: the network overlap rho(F_aug) on the training and the
-test records, the truth overlap rho(Xi) (eq:obc_overlap), and the NRMS_e per axis of the full model on all
-test records (no physical-part rows, Dirk 2026-10-24).
+test records, the truth overlap rho(Xi) (eq:obc_overlap), and the NRMS_e per axis of the full model over the
+records of Table II, with and without a multisine (no physical-part rows, Dirk 2026-10-24).
 
 Reads Results/res_obc_overlap.csv (Code/Evaluation/eval_overlap.py) and res_obc_accuracy.csv
 (Code/Evaluation/make_results.py), writes Writing/tables/res_obc_constraint.tex.
 """
-from _fig_common import AXES, AXTEX, read_csv, save_table
+from _fig_common import AXES, AXTEX, errors, read_csv, save_table
+from res_structure import mean_pairs, records
 
 STEM = "res_obc_constraint"
 RUNS = ["R4", "R1"]
@@ -25,12 +26,16 @@ def main():
     xi = {"%.2f" % float(ov[(r, "test")]["truth_overlap"]) for r in RUNS}
     assert len(xi) == 1, xi
     lines.append(r"$\rho(\Xi)$, interpolation test records & \multicolumn{2}{c}{$%s$}\\" % xi.pop())
-    lines += [r"\midrule", r"\multicolumn{3}{l}{$\mathrm{NRMS}_e$ (\%), test records}\\"]
-    # full model only; no physical-part rows (Dirk 2026-10-24)
-    for a in AXES:
-        lines.append(" & ".join([r"$%s$" % AXTEX[a]]
-                                + [r"$%.1f$" % (100 * float(acc[(r, "test", "all", "model")]["nrms_e_%s" % a]))
-                                   for r in RUNS]) + r"\\")
+    # NRMS_e over the same records as Table II: 10 with a multisine, 8 without (Dirk 2026-10-24)
+    e, ms = errors()
+    r_ms, r_no = records(e, ms, "test")
+    groups = [("with a multisine", [("test", x) for x in r_ms] + [("twins", x) for x in records(e, ms, "twins")[0]]),
+              ("without", [("test", x) for x in r_no])]
+    for name, recs in groups:
+        lines += [r"\midrule", r"\multicolumn{3}{l}{$\mathrm{NRMS}_e$ (\%%), %d records %s}\\" % (len(recs), name)]
+        mean = {r: mean_pairs(e, r, "model", recs) for r in RUNS}
+        for k, a in enumerate(AXES):
+            lines.append(" & ".join([r"$%s$" % AXTEX[a]] + [r"$%.1f$" % mean[r][k] for r in RUNS]) + r"\\")
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     save_table("\n".join(lines), STEM)
 

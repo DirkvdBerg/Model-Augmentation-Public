@@ -222,9 +222,13 @@ stacked next states predicted by the baseline}}.
 % RESTRUCTURE (2026-10-19, Maarten mail): moved below eq:obc_recovery, which
 %   it used before its definition.
 \delmv[M-mail]{V-C}{The offset does not change the first-order estimate \eqref{eq:obc_recovery}.}
-\chg[M-mail]{\kw{It}}{\kwtwo{The offset}} \kw{does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
-the neural network cancels} \del[Dirk]{\kw{part of}} \kw{the baseline response}\del[Dirk]{\kw{, because only the
-part of the network along the stacked baseline response is excluded}}.
+% FEEDBACK (own, 2026-10-24): struck; negation is not measured or reported later (c_neg cut 2026-10-23),
+%   and the final runs show hardly any (pooled cosine -0.04 and -0.09 for M_U, res_negation.csv) (Dirk 2026-10-24).
+%   Old marks: It -> The offset (M-mail); "part of" and the "because" clause struck (Dirk).
+\del[own]{The offset does not fully prevent negation~\mbox{\cite[Sec.~5.3.1.3]{kessels2025ai}}, where
+the neural network cancels the baseline response.}
+\revnote{Removed: the sentence on negation. Negation is not measured or reported anywhere in the thesis,
+and in the final runs the unconstrained network hardly negates the baseline either.}
 % \\
 % \revnote{Orthogonality here is to the stacked Jacobian and offset
 % $\Phi_\Gamma$ on the tuples (Gy\"or\"ok et al.\ 2026, Lemma~3, with the
