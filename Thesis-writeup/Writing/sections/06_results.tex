@@ -40,13 +40,17 @@
 %      below the final model only on I2 X2; twins: final below 10 % on Y, baseline and black box above 47 %.
 %   Moved out: verdicts, mechanisms, the black-box explanation (Quinten p9), the n_a = 0 reversal as an argument
 %   (Discussion); the "difference between starts" row (revnote request at the end).
-\section{Results}\label{sec:results}
+% FEEDBACK (own, 2026-10-24): the section holds the Discussion; title as announced in Section I (Dirk 2026-10-24). Was: Results.
+\section{Results and Discussion}\label{sec:results}
 \ifdraft
 \begin{itemize}
 \item Test records, $\mathrm{NRMS}_e$ with the noise floor; training and validation in the appendix (D-269)
 \end{itemize}
 \fi
 \changelegend
+% FEEDBACK (own, 2026-10-24): opening sentence as in Sections II to IV and Hoekstra 2026 Sec. 6;
+%   no pointer to Table res_structure (forward reference, Maarten).
+\add[own]{\kwtwo{In this section, we analyse the models of Table~\ref{tab:setup_models} for each aspect of Section~\ref{sec:intro}.}}
 All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
 against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
@@ -64,21 +68,32 @@ Section~\mbox{\ref{sec:discussion}} discusses them.}
 \item PS start and added states compared on validation in the appendix
 \end{itemize}
 \fi
-Table~\ref{tab:res_structure} compares the final grey box model with the baseline at
-the true parameters and with the black box (Aspect~1).
+% FEEDBACK (own, 2026-10-24): subsection opens with what it tests (Hoekstra 2026 Sec. 6.3), wording of Section VI-D.
+% FEEDBACK (own, 2026-10-24): the black box belongs to Aspect 3 (Section VII-C), not to Aspect 1 (Dirk 2026-10-24).
+For Aspect 1, we compare the augmentation structures 
+with the baseline\del[own]{ and the black box}.
+% FEEDBACK (own, 2026-10-24): "final model" is not defined in Section VI; named once here.
+Table~\ref{tab:res_structure} compares the final grey box model\add[own]{\kwtwo{ $\mathcal M_{\mathrm{OBC}}$}} with the baseline at
+the true parameters\del[own]{, and with the black box}.
 For the data with multisine, the final model lowers the error on $Y$ by more
-than an order of magnitude and halves the error on $X_1$ and $X_2$.
+% FEEDBACK (own, 2026-10-24): merged multisine group, X from 13.3 to 7.7 and 7.1 %.
+than an order of magnitude and \add[own]{\kwtwo{almost }}halves the error on $X_1$ and $X_2$.
 For the data without multisine both models achieve similar results.
-% FEEDBACK (own, 2026-10-24): "this" pointed at the data without multisine; I1 has multisine.
-Fig.~\ref{fig:res_time_trace} shows \chg[own]{this}{\kwtwo{the lower error with multisine}} on record I1, and
-Fig.~\ref{fig:res_frf} shows that the final model is able to capture the resonance
-of the system, which is not modelled in the baseline.
+% FEEDBACK (Dirk, 2026-10-24): subject first, figures in brackets; Dirk's two sentences verbatim.
+\chg[Dirk]{Fig.~\mbox{\ref{fig:res_time_trace}} shows this on record I1, and
+Fig.~\mbox{\ref{fig:res_frf}} shows that the final model is able to capture the resonance
+of the system, which is not modelled in the baseline.}{\kwtwo{The final model has a lower error than the baseline on record I1 (Fig.~\ref{fig:res_time_trace}).
+The \chg[own]{augmented}{final} model is able to capture the resonance of the system (Fig.~\ref{fig:res_frf}).}}
 % FEEDBACK (own, 2026-10-24): reading of the structure rows and of Fig. res_val_curves, the evidence for
 %   the verdict (Hoekstra 2026 Sec. 6.3 reads Table 6 and Fig. 8 in one sentence each).
-\add[own]{\kwtwo{Without added states or without PS, the error on $Y$ with multisine stays above 75\,\%, while two added states with PS reach 6.1\,\% and eight added states give no improvement.
-Fig.~\ref{fig:res_val_curves} shows that the runs with PS separate from the others at the start of training.}}
-\kw{Appendix~\ref{app:choices} compares the final model on the validation records
-with plain training of the added states and with zero and eight added states.}
+\\
+\add[own]{\kwtwo{
+Without added states or without PS, the error on $Y$ with multisine stays 
+above 50\,\%. Two added states with PS reach 6.1\,\% 
+and eight added states gives no significant improvement.
+Fig.~\ref{fig:res_val_curves} shows that the runs with PS have a significantly
+lower validation error, compared to the other runs during training. 
+}}
 % FEEDBACK (own, 2026-10-24): verdict for Aspect 1 (Maarten: argue every result).
 \add[own]{\kwtwo{The missing dynamics are therefore only captured with added states and PS.}}
 % REMOVED (own, 2026-10-24): revnote asking for a validation-curve figure, answered by
@@ -89,7 +104,8 @@ with plain training of the added states and with zero and eight added states.}
 % FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
 \begin{table}[t]
   \centering
-  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the records with the training multisine (I1, I2, E1) and without it. The structure rows start from the true parameters, $\mathcal M_{\mathrm{OBC}}$ from the detuned start.}
+  % FEEDBACK (own, 2026-10-24): every record with a multisine in one group (Dirk 2026-10-24).
+  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the 10 records with a multisine and the 8 without. $\mathcal M_{\mathrm{OBC}}$ starts from the detuned parameters, the other grey-box models from the true parameters.}
   \label{tab:res_structure}
   \input{tables/res_structure}
 \end{table}
@@ -97,7 +113,8 @@ with plain training of the added states and with zero and eight added states.}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_time_trace.pdf}
-  \caption{Test record I1, $Y$ axis. Top: simulation error, RMS over 50~ms. Bottom: servo error from 7.84 to 7.95~s. Both relative to $\sigma_{e,Y}$ of the record.}
+  % FEEDBACK (own, 2026-10-24): top is a local NRMS_e; bottom curves are servo errors of system and models (Dirk 2026-10-24).
+  \caption{Test record I1, $Y$ axis. Top: $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms} over 50~ms. Bottom: servo error $y-r$ of the system and $\hat y-r$ of the models, divided by $\sigma_{e,Y}$.}
   \label{fig:res_time_trace}
 \end{figure}
 
@@ -106,14 +123,15 @@ with plain training of the added states and with zero and eight added states.}
   \centering
   \includegraphics[width=\columnwidth]{res_val_curves.pdf}
   % FEEDBACK (own, 2026-10-24): semicolon replaced (no semicolons, Dirk).
-  \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. All four models start from the true parameters, and update 0 is the baseline.}
+  \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. Update 0 equals the baseline.}
   \label{fig:res_val_curves}
 \end{figure}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_frf.pdf}
-  \caption{Bode magnitude from $F_Y$ to $Y$ at $Y=0$, linearised at rest, relative to the system at 20~Hz. Shaded: range of the final model over $Y$. The system and the baseline vary by less than 0.3~dB over $Y$.}
+  % FEEDBACK (own, 2026-10-24): open loop, from the linearised models, no normalisation, band range in Y_tr (Dirk 2026-10-24).
+  \caption{Open-loop Bode magnitude from $F_Y$ to $Y$ at $Y=0$, from the models linearised at standstill. Shaded: final model over $\lvert Y\rvert\le1.3\,Y_{\mathrm{tr}}$.}
   \label{fig:res_frf}
 \end{figure}
 % REMOVED (own, 2026-10-24): revnote proposing a figure of the resonance against Y; the text states
@@ -129,12 +147,14 @@ with plain training of the added states and with zero and eight added states.}
 \item Uniqueness from the two starts (?: row requested, revnote at the end)
 \end{itemize}
 \fi
+% FEEDBACK (own, 2026-10-24): subsection opens with what it tests (Hoekstra 2026 Sec. 6.3), wording of Section VI-D.
+\add[own]{\kwtwo{For Aspect~2, we compare the estimates of $\mathcal M_{\mathrm{OBC}}$ and $\mathcal M_{\mathrm U}$.}}
 Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with
-$\mathcal M_{\mathrm U}$, \chg[own]{both from the detuned start}{\kwtwo{from the detuned and from the true start}} (Aspect~2).
+$\mathcal M_{\mathrm U}$, \chg[own]{both from the detuned start}{\kwtwo{from the detuned and from the true start}}\del[own]{ (Aspect~2)}.
 % FEEDBACK (own, 2026-10-24): comma before "than" removed (grammar).
 Both models have deviated further from the true combinations\del[own]{,} than their initial values.
 % FEEDBACK (own, 2026-10-24): final numbers (Results/24-10-2026/CSV): 83.1 against 69.1 is not double.
-\chg[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}{\kwtwo{$\mathcal M_{\mathrm U}$ ends at 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ at 69.1\,\%.}}
+\chg[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}{\kwtwo{From the detuned start, $\mathcal M_{\mathrm U}$ ends at 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ at 69.1\,\%.}}
 The combinations describing the damping deviate the most,
 while the mass combinations stay close to their true values.
 % FEEDBACK (own, 2026-10-24): uniqueness from the two starts, the criterion of Section I and the
@@ -184,18 +204,20 @@ Without added states, $\mathcal M_{\mathrm U}$ ends closer instead\add[own]{\kwt
 \item Multisine twins of the records without multisine
 \end{itemize}
 \fi
+% FEEDBACK (own, 2026-10-24): subsection opens with what it tests (Hoekstra 2026 Sec. 6.3), wording of Section VI-D.
+\add[own]{\kwtwo{For Aspect~3, we compare the final model with the baseline and the black box on the interpolation and extrapolation records.}}
 % FEEDBACK (own, 2026-10-24): the figure is now a table; only the reference changes.
 % FEEDBACK (own, 2026-10-24): the table gives means over the records.
 The \chg[own]{error per test record are}{\kwtwo{mean errors are}} shown in \chg[own]{Fig.~\mbox{\ref{fig:res_generalisation}}}{\kwtwo{Table~\ref{tab:res_generalisation}}},
-for extrapolation (E) and interpolation (I) (Aspect~3).
+for extrapolation (E) and interpolation (I)\del[own]{ (Aspect~3)}.
 % FEEDBACK (own, 2026-10-24): E against I, what Aspect 3 asks and the evidence for the verdict.
-\add[own]{\kwtwo{On $Y$, the error of the final model on the E records is within 1.3 points of that on the I records.}}
+\add[own]{\kwtwo{On $Y$, the error of the final model on the E records is within 0.3 points of that on the I records.}}
 % FEEDBACK (own, 2026-10-24): the error is above the baseline, not the performance.
 Without multisine the model performs \chg[own]{as well or slightly above}{\kwtwo{as well as or slightly worse than}} the baseline.
 The black box has 74 to 193\,\% on the records without multisine, and it is
 below the final model only on I2 $X_2$.
 % FEEDBACK (own, 2026-10-24): "multisine twins" was unclear (Jasper).
-On the \chg[own]{\kw{multisine twins}}{\kwtwo{records with multisine added}}, the final model stays below 10\,\% on $Y$, while the
+On the \chg[own]{\kw{multisine twins}}{\kwtwo{motion records simulated with a multisine}}, the final model stays below 10\,\% on $Y$, while the
 baseline and the black box are above 47\,\%.
 % FEEDBACK (own, 2026-10-24): verdict for Aspect 3 (Maarten: argue every result).
 \add[own]{\kwtwo{The final model therefore generalises to the held-out positions and unseen motion profiles.}}
@@ -208,7 +230,8 @@ baseline and the black box are above 47\,\%.
 \begin{table}[t]
   \centering
   % FEEDBACK (own, 2026-10-24): the number of records differs per column; caption gives it (float critique, Dirk yes).
-  \caption{$\mathrm{NRMS}_e$ per axis, mean over the interpolation (I) and extrapolation (E) test records, with and without the training multisine, and with the training multisine added to the records without it. Records per mean: 2 I and 1 E with multisine, 4 I and 4 E without, 3 I and 4 E with multisine added.}
+  % FEEDBACK (own, 2026-10-24): every record with a multisine in one group (Dirk 2026-10-24).
+  \caption{$\mathrm{NRMS}_e$ per axis, mean over the interpolation (I) and extrapolation (E) test records with and without a multisine. Records per mean: 5 I and 5 E with multisine, 4 I and 4 E without.}
   \label{tab:res_generalisation}\label{fig:res_generalisation}
   \input{tables/res_generalisation}
 \end{table}

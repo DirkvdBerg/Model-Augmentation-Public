@@ -36,16 +36,17 @@ def main():
     a1.semilogy(t, 100 * moving_rms(m - y) / sig, **MOD)
     a1.set_xlim(t[0], t[-1])
     a1.set_xlabel("Time (s)")
-    a1.set_ylabel(r"Sim. error (% of $\sigma_e$)")
+    a1.set_ylabel(r"$\mathrm{NRMS}_e$ (%)")   # local NRMS_e (Dirk 2026-10-24)
     a1.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: "%g" % v))
     a1.grid(False, which="minor")
 
-    a2.plot(t[z], (100 * (y - r) / sig)[z], zorder=1, **SYS)
-    a2.plot(t[z], (100 * (b - r) / sig)[z], zorder=2, **BASE)
-    a2.plot(t[z], (100 * (m - r) / sig)[z], zorder=3, **MOD)
+    # a scaled signal, not an error measure: no percent (Dirk 2026-10-24)
+    a2.plot(t[z], ((y - r) / sig)[z], zorder=1, **SYS)
+    a2.plot(t[z], ((b - r) / sig)[z], zorder=2, **BASE)
+    a2.plot(t[z], ((m - r) / sig)[z], zorder=3, **MOD)
     a2.set_xlim(t[z][0], t[z][-1])
     a2.set_xlabel("Time (s)")
-    a2.set_ylabel(r"Servo error (% of $\sigma_e$)")
+    a2.set_ylabel(r"Servo error / $\sigma_e$")
 
     hs = [plt.Line2D([], [], label=NAME[k], **s) for k, s in (("sys", SYS), ("base", BASE), ("model", MOD))]
     a1.legend(handles=hs, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False, handlelength=2.2,

@@ -16,6 +16,7 @@ STEM = "setup_coverage"
 COLOR = {"training": "#7f7f7f", "validation": "#1f77b4", "test-I": "#2ca02c", "test-E": "#d62728"}
 LABEL = {"training": "training", "validation": "validation", "test-I": "test, I", "test-E": "test, E"}
 SHADE = "0.90"
+SHOWN = {"E6": "E5"}
 
 
 def main():
@@ -49,7 +50,8 @@ def main():
         if rows[k]["block"] != rows[k - 1]["block"]:
             for ax in (ay, aa, av):
                 ax.axhline(k - 0.5, color="0.6", lw=0.4, zorder=1)
-    ay.set_yticks(range(n), [r["record"] for r in rows], fontsize=5)
+    # E6 is shown as E5: the changed-controller record E5 is not in the thesis (Dirk 2026-10-24)
+    ay.set_yticks(range(n), [SHOWN.get(r["record"], r["record"]) for r in rows], fontsize=5)
     for t, r in zip(ay.get_yticklabels(), rows):
         t.set_color(COLOR[r["block"]])
     ay.set_ylim(n - 0.4, -0.6)

@@ -28,6 +28,7 @@ from eval_common import TW, CACHE, RUNS, AXES, FS, DATA_NOISY, SPLITS, multisine
 
 RESULTS = TW / 'Results'
 INTERP = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6']
+EXTRAP = ['E1', 'E2', 'E3', 'E4', 'E6']    # D-283, the OBC accuracy rows only; E5 is not used (D-227)
 
 
 @functools.lru_cache(maxsize=12)          # each file is read and decompressed once, not once per table row
@@ -224,11 +225,13 @@ def combinations():
 def obc_accuracy():
     """Table C accuracy rows (D-268 stacks; 05_setup Table C): mean over the stack's records of the
     per-record RMS [m] and NRMS_e per axis, full model and physical part alone (Gyorok 2025
-    Table 1), per run. Stacks as eval_overlap.py: training, validation, test I1 to I6. Group 'all'
-    (the main Table C) and the multisine split of D-256 (the appendix version, Dirk 2026-10-18)."""
+    Table 1), per run. Stacks as eval_overlap.py: training, validation, test I1 to I6 and extrap
+    E1 to E4, E6 (D-283; both from the test predictions). Group 'all' (the main Table C) and the
+    multisine split of D-256 (the appendix version, Dirk 2026-10-18)."""
     rows = []
-    for split in ('train', 'val', 'test'):
-        recs = [n for n in split_records(split) if split != 'test' or n in INTERP]
+    for stack, split, keep in (('train', 'train', None), ('val', 'val', None),
+                               ('test', 'test', INTERP), ('extrap', 'test', EXTRAP)):
+        recs = [n for n in split_records(split) if keep is None or n in keep]
         for grp, rs in [('all', recs)] + [(g, [n for n in recs if multisine(n) == (g == 'multisine')])
                                           for g in ('multisine', 'no multisine')]:
             if not rs:
@@ -237,7 +240,7 @@ def obc_accuracy():
             for run in [r for r in OBC_RUNS if r in RUNS]:
                 for row in ('model', 'physics'):
                     a = run_rms(run, row, rs, split)
-                    rows.append([run, RUNS[run], split, grp, row, status(run), ' '.join(rs)]
+                    rows.append([run, RUNS[run], stack, grp, row, status(run), ' '.join(rs)]
                                 + [f(v) for v in a.mean(0)] + [f(v) for v in (a / sg).mean(0)])
     write('res_obc_accuracy', ['run', 'job', 'stack', 'group', 'row', 'status', 'records'] + ['rms_%s' % a for a in AXES]
           + ['nrms_e_%s' % a for a in AXES], rows)

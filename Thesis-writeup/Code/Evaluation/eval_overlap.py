@@ -1,7 +1,8 @@
 """The two inner products of D-246 and the predicted first-order bias (THESIS-RESULTS step 5).
 
-Tuples: `build_reference_set` (the OBC construction, D-192) over three stacks (D-268): the training
-records (where theta_aux is formed), the validation records and the test records I1 to I6; x_a = 0
+Tuples: `build_reference_set` (the OBC construction, D-192) over four stacks (D-268, D-283): the
+training records (where theta_aux is formed), the validation records, the interpolation test records
+I1 to I6 ('test') and the extrapolation test records E1 to E4 and E6 ('extrap'); x_a = 0
 (the reference slice); normalised coordinates of Section IV; the rows the network writes (Euclidean
 inner product, eq. aug_norm). Pi is the orthogonal projection onto ran Phi, solved by least squares.
 
@@ -35,7 +36,8 @@ from eval_common import RUNS, RUNS_DIR, TW, record_name, checkpoint_status
 from eval_greybox import run_config, build
 
 INTERP = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6']
-STACKS = ('train', 'val', 'test')
+EXTRAP = ['E1', 'E2', 'E3', 'E4', 'E6']    # D-283; E5 is not used (changed controller, D-227)
+STACKS = ('train', 'val', 'test', 'extrap')
 
 
 def overlap(J, v):
@@ -95,7 +97,8 @@ def evaluate(run):
     observed = (phy.combinations_from_free(phy.free_params.detach().double()).detach() - c_true) / scale
 
     files = {'train': data.train_files, 'val': data.val_files,
-             'test': [f for f in data.test_files if record_name(f) in INTERP]}
+             'test': [f for f in data.test_files if record_name(f) in INTERP],
+             'extrap': [f for f in data.test_files if record_name(f) in EXTRAP]}
     over, bias = [], []
     for stack in STACKS:
         ref = build_reference_set(cfg, norm, nx_ann=cfg.nx_ann, files=files[stack], verbose=False)

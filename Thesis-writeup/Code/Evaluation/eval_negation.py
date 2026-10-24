@@ -1,7 +1,8 @@
 """Negation cosine of the learned correction against the baseline response (Kessels' sense).
 
 Tuples, coordinates, rows and Phi exactly as eval_overlap.py (D-246): `build_reference_set` over
-the training, validation or test (I1 to I6) records (D-269), x_a = 0, normalised coordinates (eq. aug_norm), the physical rows the
+the training, validation, interpolation test (I1 to I6) or extrapolation test (E1 to E4, E6) records
+(D-269, D-283), x_a = 0, normalised coordinates (eq. aug_norm), the physical rows the
 network writes, Phi at the trained physical coordinate (vbar of the correction in an OBC arm).
 
   F_base  stacked baseline next-state map f_base(theta(beta), x_i, u_i) at that same coordinate
@@ -13,11 +14,11 @@ network writes, Phi at the trained physical coordinate (vbar of the correction i
   c_next  cosine of F_aug with the full next state F_base (the earlier printout, kept beside it)
   c_perp  cosine of F_aug with (I - Pi) F_base, Pi the projection onto ran Phi (pooled stack)
 
-Per record and pooled, on the training, validation and test (I1 to I6) stacks.
+Per record and pooled, on the training, validation, test (I1 to I6) and extrap (E1 to E4, E6) stacks.
 Output: Results/res_negation.csv (run, stack, record, the cosines, ||F_aug||/||F_base||, checkpoint label).
 Evaluation only, nothing is trained or modified.
 
-Usage: python Thesis-writeup/Code/Evaluation/eval_negation.py R1 R4   (all three stacks)
+Usage: python Thesis-writeup/Code/Evaluation/eval_negation.py R1 R4   (all four stacks)
 """
 import sys
 import time
@@ -26,9 +27,7 @@ import torch
 
 from eval_common import RUNS, RUNS_DIR, TW, record_name, checkpoint_status
 from eval_greybox import run_config, build
-from eval_overlap import deployed_basis, STACKS
-
-INTERP = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6']
+from eval_overlap import deployed_basis, STACKS, INTERP, EXTRAP
 
 
 def cos(a, b):
@@ -64,7 +63,8 @@ def evaluate(run):
         print('  ||vbar - free_params|| = %.3e' % float(torch.linalg.norm(
             v_hat - phy.free_params.detach().double())), flush=True)
     files = {'train': data.train_files, 'val': data.val_files,
-             'test': [f for f in data.test_files if record_name(f) in INTERP]}
+             'test': [f for f in data.test_files if record_name(f) in INTERP],
+             'extrap': [f for f in data.test_files if record_name(f) in EXTRAP]}
     out = {}
     for stack in STACKS:
         ref = build_reference_set(cfg, norm, nx_ann=cfg.nx_ann, files=files[stack], verbose=False)

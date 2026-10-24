@@ -661,7 +661,8 @@ E1 & standstill & yes & $\lvert Y\rvert=\fpeval{round(\SetupEY/\SetupTrainY,1)}\
 E2 & operational & no$^\dagger$ & stroke of $Y$ & I3\\
 E3 & route & no$^\dagger$ & acceleration, \SetupEAcc\,\% & I5\\
 E4 & route & no$^\dagger$ & velocity, \SetupEVel\,\% & I6\\
-E6 & operational & no$^\dagger$ & several, \SetupESixAcc\,\% acc. & I3\\
+% FEEDBACK (own, 2026-10-24): E6 renamed E5; the changed-controller record E5 is not in the thesis (Dirk 2026-10-24).
+E5 & operational & no$^\dagger$ & several, \SetupESixAcc\,\% acc. & I3\\
 \bottomrule
 \end{tabular}
 
@@ -670,7 +671,7 @@ E6 & operational & no$^\dagger$ & several, \SetupESixAcc\,\% acc. & I3\\
 I: interpolation, inside the training range. E: extrapolation, outside
 it in the setting under New, with the motion of the Pair record. New:
 what differs from the training records, for E from the Pair record.
-E6 differs in more than one setting and is a stress record.
+E5 differs in more than one setting and is a stress record.
 % FEEDBACK (Dirk, 2026-10-24): the M records are simulated with their own
 %   multisine phases, not the training multisine added afterwards (as in
 %   Section VI-C).
