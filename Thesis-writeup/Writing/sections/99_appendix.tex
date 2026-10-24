@@ -451,13 +451,14 @@ Fig.~\ref{fig:res_frf}, with the same linearisation and positions.
 \end{figure*}
 
 \section{Training, validation and test results}\label{app:splits}
+% FEEDBACK (own, 2026-10-24): physical-part rows removed from the table and caption (Dirk 2026-10-24).
 % D-269: every result for every split (Dirk 2026-10-18); Code/Figures/res_all_splits.py.
 Table~\ref{tab:app_splits} gives the models of Section~\ref{sec:results} on
 the training, validation and test records.
 % FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); no metres, no absolute plant gain.
 \begin{table}[t]
   \centering
-  \caption{$\mathrm{NRMS}_e$ per axis on the training, validation and test records, mean over the records of each set with and without multisine. Physical part: the trained model with the learned block switched off.}
+  \caption{$\mathrm{NRMS}_e$ per axis on the training, validation and test records, mean over the records of each set with and without multisine.}
   \label{tab:app_splits}
   \input{tables/res_all_splits}
 \end{table}
@@ -487,12 +488,8 @@ baseline frozen at $Y=0$.}
   \label{tab:app_structure}
   \input{tables/res_structure_val}
 \end{table}
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{res_ps_spectrum.pdf}
-  \caption{Amplitude spectral density of the $Y$ simulation error on the validation records with multisine, relative to the baseline's peak in the multisine band (shaded).}
-  \label{fig:res_ps_spectrum}
-\end{figure}
+% FEEDBACK (own, 2026-10-24): PS spectrum cut; Table tab:res_structure and Fig. fig:res_val_curves
+%   already show that PS is needed (Dirk 2026-10-24).
 % FEEDBACK (own, 2026-10-24): table cut; Table tab:res_obc in Section VII now
 %   holds both starts and carries the label tab:app_obc_full (Dirk 2026-10-24).
 \begin{table}[t]
@@ -503,13 +500,13 @@ baseline frozen at $Y=0$.}
 \end{table}
 \begin{table}[t]
   \centering
-  \caption{Black-box search: the 11 configurations and their best validation $\mathrm{NRMS}_e$.}
+  % FEEDBACK (own, 2026-10-24): update budget and the meaning of failed (D-264) added (float critique, Dirk yes).
+  \caption{Black-box search: the 11 configurations, each trained for at most 80\,000 updates, and their best validation $\mathrm{NRMS}_e$. Failed: the training loss became non-finite.}
   \label{tab:app_bb_search}
   \input{tables/res_bb_selection}
 \end{table}
-\revnote{Add the validation curves here: validation $\mathrm{NRMS}_e$
-against the optimiser updates for every grey-box run and the selected black
-box}
+% REMOVED (own, 2026-10-24): revnote asking for validation curves; they are
+%   Fig. res_val_curves in Section VII-A.
 
 \section{Experiment design details}\label{app:setup}
 This appendix gives the details of Section~\ref{sec:setup} and the checks

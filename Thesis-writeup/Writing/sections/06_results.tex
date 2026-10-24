@@ -20,6 +20,8 @@
 %   multisine the augmentation is equal to or slightly worse than the baseline.
 %   Numbers come from Thesis-writeup/Results/18-10-2026/CSV (res_structure, res_obc_combinations, res_generalisation,
 %   res_frf_modes) and the tables generated from them.
+% SUPERSEDED (2026-10-24): verdicts against a criterion stated before each float are in the Results
+%   (Hoekstra 2026 Sec. 6; Maarten); numbers from Results/24-10-2026/CSV; no physical-part rows.
 % MUST ESTABLISH (agreed with Dirk 2026-10-18; handoff 2026-10-18-results-section-content and the session after it)
 %   Form (revised 2026-10-18 after "too messy"): an opening and three short subsections, one per aspect, numbered as
 %   in the Introduction (1 structure and training, 2 OBC, 3 generalisation). Each subsection names its float and reads
@@ -49,9 +51,10 @@ All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_
 against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
 % RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III to VI.
-\kwtwo{Sections~\ref{sec:res_structure} to~\ref{sec:res_generalisation} give the
-results for the three aspects of Section~\ref{sec:intro} in order, and
-Section~\ref{sec:discussion} discusses them.}
+% FEEDBACK (own, 2026-10-24): roadmap struck (no subsection roadmap, Dirk 2026-10-24).
+\del[own]{Sections~\mbox{\ref{sec:res_structure}} to~\mbox{\ref{sec:res_generalisation}} give the
+results for the three aspects of Section~\mbox{\ref{sec:intro}} in order, and
+Section~\mbox{\ref{sec:discussion}} discusses them.}
 
 \subsection{Augmentation structure}\label{sec:res_structure}
 \ifdraft
@@ -63,19 +66,23 @@ Section~\ref{sec:discussion} discusses them.}
 \fi
 Table~\ref{tab:res_structure} compares the final grey box model with the baseline at
 the true parameters and with the black box (Aspect~1).
-For the data with multisine, the final model lowers the error on $Y$ by more 
+For the data with multisine, the final model lowers the error on $Y$ by more
 than an order of magnitude and halves the error on $X_1$ and $X_2$.
 For the data without multisine both models achieve similar results.
-Fig.~\ref{fig:res_time_trace} shows this on record I1, and
+% FEEDBACK (own, 2026-10-24): "this" pointed at the data without multisine; I1 has multisine.
+Fig.~\ref{fig:res_time_trace} shows \chg[own]{this}{\kwtwo{the lower error with multisine}} on record I1, and
 Fig.~\ref{fig:res_frf} shows that the final model is able to capture the resonance
 of the system, which is not modelled in the baseline.
-\kw{Appendix~\ref{app:choices} compares the final model on the validation records 
+% FEEDBACK (own, 2026-10-24): reading of the structure rows and of Fig. res_val_curves, the evidence for
+%   the verdict (Hoekstra 2026 Sec. 6.3 reads Table 6 and Fig. 8 in one sentence each).
+\add[own]{\kwtwo{Without added states or without PS, the error on $Y$ with multisine stays above 75\,\%, while two added states with PS reach 6.1\,\% and eight added states give no improvement.
+Fig.~\ref{fig:res_val_curves} shows that the runs with PS separate from the others at the start of training.}}
+\kw{Appendix~\ref{app:choices} compares the final model on the validation records
 with plain training of the added states and with zero and eight added states.}
-\revnote{Issue: that the PS start is needed and that the black box had not
-converged rests on final numbers only.
-Hoekstra et al.\ show the validation error during training for every
-model~\cite[Fig.~8]{hoekstra2026lfr}.
-Question: should I add such a figure, in the main text or the appendix?}
+% FEEDBACK (own, 2026-10-24): verdict for Aspect 1 (Maarten: argue every result).
+\add[own]{\kwtwo{The missing dynamics are therefore only captured with added states and PS.}}
+% REMOVED (own, 2026-10-24): revnote asking for a validation-curve figure, answered by
+%   Fig. res_val_curves.
 
 \revnote{Figuur heeft meerwaarde. om iets te laten zien niet de 3x3 frf.}
 
@@ -90,7 +97,7 @@ Question: should I add such a figure, in the main text or the appendix?}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_time_trace.pdf}
-  \caption{Test record I1, $Y$ axis. Top: moving $\mathrm{NRMS}_{e,Y}$ (50~ms). Bottom: servo error relative to $\sigma_{e,Y}$ from 7.84 to 7.95~s.}
+  \caption{Test record I1, $Y$ axis. Top: simulation error, RMS over 50~ms. Bottom: servo error from 7.84 to 7.95~s. Both relative to $\sigma_{e,Y}$ of the record.}
   \label{fig:res_time_trace}
 \end{figure}
 
@@ -98,7 +105,8 @@ Question: should I add such a figure, in the main text or the appendix?}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{res_val_curves.pdf}
-  \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. All four models start from the true parameters; update 0 is the baseline.}
+  % FEEDBACK (own, 2026-10-24): semicolon replaced (no semicolons, Dirk).
+  \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. All four models start from the true parameters, and update 0 is the baseline.}
   \label{fig:res_val_curves}
 \end{figure}
 
@@ -108,15 +116,11 @@ Question: should I add such a figure, in the main text or the appendix?}
   \caption{Bode magnitude from $F_Y$ to $Y$ at $Y=0$, linearised at rest, relative to the system at 20~Hz. Shaded: range of the final model over $Y$. The system and the baseline vary by less than 0.3~dB over $Y$.}
   \label{fig:res_frf}
 \end{figure}
-\revnote{Issue: Fig.~\ref{fig:res_frf} shows the final model over $Y$ as a
-shaded band; a second band for the system is unreadable, so the
-dependence of the resonance on $Y$ is not visible.
-The system curve is linearised at rest without friction, which the
-caption will state.
-Plan: a separate small figure with the learned resonance frequency
-against $Y$, for the system and the final model, training range shaded.
-Question: is this extra figure worth the space?}
+% REMOVED (own, 2026-10-24): revnote proposing a figure of the resonance against Y; the text states
+%   the frequency and damping range instead.
 
+% Floats stay in their own subsection (Dirk 2026-10-24).
+\FloatBarrier
 \subsection{Interpretability}\label{sec:res_obc}
 \ifdraft
 \begin{itemize}
@@ -126,18 +130,29 @@ Question: is this extra figure worth the space?}
 \end{itemize}
 \fi
 Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with
-$\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2).
-Both models have deviated further from the true combinations, than their initial values.
-$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.
-The combinations describing the damping deviate the most, 
+$\mathcal M_{\mathrm U}$, \chg[own]{both from the detuned start}{\kwtwo{from the detuned and from the true start}} (Aspect~2).
+% FEEDBACK (own, 2026-10-24): comma before "than" removed (grammar).
+Both models have deviated further from the true combinations\del[own]{,} than their initial values.
+% FEEDBACK (own, 2026-10-24): final numbers (Results/24-10-2026/CSV): 83.1 against 69.1 is not double.
+\chg[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}{\kwtwo{$\mathcal M_{\mathrm U}$ ends at 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ at 69.1\,\%.}}
+The combinations describing the damping deviate the most,
 while the mass combinations stay close to their true values.
+% FEEDBACK (own, 2026-10-24): uniqueness from the two starts, the criterion of Section I and the
+%   evidence for the verdict.
+\add[own]{\kwtwo{From the two starts, the estimates of $\mathcal M_{\mathrm{OBC}}$ differ by 31.3\,\%, against 36.4\,\% for $\mathcal M_{\mathrm U}$.}}
+% FEEDBACK (own, 2026-10-24): OBC is 0.6 points worse on X (Table res_obc_constraint).
 The final model with the orthogonality constraint and the unconstrained model
-perform equally well. 
-\kw{OBC keeps the network out of the parameter directions: its network overlap is 
-much lower than that of $\mathcal M_{\mathrm U}$.
+perform \add[own]{\kwtwo{about }}equally well.
+% FEEDBACK (own, 2026-10-24): Table res_obc_constraint referenced; "From the correct start" struck,
+%   no longer true in the final CSVs (59.5 against 58.3).
+\kw{OBC keeps the network out of the parameter directions: its network overlap is
+much lower than that of $\mathcal M_{\mathrm U}$\add[own]{\kwtwo{ (Table~\ref{tab:res_obc_constraint})}}.
 The missing dynamics are not orthogonal to these directions, their overlap is 0.59.
-From the correct start, OBC also ends closer to the true values (Appendix~\ref{app:choices}).
-Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
+\del[own]{From the correct start, OBC also ends closer to the true values (Appendix~\mbox{\ref{app:choices}}).}
+Without added states, $\mathcal M_{\mathrm U}$ ends closer instead\add[own]{\kwtwo{ (Table~\ref{tab:app_obc_na0})}}.}
+% FEEDBACK (own, 2026-10-24): the only reference to Table app_obc_na0.
+% FEEDBACK (own, 2026-10-24): verdict for Aspect 2 (Maarten: argue every result).
+\add[own]{\kwtwo{OBC therefore keeps the parameters interpretable to a limited extent.}}
 
 % FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
 %   tab:app_obc_full (cut from the appendix) is kept as a second label: this table now holds both starts.
@@ -151,19 +166,17 @@ Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
 % FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
 \begin{table}[t]
   \centering
-  \caption{Network and truth overlaps of \eqref{eq:obc_overlap}, and accuracy of the full model and of its physical part alone, unconstrained and OBC, from the detuned start.}
+  % FEEDBACK (own, 2026-10-24): physical-part rows removed from the table and caption (Dirk 2026-10-24).
+  % FEEDBACK (own, 2026-10-24): accuracy rows average all test records, unlike Table tab:res_structure; caption says so (float critique, Dirk yes).
+  \caption{Network and truth overlaps of \eqref{eq:obc_overlap}, and accuracy, unconstrained and OBC, from the detuned start. The $\mathrm{NRMS}_e$ is the mean over all 11 test records.}
   \label{tab:res_obc_constraint}
   \input{tables/res_obc_constraint}
 \end{table}
-\revnote{Issue: Table~\ref{tab:res_obc} shows the detuned start only, so
-whether OBC makes the estimate independent of the start is visible only
-in Table~\ref{tab:app_obc_full}.
-Gy\"or\"ok et al.\ show this by plotting the estimates from many
-starts~\cite[Fig.~2]{gyorok2026obc}; I have two starts per model.
-Question: would a figure of the ten combinations from both starts,
-unconstrained and OBC, with the true values marked, show Aspect~2 better
-than this table?}
+% REMOVED (own, 2026-10-24): revnote asking for a figure of the combinations from both starts; Dirk
+%   prefers the table, which now holds both starts and the start difference.
 
+% Floats stay in their own subsection (Dirk 2026-10-24).
+\FloatBarrier
 \subsection{Generalisation}\label{sec:res_generalisation}
 \ifdraft
 \begin{itemize}
@@ -172,35 +185,37 @@ than this table?}
 \end{itemize}
 \fi
 % FEEDBACK (own, 2026-10-24): the figure is now a table; only the reference changes.
-The error per test record are shown in \chg[own]{Fig.~\mbox{\ref{fig:res_generalisation}}}{\kwtwo{Table~\ref{tab:res_generalisation}}}, 
+% FEEDBACK (own, 2026-10-24): the table gives means over the records.
+The \chg[own]{error per test record are}{\kwtwo{mean errors are}} shown in \chg[own]{Fig.~\mbox{\ref{fig:res_generalisation}}}{\kwtwo{Table~\ref{tab:res_generalisation}}},
 for extrapolation (E) and interpolation (I) (Aspect~3).
-Without multisine the model performs as well or slightly above the baseline.
+% FEEDBACK (own, 2026-10-24): E against I, what Aspect 3 asks and the evidence for the verdict.
+\add[own]{\kwtwo{On $Y$, the error of the final model on the E records is within 1.3 points of that on the I records.}}
+% FEEDBACK (own, 2026-10-24): the error is above the baseline, not the performance.
+Without multisine the model performs \chg[own]{as well or slightly above}{\kwtwo{as well as or slightly worse than}} the baseline.
 The black box has 74 to 193\,\% on the records without multisine, and it is
 below the final model only on I2 $X_2$.
-On the \kw{multisine twins}, the final model stays below 10\,\% on $Y$, while the
+% FEEDBACK (own, 2026-10-24): "multisine twins" was unclear (Jasper).
+On the \chg[own]{\kw{multisine twins}}{\kwtwo{records with multisine added}}, the final model stays below 10\,\% on $Y$, while the
 baseline and the black box are above 47\,\%.
-\revnote{Issue: in Fig.~\ref{fig:res_generalisation} the noise floor
-stretches the axis down to below 0.01\,\%, so all bars look alike, and
-``multisine twins'' is an unclear name.
-The third panel holds the seven test records without multisine,
-simulated again with the training multisine added; it is the only test
-of the learned dynamics on unseen motion, because without multisine the
-absorber is not excited.
-Plan: drop the floor, use a log axis from 1 to 300\,\%, title the panel
-``Multisine added'' and keep the original record names.
-Question: is this clear, or would you show these records differently?}
+% FEEDBACK (own, 2026-10-24): verdict for Aspect 3 (Maarten: argue every result).
+\add[own]{\kwtwo{The final model therefore generalises to the held-out positions and unseen motion profiles.}}
+% REMOVED (own, 2026-10-24): revnote on the generalisation figure; the figure is now Table
+%   res_generalisation.
 
 % FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
 %   The per-record figure is replaced by this table (Dirk 2026-10-24); fig:res_generalisation is kept as a
 %   second label so the notes that still name it resolve.
 \begin{table}[t]
   \centering
-  \caption{$\mathrm{NRMS}_e$ per axis, mean over the interpolation (I) and extrapolation (E) test records, with and without the training multisine, and with the training multisine added to the records without it.}
+  % FEEDBACK (own, 2026-10-24): the number of records differs per column; caption gives it (float critique, Dirk yes).
+  \caption{$\mathrm{NRMS}_e$ per axis, mean over the interpolation (I) and extrapolation (E) test records, with and without the training multisine, and with the training multisine added to the records without it. Records per mean: 2 I and 1 E with multisine, 4 I and 4 E without, 3 I and 4 E with multisine added.}
   \label{tab:res_generalisation}\label{fig:res_generalisation}
   \input{tables/res_generalisation}
 \end{table}
 
 
+% Floats stay in their own subsection (Dirk 2026-10-24).
+\FloatBarrier
 \subsection{Discussion}\label{sec:discussion}
 \todo{Should this be a separate subsection? Didnt Maarten state to include it in the text itself...?}
 % RESTRUCTURE (2026-10-19, Maarten p15): moved here from Section VIII (sec:conclusion), word for word.

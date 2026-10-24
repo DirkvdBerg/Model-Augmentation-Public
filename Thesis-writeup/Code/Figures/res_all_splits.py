@@ -1,7 +1,7 @@
 """Appendix table: the main-text models on the training, validation and test records in one table
 (D-269: every result for every split). Per split one block: the baseline at the true parameters, the
-augmented model unconstrained (R4) and with OBC (R1, the final model), each with its physical part alone
-(learned block off, learned parameters), and the black box. NRMS_e per axis in %, mean over the split's
+augmented model unconstrained (R4) and with OBC (R1, the final model), and the black box. No physical-part
+rows (Dirk 2026-10-24). NRMS_e per axis in %, mean over the split's
 records with and without the training multisine (D-256); test over all 11 test records, as Table A. No
 noise-floor row: Section V states the floor through the SNR (Dirk 2026-10-24).
 
@@ -14,9 +14,7 @@ STEM = "res_all_splits"
 SPLITS = [("train", "Training records"), ("val", "Validation records"), ("test", "Test records")]
 ROWS = [(r"$\mathcal{M}_{\mathrm{LPV}}$", "R5", "base_true"),
         (r"$\mathcal{M}_{\mathrm{U}}$", "R4", "model"),
-        (r"\quad physical part", "R4", "physics"),
         (r"$\mathcal{M}_{\mathrm{OBC}}$", "R1", "model"),
-        (r"\quad physical part", "R1", "physics"),
         (r"$\mathcal{M}_{\mathrm{BB}}$", "R8", "bb")]
 
 

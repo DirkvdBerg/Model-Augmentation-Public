@@ -1,6 +1,6 @@
 """Appendix table: parameter recovery without added states (n_a = 0, detuned start, Jasper point 5),
 unconstrained (R14) against OBC (R13): relative error of the ten combinations and their norm, the
-full-model and physical-part NRMS_e per axis, and the network and truth overlaps. Same layout and
+full-model NRMS_e per axis, and the network and truth overlaps. Same layout and
 scaling as Table C (res_obc_combinations.py); no learned mode (no added states).
 
 Reads Results/res_obc_combinations.csv, res_obc_accuracy.csv (Code/Evaluation/make_results.py) and
@@ -15,7 +15,7 @@ from res_obc_combinations import AX, AXTEX, M_ACT_MEAN, SYMBOL
 
 STEM = "res_obc_na0"
 MAIN_STACK = "test"
-RUNS = [("R14", "Unconstr."), ("R13", "OBC")]
+RUNS = [("R14", r"$\mathcal{M}_{\mathrm{U}}$"), ("R13", r"$\mathcal{M}_{\mathrm{OBC}}$")]   # headers as in Table C
 
 
 def read(name):
@@ -27,17 +27,17 @@ def table(stack, rel, start, status, acc, ov):
     fmt = lambda v: r"$%+.1f$" % v                                                   # noqa: E731
     dag = {r: r"$^\dagger$" if status[r].startswith("preliminary") else "" for r, _ in RUNS}
     lines = [r"\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{l r r r}", r"\toprule",
-             " & Start & " + " & ".join(n + dag[r] for r, n in RUNS) + r"\\", r"\midrule",
+             " & Initial & " +" & ".join(n + dag[r] for r, n in RUNS) + r"\\", r"\midrule",
              r"\multicolumn{4}{l}{Relative error (\%)}\\"]
     for c in SYMBOL:
         lines.append(" & ".join([SYMBOL[c], fmt(start[c])] + [fmt(rel[c][r]) for r, _ in RUNS]) + r"\\")
     norm = lambda k: sum((start[c] if k == "start" else rel[c][k]) ** 2 for c in SYMBOL) ** 0.5   # noqa: E731
     lines.append(" & ".join(["Norm", r"$%.1f$" % norm("start")] + [r"$%.1f$" % norm(r) for r, _ in RUNS]) + r"\\")
     lines += [r"\midrule", r"\multicolumn{4}{l}{$\mathrm{NRMS}_e$ (\%%), %s records}\\" % stack]
-    for row, name in (("model", "Full model"), ("physics", "Physical part")):
-        for a in AX:
-            lines.append(" & ".join([r"%s, $%s$" % (name, AXTEX[a]), ""]
-                                    + [r"$%.1f$" % nrms_pct(acc[(r, row)]["nrms_e_%s" % a]) for r, _ in RUNS]) + r"\\")
+    # full model only; no physical-part rows (Dirk 2026-10-24)
+    for a in AX:
+        lines.append(" & ".join([r"$%s$" % AXTEX[a], ""]
+                                + [r"$%.1f$" % nrms_pct(acc[(r, "model")]["nrms_e_%s" % a]) for r, _ in RUNS]) + r"\\")
     lines += [r"\midrule",
               " & ".join([r"Network overlap $\rho(F_{\mathrm{aug}})$", ""]
                          + [r"$%.2f$" % float(ov[r]["network_overlap"]) for r, _ in RUNS]) + r"\\",

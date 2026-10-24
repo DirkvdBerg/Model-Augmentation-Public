@@ -443,33 +443,29 @@ checks in Table~\mbox{\ref{tab:setup_checks}}.}
 %   captions or floats. Old table: added states 0/2/2/black box, OBC
 %   no/no/yes/no, theta_base at start true, not trained/10 % detuned/10 %
 %   detuned/none.
-\add[own]{\kwtwo{Table~\ref{tab:setup_models} lists the models.}}
-% FEEDBACK (Dirk, 2026-10-24): bottom half added for the models that choose
-%   the structure (res_structure rows; Maarten v2 p. 13 on the PS start),
-%   with its own header; the shared facts are in the caption. M_U and M_OBC
-%   are trained from both starts (tab:res_obc). "Plain" is called
-%   random, after "random rows W^a" in Section III-D.
-\begin{table}[t]
-\caption{Models. Top: the models of the results. Bottom: the models used
-to choose the structure, trained without OBC from the true parameters.}
+% FEEDBACK (Dirk, 2026-10-24): opening in the pattern of the Results
+%   opening; it replaces "Table lists the models" and "The comparisons
+%   follow the three aspects". Table with one short value per cell; every
+%   column applies to every model, including M_BB (16 states,
+%   res_bb_selection.csv row 9). The structure runs are M_U variants and are
+%   defined in the paragraph below. No marks in floats.
+The models of Table~\ref{tab:setup_models} are compared to answer 
+each aspect of Section~\ref{sec:intro}.
+% FEEDBACK (Dirk, 2026-10-24): placed here, under the subsection title
+%   ([!h]); with [t] it could float above the title.
+\begin{table}[!h]
+\caption{Models.}
 \label{tab:setup_models}
 \centering
 \footnotesize
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}llll@{}}
 \toprule
-Model & Baseline & Learned component\\
+Model & Baseline & Learned states & OBC\\
 \midrule
-$\mathcal M_{\mathrm{LPV}}$ & true parameters & none\\
-$\mathcal M_{\mathrm{U}}$ & 10\,\% detuned or true & 2 added states, without OBC\\
-$\mathcal M_{\mathrm{OBC}}$ & 10\,\% detuned or true & 2 added states, with OBC\\
-$\mathcal M_{\mathrm{BB}}$ & none & SUBNET black box\\
-\midrule
-Structure & Added states & Start of added states\\
-\midrule
-$n_{\bar x}=0$ & 0 & none\\
-$n_{\bar x}=2$, random & 2 & random $W^a$\\
-$n_{\bar x}=2$, PS & 2 & PS\\
-$n_{\bar x}=8$, PS & 8 & PS\\
+$\mathcal M_{\mathrm{LPV}}$ & true, not trained & 0 & no\\
+$\mathcal M_{\mathrm{U}}$ & trained & 2 & no\\
+$\mathcal M_{\mathrm{OBC}}$ & trained & 2 & yes\\
+$\mathcal M_{\mathrm{BB}}$ & none & 16 & no\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -493,47 +489,70 @@ $\mathcal M_{\mathrm{OBC}}$ with $\mathcal M_{\mathrm U}$ for the
 orthogonal construction.
 The extrapolation records compare the final model with the black box
 (Aspect~4).}
-\add[own]{\kwtwo{The comparisons follow the three aspects of
-Section~\ref{sec:intro}.
-For the first, $\mathcal M_{\mathrm{OBC}}$ is compared with
-$\mathcal M_{\mathrm{LPV}}$.
-Its structure is chosen by comparing zero, two and eight added states,
-and PS with the random start of Section~\ref{sec:aug_encoder}.
-These models are trained without OBC from the true parameters, to
-separate the structure from the parameter error.
-For the second, $\mathcal M_{\mathrm{OBC}}$ is compared with
-$\mathcal M_{\mathrm U}$ from the 10\,\% detuned and the true parameters,
-to show whether the estimates depend on the start.
-For the third, $\mathcal M_{\mathrm{OBC}}$ is compared with
-$\mathcal M_{\mathrm{LPV}}$ and the black box $\mathcal M_{\mathrm{BB}}$,
-including on the extrapolation records.}}
 % FEEDBACK (Dirk, 2026-10-24): deleted, the table row states it.
 \del[own]{$\mathcal M_{\mathrm{LPV}}$ is the baseline at the true parameters.}
-
+\\
 We identify $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$
 by minimising the loss of Section~\ref{sec:aug_closed_loop} 
 with the same training setup (Table~\ref{tab:hyper}).
 This includes PS to initialise the added states (Section~\ref{sec:aug_ps2}).
-The parameter combinations $\theta_{\mathrm{base}}$ start 10\,\% larger or
+% FEEDBACK (Dirk, 2026-10-24): M_U and M_OBC also start from the true
+%   parameters (tab:res_obc), so the 10 % applies to the detuned start.
+The parameter combinations $\theta_{\mathrm{base}}$ \chg[own]{start}{\kwtwo{of the detuned start are}} 10\,\% larger or
 smaller in magnitude than their true values, and every run uses the same
 signs.
 % FEEDBACK (own, 2026-10-24): seed policy in the main text (walk W5,
 %   Dirk 2026-10-24).
-\add[own]{\kwtwo{Every model is trained once, with one seed.}}
+\add[own]{\kwtwo{Every model is trained once, with the same seed.}}
 \del[own]{Appendix~\mbox{\ref{app:choices}} shows the runs used to choose $n_{\bar x}$ and
 the PS initialisation of the added states.}
-
+% FEEDBACK (Dirk, 2026-10-24): comparisons rewritten in Dirk's pattern ("We"
+%   + plain verb, purpose with "to", reason with "because"); no ordinals.
+%   Placed after the training paragraph, so the detuned start is defined
+%   before it is used (own unaccepted addition, so moved without marks).
+% FEEDBACK (Dirk, 2026-10-24): reworded, varied sentence openings; the
+%   number of added states is chosen by comparison, its outcome (two, as
+%   eight; one vibration mode) is stated in Results VII-A, not here.
+\\
+% FEEDBACK (Dirk, 2026-10-24): paragraph in Dirk's words (chat); gaps
+%   filled with the metric and what is varied for M_U; no outcome claimed.
+%   Three blocks, as Dirk split them.
+\add[Dirk]{\kwtwo{We compare the simulation error of $\mathcal M_{\mathrm{OBC}}$ and
+$\mathcal M_{\mathrm{LPV}}$, to test whether the augmentation is able to
+improve the performance by capturing the missing dynamics.
+To determine the number of added states and whether to use PS
+initialisation, we compare the simulation error of $\mathcal M_{\mathrm U}$
+for each combination.
+These runs start from the true parameters, so that 
+parameter errors do not affect the choice.}}
+\\
+\add[Dirk]{\kwtwo{The simulation error of $\mathcal M_{\mathrm{OBC}}$ and
+$\mathcal M_{\mathrm U}$ determines whether the constraint on the neural
+network limits the performance of the model, and whether OBC keeps the parameters
+interpretable.
+Both are trained from the true parameters and from the 10\,\% detuned
+start, to test whether the estimate is unique.}}
+\\
+\add[Dirk]{\kwtwo{We test generalisation by comparing the simulation error of
+$\mathcal M_{\mathrm{OBC}}$, $\mathcal M_{\mathrm{LPV}}$ and
+$\mathcal M_{\mathrm{BB}}$ on the interpolation and extrapolation
+records.}}
+\\
 The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET
 model~\cite{beintema2023subnet} that predicts the closed-loop
 servo error from the reference and injected force,
 without modelling the controller separately
-(Appendix~\ref{app:setup_bb}).
+% FEEDBACK (Dirk, 2026-10-24): selection sentence cut; VI-C states that the
+%   validation records select the hyperparameters, and the search table
+%   (tab:app_bb_search) is in Appendix C, now named in the pointer.
+(\chg[own]{Appendix~\mbox{\ref{app:setup_bb}}}{\kwtwo{Appendices~\ref{app:choices}
+and~\ref{app:setup_bb}}}).
 % FEEDBACK (own, 2026-10-24): wording (Dirk 2026-10-24).
-Its state count, network widths and learning rate are selected
-from 11 configurations using the validation records\chg[own]{,
-with the same data and training and encoder window as the grey-box models}{\kwtwo{.
-It uses the same records, training window and encoder window as the
-grey-box models}}.
+\del[own]{Its state count, network widths and learning rate are selected
+from 11 configurations using the validation records,
+with the same data and training and encoder window as the grey-box models.}
+\add[own]{\kwtwo{It uses the same records, training window and encoder window as the
+grey-box models.}}
 
 
 \subsection{Metrics}\label{sec:setup_metrics}
@@ -549,14 +568,15 @@ grey-box models}}.
 \fi
 % FEEDBACK (own, 2026-10-24): how each model is simulated (walk W7,
 %   Dirk 2026-10-24).
-\del[own]{All models are evaluated based on its output simulated over the full records.}
-\add[own]{\kwtwo{All models are simulated over the full records: the grey-box
-models in the closed loop of Section~\ref{sec:aug_loop}, and the black box
-from the reference and the injected force.}}
-Since the reference is known, we compare the predicted servo error
-with the recorded servo error $y-r$.
-The primary metric is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet},
-adapted by using the servo error as output.
+\kwtwo{
+All models are simulated over the full records.
+The grey-box models use the closed loop of
+Section~\ref{sec:aug_loop}, while the black-box model uses
+the reference and injected force as inputs.
+We compare the predicted servo error with the recorded
+servo error $y-r$, using the known reference.
+The main metric is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet},
+adapted by using the servo error as output.}
 \revnote{Issue: the research plan names the BFR as the primary measure,
 but on the position output every model scores almost 100\,\%, because
 the reference motion dominates the output.
@@ -566,76 +586,68 @@ Question: is this departure from the research plan acceptable?}
 \mv[own]{VI-B}{The data is also generated without measurement noise, with output $y^\circ$.}
 % FEEDBACK (own, 2026-10-24): no errors in metres, confidentiality
 %   (Dirk 2026-10-24).
-We also report \del[own]{the RMS in metres and }the noise floor:
+% FEEDBACK (Dirk, 2026-10-24): lead-in names what the display defines.
+% FEEDBACK (Dirk, 2026-10-24): floor normalised like the models and defined
+%   in one sentence below; its display line (display math cannot be struck)
+%   was: RMS^fl_j = ( 1/(N-n-1) sum_{k=n+1}^{N-1} (y_{j,k} - y^circ_{j,k})^2 )^{1/2}.
+\chg[own]{We also report the RMS in metres and the noise floor:}{\kwtwo{The NRMS is computed as}}
 \begin{equation}
 \begin{aligned}
  \mathrm{RMS}_j&=\Bigl(\frac{1}{N-n-1}\sum_{k=n+1}^{N-1}(\hat y_{j,k}-y_{j,k})^2\Bigr)^{1/2},\\
- \mathrm{NRMS}_{e,j}&=\frac{\mathrm{RMS}_j}{\sigma_{e,j}},\\
- \mathrm{RMS}^{\mathrm{fl}}_j&=\Bigl(\frac{1}{N-n-1}\sum_{k=n+1}^{N-1}(y_{j,k}-y^{\circ}_{j,k})^2\Bigr)^{1/2},
+ \mathrm{NRMS}_{e,j}&=\frac{\mathrm{RMS}_j}{\sigma_{e,j}},
 \end{aligned}
 \label{eq:setup_rms}
 \end{equation}
 where $j$ is the stage axis, $N$ the record length, $n+1$ the encoder
-window length and $\sigma_{e,j}$ the population standard deviation of the servo error
-$y_j-r_j$ over the same samples.
+% FEEDBACK (Dirk, 2026-10-24): "population" cut; not the system-identification
+%   term, and 1/N against 1/(N-1) is invisible at about 48 000 samples.
+window length and $\sigma_{e,j}$ the\del[own]{ population} standard deviation of the servo error
+% FEEDBACK (Dirk, 2026-10-24): sample range named; servo_sigma uses k0 to N-1,
+%   k0 = n+1 = 30 (Clean/gantry_dynamic/data.py, eval_common.py).
+$y_j-r_j$\chg[own]{ over the same samples}{\kwtwo{ for $k=n+1$ to $N-1$}}.
 An NRMS of 100\,\% means the model performs no better than predicting the mean servo error.
+\add[own]{\kwtwo{
+The noise floor is taken as the $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms}, 
+with $\hat y$ replaced by the noise-free output $y^\circ$.}}
 % FEEDBACK (own, 2026-10-24): the display defines the floor; the
 %   definition sentence repeats it (Dirk 2026-10-24).
 \del[own]{The noise floor is the RMS difference between the measured and noise-free
 outputs.}
-% FEEDBACK (Jasper, 2026-10-24): the floor as NRMS_e varies about 20x
-%   between records only through sigma_e; in metres it is nearly constant
-%   per axis (Code/Setup/noise_floor.py), but the floor in metres is the
-%   standstill noise of the machine, so all errors stay normalised and the
-%   floor is stated through the SNR of Section VI-B (confidentiality,
-%   Dirk 2026-10-24).
-% FEEDBACK (own, 2026-10-24): "of the order of": about equal on X, about
-%   5 dB lower on Y, since the SNR is on the raw 20 kHz signals and the
-%   floor after the anti-alias filter (Dirk 2026-10-24).
-\add[own]{\kwtwo{In $\mathrm{NRMS}_e$, the noise floor is of the order of
-$10^{-\mathrm{SNR}/20}$.
-It differs per record because the servo error changes with the motion
-of the record, while the noise does not.}}
-\revnote{LTI model noise floor verandert niet per de records. kijken noise floor van het noise model te pakken}
-\kwtwo{At standstill $y^\circ=r$, so the floor equals the standstill servo
-error that the noise model was fitted to on the machine.}
-% REVNOTE (2026-10-20, Dirk): origin of the floor. D-078 (Jan's MSD
-%   convention: noise added after an open-loop simulation, floor = RMS of
-%   that noise); kept when the noise moved into the loop (D-212, D-225,
-%   D-238); D-227 / anti-alias Q4 has the residual-form oracle floor; D-256
-%   kept RMS(y - y_noisefree) as a secondary reference.
-\revnote{Issue: the noise floor is 0.005 to 0.11\,\% on the test records,
-more than an order of magnitude below every model (2.3\,\% or more).
-In Table~\ref{tab:res_structure} and Fig.~\ref{fig:res_generalisation}
-it only stretches the scale, so the differences between the models are
-hard to see.
-The floor is exact for the black box; for the grey-box models in the
-residual form \eqref{eq:aug_residual_loop} it is the same up to a small
-leak through the re-discretised controller.
-Question: may I state the floor in one sentence instead of showing it,
-and is it the realistically achievable RMS you asked for in your
-feedback (point~4)?}
+% FEEDBACK (Dirk, 2026-10-24): floor kept only as the RMS^fl line and the
+%   y-circ sentence; Results states it once ("more than an order of
+%   magnitude below every model, so it is not shown in the tables"). Cut,
+%   never accepted own text: the SNR relation, the per-record variation and
+%   the standstill sentence; both floor revnotes deleted on Dirk's yes.
 
-The parameter error of combination $j$ is
-\begin{equation}
-\begin{aligned}
- \delta_j&=\frac{\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}}{s_j},\\
- s_j&=\begin{cases}
-  (m_1+m_2)/2, & \text{for } m_\Delta,\\
-  \lvert\theta^\star_{\mathrm{base},j}\rvert, & \text{otherwise},
- \end{cases}
-\end{aligned}
- \label{eq:setup_delta}
-\end{equation}
+% FEEDBACK (Dirk, 2026-10-24): parameter error in one sentence; the display
+%   existed only for the m_Delta scaling, which the footnote of
+%   tab:res_obc now states with its reason; eq:setup_delta was referenced
+%   only in comments. Display math cannot be struck; the old display was:
+%   delta_j = (theta_base,j - theta*_base,j) / s_j, s_j = (m_1+m_2)/2 for
+%   m_Delta, |theta*_base,j| otherwise.
+\del[own]{The parameter error of combination $j$ is [display],
 where the true value of $m_\Delta=m_1-m_2$ is close to zero,
-% FEEDBACK (own, 2026-10-24): (m_1+m_2)/2 is in the display (Dirk 2026-10-24).
-so we scale its error by the mean actuator mass\del[own]{ $(m_1+m_2)/2$} instead.
-
-For the orthogonal construction of Section~\ref{sec:obc}, the overlap
-$\rho$ of \eqref{eq:obc_overlap} is computed at $\bar x=0$ on the one-step
-tuples of the training, validation and \add[own]{\kwtwo{interpolation }}test records\del[own]{ (test: I1 to I6)}, for
+so we scale its error by the mean actuator mass $(m_1+m_2)/2$ instead.}
+\\
+% FEEDBACK (Dirk, 2026-10-24): both sentences tied to the M_U / M_OBC
+%   comparison of VI-D ("To ..." as in Dirk's VI-D sentence); the overlap
+%   says what it shows.
+\add[own]{\kwtwo{To compare the parameters of $\mathcal M_{\mathrm U}$ and
+$\mathcal M_{\mathrm{OBC}}$, }}the relative error of the estimated combinations is computed against their
+true values, which are known in simulation.
+\add[own]{\kwtwo{The overlap $\rho$ of \eqref{eq:obc_overlap} shows whether the
+network stays out of the parameter directions.
+It is computed on the training, validation and interpolation test records.}}
+% FEEDBACK (Dirk, 2026-10-24): rho is defined in Section IV (eq:obc_overlap,
+%   at xbar = 0 on the one-step tuples); here only the records. The networks
+%   are named in the rows of tab:res_obc_constraint; "zero by construction"
+%   is stated in Section IV.
+\del[own]{For the orthogonal construction of Section~\mbox{\ref{sec:obc}}, the overlap
+$\rho$ of \mbox{\eqref{eq:obc_overlap}} is computed at $\bar x=0$ on the one-step
+tuples of the training, validation and test records (test: I1 to I6), for
 the network of $\mathcal M_{\mathrm U}$, the corrected network of
 $\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.
-On the training tuples the corrected overlap is zero by construction.
-\revnote{in deze tabel ook unconstrained laten zien.
-Niet in deze tabel, maar maarten zijn comment about plan en PS (added state init laten zien.)}
+On the training tuples the corrected overlap is zero by construction.}
+
+% REVNOTE RESOLVED (Dirk, 2026-10-24): res_obc_constraint shows M_U; the PS
+%   comparison (Maarten) is in the VI-D paragraph on the structure choice.

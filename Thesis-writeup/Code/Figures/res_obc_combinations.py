@@ -53,7 +53,7 @@ def main():
                          + [r"\multicolumn{2}{c}{$%.1f$}" % norm(rel[c][a] - rel[c][b] for c in SYMBOL)
                             for a, b in (("R4", "R5"), ("R1", "R2"))]) + r"\\",
               r"\bottomrule",
-              r"\multicolumn{6}{l}{\footnotesize $^*$ relative to the mean actuator mass.}\\",
+              r"\multicolumn{6}{l}{\footnotesize $^*$ relative to the mean actuator mass, because its true value is close to zero.}\\",
               r"\end{tabular}", ""]
     save_table("\n".join(lines), STEM)
 

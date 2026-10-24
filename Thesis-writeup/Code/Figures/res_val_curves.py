@@ -41,10 +41,11 @@ def main():
     fig, ax = plt.subplots(figsize=(COL_WIDTH, 2.1))
     for jid, lab, col in RUNS:
         x, y = curves[jid]
-        ax.semilogy(x / 1e3, 100 * y, color=col, lw=1.2, marker="o", ms=2.2, label=lab, zorder=3)
-    ax.set_xlabel(r"Optimiser update ($\times 10^3$)")
+        ax.semilogy(x, 100 * y, color=col, lw=1.2, marker="o", ms=2.2, label=lab, zorder=3)
+    ax.set_xlabel("Optimiser updates")
+    ax.set_xticks([0, 10000, 20000, 30000], ["0", "10\u2009000", "20\u2009000", "30\u2009000"])
     ax.set_ylabel(r"Validation $\mathrm{NRMS}_e$ (%)")
-    ax.set_xlim(-0.5, 34)
+    ax.set_xlim(-500, 34000)
     ax.set_ylim(5, 50)
     ax.yaxis.set_minor_formatter(mticker.NullFormatter())
     ax.set_yticks([5, 10, 20, 50], ["5", "10", "20", "50"])
