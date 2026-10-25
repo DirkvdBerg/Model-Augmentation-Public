@@ -51,7 +51,7 @@
 % FEEDBACK (own, 2026-10-24): opening sentence as in Sections II to IV and Hoekstra 2026 Sec. 6;
 %   no pointer to Table res_structure (forward reference, Maarten).
 \add[own]{\kwtwo{In this section, we analyse the models of Table~\ref{tab:setup_models} for each aspect of Section~\ref{sec:intro}.}}
-All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
+Unless stated otherwise, errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
 against the noise floor.
 Appendix~\ref{app:splits} gives the training and validation records.
 % RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III to VI.
@@ -131,12 +131,12 @@ The \chg[own]{augmented}{final} model is able to capture the resonance of the sy
 \add[own]{\kwtwo{
 Without added states or without PS, the error on $Y$ with multisine stays 
 above 50\,\%. Two added states with PS reach 6.1\,\% 
-and eight added states give little further improvement.
+and eight added states give similar errors.
 Fig.~\ref{fig:res_val_curves} shows that the models trained with PS have a clearly
 lower validation error, compared to the other models during training. 
 }}
 % FEEDBACK (own, 2026-10-24): verdict for Aspect 1 (Maarten: argue every result).
-\add[own]{\kwtwo{The missing dynamics are therefore only captured with added states and PS.}}
+\add[own]{\kwtwo{In these runs, the missing vibration mode is only captured with added states and PS.}}
 % REMOVED (own, 2026-10-24): revnote asking for a validation-curve figure, answered by
 %   Fig. res_val_curves.
 
@@ -167,7 +167,7 @@ $\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2)}{\kwtwo{gives t
 \delmv[own]{below}{The combinations describing the damping deviate the most,
 while the mass combinations stay close to their true values.}%
 % FEEDBACK (own, 2026-10-24): uniqueness from the two starts, the criterion of Section I.
-\add[own]{\kwtwo{The estimates of $\mathcal M_{\mathrm{OBC}}$ from the two starts differ by 31.3\,\%, while those of $\mathcal M_{\mathrm U}$ differ by 36.4\,\%.}}
+\add[own]{\kwtwo{The estimates of $\mathcal M_{\mathrm{OBC}}$ from the two starts differ by 31.3\,\%, while those of $\mathcal M_{\mathrm U}$ differ by 36.4\,\%, in the norm of Table~\ref{tab:res_obc}.}}
 % FEEDBACK (own, 2026-10-24): OBC is 0.6 points worse on X (Table res_obc_constraint).
 The final model with the orthogonality constraint and the unconstrained model
 \chg[Dirk]{perform equally well}{\kwtwo{have similar performance}}.
@@ -182,9 +182,9 @@ It increases from 0.00 on the training records to 0.24 on the interpolation test
 \chg[own]{The}{\kwtwo{However, the}} missing dynamics are not orthogonal to these directions, their overlap is 0.59 on the interpolation test records.
 \del[own]{From the correct start, OBC also ends closer to the true values (Appendix~\mbox{\ref{app:choices}}).}%
 \delmv[own]{below}{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}}
-\mv[own]{above}{Both models have deviated further from the true combinations\del[own]{,} than their initial values.}
+\mv[own]{above}{Both models have deviated further from the true combinations\del[own]{,} than their initial values in the norm of Table~\ref{tab:res_obc}.}
 % FEEDBACK (own, 2026-10-24): final numbers (Results/24-10-2026/CSV): 83.1 against 69.1 is not double.
-\add[own]{\kwtwo{With the detuned start, $\mathcal M_{\mathrm U}$ deviates 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ 69.1\,\%.}}
+\add[own]{\kwtwo{With the detuned start, $\mathcal M_{\mathrm U}$ has a distance to the true values of 83.1\,\%, compared to 69.1\,\% for $\mathcal M_{\mathrm{OBC}}$.}}
 % FEEDBACK (own, 2026-10-24): the only reference to Table app_obc_na0; after the detuned numbers it contrasts with.
 % FEEDBACK (own, 2026-10-25): sentence and Table app_obc_na0 dropped (Dirk 2026-10-25).
 \del[own]{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}%
@@ -236,10 +236,10 @@ for extrapolation (E) and interpolation (I) (Aspect~3).}%
 \add[Dirk]{\kwtwo{For the final model, the mean errors between E and I differ by about 0.5 percentage points or less.}}
 Without multisine the model performs \chg[own]{as well or slightly above}{\kwtwo{as well as or slightly worse than}} the baseline.
 \chg[own]{The black box has 74 to 193\,\% on the records without multisine, and it is
-below the final model only on I2 $X_2$.}{\kwtwo{The black box is worse than the final model with and without multisine, and reaches 97 to 128\,\% without it.}}
-\add[Dirk]{\kwtwo{It even performs worse than the baseline model, except on $Y$ with multisine.}}
+below the final model only on I2 $X_2$.}{\kwtwo{The black box has higher mean errors than the final model with and without multisine, and reaches 97 to 128\,\% without it.}}
+\add[Dirk]{\kwtwo{Its mean errors are also higher than those of the baseline model, except on $Y$ with multisine.}}
 \chg[own]{On the \kw{multisine twins}, the final model stays below 10\,\% on $Y$, while the
-baseline and the black box are above 47\,\%.}{\kwtwo{With multisine, the final model stays below 8\,\% on all axes, while the errors of the baseline and the black box exceed 65\,\% on $Y$.}}
+baseline and the black box are above 47\,\%.}{\kwtwo{With multisine, the mean errors of the final model stay below 8\,\% on all axes, while the mean errors of the baseline and the black box exceed 65\,\% on $Y$.}}
 % FEEDBACK (own, 2026-10-24): verdict for Aspect 3 with its condition (Maarten: argue every result).
 \add[own]{\kwtwo{The final model generalises to the held-out positions and unseen motion profiles, but only improves on the baseline when the multisine excites the missing dynamics.}}
 % REMOVED (own, 2026-10-24): revnote on the generalisation figure; the figure is now Table
@@ -289,10 +289,9 @@ is only able to lower the error on $Y$ from 83.7\,\% for the baseline to 60.4\,\
 while two added states with PS reach 6.1\,\% (Table~\ref{tab:res_structure}).
 Training without PS does not seem to find this mode in the current setting, it stays above 50\,\%.}}
 Without multisine, the final model performs slightly worse than the baseline.
-For these records the baseline error is only a few percent of the serve error, 
+For these records the baseline error is only a few percent of the servo error, 
 and only four of the eighteen training records are 
-without multisine. Resulting in the records without multisine contributing relatively little 
-to the loss.
+without multisine.
 The final model remains far above the noise floor on every record.
 A possible reason is that the relative error is already small, 
 so reducing it further requires a better tuned optimisation.
@@ -305,8 +304,9 @@ directions on the training tuples, and for the most part on the validation and t
 compared to $\mathcal M_{\mathrm U}$ (Table~\ref{tab:res_obc_constraint}).
 However, the missing dynamics are not orthogonal to these directions, 
 their overlap is 0.59 on the interpolation test records (Table~\ref{tab:res_obc_constraint}).
-Orthogonality is defined to hold only to first order and at $\bar x=0$, 
-and the added states enter through $f_{\mathrm{aug}}$ without projection.
+Orthogonality holds exactly on the tuples at $\bar x=0$.
+The parameter directions are obtained from a first-order approximation of the baseline.
+The added states enter through $f_{\mathrm{aug}}$ without projection.
 This holds for a single step, not for the simulated output, 
 where the model is simulated over multiple steps with nonzero added states.
 Even when training starts from the true parameters, the

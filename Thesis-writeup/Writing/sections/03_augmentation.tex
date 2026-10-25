@@ -927,8 +927,7 @@ With \chg[own]{$\hat x^{\mathrm{fb}}_k=\bar x^{\mathrm{fb}}_k+x^c_k$}{$\hat x^{\
  \label{eq:aug_residual_split}
 \end{equation}
 The first three terms are the \chg[own]{model loop}{closed-loop model}.
-The last term is \chg[Dirk]{the force error of $K_1$ at $T_s$ above}{the difference between the forces from the
-system and model controllers}.}
+The last term \chg[Dirk]{is the force error of $K_1$ at $T_s$ above}{comes from the different controller rates and the averaging of the recorded force}.}
 \mv[own]{above}{\add[own]{\kwtwo{The noise $v$ is independent of $r$ and $u^{\mathrm{ff}}$ (Section~\ref{sec:problem}).}}
 If the controllers between the system and simulation differ,
 the equations are only approximate.
@@ -1957,8 +1956,7 @@ Here $\beta^{(i_1)}$ and $\theta^{(i_1)}_{\mathrm{enc}}$ are the parameters
 after S1 and $\theta^{\mathrm{S2}}_{\mathrm{aug}}$ \del[own]{contains the parameters
 }after S2. When S2 is skipped, $\vartheta_{\mathrm{PS}}$ contains the
 parameters \chg[own]{at the end of}{after} S1.
-PS \chg[own]{has only changed}{only changes} the starting point of minimising $V$\del[own]{
-with its initialisation phases}, not what is \del[own]{being }minimised.
+PS does not change what is minimised.
 % FEEDBACK (Dirk, 2026-10-23): no "models" here (the compared models are
 %   named in Section V); PS as subject, as in the sentence before.
 \chg[own]{The models with and without PS have the same number of parameters,

@@ -370,7 +370,7 @@ in Fig.~\ref{fig:gantry_system} from the Euler-Lagrange equations
 Let $L_b$ denote the cross-arm length between the two flexible joints.
 The generalised coordinates $q=[X\;\Theta\;Y]^\top$ are defined as 
 $X=(X_1+X_2)/2$ and 
-$\Theta=(X_1-X_2)/L_b$, the position and yaw angle of
+$\Theta=(X_1-X_2)/L_b$, using $\sin(\Theta)\approx\Theta$, the position and yaw angle of
 the cross-arm, while $Y$ is unchanged.
 % NOTE (2026-10-21, Dirk): Garcia Eq. (1) (PDF p3) defines
 %   Theta = asin((X1-X2)/L_b); ours is its small-angle form (sin Theta ~ Theta),
@@ -486,7 +486,7 @@ The yaw inertias of the cross-arm and payload are $J_b$ and $J_h$.
 The actuator damping coefficients are $c_{g1}$, $c_{g2}$ and $c_y$,
 while the flexible joints have stiffness $k_{b1}$, $k_{b2}$
 and damping $c_{b1}$, $c_{b2}$.
-The distance between the centres of mass of the payload
+The perpendicular offset between the centres of mass of the payload
 and cross-arm is $d$~\cite{garcia2013model}.
 The nominal values are taken from
 \cite[Table~I]{garcia2013model} and listed in

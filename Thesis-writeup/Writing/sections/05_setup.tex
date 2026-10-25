@@ -252,7 +252,7 @@ The motion profiles excite the low frequencies up to the loop crossover
 at }\chg[own]{$f_a$}{$150$~Hz}\mv[own]{VI-A}{ and a resonance at }\chg[own]{$f_a\sqrt{1+m_a/m_{h,r}}\approx2.12\,f_b$}{$212$~Hz}\del[own]{,}\mv[own]{VI-A}{
 in the}\add[own]{ \kwtwo{open-loop}}\mv[own]{VI-A}{ transfer function from $F_Y$ to $Y$.
 % REWRITE (Dirk 2026-10-24): from here to the end of VI-B in Dirk's words.
-We have chosen both frequencies to be above the crossover of the loop with $K_1$, so that the feedback does not suppress them in the data.}
+We have chosen both frequencies to be above the crossover of the loop with $K_1$, to reduce their suppression by feedback.}
 
 % FEEDBACK (own, 2026-10-24): what the data excite before how; Dirk's
 %   multisine sentence in his pattern (observation, then "we" and the
@@ -389,7 +389,7 @@ Interpolation stays within the training range, while each
 extrapolation record exceeds \add[own]{\kwtwo{at least }}one of the limits on $Y$,
 acceleration or velocity.
 % FEEDBACK (own, 2026-10-24): E6 renamed E5; the changed-controller record E5 is not in the thesis (Dirk 2026-10-24).
-\add[own]{\kwtwo{E5 exceeds multiple limits.
+\add[own]{\kwtwo{E5 exceeds the training acceleration range.
 Each extrapolation record has the same motion as one interpolation record,
 to show the effect of leaving the training range.
 We also simulate their motion with a multisine, because the motion
@@ -520,12 +520,12 @@ To determine the number of added states and whether to use PS
 initialisation, we compare the simulation error of $\mathcal M_{\mathrm U}$
 for each combination.
 These runs start from the true parameters, so that 
-parameter errors do not affect the choice.}}
+initial parameter errors do not affect the choice.}}
 
 \add[Dirk]{\kwtwo{The simulation error of $\mathcal M_{\mathrm{OBC}}$ and
 $\mathcal M_{\mathrm U}$ determines whether the constraint on the neural
-network limits the performance of the model, and whether OBC keeps the parameters
-interpretable.
+network limits the performance of the model. The parameter estimates show whether
+OBC keeps the parameters interpretable.
 Both are trained from the true parameters and from the 10\,\% detuned
 start, to test whether the estimate \chg[own]{is unique}{depends on the start}.}}
 

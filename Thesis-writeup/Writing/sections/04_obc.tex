@@ -84,10 +84,10 @@
 % RESTRUCTURE (2026-10-23, Dirk): opening states the section goal, as the
 %   "In this section" openings of Sections II and III; replaces the roadmap below.
 \kwtwo{In this section, we make the estimate of $\theta_{\mathrm{base}}$
-unique.}
+unique for the first-order one-step approximation.}
 The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
 minimising the loss function of Section~\ref{sec:aug_closed_loop} can be non-unique:
-different pairs can give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
+different baseline parameter values can give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
 % Jan v1 (Jan-2 p7): "Write this in Section IV"; the cut sentence repeats the next one.
 \chg[Jan]{Meaning that the rigid-body dynamics that the baseline parameters
 $\theta_{\mathrm{base}}$ are able to explain from the data, can instead be represented by
@@ -99,7 +99,7 @@ Orthogonality here is defined as the neural network correction to the
 physical states having no component in the directions in which a change of
 $\theta_{\mathrm{base}}$ is able to change the next state predicted by the baseline.
 % Maarten v2 p15: state when the true values are recovered.
-This gives us a unique estimate of $\theta_{\mathrm{base}}$ up to first order\chg[M-p15]{,
+This gives us a unique estimate of $\theta_{\mathrm{base}}$ for the first-order one-step approximation\chg[M-p15]{,
 but it does not guarantee recovering the true baseline parameters.}{\kwtwo{.
 This estimate equals the true parameters only if the missing dynamics
 themselves are orthogonal to these directions.}}
@@ -260,6 +260,7 @@ using \eqref{eq:aug_norm}.
 The tuples are calculated once before training, using all samples for which
 \eqref{eq:obc_tuples} can be calculated at $i$ and at the next sample $i+1$.
 \\
+We assume that the stacked matrix $\Phi_\Gamma$ has full column rank.
 Stacking the Jacobian, \kw{the offset} and the network output over the tuples, the projection
 of \eqref{eq:obc_gyorok} becomes
 \begin{equation}
@@ -382,6 +383,8 @@ where $\Xi\in\R^{6N}$ contains the unmodelled terms
 of~\cite[Eqs.~(14), (15)]{gyorok2026obc},
 the reconstruction error of \eqref{eq:obc_tuples}
 and the measurement noise.
+For this derivation, the baseline is linearised at the true parameters,
+$\beta_{\mathrm{lin}}=\beta^\star$.
 To first order around $\beta^\star$, the one-step error on the tuples is
 $\Xi-\Phi(\beta-\beta^\star)-\tilde F^{\mathrm n}_{\mathrm{aug}}$.
 Minimising the squared one-step error over $\beta$ gives $\hat\beta$.
