@@ -877,27 +877,6 @@ Selection & lowest validation NRMS$_e$\\
 
 % REMOVED (own, 2026-10-24): work-in-progress block "OBC and experiment details" (to-do bullets only).
 
-% NEW (2026-10-21, Dirk): proposed revision of Fig. 1 (Jasper, oral: the
-%   cross-arm may be held along its axis on one side only, one spring is
-%   enough). Joints as in the Simscape model kamtin-fp-model/03 Simulink
-%   gantry/gantry_2025a.slx: X1 pin-slot joint, X2 planar joint with Py
-%   stiffness and damping 0. Not yet replacing Fig. 1.
-\begin{figure}[t]
-  \centering
-  \def\gantryabsorber{0}% baseline only, as Fig. 1
-  \input{figures/gantry_system_floating_joint}
-  \caption{Proposed revision of Fig.~\ref{fig:gantry_system}. At $X_2$, a
-  prismatic joint lets the cross-arm slide along its axis, so only the joint
-  at $X_1$ holds it in that direction. In Fig.~\ref{fig:gantry_system} both
-  ends are held, which locks $\Theta$ for a rigid cross-arm; with the
-  prismatic joint, $\Theta$ is free, as the coordinates of
-  \eqref{eq:Ptransform} assume. The length mismatch that
-  Fig.~\ref{fig:gantry_system} ignores is second order in $\Theta$, so the
-  linear model \eqref{eq:eom} is unaffected; the revision corrects the
-  drawing, not the model. Both flexible joints turn through the same
-  angle $\Theta$, so only $k_{b1}+k_{b2}$ and $c_{b1}+c_{b2}$ enter the
-  equations of motion \eqref{eq:eom}.}
-  \label{fig:app_gantry_floating}
-\end{figure}
-\revnote{Benoemen prismatic joint
-torsion veer aan beiden kanten houden}
+% REMOVED (Dirk 2026-10-25): appendix figure "Proposed revision of Fig. 1"
+%   (fig:app_gantry_floating); the prismatic joint at X2 and both torsion
+%   springs are now in Fig. 1 itself (figures/gantry_system_with_absorber.tex).

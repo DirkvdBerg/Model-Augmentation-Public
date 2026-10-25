@@ -86,19 +86,29 @@ a different controller or on measured data.}
 %   limitation before the recommendation, recommendation and future work separated.
 % FEEDBACK (own, 2026-10-25): gantry-specific (research question "For the dual-drive gantry"): the
 %   vibration mode of the added mass, on Y, the damper combinations (Dirk 2026-10-25).
-For the dual-drive gantry, 
+% FEEDBACK (own, 2026-10-25): one answer per aspect and one to the research question; "vibration
+%   mode" as in Section V (not "absorber"); interpretability tied to the definition of Section I
+%   (Dirk 2026-10-25).
+For the dual-drive gantry,
 a parallel augmentation with added states
-is able to capture the mode of the added mass, spring and damper from closed-loop data when
+is able to capture the vibration mode of the added mass, spring and damper when
+it is trained in closed loop with the known controller and
 the added states are initialised with PS.
-The resulting model reduces the prediction error on $Y$ 
+The resulting model reduces the prediction error on $Y$
 when this mode is sufficiently excited in the data.
-The final model performs slightly worse than the baseline model on records without 
+The final model performs slightly worse than the baseline model on records without
 multisine excitation.
-The prediction errors on the interpolation and extrapolation records are similar, 
+The model generalises to held-out positions and unseen motion profiles:
+the prediction errors on the interpolation and extrapolation records are similar,
 and the final model performs better than the black box model.
-OBC is able to reduce the overlap between the neural network and the parameter directions. 
+Compared to unconstrained estimation,
+OBC is able to reduce the overlap between the neural network and the parameter directions.
 However, the parameter estimates still deviate from their true
 values and depend on where training starts.
+In conclusion, a parallel augmentation with added states initialised with
+PS improves the prediction of the gantry, but the uniqueness provided by
+OBC for a single state update does not make the trained parameters
+interpretable as defined in Section~\ref{sec:intro}.
 These results are limited to simulation with one controller.
 % OLD conclusion (until 2026-10-25), replaced by the paragraph above:
 % \revnote{Issue: the conclusion lists the results but does not judge them,

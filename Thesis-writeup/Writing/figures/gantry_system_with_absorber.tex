@@ -65,7 +65,21 @@
   \pgfmathsetmacro\vh{\hb+2*\rw+0.5*\Hh}      % payload centre height (v)
   \pgfmathsetmacro\ua{\Yp-0.5*\Lh-\ga-0.5*\Wa}  % absorber centre (u)
   \pgfmathsetmacro\vY{\vh+0.5*\Hh+30}          % height of the Y dimension line
-  \pgfmathsetmacro\xM{0.5*\Lb*cos(\th)+22.3+0.5*\Mw}  % |x| of actuator centres
+  \pgfmathsetmacro\xM{0.5*\Lb*cos(\th)+22.3+0.5*\Mw}  % |x| of actuator 1 centre
+  % X2 joint (ISO 3952-1 prismatic pair): the arm axis runs as a rod through
+  % the block; the block's stem leaves its side, perpendicular to the arm, and
+  % ends in the torsion spring k_b2; m_2 sits level with the spring, 11 units
+  % out so that the rod end stays clear of it
+  \def\gs{5}         % gap between beam end and block (u)
+  \def\Ls{14}        % block length (u)
+  \def\Hs{9.5}       % block height (v)
+  \def\ro{3.5}       % rod length beyond the block (u)
+  \def\vS{16}        % depth of the spring centre below the axis (v)
+  \def\rp{7.3}       % outer radius of both torsion springs
+  \pgfmathsetmacro\uB{-(0.5*\Lb+\gs+0.5*\Ls)}  % block centre (u)
+  \pgfmathsetmacro\xP{\uB*cos(\th)+\vS*sin(\th)}  % spring centre, world
+  \pgfmathsetmacro\yP{\uB*sin(\th)-\vS*cos(\th)}
+  \pgfmathsetmacro\xMb{-\xP+\rp+11+0.5*\Mw}    % |x| of actuator 2 centre
   % Lane for the d dimension and the F_Y arrow: on the CoM side of the payload
   % and clear of the red Y reference line, so it follows the sign of \Yp.
   \pgfmathsetmacro\ud{ifthenelse(\Yp<0,9,-9)}
@@ -74,9 +88,16 @@
   % ===================== cross arm =====================
   \begin{scope}[rotate=\th]
     \draw (-\Lb/2,-\hb) rectangle (\Lb/2,\hb);
-    \draw[cl] (-0.57*\Lb,0) -- (0.58*\Lb,0);
+    \draw[cl] (-0.5*\Lb,0) -- (0.58*\Lb,0);    % left: the rod continues the axis
     \coordinate (E1) at ( \Lb/2,0);
     \coordinate (E2) at (-\Lb/2,0);
+
+    % ==== X2 joint: prismatic (rod through block) + revolute (spring) ====
+    \draw (-0.5*\Lb,0) -- (-0.5*\Lb-\gs-\Ls-\ro,0);    % rod through the block
+    \draw (\uB-0.5*\Ls,-0.5*\Hs) rectangle (\uB+0.5*\Ls,0.5*\Hs);
+    \draw[<->] (\uB-0.5*\Ls,0.5*\Hs+3.5)                 % free direction
+               -- (\uB+0.5*\Ls,0.5*\Hs+3.5);
+    \draw (\uB,-0.5*\Hs) -- (\uB,-\vS);                  % stem to spring centre
 
     % ==== payload m_h on its wheels ====
     \draw[fill=white] (\Yp-\Lh/2,\vh-\Hh/2) rectangle (\Yp+\Lh/2,\vh+\Hh/2);
@@ -138,12 +159,11 @@
       \node[anchor=south] at ({0.5*\Yp},\vY+1) {$Y$};
     \end{scope}
 
-    % ==== flexible joints and L_b ====
+    % ==== flexible joint X1 and L_b (k_b2, c_b2 sit at the X2 spring) ====
     \draw[dim] ( \Lb/2,-\hb-2) -- ++(0,-24)   (-\Lb/2,-\hb-2) -- ++(0,-24);
     \draw[<->] (-\Lb/2,-\hb-18) -- node[pos=0.72, below=1pt] {$L_b$}
                ( \Lb/2,-\hb-18);
     \node[anchor=north west, inner sep=2.5pt] at ( \Lb/2,-\hb-19) {$k_{b1},\,c_{b1}$};
-    \node[anchor=north east, inner sep=2.5pt] at (-\Lb/2,-\hb-19) {$k_{b2},\,c_{b2}$};
   \end{scope}
 
   % ===================== generalized coordinates X, Theta (blue) =============
@@ -164,41 +184,58 @@
   % ===================== actuators, guides, forces =====================
   % \s = +1 : actuator 1 (right) ; \s = -1 : actuator 2 (left)
   \foreach \s/\i in {1/1,-1/2}{
-    \pgfmathsetmacro\y{\s*\yE}                 % row height (symmetric)
-    \coordinate (M\i) at (\s*\xM,\y);
-    \draw (\s*\xM-\Mw/2,\y-\Mw/2) rectangle (\s*\xM+\Mw/2,\y+\Mw/2);
+    \ifnum\s>0
+      \pgfmathsetmacro\y{\yE}                  % row height at the beam end
+      \pgfmathsetmacro\xm{\xM}
+    \else
+      \pgfmathsetmacro\y{\yP}                  % row height at the X2 spring
+      \pgfmathsetmacro\xm{\xMb}
+    \fi
+    \coordinate (M\i) at (\s*\xm,\y);
+    \draw (\s*\xm-\Mw/2,\y-\Mw/2) rectangle (\s*\xm+\Mw/2,\y+\Mw/2);
     \node at (M\i) {$m_\i$};
 
-    % flexible joint: spiral spring between beam end and actuator
-    \pgfmathsetmacro\xs{\s*(0.5*\Lb*cos(\th)+11)}
-    \draw (\xs,\y) -- (E\i);
-    \draw[line width=0.4pt] plot[domain=0:540, samples=100, smooth]  % 1.5 turns
-          ({\xs+(3.4+3.9*\x/540)*cos(90*(1-\s)-\s*(\x-540))},
-           {\y +(3.4+3.9*\x/540)*sin(90*(1-\s)-\s*(\x-540))});
-    \draw (\xs+\s*7.3,\y) -- (\s*\xM-\s*\Mw/2,\y);
+    \ifnum\s>0
+      % X1: spiral spring between beam end and actuator
+      \pgfmathsetmacro\xs{\s*(0.5*\Lb*cos(\th)+11)}
+      \draw (\xs,\y) -- (E\i);
+      \draw[line width=0.4pt] plot[domain=0:540, samples=100, smooth]  % 1.5 turns
+            ({\xs+(3.4+3.9*\x/540)*cos(90*(1-\s)-\s*(\x-540))},
+             {\y +(3.4+3.9*\x/540)*sin(90*(1-\s)-\s*(\x-540))});
+      \draw (\xs+\s*7.3,\y) -- (\s*\xm-\s*\Mw/2,\y);
+    \else
+      % X2: spring at the end of the block stem (drawn with the cross arm),
+      % 1.25 turns from the stem (up) to the actuator link (left)
+      \draw[line width=0.4pt] plot[domain=0:450, samples=90, smooth]
+            ({\xP+(3.4+3.9*\x/450)*cos(90+\x)},
+             {\yP+(3.4+3.9*\x/450)*sin(90+\x)});
+      \draw (\xP-\rp,\yP) -- (\s*\xm-\s*\Mw/2,\y);
+      \node[anchor=north, inner sep=2.5pt, align=left]
+           at (\xP,\yP-\rp) {$k_{b2}$\\$c_{b2}$};
+    \fi
 
     % linear guide: two rollers against a hatched wall
-    \pgfmathsetmacro\xb{\s*(\xM+\Mw/2+5.35)}
+    \pgfmathsetmacro\xb{\s*(\xm+\Mw/2+5.35)}
     \draw (\xb,\y+11.6) circle (5.35)  (\xb,\y-11.6) circle (5.35);
     \draw (\xb+\s*5.6,\y-20) -- (\xb+\s*5.6,\y+20);
     \foreach \k in {0,...,5}
       \draw[ext] (\xb+\s*5.6,\y+18-7.5*\k) -- ++(\s*6.5,-6.5);
 
     % actuator force
-    \draw[->] (\s*\xM,\y+\Mw/2+30) -- (\s*\xM,\y+\Mw/2);
+    \draw[->] (\s*\xm,\y+\Mw/2+30) -- (\s*\xm,\y+\Mw/2);
     \ifnum\gantryabsorber>0                   % rail friction, grey; the label
       \ifnum\i=2 \def\FXanchor{south east}\def\FXdx{\Mw/2}% grows outward,
       \else \def\FXanchor{south}\def\FXdx{0}\fi          % clear of q_a
-      \node[anchor=\FXanchor] at (\s*\xM+\FXdx,\y+\Mw/2+31)
+      \node[anchor=\FXanchor] at (\s*\xm+\FXdx,\y+\Mw/2+31)
             {$F_{X\i}$\textcolor{black!55}{$\,-\,F_{\mathrm{fr},X_\i}$}};
     \else
-      \node[anchor=south] at (\s*\xM,\y+\Mw/2+31) {$F_{X\i}$};
+      \node[anchor=south] at (\s*\xm,\y+\Mw/2+31) {$F_{X\i}$};
     \fi
 
     % measured position X_i (red), drawn from the carriage so that it does
     % not start at the fixed world (feedback Js24, 2026-10-18); was a tick
     % and arrow outside the wall hatching
-    \pgfmathsetmacro\xr{\s*(\xM+\Mw/2-1.5)}   % outer edge of the carriage,
+    \pgfmathsetmacro\xr{\s*(\xm+\Mw/2-1.5)}   % outer edge of the carriage,
                                               % clear of the k_b, c_b labels
     \draw[red,->] (\xr,\y-\Mw/2) -- (\xr,\y-\Mw/2-22);
     \node[red, anchor=north] at (\xr,\y-\Mw/2-23) {$X_\i$};
