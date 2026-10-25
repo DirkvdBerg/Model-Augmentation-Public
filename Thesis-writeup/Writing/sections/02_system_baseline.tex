@@ -557,12 +557,10 @@ the inertia matrix \mbox{\eqref{eq:mass_matrix}} into}{\kwtwo{The inertia matrix
   \label{eq:Msplit}
 \end{equation}
 \chg[Dirk]{$M_0$, $M_1$ and $M_2$ are}{where $M_0$, $M_1$ and $M_2$ are} given in Appendix~\ref{app:lfr-details}.
-\\
 With positive masses and inertias, $M(Y)\succ0$ for every $Y\in\R$
 (Appendix~\ref{app:lfr-wellposed}), 
 \chg[Dirk]{the baseline LFR is well posed throughout the operating range}{\kwtwo{we invert $M(Y)$ to calculate $\ddot q$
 from \eqref{eq:eom}}}.
-
 % REVISED (2026-10-22, Dirk): the 2026-10-20 well-posedness sentence
 %   "For this realisation, well-posedness is equivalent to nonsingularity
 %   of M(Y) (Appendix A.2)" moved to A.2, where the Schur step shows it.
@@ -593,7 +591,6 @@ baseline model in state-space form~\cite{hoekstra2026lfr}.}}
 \mbox{\eqref{eq:Ptransform}}.}
 % REVNOTE closed (2026-10-22, Dirk): "Make clear that the acceleration is
 %   obtained from the formulas" is answered by eq:base_ss (Maarten v2 p5).
-
 % FEEDBACK v2 (2026-10-22, own): the rational-dependence sentence moved to
 %   the LFR paragraph, whose LFR it motivates (Dirk 2026-10-22).
 \delmv[own]{below}{Because of $M(Y)^{-1}$, \mbox{\eqref{eq:base_ss}}
@@ -645,11 +642,9 @@ Section~\mbox{\ref{sec:augmentation}} is obtained.}
 %   rational (Dirk 2026-10-22).
 Because of $M(Y)^{-1}$\add[own]{ and \eqref{eq:Msplit}},
 the matrices in \eqref{eq:base_ss} depend rationally on $Y$.
-\add[Dirk]{\kwtwo{We can also write the baseline as an exact linear fractional
-representation (LFR), with a linear time-invariant part
-interconnected with a scheduling block that depends on $Y$.
-Appendix~\ref{app:lfr-details} gives the derivation and shows
-that the algebraic loop is well posed if $M(Y)$ is nonsingular.}}
+\add[Dirk]{\kwtwo{The baseline also has an exact linear fractional representation (LFR),
+derived in Appendix~\ref{app:lfr-details}. Its algebraic loop is well
+posed if $M(Y)$ is nonsingular.}}
 % Moved to Appendix A.2 with their text: the LFR introduction, Fig. 2
 %   (fig:lfr), eq:lfr_mass_factorization, eq:lfr_chain, eq:lfr_constant,
 %   eq:delta, eq:lfr_G and the loop closing.
@@ -701,9 +696,9 @@ require that their identifiable combinations are estimated uniquely
 %   instead of the Section I motivation; III-C answers that goal
 %   (Dirk 2026-10-22).
 \delmv[own]{III-C, below}{The fourteen parameters $\theta$ of
-Table~\mbox{\ref{tab:nominal_parameters}} cannot all be identified from input-output data.}
+Table~\mbox{\ref{tab:nominal_parameters}} cannot all be identified from input-output data.}%
 \del[own]{The positions $X_1$, $X_2$, $Y$ are measured, which gives
-$q$ through \mbox{\eqref{eq:Ptransform}}, and the forces $u$ are known in absolute scale.}
+$q$ through \mbox{\eqref{eq:Ptransform}}, and the forces $u$ are known in absolute scale.}%
 % FEEDBACK v2 (2026-10-22, Maarten mail "kan wel wat korter"): struck, it
 %   repeats Section II (D_N holds forces and measured positions) and III-A
 %   (eq:Ptransform); "forces and positions in D_N" below carries it
@@ -727,7 +722,7 @@ positions in $\mathcal D_N$ (Section~\mbox{\ref{sec:problem}})}.}
 %   positions of D_N, Section II) named here (Dirk 2026-10-22).
 \delmv[own]{below}{With unconstrained initial conditions and full actuation ($P$ invertible),
 any acceleration $\ddot q$ can be reached at any state within the operating range.}\del[own]{
-Since $q$ is measured, the state $(q,\dot q)$ is observable.}
+Since $q$ is measured, the state $(q,\dot q)$ is observable.}%
 % FEEDBACK v2 (2026-10-22, Maarten mail): observability sentence struck, the
 %   argument uses equal positions only (Dirk 2026-10-22).
 % The state $(q,\dot q)$ is observable, because $q$ is measured, and
@@ -735,8 +730,7 @@ Since $q$ is measured, the state $(q,\dot q)$ is observable.}
 % of $q$ has its own force.
 Two parameter sets $\theta$ and $\theta'$ that produce the same
 \chg[M-p5]{motion}{positions $q$} for every input force
-\del[M-p5]{ satisfy}\add[M-p5]{
-also have the same $\dot q$ and $\ddot q$, since both are derivatives
+\del[M-p5]{ satisfy}\add[M-p5]{also have the same $\dot q$ and $\ddot q$, since both are derivatives
 of $q$.}
 % Subtracting \eqref{eq:eom} for $\theta'$ from that for $\theta$ gives}
 % FEEDBACK v2 (2026-10-22, Maarten p5): (a) "reference for this statement?
@@ -836,7 +830,7 @@ presented in the results}.
 % Section~\ref{sec:obc}. Recovery from the closed-loop records is examined in
 % Section~\ref{sec:setup}.
 % \todo{Missing: gautier1990minimum passage unchecked (no local PDF); metadata verified, DOI 10.1109/70.56655. Candidate: obtain the paper and check that it defines base inertial parameters as the minimal set of regressor coefficients.}
-\\
+
 \chg[own]{Positive $\theta_{\mathrm{base}}$ does not imply $M(Y)\succ0$. For}{In
 Section~\mbox{\ref{sec:lfr}}, $M(Y)\succ0$ follows from positive masses and
 inertias. For}
