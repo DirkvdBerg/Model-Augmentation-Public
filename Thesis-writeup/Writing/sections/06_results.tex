@@ -314,8 +314,7 @@ the estimates cannot be used to trace a change in the machine back to a physical
 For the interpolation and extrapolation records both the baseline and the final model 
 have a similar error (Table~\ref{tab:res_generalisation}), 
 However, most extrapolation records extend beyond the training range in only one direction.
-The black box model underperforms, while we would expect it to have similar results to the grey box model, 
-as in~\cite{hoekstra2026lfr}.
+The black box model underperforms, while Hoekstra et al.\ report similar results for black-box and dynamic augmented models~\cite[Table~8]{hoekstra2026lfr}.
 Possible reasons for the underperformance are that it starts from a random initialisation, 
 instead of for example a best linear approximation.
 The black box model also has to learn the controller dynamics, because
