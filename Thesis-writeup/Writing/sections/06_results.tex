@@ -248,100 +248,158 @@ baseline and the black box are above 47\,\%.}{\kwtwo{With multisine, the final m
 % Floats stay in their own subsection (Dirk 2026-10-24).
 \FloatBarrier
 \subsection{Discussion}\label{sec:discussion}
-\todo{Should this be a separate subsection? Didnt Maarten state to include it in the text itself...?}
-% RESTRUCTURE (2026-10-19, Maarten p15): moved here from Section VIII (sec:conclusion), word for word.
-\mv[M-p15]{VIII}{The improvement on the multisine records comes mainly from the
-learned absorber mode (Fig.~\ref{fig:res_frf}).
-The results in Table~\ref{tab:app_structure} (Appendix~\ref{app:choices})
-show that both the added states and their PS initialisation are needed
-to obtain this improvement.
-Without multisine, the final model performs slightly worse than
-the baseline.
-The baseline is already accurate on these records, so the learned
-correction might overfit on the multisine records
-and introduce small errors on the records without multisine.
-\revnote{Issue: without multisine the final model stays at the level of
-the baseline (3.8 against 3.4\,\% on $Y$), far above the noise floor.
-The data give no sign that the friction is learned, but they also do not
-show that the remaining error is caused by friction.
-Question: is ``consistent with the unmodelled friction'' the right
-wording for this remaining error?}
+% FEEDBACK (Dirk, 2026-10-24): Discussion rewritten with Dirk in the chat, one paragraph per aspect
+%   plus limits, from his own sentences (Hoekstra 2026 Sec. 6.3 and 7.4 as model); new: integrators,
+%   controller rate (D-265), controller hides overlap, black box against grey box. Numbers from
+%   Results/24-10-2026/CSV. Answers M-p15b (separate subsection), M-p15c, M-p15e, M-p15f, Q-p9.
+%   The old text is kept below as commented-out source.
+%   Marks (2026-10-24, Dirk): black = Dirk's own sentences, red = new or changed words only.
+The improvement on the multisine records comes mainly from the
+learned absorber mode\add[Dirk]{\kwtwo{, which needs both the added states and their PS
+initialisation}} (Fig.~\ref{fig:res_frf}\add[Dirk]{\kwtwo{, Table~\ref{tab:res_structure}}}).
+Without multisine, the final model performs slightly worse than the baseline.
+% FEEDBACK (Dirk, 2026-10-24): review: observation first, the integrators as a possible cause only.
+\add[Dirk]{\kwtwo{Both models stay far above the noise floor on these records.
+A possible cause is the free integrators on $X$ and $Y$, which accumulate
+small errors.
+The training simulates the controller at 4~kHz, while the data are generated
+with the controller at 20~kHz.
+The augmentation can therefore learn part of this difference as plant
+dynamics.}}
 \\
-% FEEDBACK (own, 2026-10-24): final R1 norm (Results/24-10-2026/CSV/res_obc_combinations.csv,
-%   D-259 scaling); final R2 59.5 % against R5 58.3 % from the correct start.
-% FEEDBACK (Dirk, 2026-10-24): the constraint holds, but the missing dynamics are not
-%   orthogonal to the baseline; selection uses the validation error only, because the
-%   truth is unknown. The todo "Use this?" is answered: the sentence is kept.
-OBC reduces the final combination error compared with the
-unconstrained model (\chg[own]{47.7}{\kwtwo{69.1}} against 83.1\,\%), but the parameters
-still end up further from the truth than at their initial values
-(Table~\ref{tab:res_obc}).
-\chg[own]{The missing dynamics have a truth overlap of 0.59 with the
-parameter directions.
-The truth overlap of 0.59 means}{\kwtwo{The network overlap of OBC is much lower than that of
-the unconstrained model, which shows that the constraint holds.
-The missing dynamics themselves are not orthogonal to the parameter directions.
-Their truth overlap is 0.59.
-This means}} $\Phi^\top\Xi\neq0$, \chg[own]{so the recovery
-condition of Section~\mbox{\ref{sec:obc_ident}} is not met and OBC is not
-expected to recover the true values.}{\kwtwo{and the recovery condition of
-Section~\ref{sec:obc_ident} is not met.
-OBC keeps this part of the missing dynamics out of the network, and the
-physical parameters absorb it instead.
-From the correct start, OBC therefore also moves away from the true values
-(Table~\ref{tab:app_obc_full}).}}
-The orthogonality holds only to first order and at $\bar x=0$.
-During training, the added states enter the physical states through
-$f_{\mathrm{aug}}$ without projection.
-This is a limitation of imposing the constraint at $\bar x=0$.
-\add[own]{\kwtwo{The model is selected on the validation error only
-(Section~\ref{sec:aug_closed_loop}), because the true parameters are unknown
-outside simulation.
-A small decrease in the validation error can therefore come with a large
-drift of the damper combinations.}}
-With OBC the estimates from the true and detuned starts are closer together, 
-but still differ (Table~\ref{tab:app_obc_full}).
-The results therefore show less dependence on initialisation,
-but does not establish uniqueness.
+OBC reduces the \del[Dirk]{final }combination error compared with the
+unconstrained model (69.1 against 83.1\,\%), but the parameters still end up
+further from the truth than at their initial values (Table~\ref{tab:res_obc}).
+% FEEDBACK (own, 2026-10-24): approved wording changes: separate the recovery explanation and name the comparison.
+\add[Dirk]{\kwtwo{The constraint holds, but the missing dynamics are not orthogonal to the
+parameter directions\chg[own]{ (truth overlap 0.59)}{. Their overlap is 0.59}, so the recovery condition of
+Section~\ref{sec:obc_ident} is not met\del[own]{ and the parameters are biased}.
+In closed loop, the controller can also hide the effect of this bias on the
+output.
+\chg[own]{From the correct start and without added states}{Without added states and starting from the true parameters}, OBC does not end closer to
+the true values\add[own]{ than the unconstrained model}.}}
+With OBC the estimates from the \chg[Dirk]{true and detuned}{\kwtwo{two}} starts are closer together, but still
+differ\add[Dirk]{\kwtwo{ (31.3 against 36.4\,\%)}}.
+% FEEDBACK (Dirk, 2026-10-24): review: observation and possible reason separated (Dirk's two
+%   sentences); no uniqueness claim either way (Section IV, M-p15e).
+The orthogonality holds only to first order and at $\bar x=0$, and the added
+states enter through $f_{\mathrm{aug}}$ without projection.
+\add[Dirk]{\kwtwo{OBC therefore reduces the dependence on the start, but does not recover
+the true values.}}
 \\
-The black box model performs poorly on its training records and
-had not converged within the available budget
-(Table~\ref{tab:app_bb_search}).
-% The final model maintains its accuracy on all extrapolation
-% records (Fig.~\ref{fig:res_generalisation}).
-% However, each record extends beyond the training range in only
-% one direction, so the results do not establish how the model
-% behaves further outside this range.
-The black box model is also randomly initialised and not trained 
-with the known controller.
-Having a disadvantages starting position. t
-\\
-% NEW (2026-10-20, Dirk; LFR audit): role of the LPV-LFR, in the text so it
-%   survives submission (the revnote does not).
-% RESTRUCTURE (2026-10-22, Dirk): the LFR derivation is now in Appendix A.2;
-%   III-B gives the baseline transition eq:base_ss.
-\kwtwo{The baseline is represented as an LPV-LFR \chg[Dirk]{(Section~\mbox{\ref{sec:lfr}})}{(Appendix~\ref{app:lfr-details})},
-which is well posed for admissible physical parameters.
-The implementation resolves its loop analytically, and the learned correction
-is added to the resulting discrete-time state update.
-The augmentation therefore uses the baseline transition, but does not connect
-to the latent signals of the LFR.
-The augmented model is evaluated in closed-loop simulation; LPV controller
-synthesis with this model is outside the scope of this work.}
+The final model maintains its accuracy on all extrapolation
+records\add[Dirk]{\kwtwo{, but}} each record extends beyond the training range in only one
+direction (Table~\ref{tab:res_generalisation}).
+The black box model performs poorly on its training records and \chg[Dirk]{had not converged}{\kwtwo{did not converge}} within the available budget (Table~\ref{tab:app_bb_search}).
+% FEEDBACK (own, 2026-10-24): approved wording change: separate parameter initialisation from controller use.
+\chg[own]{It is also randomly initialised and
+trained without the controller, while the grey box
+starts from the baseline with the controller in the loop}{\kwtwo{The black box model starts from randomly initialised parameters, while the
+grey box starts from the physics baseline.
+The black box is also trained without the controller}}.
 \\
 The results are limited to simulation with one seed and the
 same controller used to generate the data.
-Training and evaluation are both performed in closed loop,
-where the controller can suppress errors in the plant model.
-\kwtwo{Through the feedback, the recorded input is correlated with the
-measurement noise\add[own]{, while SUBNET assumes an input that is
-independent of the noise~\cite{beintema2023subnet}}, so the consistency
-of the estimate is not shown.}
-% FEEDBACK (own, 2026-10-21): SUBNET's independence assumption is stated in
-%   IV-C (Beintema 2023 Sec. 2.1); the correlation is stated in Section II
-%   (Dirk 2026-10-21).
-It remains unclear whether the improvements would hold with
-a different controller or on measured data.}
+Through the feedback, the recorded input is correlated with the measurement
+noise, so the consistency of the \add[Dirk]{\kwtwo{SUBNET }}estimate\add[Dirk]{\kwtwo{~\cite{beintema2023subnet}}} is
+not shown.
+It remains unclear whether the improvements would hold with a different
+controller or on measured data.
+% OLD Discussion (until 2026-10-24), replaced by the four paragraphs above:
+% \todo{Should this be a separate subsection? Didnt Maarten state to include it in the text itself...?}
+% % RESTRUCTURE (2026-10-19, Maarten p15): moved here from Section VIII (sec:conclusion), word for word.
+% \mv[M-p15]{VIII}{The improvement on the multisine records comes mainly from the
+% learned absorber mode (Fig.~\ref{fig:res_frf}).
+% The results in Table~\ref{tab:app_structure} (Appendix~\ref{app:choices})
+% show that both the added states and their PS initialisation are needed
+% to obtain this improvement.
+% Without multisine, the final model performs slightly worse than
+% the baseline.
+% The baseline is already accurate on these records, so the learned
+% correction might overfit on the multisine records
+% and introduce small errors on the records without multisine.
+% \revnote{Issue: without multisine the final model stays at the level of
+% the baseline (3.8 against 3.4\,\% on $Y$), far above the noise floor.
+% The data give no sign that the friction is learned, but they also do not
+% show that the remaining error is caused by friction.
+% Question: is ``consistent with the unmodelled friction'' the right
+% wording for this remaining error?}
+% \\
+% % FEEDBACK (own, 2026-10-24): final R1 norm (Results/24-10-2026/CSV/res_obc_combinations.csv,
+% %   D-259 scaling); final R2 59.5 % against R5 58.3 % from the correct start.
+% % FEEDBACK (Dirk, 2026-10-24): the constraint holds, but the missing dynamics are not
+% %   orthogonal to the baseline; selection uses the validation error only, because the
+% %   truth is unknown. The todo "Use this?" is answered: the sentence is kept.
+% OBC reduces the final combination error compared with the
+% unconstrained model (\chg[own]{47.7}{\kwtwo{69.1}} against 83.1\,\%), but the parameters
+% still end up further from the truth than at their initial values
+% (Table~\ref{tab:res_obc}).
+% \chg[own]{The missing dynamics have a truth overlap of 0.59 with the
+% parameter directions.
+% The truth overlap of 0.59 means}{\kwtwo{The network overlap of OBC is much lower than that of
+% the unconstrained model, which shows that the constraint holds.
+% The missing dynamics themselves are not orthogonal to the parameter directions.
+% Their truth overlap is 0.59.
+% This means}} $\Phi^\top\Xi\neq0$, \chg[own]{so the recovery
+% condition of Section~\mbox{\ref{sec:obc_ident}} is not met and OBC is not
+% expected to recover the true values.}{\kwtwo{and the recovery condition of
+% Section~\ref{sec:obc_ident} is not met.
+% OBC keeps this part of the missing dynamics out of the network, and the
+% physical parameters absorb it instead.
+% From the correct start, OBC therefore also moves away from the true values
+% (Table~\ref{tab:app_obc_full}).}}
+% The orthogonality holds only to first order and at $\bar x=0$.
+% During training, the added states enter the physical states through
+% $f_{\mathrm{aug}}$ without projection.
+% This is a limitation of imposing the constraint at $\bar x=0$.
+% \add[own]{\kwtwo{The model is selected on the validation error only
+% (Section~\ref{sec:aug_closed_loop}), because the true parameters are unknown
+% outside simulation.
+% A small decrease in the validation error can therefore come with a large
+% drift of the damper combinations.}}
+% With OBC the estimates from the true and detuned starts are closer together, 
+% but still differ (Table~\ref{tab:app_obc_full}).
+% The results therefore show less dependence on initialisation,
+% but does not establish uniqueness.
+% \\
+% The black box model performs poorly on its training records and
+% had not converged within the available budget
+% (Table~\ref{tab:app_bb_search}).
+% % The final model maintains its accuracy on all extrapolation
+% % records (Fig.~\ref{fig:res_generalisation}).
+% % However, each record extends beyond the training range in only
+% % one direction, so the results do not establish how the model
+% % behaves further outside this range.
+% The black box model is also randomly initialised and not trained 
+% with the known controller.
+% Having a disadvantages starting position. t
+% \\
+% % NEW (2026-10-20, Dirk; LFR audit): role of the LPV-LFR, in the text so it
+% %   survives submission (the revnote does not).
+% % RESTRUCTURE (2026-10-22, Dirk): the LFR derivation is now in Appendix A.2;
+% %   III-B gives the baseline transition eq:base_ss.
+% \kwtwo{The baseline is represented as an LPV-LFR \chg[Dirk]{(Section~\mbox{\ref{sec:lfr}})}{(Appendix~\ref{app:lfr-details})},
+% which is well posed for admissible physical parameters.
+% The implementation resolves its loop analytically, and the learned correction
+% is added to the resulting discrete-time state update.
+% The augmentation therefore uses the baseline transition, but does not connect
+% to the latent signals of the LFR.
+% The augmented model is evaluated in closed-loop simulation; LPV controller
+% synthesis with this model is outside the scope of this work.}
+% \\
+% The results are limited to simulation with one seed and the
+% same controller used to generate the data.
+% Training and evaluation are both performed in closed loop,
+% where the controller can suppress errors in the plant model.
+% \kwtwo{Through the feedback, the recorded input is correlated with the
+% measurement noise\add[own]{, while SUBNET assumes an input that is
+% independent of the noise~\cite{beintema2023subnet}}, so the consistency
+% of the estimate is not shown.}
+% % FEEDBACK (own, 2026-10-21): SUBNET's independence assumption is stated in
+% %   IV-C (Beintema 2023 Sec. 2.1); the correlation is stated in Section II
+% %   (Dirk 2026-10-21).
+% It remains unclear whether the improvements would hold with
+% a different controller or on measured data.}
 % REVNOTE (2026-10-20, Dirk): role of the LFR; checked against
 %   blocks.py Gantry_State_Block (closed-form loop, then G and Delta) and
 %   Drenth 2025 (paper Sec. 1, thesis Ch. 1: LPV-LFR for controller synthesis).

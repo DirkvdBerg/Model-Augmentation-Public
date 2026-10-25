@@ -1,0 +1,1380 @@
+﻿key,thesis_file,thesis_line,category,command,locator,thesis_excerpt,pdf,suggested_pdf_pages,page_matching_status,user_judgment,user_notes
+irds2022,sections/01_introduction.tex,60,retained text,cite,,"57: \cite{hwang2024semiconductor}.
+58: Manufacturing these devices requires high-precision motion systems,
+59: with strict requirements on alignment accuracy, yield, throughput
+60: and cost~\cite{irds2022,workman2021diewafer}.
+61: % This thesis is done in collaboration with ASMPT, which makes use of
+62: % dual-drive gantries as high-precision motion systems in some of its
+63: % products.",IRDS-2022-Executive-summary.pdf,63; 49,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+workman2021diewafer,sections/01_introduction.tex,60,retained text,cite,,"57: \cite{hwang2024semiconductor}.
+58: Manufacturing these devices requires high-precision motion systems,
+59: with strict requirements on alignment accuracy, yield, throughput
+60: and cost~\cite{irds2022,workman2021diewafer}.
+61: % This thesis is done in collaboration with ASMPT, which makes use of
+62: % dual-drive gantries as high-precision motion systems in some of its
+63: % products.",Workman-2021-Die-to-wafer-hybrid-bonding.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/01_introduction.tex,80,retained text,cite,,"77: locations.}
+78: The shared beam couples the dynamics of
+79: both actuators, so the motion of one actuator
+80: influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
+81: The system} exhibits position-dependent behaviour
+82: \del[own]{\cite{garcia2013model, teo2007dynamic} }and flexible dynamics
+83: \cite{garcia2013model}.",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/01_introduction.tex,83,retained text,cite,,"80: influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
+81: The system} exhibits position-dependent behaviour
+82: \del[own]{\cite{garcia2013model, teo2007dynamic} }and flexible dynamics
+83: \cite{garcia2013model}.
+84: % CHANGED: citation split; Teo supports coupling and position dependence,
+85: %   not flexibility (Garcia Sec. 2, flexible joints)
+86: % FEEDBACK v2: LPV sentence struck (Dirk 2026-10-20): added for Q11 while",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,114,retained text,cite,,"111: is a high-precision motion system of ASMPT, used in back-end
+112: semiconductor assembly and packaging equipment.}
+113: \chg[ASMPT]{The gantry}{\kwtwo{We consider a dual-drive gantry with}} \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+114: third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system})\add[own]{\kwtwo{, as in Garc\'ia-Herreros et al.~\cite{garcia2013model}}}.
+115: % \chg[ASMPT]{The gantry}{\kwtwo{The dual-drive gantry of Garc\'ia-Herreros 
+116: % et al.~\cite{garcia2013model}}} has \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+117: % third \add[Js21]{linear }actuator that moves a payload along this ",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,2; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,132,retained text,cite,,"129:   \input{figures/gantry_system_with_absorber}
+130:   \caption{
+131:   Lumped-parameter model of the Dual-drive gantry stage, adapted from   
+132:   \cite{garcia2013model}. 
+133:   Red labels are actuator coordinates and blue labels generalised coordinates, 
+134:   with $Y$ in both.}
+135:   % FEEDBACK: caption taken out of its \todo, ""Still need to add springs to",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,155,retained text,cite,,"152: Here $F_{X1}$, $F_{X2}$ and $F_Y$ are the forces and
+153: $X_1$, $X_2$ and $Y$ the measured positions of the
+154: \chg[Dirk]{two X actuators and the Y actuator}{two X and the Y actuators}%
+155: \add[Q17]{\kwtwo{, each from a linear encoder~\cite{garcia2013model}}}.
+156: % FEEDBACK v1 (2026-10-21): Q17 (""add location of encoders""): Garcia Sec.
+157: %   2.1 (PDF p2), each actuator has a linear encoder that measures its
+158: %   position. Js22 (""positions of what? the stages?""): no change, ""of the",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,5; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,368,retained text,cite,Eqs.~(3) to~(8),"365: %   implementation (kamtin-fp-model/02 EulerLagrange/EulerLagrange.m).
+366: Garc\'ia-Herreros et al.\ derive the equations of motion of the model
+367: in Fig.~\ref{fig:gantry_system} from the Euler-Lagrange equations
+368: \cite[Eqs.~(3) to~(8)]{garcia2013model}.
+369: Let $L_b$ denote the cross-arm length between the two flexible joints.
+370: The generalised coordinates $q=[X\;\Theta\;Y]^\top$ are defined as 
+371: $X=(X_1+X_2)/2$ and ",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 8; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/02_system_baseline.tex,382,retained text,cite,,"379: % associated with the
+380: % \chg[Dirk]{nonuniform load distribution}{\kwtwo{load distribution over $X_1$ and $X_2$, which changes with the payload position $Y$,}} explicit \cite{garcia2013model}.}
+381: These coordinates avoid closed kinematic chains when defining the
+382: kinematics~\cite{garcia2013model}.
+383: They also show the coupling caused by the non-uniform load distribution
+384: between actuators $X_1$ and $X_2$, from the payload and differences in
+385: motor characteristics.",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,419,retained text,cite,,"416: % both the load distribution over the two drives and the inertia about the yaw axis. 
+417: % The baseline keeps this dependence in linear parameter-varying (LPV) form, 
+418: % with the measured position $Y$ as scheduling variable \cite{toth2010modeling}.
+419: Following Garc\'ia-Herreros et al. \cite{garcia2013model}, the baseline assumes $\cos(\Theta)\approx1$ and $\sin(\Theta)\approx0$, 
+420: valid for small yaw angles, and assumes that the Coriolis and centripetal force terms are
+421: negligible compared to the inertia, damping, and stiffness forces.
+422: % NEW (2026-10-21, Dirk): Garcia Sec. 2.3 moves m_h d Ydd to the force",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 4,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,426,retained text,cite,Eq.~(6),"423: %   vector (Eq. 15) and treats Y separately (Eq. 17); the baseline keeps it in M.
+424: %\kwtwo{Unlike~\cite[Sec.~2.3.1]{garcia2013model}, $M(Y)$ keeps the coupling $-m_hd$ between $\Theta$ and $Y$.}
+425: Our baseline model does not include the Coulomb friction
+426: of~\cite[Eq.~(6)]{garcia2013model}.
+427: Instead, it is part of the missing dynamics of Section~\ref{sec:problem}.
+428: % TODO closed (2026-10-21): Sec. 2.2 checked, Garcia PDF p3 lists the Coulomb
+429: %   forces c_c1, c_c2, c_cy of X1, X2 and Y.",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/02_system_baseline.tex,489,retained text,cite,,"486: while the flexible joints have stiffness $k_{b1}$, $k_{b2}$
+487: and damping $c_{b1}$, $c_{b2}$.
+488: The distance between the centres of mass of the payload
+489: and cross-arm is $d$~\cite{garcia2013model}.
+490: The nominal values are taken from
+491: \cite[Table~I]{garcia2013model} and listed in
+492: Appendix~\ref{app:params}.",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,4; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,491,retained text,cite,Table~I,"488: The distance between the centres of mass of the payload
+489: and cross-arm is $d$~\cite{garcia2013model}.
+490: The nominal values are taken from
+491: \cite[Table~I]{garcia2013model} and listed in
+492: Appendix~\ref{app:params}.
+493: % TODO closed (2026-10-21, Dirk): the sentence stays; the simulation uses the
+494: %   Table I values (todo was ""not identified on the present Telica machine"").",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/05_setup.tex,89,retained text,cite,,"86: \add[own]{\kwtwo{Fig.~\ref{fig:gantry_absorber} shows the baseline model with
+87: both additions.}}
+88: The first is Coulomb friction at the actuators $X_1$, $X_2$ and $Y$, as
+89: modelled by Garc\'ia-Herreros et al.~\cite{garcia2013model}.
+90: We left it out of the baseline to add nonlinear unmodelled dynamics to the
+91: system, for the augmented model to capture.
+92: % FEEDBACK (own, 2026-10-24): the display lead-in states this (Dirk 2026-10-24).",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,9; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/05_setup.tex,133,retained text,cite,,"130: For $\lvert v_i\rvert\gg v_{\mathrm{fr}}$, the friction
+131: approaches the Coulomb law
+132: $F_{\mathrm{fr},i}=c_{c,i}\operatorname{sign}(v_i)$
+133: of~\cite{garcia2013model}.
+134: % FEEDBACK (own, 2026-10-24): c_c sentence moved here, where c_c appears;
+135: %   v_fr tuning moved to Appendix F-C, next to its 3 v_fr check (Dirk 2026-10-24).
+136: \mv[own]{below}{The friction levels $c_c$ are taken from Garc\'ia-Herreros et",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/05_setup.tex,137,retained text,cite,Table~I,"134: % FEEDBACK (own, 2026-10-24): c_c sentence moved here, where c_c appears;
+135: %   v_fr tuning moved to Appendix F-C, next to its 3 v_fr check (Dirk 2026-10-24).
+136: \mv[own]{below}{The friction levels $c_c$ are taken from Garc\'ia-Herreros et
+137: al.~\cite[Table~I]{garcia2013model}.}
+138: \delmv[own]{F-C}{$v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating
+139: the loop with values between 0.1 and 10~mm/s.
+140: Higher values turn the friction into viscous damping under the multisine,",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/99_appendix.tex,23,retained text,cite,Table~I,"20: Table~\ref{tab:nominal_parameters} lists the nominal values used by the
+21: baseline.
+22: These values are from the dual-drive gantry of Garc\'ia-Herreros et
+23: al.~\cite[Table~I]{garcia2013model}.
+24: The lower block shows the parameters of the simulated system, which are
+25: omitted from the baseline (Section~\ref{sec:setup_system}).
+26: % FEEDBACK (2026-10-21, Dirk): [t] put the table above the Appendix A",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/01_introduction.tex,82,deleted text,cite,,"79: both actuators, so the motion of one actuator
+80: influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
+81: The system} exhibits position-dependent behaviour
+82: \del[own]{\cite{garcia2013model, teo2007dynamic} }and flexible dynamics
+83: \cite{garcia2013model}.
+84: % CHANGED: citation split; Teo supports coupling and position dependence,
+85: %   not flexibility (Garcia Sec. 2, flexible joints)",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,362,deleted text,cite,,"359: %   Lagrange equation (7) gives the equations of motion (8) in X, Theta, Y.
+360: \del[Dirk]{The physics baseline of the gantry system used in this thesis
+361: is the lumped-parameter model of the
+362: dual-drive gantry of Garc\'ia-Herreros et al.~\mbox{\cite{garcia2013model}}.}
+363: % NEW (2026-10-21, Dirk): source of the 3x3 matrices; Garcia prints only the
+364: %   2x2 X-Theta matrices, Eqs. (12) to (17). The 3x3 form comes from the ASMPT
+365: %   implementation (kamtin-fp-model/02 EulerLagrange/EulerLagrange.m).",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/05_setup.tex,183,deleted text,cite,Table~I,"180: %   (sec2-rate-review; Dirk 2026-10-21).
+181: All parameter values are listed in Table~\ref{tab:nominal_parameters}.
+182: \delmv[own]{above}{The friction levels $c_c$ are taken from Garc\'ia-Herreros et
+183: al.~\mbox{\cite[Table~I]{garcia2013model}}.}
+184: % RESTRUCTURE (own, 2026-10-24): resonance placement, controller and
+185: %   feedforward moved to Section VI-B, after the crossover is introduced
+186: %   (Maarten v2: no forward references; Dirk 2026-10-24). The 2026-10-21",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/01_introduction.tex,203,commented out,cite,,"200: % NEW: Hoekstra 2026 Sec. 1, p. 1
+201: % REMOVED: For the dual-gantry system, this limitation is also evident in
+202: %   the first-principles model structure of Garc\'ia-Herreros et al.
+203: %   \cite{garcia2013model}, which is only able to capture part of the
+204: %   position-dependent behaviour and cross-coupling.
+205: % FEEDBACK v2: white-box and black-box paragraphs merged into one (M-p2d);
+206: %   the paragraph break was here.",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,9; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,116,commented out,cite,,"113: \chg[ASMPT]{The gantry}{\kwtwo{We consider a dual-drive gantry with}} \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+114: third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system})\add[own]{\kwtwo{, as in Garc\'ia-Herreros et al.~\cite{garcia2013model}}}.
+115: % \chg[ASMPT]{The gantry}{\kwtwo{The dual-drive gantry of Garc\'ia-Herreros 
+116: % et al.~\cite{garcia2013model}}} has \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
+117: % third \add[Js21]{linear }actuator that moves a payload along this 
+118: % arm (Fig.~\ref{fig:gantry_system}).
+119: % FEEDBACK v1 (2026-10-21): Js21 (""and presumably it has guidings and",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,2; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,380,commented out,cite,,"377: % \kw{These coordinates avoid
+378: % a closed kinematic-chain description and make the coupling 
+379: % associated with the
+380: % \chg[Dirk]{nonuniform load distribution}{\kwtwo{load distribution over $X_1$ and $X_2$, which changes with the payload position $Y$,}} explicit \cite{garcia2013model}.}
+381: These coordinates avoid closed kinematic chains when defining the
+382: kinematics~\cite{garcia2013model}.
+383: They also show the coupling caused by the non-uniform load distribution",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 4,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,411,commented out,cite,,"408: \label{eq:Ptransform}
+409: \end{equation}
+410: where $u$ denotes the generalised force.
+411: % Here $X=(X_1+X_2)/2$ is the translation of the cross-arm centre, $\Theta=(X_1-X_2)/L_b$ its yaw angle, and $Y$ is unchanged. These coordinates avoid a closed kinematic-chain description \cite{garcia2013model}.
+412: % Then, after the matrices:
+413: % The payload position enters $M(Y)$ in two entries. 
+414: % The coupling term $\tfrac{L_b}{2}(m_1-m_2)-m_hY$ links $X$ and $\Theta$ unless $m_hY=\tfrac{L_b}{2}(m_1-m_2)$, ",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3; 4,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+garcia2013model,sections/02_system_baseline.tex,424,commented out,cite,Sec.~2.3.1,"421: negligible compared to the inertia, damping, and stiffness forces.
+422: % NEW (2026-10-21, Dirk): Garcia Sec. 2.3 moves m_h d Ydd to the force
+423: %   vector (Eq. 15) and treats Y separately (Eq. 17); the baseline keeps it in M.
+424: %\kwtwo{Unlike~\cite[Sec.~2.3.1]{garcia2013model}, $M(Y)$ keeps the coupling $-m_hd$ between $\Theta$ and $Y$.}
+425: Our baseline model does not include the Coulomb friction
+426: of~\cite[Eq.~(6)]{garcia2013model}.
+427: Instead, it is part of the missing dynamics of Section~\ref{sec:problem}.",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+garcia2013model,sections/01_introduction.tex,20,disabled text,cite,,"17: % Outline bullets hidden 2026-10-11 (kept in source; the prose below covers them).
+18: \iffalse
+19: \begin{itemize}
+20: \item Settling prediction limits throughput in coupled high-precision gantries, so model error has a direct operational cost \cite{garcia2013model}
+21: \item The concrete digital-twin use case is to evaluate relevant ASMPT motion and a changed controller before deployment on the machine
+22: \item The physics model exposes masses, stiffnesses, damping, and coupling, but omits position-dependent flexible dynamics that matter for prediction
+23: \item A black-box model offers flexibility but weakens extrapolation arguments and removes parameters useful for control design, digital twins, and health monitoring",Garcia-Herreros-2013-Dual-drive-gantry-decoupling-control.pdf,2; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+teo2007dynamic,sections/01_introduction.tex,80,retained text,cite,,"77: locations.}
+78: The shared beam couples the dynamics of
+79: both actuators, so the motion of one actuator
+80: influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
+81: The system} exhibits position-dependent behaviour
+82: \del[own]{\cite{garcia2013model, teo2007dynamic} }and flexible dynamics
+83: \cite{garcia2013model}.",Teo-2007-H-type-gantry-modeling-adaptive-control.pdf,1; 7,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+teo2007dynamic,sections/01_introduction.tex,82,deleted text,cite,,"79: both actuators, so the motion of one actuator
+80: influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
+81: The system} exhibits position-dependent behaviour
+82: \del[own]{\cite{garcia2013model, teo2007dynamic} }and flexible dynamics
+83: \cite{garcia2013model}.
+84: % CHANGED: citation split; Teo supports coupling and position dependence,
+85: %   not flexibility (Garcia Sec. 2, flexible joints)",Teo-2007-H-type-gantry-modeling-adaptive-control.pdf,1; 7,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hwang2024semiconductor,sections/01_introduction.tex,57,retained text,cite,,"54: Semiconductor devices are \chg[M-p2b]{used in technologies}{essential for applications} such as artificial
+55: intelligence, 5G and autonomous vehicles.
+56: Shortages can affect entire industries and national security
+57: \cite{hwang2024semiconductor}.
+58: Manufacturing these devices requires high-precision motion systems,
+59: with strict requirements on alignment accuracy, yield, throughput
+60: and cost~\cite{irds2022,workman2021diewafer}.",Digital_Twin-Based_Optimization_of_Operational_Parameters_for_Cluster_Tools_in_Semiconductor_Manufacturing.pdf,1; 22,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+willard2020integrating,sections/01_introduction.tex,196,retained text,cite,,"193: stiffness, and damping.
+194: However, purely physics-based models do not always capture all behaviour
+195: needed for accurate prediction across the operating range
+196: \cite{willard2020integrating}.
+197: More accurate FP models can be developed, but this is labour-intensive
+198: \cite{hoekstra2026lfr}.
+199: %!!!!!!!!!!!!!!",Willard-2022-Scientific-knowledge-machine-learning.pdf,10; 18,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+willard2020integrating,sections/01_introduction.tex,211,retained text,cite,,"208: can describe measured behaviour well, but can offer limited physical
+209: insight and are not guaranteed to be
+210: accurate at operating conditions not covered
+211: by the training data \cite{willard2020integrating, hoekstra2026lfr}.
+212: % CHANGED: ""(black-box)"" added; ""and"" added after ""insight""
+213: % FEEDBACK v2: data-amount sentence struck (M-p2d, shorten); the rigid-body
+214: %   argument below is the one that leads to augmentation.",Willard-2022-Scientific-knowledge-machine-learning.pdf,2; 18,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+willard2020integrating,sections/01_introduction.tex,239,retained text,cite,,"236: neural networks and Gaussian-process-based methods}}, incorporate physical
+237: \chg[M-p2e]{laws as constraints}{knowledge} during training
+238: \cite{karniadakis2021physicsinformed, raissi2019physicsinformed}\add[M-p2e]{,
+239: \cite{willard2020integrating}}\chg[M-p2e]{.
+240: However, these methods require the physics equations to be known
+241: and}{, but} still rely on a black-box model for the entire system
+242: \cite{hoekstra2026lfr}.",Willard-2022-Scientific-knowledge-machine-learning.pdf,10; 8,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+willard2020integrating,sections/01_introduction.tex,270,retained text,cite,,"267: Grey-box approaches include parameter
+268: re-estimation within the physics model structure, static residual
+269: correction on the model output, and dynamic augmentation that extends the
+270: baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
+271: % NEW: research plan Literature.tex l.1 word for word, citation changed;
+272: %   Willard Secs. 2.3, 3.4.1 (calibration, residual modelling), Hoekstra
+273: %   2026 Sec. 2 (static vs dynamic)",Willard-2022-Scientific-knowledge-machine-learning.pdf,6; 24,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+willard2020integrating,sections/01_introduction.tex,216,deleted text,cite,,"213: % FEEDBACK v2: data-amount sentence struck (M-p2d, shorten); the rigid-body
+214: %   argument below is the one that leads to augmentation.
+215: \del[M-p2d]{These models can also require large amounts of data to train
+216: \cite{willard2020integrating, karniadakis2021physicsinformed}.}
+217: % CHANGED: ""and significant computational power"" dropped (no source); cited
+218: %   Willard Sec. 1, Karniadakis abstract
+219: In addition, these models need to learn behaviour that is already known",Willard-2022-Scientific-knowledge-machine-learning.pdf,14; 16,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+willard2020integrating,sections/01_introduction.tex,259,deleted text,cite,,"256: %   approaches are neither purely physics-based nor purely data-driven.
+257: \del[M-p2e]{However, purely physics-based and purely data-driven models can
+258: each have limitations in meeting both requirements
+259: \cite{willard2020integrating}.}
+260: % CHANGED: Noel removed; Willard Sec. 1, p. 2
+261: \\
+262: Grey-box modelling is the logical choice, because it is able to",Willard-2022-Scientific-knowledge-machine-learning.pdf,14; 8,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+noel2018greybox,sections/01_introduction.tex,266,retained text,cite,,"263: combine a baseline model with interpretable parameters
+264: \chg[Dirk]{with data-driven flexibility needed}{and a data-driven model}
+265: for accurate prediction
+266: \cite{noel2018greybox}.
+267: Grey-box approaches include parameter
+268: re-estimation within the physics model structure, static residual
+269: correction on the model output, and dynamic augmentation that extends the",Noel-2018-Grey-box-state-space-identification.pdf,2; 14,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+kessels2025ai,sections/01_introduction.tex,71,retained text,cite,,"68: %   motion stages call for accurate nonlinear models); Hoekstra 2026 Sec. 1,
+69: %   p. 1 (rising performance requirements call for accurate models).
+70: \add[M-p2b]{\kwtwo{Accurate plant models help to meet these
+71: requirements~\cite{kessels2025ai,hoekstra2026lfr}.}}
+72: This thesis focuses on \chg[own]{a dual-drive gantry motion system}{one
+73: such motion system: a dual-drive gantry} in which two parallel
+74: linear actuators support a common beam carrying the payload.",Kessels-2025-AI-based-model-updating.pdf,218; 31,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+kessels2025ai,sections/01_introduction.tex,296,retained text,cite,,"293: %   relevant as model updating of an industrial machine, not by company.
+294: However, related work\del[Jan1]{ at ASMPT} on \chg[Jan1]{a}{an industrial} wire bonder shows that preserving
+295: physical interpretability during model updating remains an open challenge
+296: \cite{kessels2025ai}.
+297: Refitting the physical parameters allows them to \chg[own]{absorbs}{absorb} unmodelled dynamics,
+298: and an unconstrained \chg[own]{learning}{learned} component is able to absorb dynamics
+299: the baseline already describes \cite{gyorok2026obc}.",Kessels-2025-AI-based-model-updating.pdf,218; 221,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+kessels2025ai,sections/01_introduction.tex,357,retained text,cite,,"354: % FEEDBACK v2 (Jan1): ""on the wire bonder"", not ""This related work"": the
+355: %   sentence before is about Hoekstra's LFR augmentation.
+356: The related work \chg[Jan1]{at ASMPT}{on the wire bonder} uses closed-loop data, but keeps the physical
+357: parameters fixed during training \cite{kessels2025ai}.
+358: % NEW: Kessels Sec. 5.1 (PDF p. 175, only network weights trained); wire
+359: %   bonder updated from closed-loop measurements (Sec. 5.3.2)
+360: Orthogonal-by-construction (OBC) augmentation keeps the learned component",Kessels-2025-AI-based-model-updating.pdf,173; 218,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+kessels2025ai,sections/03_augmentation.tex,731,retained text,cite,"Eqs.~(5.12), (5.13)","728: %   Earlier marks kept: M-p7, own (K_fb) on the moved sentence, Jan49 strike.
+729: \mv[Dirk]{IV-B, below}{\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with
+730: \chg[own]{the assumed known controller}{the controller $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}},
+731: as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}\add[Dirk]{, instead of using the recorded input as
+732: in~\cite[Eq.~(22)]{hoekstra2026lfr}}.
+733: \del[Dirk]{Instead of using the recorded input as
+734: in~\mbox{\cite[Eq.~(22)]{hoekstra2026lfr}}, we include the",Kessels-2025-AI-based-model-updating.pdf,182; 183; 184; 185; 186,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/03_augmentation.tex,902,retained text,cite,Remark~5.4,"899: \mv[M-p7]{IV-C}{Therefore the encoder\add[own]{ of Section~\ref{sec:problem}} only has to initialise the states of the model.
+900: Kessels instead needs the system's controller state at the start of each
+901: window, either measured directly or calculated by simulating the
+902: controller from the start of the record~\cite[Remark~5.4]{kessels2025ai}.}
+903: We then write the closed-loop model in \eqref{eq:aug_two_loops} as
+904: \revnote{ZOH eigenlijk beter dan tustin. en tustin is voor een frequency domein het beste.
+905: dus tustin niet de beste keuze.",Kessels-2025-AI-based-model-updating.pdf,184; 198,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/03_augmentation.tex,969,retained text,cite,Remark~5.1,"966: For each sample we first calculate the output\chg[own]{ and then}{, then}
+967: the error and \add[own]{the }model input\add[own]{,} before updating the states.
+968: This avoids an algebraic loop through $D_{\mathrm{fb}}$,
+969: for the same reason as Kessels~\cite[Remark~5.1]{kessels2025ai}.
+970: For a \chg[M-p7]{window}{simulation} starting at $\tau$, the model equations
+971: in the normalised coordinates of \eqref{eq:aug_norm} are
+972: % The output of the augmented model depends on its state only, so each sample is",Kessels-2025-AI-based-model-updating.pdf,179,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/03_augmentation.tex,414,deleted text,cite,Remark~5.3,"411: relation between the states and the measured outputs%
+412: % FEEDBACK v2 (2026-10-22, Maarten p5 ""spacing too much""; M1): the line break
+413: %   before the comma printed a space; the % above removes it (Dirk 2026-10-22).
+414: \del[own]{, as in Kessels~\mbox{\cite[Remark~5.3]{kessels2025ai}}}\chg[own]{.
+415: This is also done to}{\kwtwo{, and this ensures}} \del[own]{ensure }that $q$ still represents the physical positions.
+416: % FEEDBACK (Dirk + Jan27, 2026-10-22): the q sentence merged into the one
+417: %   before; Kessels dropped, the dynamic parallel structure of Hoekstra",Kessels-2025-AI-based-model-updating.pdf,184; 198,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/03_augmentation.tex,784,deleted text,cite,,"781: using closed-loop data from a wire bonder.
+782: Kessels cites earlier work suggesting that this could be explained by noise-induced bias
+783: due to this correlation and the integral term
+784: of the controller~\cite{kessels2025ai}.}
+785: % RESTRUCTURE (2026-10-19, Maarten p6: ""I don't see how this part of the
+786: %   discussion is relevant for your approach.""): indirect approach struck.
+787: \del[M-p6]{This bias is avoided in the indirect approach for linear systems with a known controller, which fits the closed-loop model using the reference.",Kessels-2025-AI-based-model-updating.pdf,209; 201,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+kessels2025ai,sections/03_augmentation.tex,801,deleted text,cite,"Eqs.~(5.12), (5.13)","798: \\
+799: \delmv[Dirk]{IV-B start}{The model is simulated in closed-loop with
+800: the controller $K_{\mathrm{fb}}$ of \mbox{\eqref{eq:system_loop}},
+801: as in Kessels~\mbox{\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}.}
+802: \del[own]{The feedback controller is linear and time invariant, the model output is used to
+803: calculate the position error in actuator coordinates.
+804: The controller calculates the actuator forces from this error.}",Kessels-2025-AI-based-model-updating.pdf,182; 183; 184; 185; 186,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/03_augmentation.tex,892,deleted text,cite,,"889: \delmv[M-p7]{IV-C}{Therefore the encoder only has to initialise the states of the model.
+890: Kessels instead needs the system's controller state at the start of each
+891: window, either measured directly or calculated by simulating the
+892: controller from the start of the record~\cite{kessels2025ai}.}
+893: % RESTRUCTURE (2026-10-23, Dirk): moved back from IV-C. Maarten p7's
+894: %   objection (encoder not yet introduced) no longer holds: Section II now
+895: %   introduces the encoder and the windows. The reason for x^c_tau = 0 sits",Kessels-2025-AI-based-model-updating.pdf,198; 184,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+kessels2025ai,sections/03_augmentation.tex,1261,deleted text,cite,Remark~5.4,"1258: \delmv[M-p7]{IV-B}{With $x^c_\tau=0$, the encoder only has to initialise the states of the model.
+1259: Kessels instead needs the system's controller state at the start of each
+1260: window, either measured directly or calculated by simulating the
+1261: controller from the start of the record~\mbox{\cite[Remark~5.4]{kessels2025ai}}.}
+1262: % FEEDBACK (own, 2026-10-23): first sentence struck, it repeats IV-B (the
+1263: %   controller corrects the model input within the window) (Dirk 2026-10-23).
+1264: \mv[M-p8]{IV-B}{\del[own]{The controller uses the output error to correct the model input",Kessels-2025-AI-based-model-updating.pdf,184; 198,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/04_obc.tex,228,deleted text,cite,Sec.~5.3.1.3,"225: % FEEDBACK (own, 2026-10-24): struck; negation is not measured or reported later (c_neg cut 2026-10-23),
+226: %   and the final runs show hardly any (pooled cosine -0.04 and -0.09 for M_U, res_negation.csv) (Dirk 2026-10-24).
+227: %   Old marks: It -> The offset (M-mail); ""part of"" and the ""because"" clause struck (Dirk).
+228: \del[own]{The offset does not fully prevent negation~\mbox{\cite[Sec.~5.3.1.3]{kessels2025ai}}, where
+229: the neural network cancels the baseline response.}
+230: \revnote{Removed: the sentence on negation. Negation is not measured or reported anywhere in the thesis,
+231: and in the final runs the unconstrained network hardly negates the baseline either.}",Kessels-2025-AI-based-model-updating.pdf,191,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+kessels2025ai,sections/03_augmentation.tex,977,commented out,cite,Remark~5.1,"974: % then the model and controller states advance.
+975: % The controller feedthrough $D_{\mathrm{fb}}$ therefore closes no algebraic
+976: % loop, for the same reason that Kessels' output augmentation does not depend
+977: % on the input~\cite[Remark~5.1]{kessels2025ai}.
+978: % In the coordinates of \eqref{eq:aug_norm}, where the output means cancel in
+979: % the error, one step of a window started at $\tau$ is
+980: \begin{equation}",Kessels-2025-AI-based-model-updating.pdf,179,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+retzler2024,sections/01_introduction.tex,277,retained text,cite,,"274: Model augmentation combines a physics-based baseline model with a learned
+275: component, so that the learned component only needs to capture the dynamics
+276: the physics-based model cannot describe \cite{hoekstra2026lfr}\add[own]{,
+277: \cite{retzler2024}}.
+278: % NEW: wording from research plan Literature.tex l.3; Hoekstra 2026 Sec. 1,
+279: %   p. 2
+280: % FEEDBACK v2 (own, Dirk 2026-10-20): Retzler cited here, its sentence in P6",Retzler-2024-Physics-based-model-augmentation-robot.pdf,3; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+retzler2024,sections/01_introduction.tex,328,deleted text,cite,,"325: %   wire-bonder sentence already shows augmentation on an industrial
+326: %   machine. Retzler is now cited in P5 (model augmentation sentence).
+327: \del[own]{Learning-based hybrid modelling has already been demonstrated using
+328: measurements from an industrial robot \cite{retzler2024}.}
+329: \delmv[own]{end of P6}{However, a key gap remains: there is no grey-box modelling framework for the
+330: dual-drive gantry that simultaneously addresses coupled multi-input
+331: multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,",Retzler-2024-Physics-based-model-augmentation-robot.pdf,4; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,71,retained text,cite,,"68: %   motion stages call for accurate nonlinear models); Hoekstra 2026 Sec. 1,
+69: %   p. 1 (rising performance requirements call for accurate models).
+70: \add[M-p2b]{\kwtwo{Accurate plant models help to meet these
+71: requirements~\cite{kessels2025ai,hoekstra2026lfr}.}}
+72: This thesis focuses on \chg[own]{a dual-drive gantry motion system}{one
+73: such motion system: a dual-drive gantry} in which two parallel
+74: linear actuators support a common beam carrying the payload.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,15; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,198,retained text,cite,,"195: needed for accurate prediction across the operating range
+196: \cite{willard2020integrating}.
+197: More accurate FP models can be developed, but this is labour-intensive
+198: \cite{hoekstra2026lfr}.
+199: %!!!!!!!!!!!!!!
+200: % NEW: Hoekstra 2026 Sec. 1, p. 1
+201: % REMOVED: For the dual-gantry system, this limitation is also evident in",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,211,retained text,cite,,"208: can describe measured behaviour well, but can offer limited physical
+209: insight and are not guaranteed to be
+210: accurate at operating conditions not covered
+211: by the training data \cite{willard2020integrating, hoekstra2026lfr}.
+212: % CHANGED: ""(black-box)"" added; ""and"" added after ""insight""
+213: % FEEDBACK v2: data-amount sentence struck (M-p2d, shorten); the rigid-body
+214: %   argument below is the one that leads to augmentation.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,221,retained text,cite,,"218: %   Willard Sec. 1, Karniadakis abstract
+219: In addition, these models need to learn behaviour that is already known
+220: from first principles, such as the rigid-body dynamics
+221: \cite{hoekstra2026lfr}.
+222: % NEW: Hoekstra 2026 Sec. 1, p. 1
+223: \\
+224: % FEEDBACK v2: more than PINNs, more compact (M-p2e). Willard Sec. 3.1,",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,242,retained text,cite,,"239: \cite{willard2020integrating}}\chg[M-p2e]{.
+240: However, these methods require the physics equations to be known
+241: and}{, but} still rely on a black-box model for the entire system
+242: \cite{hoekstra2026lfr}.
+243: % NEW: Hoekstra 2026 Sec. 1, p. 2
+244: \delmv[own]{P2}{For the plant model of the dual-drive gantry, both predictive
+245: accuracy and physical interpretability are required.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,2; 14,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,270,retained text,cite,,"267: Grey-box approaches include parameter
+268: re-estimation within the physics model structure, static residual
+269: correction on the model output, and dynamic augmentation that extends the
+270: baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
+271: % NEW: research plan Literature.tex l.1 word for word, citation changed;
+272: %   Willard Secs. 2.3, 3.4.1 (calibration, residual modelling), Hoekstra
+273: %   2026 Sec. 2 (static vs dynamic)",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,15; 12,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,276,retained text,cite,,"273: %   2026 Sec. 2 (static vs dynamic)
+274: Model augmentation combines a physics-based baseline model with a learned
+275: component, so that the learned component only needs to capture the dynamics
+276: the physics-based model cannot describe \cite{hoekstra2026lfr}\add[own]{,
+277: \cite{retzler2024}}.
+278: % NEW: wording from research plan Literature.tex l.3; Hoekstra 2026 Sec. 1,
+279: %   p. 2",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,2; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,290,retained text,cite,,"287: dynamics, such as flexible dynamics. These}{, because missing dynamics}
+288: require additional states, which
+289: parameter re-estimation
+290: and static output correction cannot provide \cite{hoekstra2026lfr}.
+291: % FEEDBACK v2 (Jan1, Dirk 2026-10-20): ASMPT dropped here and in the gap
+292: %   paragraph; the introduction no longer introduces ASMPT, and the work is
+293: %   relevant as model updating of an industrial machine, not by company.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,15; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/01_introduction.tex,342,retained text,cite,,"339: \chg[Jan26]{Model augmentation using a linear fractional representation (LFR)}{Dynamic augmentation} has
+340: already been demonstrated, but not for position-dependent baselines or
+341: \chg[own]{closed-loop data}{with a simulated feedback controller}
+342: \cite{hoekstra2026lfr}.
+343: % NEW: Hoekstra 2026, absence: no closed loop, LPV only in a reference
+344: %   title
+345: % FEEDBACK v2 (own, Dirk 2026-10-20): checked Hoekstra 2026. Baselines: linear",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,1; 14,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/02_system_baseline.tex,272,retained text,cite,,"269: This model does not capture all dynamics of the system.
+270: We identify these missing dynamics from $\mathcal D_N$ and augment the
+271: baseline with learned components and additional
+272: states~\cite{hoekstra2026lfr}.
+273: % \mv[Jan7]{III intro}{A correction to the states of the baseline model alone is 
+274: % not sufficient,
+275: % \kwtwo{because missing dynamics need states the baseline does not ",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,13; 11,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/02_system_baseline.tex,579,retained text,cite,,"576: %   sentence on the discrete-time transition of Section IV. ""state-space""
+577: %   -> ""this"" in the next sentence avoids the repeat (Dirk 2026-10-22).
+578: \add[M-mail]{\kwtwo{The augmentation of Section~\ref{sec:problem} assumes a
+579: baseline model in state-space form~\cite{hoekstra2026lfr}.}}
+580: % Moved from IV-A (2026-10-22, Dirk).
+581: \mv[Dirk]{IV-A}{\add[Dirk]{\kwtwo{With the state $\tilde x=[q^\top\;\dot q^\top]^\top$,}}
+582: \chg[Dirk]{Writing}{writing} \eqref{eq:eom} in state-space form gives \kwtwo{the state derivative $F$}}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,16; 10,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,306,retained text,cite,"Sec.~2, Table~1","303: % FEEDBACK (own, 2026-10-22): ""full state and input"" undefined at this point
+304: %   (x-hat only defined after (14)); named as in (14) (Dirk 2026-10-22).
+305: The augmented model updates these states using \chg[own]{the full state
+306: and input}{\kwtwo{the baseline states, the added states and the actuator forces}}~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
+307: \\
+308: % FEEDBACK (own, 2026-10-22; F1): the cite sat inside \todo and did not
+309: %   print; moved out (todo removed, it only asked for this cite);",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,2; 8; 9; 3; 4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,312,retained text,cite,Table~1,"309: %   print; moved out (todo removed, it only asked for this cite);
+310: %   ""it"" -> ""its"" (Dirk 2026-10-22).
+311: \kwtwo{We use the dynamic parallel structure of Hoekstra et
+312: al.\add[own]{~\cite[Table~1]{hoekstra2026lfr}}\del[Dirk]{ (Fig.~\mbox{\ref{fig:aug_structure}})}\del[own]{,
+313: here a neural network adds it correction on the same state as the
+314: baseline model in parallel}.
+315: \del[own]{besides the baseline model on the same state.}}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,3; 4; 10; 12; 16,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,502,retained text,cite,Table~1,"499: as in the dynamic-parallel structure~\mbox{\cite[Table~1]{hoekstra2026lfr}}.}
+500: The positions are also corrected\add[own]{,} because within one sample period
+501: an unmodelled force would change both the velocity and \add[own]{the }position\del[own]{,
+502: correcting only for the velocities would not be able to capture this}\add[own]{~\cite[Table~1]{hoekstra2026lfr}}.
+503: \chg[own]{Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload
+504: position $Y$ through $\tilde x_k$, enabling}{\kwtwo{The payload position $Y$ in $\tilde x_k$ enables}} the neural network to learn
+505:  position-dependent effects.}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,3; 4; 10; 12; 16,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,509,retained text,cite,Sec.~5.3,"506: \\
+507: The inputs to the neural network are normalised
+508: to zero mean and unit variance, which has been shown to improve
+509: the estimation of models containing neural networks~\chg[Q41]{\mbox{\cite[Sec.~5.3]{hoekstra2026lfr}}}{\cite{bishop1995neural}}\add[Q41]{\kwtwo{, as in~\cite[Sec.~5.3]{hoekstra2026lfr}}}.
+510: \todo{Add bib entry \texttt{bishop1995neural}: C.~M.~Bishop, \emph{Neural Networks for Pattern Recognition}, Oxford University Press, 1995 (the source Hoekstra et al.\ cite for this claim, their ref.~[6], Sec.~5.3).}
+511: % FEEDBACK v1 (2026-10-22, Q41 ""A more primary source can be used like Deep
+512: %   Learning by Goodfellow""): the general claim cites Hoekstra's own source",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,657,retained text,cite,Sec.~5.3,"654: %   equation; ""we"" subject as in the two sentences before; the zero-mean
+655: %   assumption attributed to Hoekstra 2026 Sec. 5.3, where (28) is derived.
+656: \add[Dirk]{We include the means in $f_{\mathrm{base}}^{\mathrm n}$, since we do not
+657: assume zero-mean signals as in~\cite[Sec.~5.3]{hoekstra2026lfr}.}
+658: \\
+659: % RESTRUCTURE (2026-10-22, Dirk; A6): the network paragraph moved before
+660: %   the normalisation paragraph (Hoekstra 2026 Sec. 3.3 follows the",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,732,retained text,cite,Eq.~(22),"729: \mv[Dirk]{IV-B, below}{\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with
+730: \chg[own]{the assumed known controller}{the controller $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}},
+731: as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}\add[Dirk]{, instead of using the recorded input as
+732: in~\cite[Eq.~(22)]{hoekstra2026lfr}}.
+733: \del[Dirk]{Instead of using the recorded input as
+734: in~\mbox{\cite[Eq.~(22)]{hoekstra2026lfr}}, we include the
+735: feedback controller in the simulation}\del[Jan49]{ for two reasons}\del[Dirk]{.}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1128,retained text,cite,Eq.~(22),"1125: %   window start (P6), non-uniqueness, optimiser.
+1126: % RESTRUCTURE (2026-10-19, Maarten p8): joint estimation and the criterion moved here, after the encoder they use.
+1127: \mv[M-p8]{IV-C start}{\kwtwo{The network parameters $\theta_{\mathrm{aug}}$, the encoder parameters $\theta_{\mathrm{enc}}$ and} $\theta_{\mathrm{base}}$ are jointly estimated,
+1128: as in~\cite[Eq.~(22)]{hoekstra2026lfr}\kwtwo{, while the encoder paper keeps
+1129: $\theta_{\mathrm{base}}$ fixed~\cite[footnote~1]{hoekstra2026encoder}}.}
+1130: \mv[M-p8]{IV-C start}{The parameters
+1131: $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1134,retained text,cite,Eq.~(22),"1131: $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
+1132: are trained to minimise the normalised output error of the
+1133: closed-loop simulation, with the
+1134: \chg[own]{controller fixed}{known controller $K_{\mathrm{fb}}$}. We adapt this from~\cite[Eq.~(22)]{hoekstra2026lfr}\del[own]{,
+1135: adapted} for the closed loop of Section~\ref{sec:aug_loop} and the
+1136: encoder\del[M-mail]{ \kwtwo{described below}}:
+1137: % FEEDBACK (Dirk, 2026-10-23): ""fixed"" -> ""known"" as in Section II (the",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1180,retained text,cite,Eq.~(22e),"1177: in Section~\ref{sec:results}.}}
+1178: \\
+1179: \chg[M-p8]{The encoder uses}{\kwtwo{In \eqref{eq:aug_loss}, the encoder $\psi$ uses}} the samples up to $\tau-1$,
+1180: as in~\cite[Eq.~(22e)]{hoekstra2026lfr}:
+1181: \begin{equation}
+1182: \begin{aligned}
+1183:  \hat x^{\mathrm n}_{\tau|\tau}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,8,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1248,retained text,cite,,"1245: independent of the noise~\cite[Sec.~2.1]{beintema2023subnet} and }}that the system that generates the data is
+1246: incrementally exponentially output
+1247: stable~\cite[Cond.~1]{beintema2023subnet}.
+1248: The identification method we have adapted from~\cite{hoekstra2026lfr}
+1249: relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions}~\cite[Sec.~5.5]{hoekstra2026lfr}.
+1250: The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:
+1251: a mismatch in the initial velocity will create a permanent position offset.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,14; 10,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,1249,retained text,cite,Sec.~5.5,"1246: incrementally exponentially output
+1247: stable~\cite[Cond.~1]{beintema2023subnet}.
+1248: The identification method we have adapted from~\cite{hoekstra2026lfr}
+1249: relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions}~\cite[Sec.~5.5]{hoekstra2026lfr}.
+1250: The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:
+1251: a mismatch in the initial velocity will create a permanent position offset.
+1252: In closed-loop the feedback controller is able to correct this offset\del[own]{, which is why each window is simulated in the closed loop of Section~\mbox{\ref{sec:aug_loop}}}.}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1277,retained text,cite,Sec.~5.2,"1274: \\
+1275: The baseline parameters and the neural network can both correct the same
+1276: model errors, making the optimal parameter values  
+1277: not unique~\cite[Sec.~5.2]{hoekstra2026lfr}.
+1278: \todo{Missing: Section~\ref{sec:obc} makes the 
+1279: network orthogonal to the linearised baseline sensitivity at
+1280: fixed tuples, so the split is unique only to first order ",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,8,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1364,retained text,cite,Sec.~5.4,"1361: \kwtwo{A fully random initialisation} can \kwtwo{make the model unstable
+1362: and lead to poor optimisation results}\kwtwo{. We therefore} start
+1363: training from \kwtwo{a model that behaves as the baseline}
+1364: ~\cite[Sec.~5.4]{hoekstra2026lfr}.
+1365: \todo{Word different, look at Quinten his comment.}
+1366: \\
+1367: The physical rows are initialised from the baseline model.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1380,retained text,cite,Eq.~(30),"1377: Hoekstra et al.\ therefore suggest fitting the encoder to 
+1378: states simulated with the 
+1379: baseline~\cite[Sec.~3.2, Eq.~(35)]{hoekstra2026encoder}, as their 
+1380: augmentation method does~\cite[Eq.~(30)]{hoekstra2026lfr}.
+1381: We apply this approach and simulate the baseline model once before training 
+1382: to obtain the physical state at every sample \chg[M-p8]{$\tau$}{$k$}.
+1383: % FEEDBACK v2 (2026-10-23, Maarten p8 on this tau: ""\tau or k? you normally",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1403,retained text,cite,Eq.~(30),"1400: %   here from after the fit, beside the simulation it explains (Maarten p8
+1401: %   ""simulate in closed loop?"").
+1402: \mv[own]{below}{We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the
+1403: recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.}
+1404: % FEEDBACK (own, 2026-10-22; D2): the x^c clause repeats the next sentence
+1405: %   (""... zero added states and x^c=0"") (Dirk 2026-10-22).
+1406: We use $\hat y^{\mathrm n,0}_k$ as the model output\del[own]{",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1534,retained text,cite,Eq.~(31),"1531: from $\mathcal U(-1/\sqrt{m},1/\sqrt{m})$,
+1532: where $m$ is the input size of the layer.
+1533: We use Xavier initialisation for $W^a$,
+1534: following~\cite[Eq.~(31)]{hoekstra2026lfr}.
+1535: % FEEDBACK (own, 2026-10-22; D5): a is already given in (27) (Dirk 2026-10-22).
+1536: We choose the uniform distribution with gain one\del[own]{,
+1537: giving $a=\sqrt{6/(n_{\bar x}+6(n+1))}$}.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1543,retained text,cite,Eq.~(29),"1540: The augmented model and baseline model give the same $\tilde x$ and $\hat y$, 
+1541: given they start from the same physical state.
+1542: The added states $\bar x$ are still updated by
+1543: $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
+1544: \\
+1545: 
+1546: \subsection{Added-state initialisation}\label{sec:aug_ps2}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/99_appendix.tex,80,retained text,cite,,"77: matrices do not depend on $Y$.
+78: We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
+79: with the scheduling being connected in feedback
+80: with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2026lpvlfr,hoekstra2026lfr}.}
+81: \begin{figure}[!ht]
+82:   \centering
+83:   \input{figures/lfr_loop}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,14; 10,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/02_system_baseline.tex,659,deleted text,cite,,"656: matrices do not depend on $Y$.
+657: We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
+658: with the scheduling being connected in feedback
+659: with $G$ (Fig.~\mbox{\ref{fig:lfr}}) \mbox{\cite{drenth2026lpvlfr,hoekstra2026lfr}}.
+660: Substituting \mbox{\eqref{eq:Msplit}} into \mbox{\eqref{eq:eom}} gives (7).
+661: Here $Y$ only enters through $Y\ddot q$ and $Y^2\ddot q$,
+662: with $Y^2\ddot q=Y(Y\ddot q)$. This lets us apply the same scheduling variable twice",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,10; 4,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,285,deleted text,cite,Sec.~2,"282: physical states, is not sufficient.
+283: Both these methods only retain the original states of the baseline}\del{,
+284: while missing dynamics require
+285: states the baseline does not include}\del[own]{~\mbox{\cite[Sec.~2]{hoekstra2026lfr}}.}
+286: % To represent additional dynamics such as a flexible mode,
+287: % refitting $\theta_{\mathrm{base}}$ or correcting the baseline states with 
+288: % a static augmentation",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,2; 8; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,364,deleted text,cite,"Sec.~2, Table~1","361: \del[own]{The learning components are a neural network consisting of $f_{\mathrm{aug}}$
+362: and $g_{\mathrm{aug}}$.}
+363: The model is defined in \kwtwo{discrete} time with the augmentation added to
+364: the state update of the baseline\del[own]{~\mbox{\cite[Sec.~2, Table~1]{hoekstra2026lfr}}}.
+365: % FEEDBACK (own, 2026-10-22; F6, Js60 ""so many citations in a row""): third
+366: %   [Sec. 2, Table 1] cite within a few sentences; this sentence states our
+367: %   model, the structure is cited two sentences above (Dirk 2026-10-22).",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,2; 8; 9; 3; 4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,499,deleted text,cite,Table~1,"496: %   velocity and the position"" and is struck (replaces the F5 split of
+497: %   2026-10-22); Y sentence shortened (Dirk 2026-10-22).
+498: \del[own]{These corrections act on all six physical states, the positions included,
+499: as in the dynamic-parallel structure~\mbox{\cite[Table~1]{hoekstra2026lfr}}.}
+500: The positions are also corrected\add[own]{,} because within one sample period
+501: an unmodelled force would change both the velocity and \add[own]{the }position\del[own]{,
+502: correcting only for the velocities would not be able to capture this}\add[own]{~\cite[Table~1]{hoekstra2026lfr}}.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,3; 4; 10; 12; 16,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,509,deleted text,cite,Sec.~5.3,"506: \\
+507: The inputs to the neural network are normalised
+508: to zero mean and unit variance, which has been shown to improve
+509: the estimation of models containing neural networks~\chg[Q41]{\mbox{\cite[Sec.~5.3]{hoekstra2026lfr}}}{\cite{bishop1995neural}}\add[Q41]{\kwtwo{, as in~\cite[Sec.~5.3]{hoekstra2026lfr}}}.
+510: \todo{Add bib entry \texttt{bishop1995neural}: C.~M.~Bishop, \emph{Neural Networks for Pattern Recognition}, Oxford University Press, 1995 (the source Hoekstra et al.\ cite for this claim, their ref.~[6], Sec.~5.3).}
+511: % FEEDBACK v1 (2026-10-22, Q41 ""A more primary source can be used like Deep
+512: %   Learning by Goodfellow""): the general claim cites Hoekstra's own source",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,682,deleted text,cite,Table~1,"679: $g^{\mathrm n}_{\mathrm{aug}}$
+680: equal the additional states $\bar x_{k+1}$ (Fig.~\mbox{\ref{fig:aug_structure}}).
+681: These corrections act on all six physical states, the positions included,
+682: as in the dynamic-parallel structure~\mbox{\cite[Table~1]{hoekstra2026lfr}}.
+683: The positions are also corrected because within one sample period
+684: an unmodelled force would change both the velocity and position,
+685: correcting only for the velocities would not be able to capture this.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,3; 4; 10; 12; 16,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,734,deleted text,cite,Eq.~(22),"731: as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}\add[Dirk]{, instead of using the recorded input as
+732: in~\cite[Eq.~(22)]{hoekstra2026lfr}}.
+733: \del[Dirk]{Instead of using the recorded input as
+734: in~\mbox{\cite[Eq.~(22)]{hoekstra2026lfr}}, we include the
+735: feedback controller in the simulation}\del[Jan49]{ for two reasons}\del[Dirk]{.}
+736: % FEEDBACK (Dirk, 2026-10-23: the paragraph did not state the reason and
+737: %   the problem): reason first, then the problem (no correction of the",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,772,deleted text,cite,,"769: et al.~\cite{beintema2023subnet}, assumes that the system that generates the data is
+770: incrementally exponentially output
+771: stable~\cite{beintema2023subnet}.
+772: The identification method we have adapted from~\cite{hoekstra2026lfr}
+773: relies on this SUBNET assumption~\cite{hoekstra2026lfr}.
+774: The open-loop gantry system does not satisfy this assumption:
+775: a mismatch in the initial velocity will create a permanent position offset.",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,14; 15,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,773,deleted text,cite,,"770: incrementally exponentially output
+771: stable~\cite{beintema2023subnet}.
+772: The identification method we have adapted from~\cite{hoekstra2026lfr}
+773: relies on this SUBNET assumption~\cite{hoekstra2026lfr}.
+774: The open-loop gantry system does not satisfy this assumption:
+775: a mismatch in the initial velocity will create a permanent position offset.
+776: In closed-loop the feedback controller is able to correct this offset.}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,14; 15,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,1054,deleted text,cite,,"1051: %   the criterion moved below the encoder; the beta parametrisation moved to
+1052: %   Section III-C. Struck here, equations shown as struck notes.
+1053: \delmv[M-p8]{IV-C, below}{The network parameters $\theta_{\mathrm{aug}}$, the encoder parameters $\theta_{\mathrm{enc}}$ and $\theta_{\mathrm{base}}$ are jointly estimated,
+1054: as in~\cite{hoekstra2026lfr}, while the encoder paper keeps
+1055: $\theta_{\mathrm{base}}$ fixed~\cite{hoekstra2026encoder}.}
+1056: \delmv[M-mail]{III-C}{The optimiser updates $\theta_{\mathrm{base}}$ through training coordinates $\beta\in\R^{10}$,
+1057: which are zero at the initial parameters $\theta^0_{\mathrm{base}}$ and keep",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,8; 14,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,1081,deleted text,cite,,"1078: $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
+1079: are trained to minimise the normalised output error of the
+1080: closed-loop simulation, with the
+1081: controller fixed. We adapt this from~\cite{hoekstra2026lfr}, 
+1082: adapted for the closed loop of Section~\ref{sec:aug_loop} and the
+1083: encoder described below:
+1084: [criterion \eqref{eq:aug_loss} moved below]",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,14; 8,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,1477,deleted text,cite,Eq.~(30),"1474: $\mathcal D$ is the set of window ends $\tau$ at the training stride of
+1475: 10 samples.}
+1476: \delmv[own]{after \mbox{\eqref{eq:aug_enc_sim}}}{We use the closed-loop input from \mbox{\eqref{eq:aug_enc_sim}}, instead of the
+1477: recorded input as in~\mbox{\cite[Eq.~(30)]{hoekstra2026lfr}}.}
+1478: % FEEDBACK (own, 2026-10-22; D6): repeats ""use it to start minimising (22)""
+1479: %   above (Dirk 2026-10-22).
+1480: \del[own]{The fitting loss in \mbox{\eqref{eq:aug_enc_fit}} and $\theta^{b,0}_{\mathrm{enc}}$",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,1493,deleted text,cite,Eq.~(29),"1490: %   (Dirk 2026-10-22).
+1491: \del[M-p8]{We start training with the augmented model giving the same
+1492: output as the baseline model from the same initial state, as posed
+1493: by~\mbox{\cite[Eq.~(29)]{hoekstra2026lfr}}.} \revnote{I use the encoder
+1494: for my augmented model, so i state: model from the same initial state.
+1495: But i could leave it out.}
+1496: \chg[M-p8]{Therefore we}{\kwtwo{To start from the baseline, we}} zero the physical-state rows",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/03_augmentation.tex,466,draft material,cite,"Cond.~6, Cond.~8, Thm.~9","463: The augmented model admits a unique solution for every state,
+464: input and $Y$. The interconnection has no algebraic loops,
+465: making it acyclic, and both blocks are twice continuously differentiable,
+466: which together give well-posedness~\cite[Cond.~6, Cond.~8, Thm.~9]{hoekstra2026lfr}.
+467: The baseline LFR is also well posed
+468: (Section~\ref{sec:lfr}).}
+469: ",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,7; 8; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/01_introduction.tex,311,commented out,cite,,"308: % \add{Two properties make augmentation of this gantry difficult.
+309: % Two axes have no stiffness to the fixed world, so the plant is marginally
+310: % stable and operates in closed loop, whereas the training method of
+311: % \cite{hoekstra2026lfr} assumes an incrementally exponentially output stable
+312: % system \cite[Cond.~1]{beintema2023subnet}.
+313: % Moreover, prediction accuracy and interpretability interfere.
+314: % Refitting the physical parameters absorbs the unmodelled dynamics, and an",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,14; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hoekstra2026lfr,sections/03_augmentation.tex,294,commented out,cite,Sec.~2,"291: % } is not sufficient.
+292: % Both these methods \kwtwo{only retain} the original states of the baseline,
+293: % while missing dynamics require
+294: % states the baseline does not include~\cite[Sec.~2]{hoekstra2026lfr}.
+295: % FEEDBACK (Dirk, 2026-10-22): no ""As motivated in"" opening; Dirk's
+296: %   sentence kept; ""therefore"" and ""these"" lost their antecedent with the
+297: %   struck paragraph; the reason is Dirk's own struck clause (""missing",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,2; 8; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/07_discussion.tex,45,commented out,cite,Sec.~5.3,"42: % \item The training loop runs $K_1$ at the model rate instead of the 20~kHz of the data, which changes the feedback force by a median of \SetupKmismatchMed\,\% on the records with multisine and at most \SetupKmismatchMotion\,\% on those without; the model sees a slightly different loop in the band of the added mass (Appendix~\ref{app:setup_checks}) (?: cause, half-sample offset in the reduction or Tustin warping, being checked for the final runs; drop this point if it is fixed)
+43: % \end{itemize}
+44: % \todo{Should a cubic-spring benchmark, noise study, and Monte Carlo analysis be completed, or should the thesis explicitly narrow its claims to the measured linear absorber case?}
+45: % \todo{Missing: the criterion \eqref{eq:aug_loss} weights each axis by $1/\sigma_{y,i}^2$ (normalised outputs, as~\cite[Sec.~5.3]{hoekstra2026lfr}), while checkpoint selection and the reported errors are in metres, so training and evaluation weigh the axes differently. Candidate: one limitation sentence, after checking whether Hoekstra et al.\ (Sec.~6) and Beintema et al.\ report normalised (NRMS) or physical-unit errors (not yet read).}
+46: 
+47: % \subsection{Implications and future work}
+48: % \begin{itemize}",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026lfr,sections/01_introduction.tex,24,disabled text,cite,,"21: \item The concrete digital-twin use case is to evaluate relevant ASMPT motion and a changed controller before deployment on the machine
+22: \item The physics model exposes masses, stiffnesses, damping, and coupling, but omits position-dependent flexible dynamics that matter for prediction
+23: \item A black-box model offers flexibility but weakens extrapolation arguments and removes parameters useful for control design, digital twins, and health monitoring
+24: \item Grey-box dynamic augmentation is the target compromise: preserve the baseline and learn only the missing state dynamics \cite{hoekstra2026lfr}
+25: \end{itemize}
+26: \fi
+27: % Prose based on the research plan,",Hoekstra-2026-LFR-model-augmentation-arXiv-v1.pdf,1; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/02_system_baseline.tex,293,retained text,cite,,"290: % al.~\cite{beintema2023subnet}: the encoder estimates each initial state
+291: % from past inputs and outputs and is trained jointly with the model.}}
+292: We use the SUBNET method of Beintema et
+293: al.~\cite{beintema2023subnet} to train the model on short windows of
+294: $\mathcal D_N$, where each window is simulated with the controller
+295: $K_{\mathrm{fb}}$.
+296: The initial states are estimated by an encoder network from past inputs and outputs.",Beintema-2023-Deep-subspace-encoders.pdf,11; 5,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/03_augmentation.tex,1109,retained text,cite,Sec.~3.1,"1106: \add[own]{\kwtwo{Within the window, $k$ denotes the sample.}}
+1107: Estimating $\hat x_\tau$ as a separate parameter for each window
+1108: would increase the number of parameters as the data
+1109: grows~\cite[Sec.~3.1]{beintema2023subnet}.
+1110: Following Beintema et al., we use \kwtwo{an encoder network} that estimates $\hat x_\tau$ from
+1111: \add[own]{the }past inputs and outputs\add[own]{ $\chi_\tau$}~\cite[Sec.~3.2]{beintema2023subnet}.
+1112: % FEEDBACK (own, 2026-10-23): chi_tau named where IV-C introduces the",Beintema-2023-Deep-subspace-encoders.pdf,4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/03_augmentation.tex,1111,retained text,cite,Sec.~3.2,"1108: would increase the number of parameters as the data
+1109: grows~\cite[Sec.~3.1]{beintema2023subnet}.
+1110: Following Beintema et al., we use \kwtwo{an encoder network} that estimates $\hat x_\tau$ from
+1111: \add[own]{the }past inputs and outputs\add[own]{ $\chi_\tau$}~\cite[Sec.~3.2]{beintema2023subnet}.
+1112: % FEEDBACK (own, 2026-10-23): chi_tau named where IV-C introduces the
+1113: %   encoder, so (22) does not use it before (23); Section II already
+1114: %   introduces the encoder from past inputs and outputs (Dirk 2026-10-23).",Beintema-2023-Deep-subspace-encoders.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/03_augmentation.tex,1116,retained text,cite,"Sec.~3.1, Eq.~(9)","1113: %   encoder, so (22) does not use it before (23); Section II already
+1114: %   introduces the encoder from past inputs and outputs (Dirk 2026-10-23).
+1115: keeps the computation per gradient step independent of the record length\add[own]{,}
+1116: for \add[own]{a }fixed batch size and window \chg[own]{lengths}{length}~\cite[Sec.~3.1, Eq.~(9)]{beintema2023subnet}.
+1117: Using short simulation windows increases the loss function
+1118: smoothness~\cite[Sec.~3.1, 4.2]{beintema2023subnet}.
+1119: % FEEDBACK (own, 2026-10-23; Codex math check, finding 11): Sec. 4.2 added,",Beintema-2023-Deep-subspace-encoders.pdf,4; 5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/03_augmentation.tex,1118,retained text,cite,"Sec.~3.1, 4.2","1115: keeps the computation per gradient step independent of the record length\add[own]{,}
+1116: for \add[own]{a }fixed batch size and window \chg[own]{lengths}{length}~\cite[Sec.~3.1, Eq.~(9)]{beintema2023subnet}.
+1117: Using short simulation windows increases the loss function
+1118: smoothness~\cite[Sec.~3.1, 4.2]{beintema2023subnet}.
+1119: % FEEDBACK (own, 2026-10-23; Codex math check, finding 11): Sec. 4.2 added,
+1120: %   where Beintema shows it (Theorem 9, PDF p8); Sec. 3.1 (PDF p4) states
+1121: %   it. No mark inside \cite (a [tag] would end its optional argument).",Beintema-2023-Deep-subspace-encoders.pdf,4; 8,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/03_augmentation.tex,1245,retained text,cite,Sec.~2.1,"1242: %   (06_results.tex) (Dirk 2026-10-21).
+1243: \mv[M-p7]{IV-B}{SUBNET\del[M-p7]{, the encoder-based identification method of Beintema
+1244: et al.~\cite{beintema2023subnet},} assumes \add[own]{\kwtwo{that the input is
+1245: independent of the noise~\cite[Sec.~2.1]{beintema2023subnet} and }}that the system that generates the data is
+1246: incrementally exponentially output
+1247: stable~\cite[Cond.~1]{beintema2023subnet}.
+1248: The identification method we have adapted from~\cite{hoekstra2026lfr}",Beintema-2023-Deep-subspace-encoders.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/03_augmentation.tex,1247,retained text,cite,Cond.~1,"1244: et al.~\cite{beintema2023subnet},} assumes \add[own]{\kwtwo{that the input is
+1245: independent of the noise~\cite[Sec.~2.1]{beintema2023subnet} and }}that the system that generates the data is
+1246: incrementally exponentially output
+1247: stable~\cite[Cond.~1]{beintema2023subnet}.
+1248: The identification method we have adapted from~\cite{hoekstra2026lfr}
+1249: relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions}~\cite[Sec.~5.5]{hoekstra2026lfr}.
+1250: The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:",Beintema-2023-Deep-subspace-encoders.pdf,7; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/05_setup.tex,545,retained text,cite,,"542: records.}}
+543: \\
+544: The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET
+545: model~\cite{beintema2023subnet} that predicts the closed-loop
+546: servo error from the reference and injected force,
+547: without modelling the controller separately
+548: % FEEDBACK (Dirk, 2026-10-24): selection sentence cut; VI-C states that the",Beintema-2023-Deep-subspace-encoders.pdf,11; 10,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/05_setup.tex,581,retained text,cite,Eq.~(43),"578: the reference and injected force as inputs.
+579: We compare the predicted servo error with the recorded
+580: servo error $y-r$, using the known reference.
+581: The main metric is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet},
+582: adapted by using the servo error as output.}
+583: \revnote{Issue: the research plan names the BFR as the primary measure,
+584: but on the position output every model scores almost 100\,\%, because",Beintema-2023-Deep-subspace-encoders.pdf,10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/06_results.tex,304,retained text,cite,,"301: The results are limited to simulation with one seed and the
+302: same controller used to generate the data.
+303: Through the feedback, the recorded input is correlated with the measurement
+304: noise, so the consistency of the \add[Dirk]{\kwtwo{SUBNET }}estimate\add[Dirk]{\kwtwo{~\cite{beintema2023subnet}}} is
+305: not shown.
+306: It remains unclear whether the improvements would hold with a different
+307: controller or on measured data.",Beintema-2023-Deep-subspace-encoders.pdf,5; 12,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/99_appendix.tex,807,retained text,cite,,"804: \end{equation}
+805: where $x^{\mathrm{bb}}_k\in\R^{n_x}$ and an encoder estimates
+806: $x^{\mathrm{bb}}$ at the window start from past inputs and servo errors, as
+807: in~\cite{beintema2023subnet}.
+808: Its settings are the black-box rows of Table~\ref{tab:hyper}.
+809: 
+810: \subsection{Hyperparameters}\label{app:hyper}",Beintema-2023-Deep-subspace-encoders.pdf,6; 5,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/03_augmentation.tex,769,deleted text,cite,,"766: The feedback controller is able to correct this drift\chg[M-p6]{, which is why we have
+767: chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).}{.}}
+768: \delmv[M-p6]{IV-C}{SUBNET, the encoder-based identification method of Beintema
+769: et al.~\cite{beintema2023subnet}, assumes that the system that generates the data is
+770: incrementally exponentially output
+771: stable~\cite{beintema2023subnet}.
+772: The identification method we have adapted from~\cite{hoekstra2026lfr}",Beintema-2023-Deep-subspace-encoders.pdf,10; 7,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/03_augmentation.tex,771,deleted text,cite,,"768: \delmv[M-p6]{IV-C}{SUBNET, the encoder-based identification method of Beintema
+769: et al.~\cite{beintema2023subnet}, assumes that the system that generates the data is
+770: incrementally exponentially output
+771: stable~\cite{beintema2023subnet}.
+772: The identification method we have adapted from~\cite{hoekstra2026lfr}
+773: relies on this SUBNET assumption~\cite{hoekstra2026lfr}.
+774: The open-loop gantry system does not satisfy this assumption:",Beintema-2023-Deep-subspace-encoders.pdf,7; 6,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/03_augmentation.tex,1044,deleted text,cite,,"1041: \mv[Jan23]{II}{\del[own]{During training, the physical parameters $\theta_{\mathrm{base}}$ are also
+1042: estimated, using the combinations defined in Section~\mbox{\ref{sec:params}}.}}
+1043: % NEW (2026-10-19, Maarten p7: ""I would include at least a brief intro of subnet somewhere""): drafted sentence, Dirk to reword.
+1044: \delmv[M-p7]{II}{This is the SUBNET approach of Beintema et al.~\cite{beintema2023subnet}:
+1045: the simulation error over short windows is minimised, and an encoder,
+1046: trained jointly with the model, estimates the initial state of each window
+1047: from past inputs and outputs.}",Beintema-2023-Deep-subspace-encoders.pdf,2; 11,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/03_augmentation.tex,1244,deleted text,cite,,"1241: %   correlation of u_act with v and the Discussion draws the consequence
+1242: %   (06_results.tex) (Dirk 2026-10-21).
+1243: \mv[M-p7]{IV-B}{SUBNET\del[M-p7]{, the encoder-based identification method of Beintema
+1244: et al.~\cite{beintema2023subnet},} assumes \add[own]{\kwtwo{that the input is
+1245: independent of the noise~\cite[Sec.~2.1]{beintema2023subnet} and }}that the system that generates the data is
+1246: incrementally exponentially output
+1247: stable~\cite[Cond.~1]{beintema2023subnet}.",Beintema-2023-Deep-subspace-encoders.pdf,9; 7,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/01_introduction.tex,312,commented out,cite,Cond.~1,"309: % Two axes have no stiffness to the fixed world, so the plant is marginally
+310: % stable and operates in closed loop, whereas the training method of
+311: % \cite{hoekstra2026lfr} assumes an incrementally exponentially output stable
+312: % system \cite[Cond.~1]{beintema2023subnet}.
+313: % Moreover, prediction accuracy and interpretability interfere.
+314: % Refitting the physical parameters absorbs the unmodelled dynamics, and an
+315: % unconstrained learned component can absorb dynamics the baseline already",Beintema-2023-Deep-subspace-encoders.pdf,7; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+beintema2023subnet,sections/02_system_baseline.tex,290,commented out,cite,,"287: % The initial states are estimated by \chg[Q37]{an encoder}{an encoder network}, 
+288: % including the additional states.}
+289: % \add[M-p7]{\kwtwo{This is the SUBNET method of Beintema et
+290: % al.~\cite{beintema2023subnet}: the encoder estimates each initial state
+291: % from past inputs and outputs and is trained jointly with the model.}}
+292: We use the SUBNET method of Beintema et
+293: al.~\cite{beintema2023subnet} to train the model on short windows of",Beintema-2023-Deep-subspace-encoders.pdf,11; 6,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+beintema2023subnet,sections/06_results.tex,396,commented out,cite,,"393: % where the controller can suppress errors in the plant model.
+394: % \kwtwo{Through the feedback, the recorded input is correlated with the
+395: % measurement noise\add[own]{, while SUBNET assumes an input that is
+396: % independent of the noise~\cite{beintema2023subnet}}, so the consistency
+397: % of the estimate is not shown.}
+398: % % FEEDBACK (own, 2026-10-21): SUBNET's independence assumption is stated in
+399: % %   IV-C (Beintema 2023 Sec. 2.1); the correlation is stated in Section II",Beintema-2023-Deep-subspace-encoders.pdf,10; 9,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gautier1990minimum,sections/02_system_baseline.tex,799,retained text,ucite,,"796: \cite[Def.~7]{ovchinnikov2021computing}.
+797: % Ovchinnikov Def. 7 checked against PDF p3 (2026-10-22): todo removed.
+798: \add[own]{Following the idea of base parameters used in robot
+799: dynamics\ucite{gautier1990minimum},} \chg[own]{We}{we} define \chg[own]{these ten combinations}{them} as
+800: \begin{equation}
+801:   \theta_{\mathrm{base}}=[k_{b,\Sigma},c_{g1},c_{g2},c_y,c_{b,\Sigma},
+802:   m_h,m_\Sigma,m_\Delta,J_{\mathrm{eff}},d]^\top,",Gautier-1990-Minimum-inertial-parameters-serial-robots.pdf,1,Scanned article; inspect visually. No reliable text search is available.,,
+gautier1990minimum,sections/02_system_baseline.tex,808,deleted text,cite,,"805: with $k_{b,\Sigma}=k_{b1}+k_{b2}$, $c_{b,\Sigma}=c_{b1}+c_{b2}$,
+806: $m_\Sigma=m_1+m_2+m_b$, $m_\Delta=m_1-m_2$ and
+807: $J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$. 
+808: \del[own]{This follows the idea of base parameters used in robot dynamics~\cite{gautier1990minimum}.}\todo{check source}
+809: % FEEDBACK v2 (2026-10-22, Dirk): sentence folded into the definition of
+810: %   theta_base above, in Dirk's words; Gautier still unchecked (no local PDF).
+811: \chg[own]{For $m_h>0$, $\theta_{\mathrm{base}}$}{Since $\theta_{\mathrm{base}}$} can be uniquely determined from",Gautier-1990-Minimum-inertial-parameters-serial-robots.pdf,1,Scanned article; inspect visually. No reliable text search is available.,,
+ovchinnikov2021computing,sections/02_system_baseline.tex,739,retained text,cite,Def.~7,"736: \chg[M-p5]{motion}{positions $q$} for every input force
+737: \del[M-p5]{ satisfy}\add[M-p5]{
+738: also have the same $\dot q$ and $\ddot q$, since both are derivatives
+739: of $q$~\mbox{\cite[Def.~7]{ovchinnikov2021computing}}.}
+740: % Subtracting \eqref{eq:eom} for $\theta'$ from that for $\theta$ gives}
+741: % FEEDBACK v2 (2026-10-22, Maarten p5): (a) ""reference for this statement?
+742: %   This is a large jump ... don't you also need the acceleration to be",Ovchinnikov-2021-Identifiable-functions-ODE-models.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+ovchinnikov2021computing,sections/02_system_baseline.tex,796,retained text,cite,Def.~7,"793: Since the matrices \del[own]{only }depend on \chg[M-p5]{these ten functions}{ten
+794: independent combinations of $\theta$ (Appendix~\mbox{\ref{app:combos}})},
+795: \chg[own]{exactly ten independent combinations of $\theta$}{only these} can be identified
+796: \cite[Def.~7]{ovchinnikov2021computing}.
+797: % Ovchinnikov Def. 7 checked against PDF p3 (2026-10-22): todo removed.
+798: \add[own]{Following the idea of base parameters used in robot
+799: dynamics\ucite{gautier1990minimum},} \chg[own]{We}{we} define \chg[own]{these ten combinations}{them} as",Ovchinnikov-2021-Identifiable-functions-ODE-models.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+toth2010modeling,sections/02_system_baseline.tex,616,retained text,cite,,"613: as scheduling variable~\mbox{\cite{toth2010modeling}}.}
+614: This position dependence is included by representing
+615: \chg[own]{the baseline}{\eqref{eq:base_ss}} in linear parameter-varying (LPV)
+616: form, with the payload position $Y$ as scheduling variable~\cite{toth2010modeling}.
+617: \add[own]{\kwtwo{For a given $Y$, \eqref{eq:base_ss} is then linear in $\tilde x$ and $u$.}}
+618: The payload position $Y$ is both a state and the scheduling variable,
+619: making the baseline a self-scheduled LPV model\add[own]{~\cite{drenth2026lpvlfr}}.",Toth-2010-Modeling-identification-LPV-systems.pdf,191; 164,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+toth2010modeling,sections/02_system_baseline.tex,515,deleted text,cite,,"512: %   III-B, where the LPV form is introduced; the factor-3.7 sentence dropped
+513: %   (the comparison stays in Appendix C).
+514: \delmv{III-B}{Moving the payload position $Y$ changes the mass distribution of the gantry and therefore its inertia matrix $M(Y)$.
+515: This position dependence is included by representing the baseline in linear parameter-varying (LPV) form, with the payload position \(Y\) as scheduling variable \cite{toth2010modeling}.}
+516: \del{Freezing $M(Y)$ at $Y=0$ increases the simulation error on $X$ by
+517: up to a factor 3.7 (Fig.~\ref{fig:res_lpv_lti} in
+518: Appendix~\ref{app:choices}).}",Toth-2010-Modeling-identification-LPV-systems.pdf,191; 34,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+toth2010modeling,sections/02_system_baseline.tex,613,deleted text,cite,,"610: \del[own]{Treating $Y$ as an externally specified scheduling signal,
+611: \mbox{\eqref{eq:base_ss}} is linear in $\tilde x$ and $u$, with matrices
+612: that depend on $Y$: it is a linear parameter-varying (LPV) model with $Y$
+613: as scheduling variable~\mbox{\cite{toth2010modeling}}.}
+614: This position dependence is included by representing
+615: \chg[own]{the baseline}{\eqref{eq:base_ss}} in linear parameter-varying (LPV)
+616: form, with the payload position $Y$ as scheduling variable~\cite{toth2010modeling}.",Toth-2010-Modeling-identification-LPV-systems.pdf,191; 73,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+toth2010modeling,sections/02_system_baseline.tex,418,commented out,cite,,"415: % and the yaw inertia grows with $m_hY^2$. Moving the payload therefore changes 
+416: % both the load distribution over the two drives and the inertia about the yaw axis. 
+417: % The baseline keeps this dependence in linear parameter-varying (LPV) form, 
+418: % with the measured position $Y$ as scheduling variable \cite{toth2010modeling}.
+419: Following Garc\'ia-Herreros et al. \cite{garcia2013model}, the baseline assumes $\cos(\Theta)\approx1$ and $\sin(\Theta)\approx0$, 
+420: valid for small yaw angles, and assumes that the Coriolis and centripetal force terms are
+421: negligible compared to the inertia, damping, and stiffness forces.",Toth-2010-Modeling-identification-LPV-systems.pdf,164; 70,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+drenth2026lpvlfr,sections/02_system_baseline.tex,619,retained text,cite,,"616: form, with the payload position $Y$ as scheduling variable~\cite{toth2010modeling}.
+617: \add[own]{\kwtwo{For a given $Y$, \eqref{eq:base_ss} is then linear in $\tilde x$ and $u$.}}
+618: The payload position $Y$ is both a state and the scheduling variable,
+619: making the baseline a self-scheduled LPV model\add[own]{~\cite{drenth2026lpvlfr}}.
+620: % FEEDBACK v2 (2026-10-22, own): todo ""source, or do i state it
+621: %   earlier..?"" resolved by the citation: Drenth (arXiv v1, PDF p2) embeds a
+622: %   nonlinear system in LPV form with p = psi(x, u), and calls such models",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,4; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+drenth2026lpvlfr,sections/03_augmentation.tex,1331,retained text,cite,Sec.~4.1,"1328: \chg[own]{We then polish with L-BFGS on a fixed set of windows.}{\kwtwo{\chg[own]{After Adam,}{From these parameters,} we continue to minimise $V$ with L-BFGS on a fixed set of windows.
+1329: We call this step polish\chg[own]{.}{, and the parameter updates from this step are only kept if they lower the validation error.}}}
+1330: \chg[own]{This is adapted from the Adam and L-BFGS-B sequence of Drenth
+1331: et al.}{\kwtwo{Drenth et al.\ also use Adam followed by L-BFGS-B}}~\cite[Sec.~4.1]{drenth2026lpvlfr}.
+1332: Because every $\beta$ satisfies \eqref{eq:lfr_admissibility},
+1333: unconstrained L-BFGS works without a bound.
+1334: \delmv[own]{above}{The parameters are selected on a separate validation set",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,80,retained text,cite,,"77: matrices do not depend on $Y$.
+78: We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
+79: with the scheduling being connected in feedback
+80: with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2026lpvlfr,hoekstra2026lfr}.}
+81: \begin{figure}[!ht]
+82:   \centering
+83:   \input{figures/lfr_loop}",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2; 6,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+drenth2026lpvlfr,sections/99_appendix.tex,124,retained text,cite,Eq.~(2),"121:   \label{eq:delta}
+122: \end{equation}
+123: \mv[Dirk]{III-B}{We write the LTI part $G$ of the LFR in continuous time, adapting the
+124: discrete-time block structure of~\cite[Eq.~(2)]{drenth2026lpvlfr}:}
+125: \todo{Check this}
+126: \begin{equation}
+127:   \begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2; 3; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,141,retained text,cite,Def.~1,"138: $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
+139: into \eqref{eq:eom}. The LFR is therefore an exact realisation of the baseline.
+140: The LFR is well posed if the algebraic loop has a unique solution for
+141: every $Y$ \cite[Def.~1]{drenth2026lpvlfr}.}
+142: 
+143: % FEEDBACK (2026-10-22, Dirk): A.2 shortened; derivation unchanged and as in
+144: %   docs/Thesis-documentation/LPV_LFR_Stepwise_Derivation/main.tex (Overleaf,",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,160,retained text,cite,Eq.~(2),"157: \add[own]{\kwtwo{With $R=M_0^{-1}$ ($M_0=M(0)\succ0$,
+158: Appendix~\ref{app:lfr-wellposed}), \eqref{eq:lfr_constant} gives
+159: $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$.
+160: Partitioning $G$ in \eqref{eq:lfr_G} as in~\cite[Eq.~(2)]{drenth2026lpvlfr},
+161: with rows $(\dot{\tilde x},z,q)$ and columns $(\tilde x,w,u)$, gives the blocks}}
+162: % \begin{equation}
+163: %  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2; 3; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,216,retained text,cite,Def.~1,"213:  &=\det M(Y)/\det M_0,
+214: \end{aligned}
+215: \end{equation*}
+216: \add[own]{\kwtwo{so the condition of \cite[Def.~1]{drenth2026lpvlfr} holds if and only if
+217: $M(Y)$ is nonsingular.}}
+218: % FEEDBACK (2026-10-22, own): closed-form sentence struck; it repeats the
+219: %   loop closing above (exact realisation), and Section IV no longer cites",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/02_system_baseline.tex,659,deleted text,cite,,"656: matrices do not depend on $Y$.
+657: We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
+658: with the scheduling being connected in feedback
+659: with $G$ (Fig.~\mbox{\ref{fig:lfr}}) \mbox{\cite{drenth2026lpvlfr,hoekstra2026lfr}}.
+660: Substituting \mbox{\eqref{eq:Msplit}} into \mbox{\eqref{eq:eom}} gives (7).
+661: Here $Y$ only enters through $Y\ddot q$ and $Y^2\ddot q$,
+662: with $Y^2\ddot q=Y(Y\ddot q)$. This lets us apply the same scheduling variable twice",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+drenth2026lpvlfr,sections/02_system_baseline.tex,672,deleted text,cite,Eq.~(2),"669: The latent variables are $z=[\ddot q^\top\;a_1^\top]^\top$ and $w=[a_1^\top\;a_2^\top]^\top$,
+670: with the Delta-block mapping $z$ to $w$ (10).
+671: We write the LTI part $G$ of the LFR in continuous time, adapting the
+672: discrete-time block structure of~\mbox{\cite[Eq.~(2)]{drenth2026lpvlfr}} (11),
+673: where $\tilde x=[q^\top\;\dot q^\top]^\top$ is the state and $q$ the output.
+674: The first block row is the state equation, with $\ddot q$ obtained from
+675: (9) by multiplying with $M_0^{-1}$.",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2; 3; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/02_system_baseline.tex,681,deleted text,cite,Def.~1,"678: $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns (9) back
+679: into \mbox{\eqref{eq:eom}}. The LFR is therefore an exact realisation of the baseline.
+680: The LFR is well posed if the algebraic loop has a unique solution for
+681: every $Y$ \mbox{\cite[Def.~1]{drenth2026lpvlfr}}.}
+682: 
+683: \subsection{Physical parameters and identifiable combinations}\label{sec:params}
+684: \ifdraft",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,156,deleted text,cite,Eq.~(2),"153: $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
+154: $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
+155: \mbox{\eqref{eq:lfr_G}}, using a continuous-time adaptation of the block partition
+156: in~\mbox{\cite[Eq.~(2)]{drenth2026lpvlfr}}, is}
+157: \add[own]{\kwtwo{With $R=M_0^{-1}$ ($M_0=M(0)\succ0$,
+158: Appendix~\ref{app:lfr-wellposed}), \eqref{eq:lfr_constant} gives
+159: $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$.",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2; 3; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,205,deleted text,cite,Def.~1,"202: \del[own]{The second block row gives $a_1=Y\ddot q$, and the first then gives
+203: $M(Y)\ddot q=u-C\dot q-Kq$, that is \mbox{\eqref{eq:eom}}, after multiplication by
+204: $M_0$. The condition of
+205: \mbox{\cite[Def.~1]{drenth2026lpvlfr}}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
+206: therefore the condition that $M(Y)$ is nonsingular: the Schur complement of
+207: the lower identity block gives}
+208: \add[own]{\kwtwo{The Schur complement of the lower identity block gives}}",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,2,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+drenth2026lpvlfr,sections/99_appendix.tex,323,draft material,cite,,"320: \begin{wip}
+321: \todo{Remarks cut from Section~II-B; keep here or drop?}
+322: \begin{itemize}
+323: \item $Y^2$ is realised by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2026lpvlfr}
+324: \item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2026lpvlfr}
+325: \item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2026lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+326: \item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,3; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+drenth2026lpvlfr,sections/99_appendix.tex,324,draft material,cite,,"321: \todo{Remarks cut from Section~II-B; keep here or drop?}
+322: \begin{itemize}
+323: \item $Y^2$ is realised by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2026lpvlfr}
+324: \item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2026lpvlfr}
+325: \item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2026lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+326: \item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
+327: \end{itemize}",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,3; 1,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+drenth2026lpvlfr,sections/99_appendix.tex,325,draft material,cite,Thm.~6,"322: \begin{itemize}
+323: \item $Y^2$ is realised by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2026lpvlfr}
+324: \item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2026lpvlfr}
+325: \item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2026lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+326: \item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
+327: \end{itemize}
+328: \end{wip}",Drenth-2026-LPV-models-linear-fractional-representation-arXiv-v1.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1129,retained text,cite,footnote~1,"1126: % RESTRUCTURE (2026-10-19, Maarten p8): joint estimation and the criterion moved here, after the encoder they use.
+1127: \mv[M-p8]{IV-C start}{\kwtwo{The network parameters $\theta_{\mathrm{aug}}$, the encoder parameters $\theta_{\mathrm{enc}}$ and} $\theta_{\mathrm{base}}$ are jointly estimated,
+1128: as in~\cite[Eq.~(22)]{hoekstra2026lfr}\kwtwo{, while the encoder paper keeps
+1129: $\theta_{\mathrm{base}}$ fixed~\cite[footnote~1]{hoekstra2026encoder}}.}
+1130: \mv[M-p8]{IV-C start}{The parameters
+1131: $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
+1132: are trained to minimise the normalised output error of the",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,2,Footnote 1 is on PDF page 2. Read its qualification about co-estimating the baseline parameters before judging the thesis wording.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1210,retained text,cite,Eq.~(8),"1207: % , and to 
+1208: % average out measurement noise over the window.
+1209: The encoder uses a linear map with a nonlinear
+1210: correction~\cite[Eq.~(8)]{hoekstra2026encoder}:
+1211: \begin{equation}
+1212:  \psi(\theta_{\mathrm{enc}},\chi_\tau)
+1213:  =\begin{bmatrix}W^b\\ W^a\end{bmatrix}\chi_\tau",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,3; 4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1376,retained text,cite,Sec.~3.1,"1373: a linearisation point has to be chosen,
+1374: making the map only accurate around that
+1375: point}{\kwtwo{A model-based state reconstruction map for the nonlinear baseline needs a
+1376: linearisation point, so the map is only accurate around that point}}~\cite[Sec.~3.1]{hoekstra2026encoder}.
+1377: Hoekstra et al.\ therefore suggest fitting the encoder to 
+1378: states simulated with the 
+1379: baseline~\cite[Sec.~3.2, Eq.~(35)]{hoekstra2026encoder}, as their ",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1379,retained text,cite,"Sec.~3.2, Eq.~(35)","1376: linearisation point, so the map is only accurate around that point}}~\cite[Sec.~3.1]{hoekstra2026encoder}.
+1377: Hoekstra et al.\ therefore suggest fitting the encoder to 
+1378: states simulated with the 
+1379: baseline~\cite[Sec.~3.2, Eq.~(35)]{hoekstra2026encoder}, as their 
+1380: augmentation method does~\cite[Eq.~(30)]{hoekstra2026lfr}.
+1381: We apply this approach and simulate the baseline model once before training 
+1382: to obtain the physical state at every sample \chg[M-p8]{$\tau$}{$k$}.",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1421,retained text,cite,Eq.~(33),"1418: encoder paper Sec.~3.2, and their public code), and whether our records
+1419: start at rest, which the zero velocities assume.}
+1420: The physical rows of the encoder are then fitted to the simulated
+1421: states by least squares~\cite[Eq.~(33)]{hoekstra2026encoder}:
+1422: \begin{equation}
+1423:  \bigl(W^{b,0},b^{b,0}\bigr)\in\arg\min_{W^b,\,b}
+1424:  \frac{1}{|\mathcal D|}\sum_{\tau\in\mathcal D}",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1442,retained text,cite,"Eqs.~(33), (35)","1439: $\hat u^{\mathrm n,0}$ instead of the recorded $y^{\mathrm n}$ and $u^{\mathrm n}$.
+1440: $\mathcal D$ is the set of samples $\tau$ where we fit the encoder in \eqref{eq:aug_enc_fit}.}}}
+1441: Hoekstra et al.\ use this linear fit for LTI baselines and fit a
+1442: neural network for nonlinear baselines~\cite[Eqs.~(33), (35)]{hoekstra2026encoder}.
+1443: % FEEDBACK (Dirk, 2026-10-23): abstract ""linear restriction"" wording
+1444: %   replaced by what we do (Dirk 2026-10-23).
+1445: \chg[own]{We use the linear fit as a linear restriction of their data-based",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hoekstra2026encoder,sections/03_augmentation.tex,1055,deleted text,cite,,"1052: %   Section III-C. Struck here, equations shown as struck notes.
+1053: \delmv[M-p8]{IV-C, below}{The network parameters $\theta_{\mathrm{aug}}$, the encoder parameters $\theta_{\mathrm{enc}}$ and $\theta_{\mathrm{base}}$ are jointly estimated,
+1054: as in~\cite{hoekstra2026lfr}, while the encoder paper keeps
+1055: $\theta_{\mathrm{base}}$ fixed~\cite{hoekstra2026encoder}.}
+1056: \delmv[M-mail]{III-C}{The optimiser updates $\theta_{\mathrm{base}}$ through training coordinates $\beta\in\R^{10}$,
+1057: which are zero at the initial parameters $\theta^0_{\mathrm{base}}$ and keep
+1058: every iterate admissible (Section~\ref{sec:params}).",Hoekstra-2026-Encoder-initialisation-arXiv-v1.pdf,5; 6,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2025l4dc,sections/04_obc.tex,185,retained text,cite,"Sec.~4, Eq.~(15)","182: Instead of the regressor the Jacobian of the baseline state update is taken 
+183: with respect to $\beta$,
+184: as in the orthogonal regularisation method of
+185: Gy\""or\""ok et al.~\cite[Sec.~4, Eq.~(15)]{gyorok2025l4dc}.
+186: Like the regressor, the stacked Jacobian must have full column rank.
+187: % FEEDBACK (2026-10-23, Jasper v1 p8 JsV1 ""what is beta""; Dirk): back-reference.
+188: This requires identifiable parameters, which is why we use $\beta$\add[JsV1]{\kwtwo{ (Section~\mbox{\ref{sec:params}})}}.",Gyorok-2025-Orthogonal-projection-regularization.pdf,1; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2025l4dc,sections/04_obc.tex,202,retained text,cite,Eq.~(16),"199: %   wording around Eq. (16); ""so""/""because"" tails and ""part of"" cut; the
+200: %   Eq. (18) reason says what the column does.
+201: \chg[Dirk]{\kw{The linearisation also leaves an offset that does not depend on
+202: $\beta$}}{\kwtwo{Expanding \eqref{eq:obc_sens} gives}}\kw{~\cite[Eq.~(16)]{gyorok2025l4dc}:}
+203: \begin{equation}
+204: \begin{aligned}
+205:  f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)",Gyorok-2025-Orthogonal-projection-regularization.pdf,7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2025l4dc,sections/04_obc.tex,219,retained text,cite,Eq.~(18),"216: \kw{Gy\""or\""ok et al.\ add this offset as an extra column to the Jacobian, to}
+217: \chg[Dirk]{\kw{include all components of the baseline model in the
+218: orthogonality}}{\kwtwo{make the neural network also orthogonal to the next
+219: states predicted by the baseline}}\kw{~\cite[Eq.~(18)]{gyorok2025l4dc}.
+220: We include it as well}\del[Dirk]{\kw{, so the neural network has no component along the
+221: stacked next states predicted by the baseline}}.
+222: % RESTRUCTURE (2026-10-19, Maarten mail): moved below eq:obc_recovery, which",Gyorok-2025-Orthogonal-projection-regularization.pdf,7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2025l4dc,sections/04_obc.tex,353,retained text,cite,Sec.~4,"350: of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to
+351: keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters,
+352: assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\""or\""ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration
+353: or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
+354: \chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{\kwtwo{To allow training to start}} from detuned parameters\add[Dirk]{\kwtwo{ without rebuilding $\Phi_\Gamma$ at each evaluation of $V$}},
+355: we instead adapt their recomputation 
+356: at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.",Gyorok-2025-Orthogonal-projection-regularization.pdf,1; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2025l4dc,sections/04_obc.tex,356,retained text,cite,Remark~2,"353: or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
+354: \chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{\kwtwo{To allow training to start}} from detuned parameters\add[Dirk]{\kwtwo{ without rebuilding $\Phi_\Gamma$ at each evaluation of $V$}},
+355: we instead adapt their recomputation 
+356: at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
+357: % CUT (2026-10-23, Maarten mail ""korter""; Dirk yes): checkpoint and polish
+358: %   handling is run procedure, not method; no later section refers to it.
+359: \del[M-mail]{We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.",Gyorok-2025-Orthogonal-projection-regularization.pdf,7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2025l4dc,sections/04_obc.tex,350,deleted text,cite,Sec.~4,"347: %   alternatives of Gyorok 2025 Sec. 4 shortened to one sentence.
+348: \chg[M-mail]{Gy\""or\""ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
+349: which requires rebuilding $\Phi_\Gamma$ at each evaluation
+350: of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to
+351: keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters,
+352: assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\""or\""ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration
+353: or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}",Gyorok-2025-Orthogonal-projection-regularization.pdf,1; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2025l4dc,sections/04_obc.tex,352,deleted text,cite,Sec.~4,"349: which requires rebuilding $\Phi_\Gamma$ at each evaluation
+350: of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to
+351: keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters,
+352: assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\""or\""ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration
+353: or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
+354: \chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{\kwtwo{To allow training to start}} from detuned parameters\add[Dirk]{\kwtwo{ without rebuilding $\Phi_\Gamma$ at each evaluation of $V$}},
+355: we instead adapt their recomputation ",Gyorok-2025-Orthogonal-projection-regularization.pdf,1; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/01_introduction.tex,149,retained text,cite,,"146: physical interpretability are required.}
+147: \del[own]{Physical interpretability means that }Physical interpretability means that the identifiable combinations of the physical
+148: parameters\del[M-mail]{ (Section~\ref{sec:params})} are estimated uniquely
+149: \cite{gyorok2026obc}.
+150: This does not guarantee identifying the true parameters,
+151: but a deviation\del[M-p2c]{ from the trained model} can then indicate which
+152: physical parameter has changed\chg[M-p2c]{.}{,}}",Gyorok-2026-Orthogonal-by-construction.pdf,3; 8,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/01_introduction.tex,299,retained text,cite,,"296: \cite{kessels2025ai}.
+297: Refitting the physical parameters allows them to \chg[own]{absorbs}{absorb} unmodelled dynamics,
+298: and an unconstrained \chg[own]{learning}{learned} component is able to absorb dynamics
+299: the baseline already describes \cite{gyorok2026obc}.
+300: % FEEDBACK v2 (own): source checked 2026-10-20, todo removed. Gyorok Sec. 1,
+301: %   p. 2 (the ANN learns relations the FP model can represent, baseline
+302: %   parameters tuned to unrealistic values) and Sec. 4.2 with Eq. (21)",Gyorok-2026-Orthogonal-by-construction.pdf,2; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/01_introduction.tex,362,retained text,cite,,"359: %   bonder updated from closed-loop measurements (Sec. 5.3.2)
+360: Orthogonal-by-construction (OBC) augmentation keeps the learned component
+361: orthogonal to the baseline parameters, so that their 
+362: estimates are unique \cite{gyorok2026obc}. This has currently only been 
+363: formulated for discrete-time input-output models, and not for state-space models.
+364: % NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10
+365: %   (state-space form named as future research)",Gyorok-2026-Orthogonal-by-construction.pdf,9; 5,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/03_augmentation.tex,406,retained text,cite,,"403: \\
+404: The dynamic-parallel augmentation structure is chosen, because the
+405: orthogonal-by-construction \chg[M-mail]{parametrisation that Section~\ref{sec:obc} builds upon}{\kwtwo{augmentation}}
+406: is defined for \kwtwo{this additive structure}~\cite{gyorok2026obc}.
+407: % FEEDBACK (Dirk, 2026-10-22): no section pointer; the cite carries it and
+408: %   OBC is introduced in Section I (Dirk 2026-10-22).
+409: \\",Gyorok-2026-Orthogonal-by-construction.pdf,2; 9,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/04_obc.tex,90,retained text,cite,Sec.~3.1,"87: unique.}
+88: The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
+89: minimising the loss function of Section~\ref{sec:aug_closed_loop} can be non-unique:
+90: different pairs can give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
+91: % Jan v1 (Jan-2 p7): ""Write this in Section IV""; the cut sentence repeats the next one.
+92: \chg[Jan]{Meaning that the rigid-body dynamics that the baseline parameters
+93: $\theta_{\mathrm{base}}$ are able to explain from the data, can instead be represented by",Gyorok-2026-Orthogonal-by-construction.pdf,3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,97,retained text,cite,,"94: a neural network correction.}{\kwtwo{Then $\theta_{\mathrm{base}}$ is not interpretable
+95: as defined in Section~\mbox{\ref{sec:intro}}.}}
+96: To prevent the neural network from correcting what $\theta_{\mathrm{base}}$ 
+97: can represent we introduce orthogonality by construction~\cite{gyorok2026obc}.
+98: Orthogonality here is defined as the neural network correction to the
+99: physical states having no component in the directions in which a change of
+100: $\theta_{\mathrm{base}}$ is able to change the next state predicted by the baseline.",Gyorok-2026-Orthogonal-by-construction.pdf,2; 4,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/04_obc.tex,108,retained text,cite,,"105: themselves are orthogonal to these directions.}}
+106: \\
+107: Gy\""or\""ok et al.\ have constructed this for input-output baseline models that
+108: are linear in their parameters~\cite{gyorok2026obc}.
+109: We extend this to state-space models nonlinear in their parameters,
+110: specifically for our gantry system.
+111: % RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III and IV.",Gyorok-2026-Orthogonal-by-construction.pdf,9; 5,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/04_obc.tex,133,retained text,cite,"Eqs.~(2), (39)","130: $\hat y_k=\varphi(x_k)\theta_{\mathrm b}$,
+131: changing $\theta_{\mathrm b}$ changes the model output $\hat y_k$
+132: by a linear combination of the columns of the
+133: regressor $\varphi(x_k)$~\cite[Eqs.~(2), (39)]{gyorok2026obc}.
+134: Gy\""or\""ok et al.\ subtract from the neural network output
+135: its least-squares fit by the stacked
+136: regressor~\cite[Eqs.~(8), (9), (11), Lemma~3]{gyorok2026obc}:",Gyorok-2026-Orthogonal-by-construction.pdf,2; 3; 5; 7; 8,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,136,retained text,cite,"Eqs.~(8), (9), (11), Lemma~3","133: regressor $\varphi(x_k)$~\cite[Eqs.~(2), (39)]{gyorok2026obc}.
+134: Gy\""or\""ok et al.\ subtract from the neural network output
+135: its least-squares fit by the stacked
+136: regressor~\cite[Eqs.~(8), (9), (11), Lemma~3]{gyorok2026obc}:
+137: \begin{equation}
+138: \begin{aligned}
+139:  \hat Y&=\Phi\theta_{\mathrm b}+\tilde F^{\mathrm{ANN}},\\",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4; 5; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,147,retained text,cite,Eq.~(1),"144: \label{eq:obc_gyorok}
+145: \end{equation}
+146: where $x_k$ is the vector of past measured outputs and past and current
+147: inputs~\cite[Eq.~(1)]{gyorok2026obc}, $\hat Y$ stacks the
+148: % FEEDBACK (2026-10-23, Dirk): ""training data"" -> D_N, the name since Section II.
+149: predicted outputs over \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}, $\Phi$ is the stacked
+150: regressor, $F^{\mathrm{ANN}}$ stacks the parallel network",Gyorok-2026-Orthogonal-by-construction.pdf,2; 3; 5; 6; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,151,retained text,cite,Eq.~(5),"148: % FEEDBACK (2026-10-23, Dirk): ""training data"" -> D_N, the name since Section II.
+149: predicted outputs over \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}, $\Phi$ is the stacked
+150: regressor, $F^{\mathrm{ANN}}$ stacks the parallel network
+151: outputs~\cite[Eq.~(5)]{gyorok2026obc} and $\tilde F^{\mathrm{ANN}}$ is the
+152: projected network output~\cite[Eqs.~(9), (10)]{gyorok2026obc}.
+153: \\
+154: The projected network output $\tilde F^{\mathrm{ANN}}$ is",Gyorok-2026-Orthogonal-by-construction.pdf,2; 3; 9; 10,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,152,retained text,cite,"Eqs.~(9), (10)","149: predicted outputs over \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}, $\Phi$ is the stacked
+150: regressor, $F^{\mathrm{ANN}}$ stacks the parallel network
+151: outputs~\cite[Eq.~(5)]{gyorok2026obc} and $\tilde F^{\mathrm{ANN}}$ is the
+152: projected network output~\cite[Eqs.~(9), (10)]{gyorok2026obc}.
+153: \\
+154: The projected network output $\tilde F^{\mathrm{ANN}}$ is
+155: orthogonal to the regressor~\cite[Lemma~3]{gyorok2026obc}.",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4; 5; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,155,retained text,cite,Lemma~3,"152: projected network output~\cite[Eqs.~(9), (10)]{gyorok2026obc}.
+153: \\
+154: The projected network output $\tilde F^{\mathrm{ANN}}$ is
+155: orthogonal to the regressor~\cite[Lemma~3]{gyorok2026obc}.
+156: Calculating $\theta_{\mathrm{aux}}$ requires
+157: $(\Phi^\top\Phi)^{-1}$, which exists only if $\Phi$ has
+158: full column rank~\cite[Assumption~1]{gyorok2026obc}.",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,158,retained text,cite,Assumption~1,"155: orthogonal to the regressor~\cite[Lemma~3]{gyorok2026obc}.
+156: Calculating $\theta_{\mathrm{aux}}$ requires
+157: $(\Phi^\top\Phi)^{-1}$, which exists only if $\Phi$ has
+158: full column rank~\cite[Assumption~1]{gyorok2026obc}.
+159: Therefore different values of $\theta_{\mathrm b}$ are unable 
+160: % FEEDBACK (2026-10-23, Dirk): ""training data"" -> D_N; no ""call"".
+161: to give the same stacked prediction on \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}.",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,163,retained text,cite,"Eq.~(6), Sec.~4.3","160: % FEEDBACK (2026-10-23, Dirk): ""training data"" -> D_N; no ""call"".
+161: to give the same stacked prediction on \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}.
+162: \chg[Dirk]{Gy\""or\""ok et al.\ call an input with this property}{\kwtwo{An input with this property is}} persistently
+163: exciting~\cite[Eq.~(6), Sec.~4.3]{gyorok2026obc}.
+164: This also requires an identifiable baseline, where different
+165: values of $\theta_{\mathrm b}$ give different functions
+166: $\varphi(\cdot)\theta_{\mathrm b}$.",Gyorok-2026-Orthogonal-by-construction.pdf,3; 10; 5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,244,retained text,cite,"Eqs.~(1), (2)","241: 
+242: \chg{The}{\kwtwo{Second, the}} Jacobian also depends on the state, while the regressor of
+243: Gy\""or\""ok et al.\ uses only measured inputs and
+244: outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.
+245: Since only the positions are measured, we evaluate the Jacobian at these
+246: positions with the velocities reconstructed from them:
+247: \begin{equation}",Gyorok-2026-Orthogonal-by-construction.pdf,2; 3; 5; 6; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,294,retained text,cite,"Eqs.~(9), (13)","291: % FEEDBACK (2026-10-23, Jasper v1 p8 JsV10 ""which correction?""; Dirk): the
+292: %   Gyorok sentence is cut, ""correction"" now only means f_aug; the output
+293: %   contrast is in the ""Third, ..."" sentence; citation moved up.
+294: physical state at every step in the closed-loop simulation\add[JsV10]{\kwtwo{~\cite[Eqs.~(9), (13)]{gyorok2026obc}}}.
+295: At each step, we subtract the Jacobian \kw{and offset} multiplied by
+296: $\theta_{\mathrm{aux}}$ from the network correction,
+297: evaluated at the current state and input.",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4; 5; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,325,retained text,cite,"Eqs.~(9), (10)","322: %   in"" (the verb of the same sentence); ""so ... is trained"" -> ""to train"".
+323: $g^{\mathrm n}_{\mathrm{aug}}$ \chg[Dirk]{take the arguments of}{\kwtwo{are evaluated as in}} \eqref{eq:aug_loss}.
+324: We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, as
+325: in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
+326: \chg[Dirk]{\kw{so} the network is trained}{\kwtwo{to train the network}} using the gradient of its projected output.
+327: \subsection{Identification and recovery}\label{sec:obc_ident}
+328: \ifdraft",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4; 5; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,382,retained text,cite,"Eqs.~(14), (15)","379: \label{eq:obc_eps}
+380: \end{equation}
+381: where $\Xi\in\R^{6N}$ contains the unmodelled terms
+382: of~\cite[Eqs.~(14), (15)]{gyorok2026obc},
+383: the reconstruction error of \eqref{eq:obc_tuples}
+384: and the measurement noise.
+385: To first order around $\beta^\star$, the one-step error on the tuples is",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4; 5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,402,retained text,cite,Eq.~(25),"399: \mv[M-mail]{V-B}{The offset does not change the first-order estimate \eqref{eq:obc_recovery}.}
+400: Without the projection, $\Phi^\top F^{\mathrm n}_{\mathrm{aug}}$
+401: % FEEDBACK (2026-10-23, Dirk): beta_np is Gyorok 2026 Eq. (25) (PDF p4, Sec. 4.2).
+402: is still in the estimate $\hat\beta_{\mathrm{np}}$\add[Dirk]{\kwtwo{~\cite[Eq.~(25)]{gyorok2026obc}}}.
+403: The expression for $\hat\beta-\beta^\star$ has the same form as
+404: Gy\""or\""ok et al.~\cite[Eq.~(21)]{gyorok2026obc}, which they derived
+405: % FEEDBACK (2026-10-23, Dirk): Gyorok's own wording (2026 PDF p4, line before",Gyorok-2026-Orthogonal-by-construction.pdf,4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,404,retained text,cite,Eq.~(21),"401: % FEEDBACK (2026-10-23, Dirk): beta_np is Gyorok 2026 Eq. (25) (PDF p4, Sec. 4.2).
+402: is still in the estimate $\hat\beta_{\mathrm{np}}$\add[Dirk]{\kwtwo{~\cite[Eq.~(25)]{gyorok2026obc}}}.
+403: The expression for $\hat\beta-\beta^\star$ has the same form as
+404: Gy\""or\""ok et al.~\cite[Eq.~(21)]{gyorok2026obc}, which they derived
+405: % FEEDBACK (2026-10-23, Dirk): Gyorok's own wording (2026 PDF p4, line before
+406: %   and text of Assumption 6); ""noise-free"" is not part of the assumption.
+407: assuming \chg[Dirk]{an exact fit of noise-free",Gyorok-2026-Orthogonal-by-construction.pdf,4; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,408,retained text,cite,Assumption~6,"405: % FEEDBACK (2026-10-23, Dirk): Gyorok's own wording (2026 PDF p4, line before
+406: %   and text of Assumption 6); ""noise-free"" is not part of the assumption.
+407: assuming \chg[Dirk]{an exact fit of noise-free
+408: data}{\kwtwo{the model exactly recovers the dynamics on $\mathcal D_N$}}~\cite[Assumption~6]{gyorok2026obc}.
+409: We obtain it by minimising the squared one-step error.
+410: The estimate equals $\beta^\star$ if and only if
+411: % FEEDBACK (2026-10-23, Dirk): Phi^T Xi = 0 is the orthogonality, not a requirement for it.",Gyorok-2026-Orthogonal-by-construction.pdf,4; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,413,retained text,cite,"Condition~4, Remark~5","410: The estimate equals $\beta^\star$ if and only if
+411: % FEEDBACK (2026-10-23, Dirk): Phi^T Xi = 0 is the orthogonality, not a requirement for it.
+412: $\Phi^\top\Xi=0$, \chg[Dirk]{requiring $\Xi$ to be}{\kwtwo{which means that $\Xi$ is}} orthogonal to the
+413: columns of $\Phi$ on the tuples~\cite[Condition~4, Remark~5]{gyorok2026obc}.
+414: % FEEDBACK (2026-10-23, Dirk): first order, one-step and x-bar = 0 are
+415: %   stated above and in V-B; only the closed-loop limit is kept, in Dirk's
+416: %   ""This holds for ..., not for ..."" pattern (V-B).",Gyorok-2026-Orthogonal-by-construction.pdf,4; 6; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/01_introduction.tex,247,deleted text,cite,,"244: \delmv[own]{P2}{For the plant model of the dual-drive gantry, both predictive
+245: accuracy and physical interpretability are required.
+246: Physical interpretability means that the identifiable combinations of the
+247: physical parameters are estimated uniquely \cite{gyorok2026obc}.
+248: This does not guarantee identifying the true parameters, but a deviation
+249: from the trained model can then indicate which physical parameter has
+250: changed.}",Gyorok-2026-Orthogonal-by-construction.pdf,8; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+gyorok2026obc,sections/04_obc.tex,299,deleted text,cite,"Eqs.~(9), (13)","296: $\theta_{\mathrm{aux}}$ from the network correction,
+297: evaluated at the current state and input.
+298: \del[JsV10]{Gy\""or\""ok et al.\ apply the same correction to the predicted
+299: output~\cite[Eqs.~(9), (13)]{gyorok2026obc}.}
+300: The baseline has no added states, so its Jacobian \kw{and offset are} zero
+301: in the added-state rows and $g^{\mathrm n}_{\mathrm{aug}}$
+302: is orthogonal to it by definition.",Gyorok-2026-Orthogonal-by-construction.pdf,3; 4; 5; 9,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/04_obc.tex,429,draft material,cite,Eq.~(21),"426: It only explains what the network overlap and the truth overlap in
+427: Table~\ref{tab:res_obc} measure.
+428: Question: keep it under another name, or replace it by a citation
+429: of~\cite[Eq.~(21)]{gyorok2026obc}?}
+430: \\
+431: % RESTRUCTURE (2026-10-20, Dirk): the measures get their own subsection; the
+432: %   text below is unchanged. New heading shown in kwtwo so it is visible.",Gyorok-2026-Orthogonal-by-construction.pdf,4; 6,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+gyorok2026obc,sections/01_introduction.tex,316,commented out,cite,,"313: % Moreover, prediction accuracy and interpretability interfere.
+314: % Refitting the physical parameters absorbs the unmodelled dynamics, and an
+315: % unconstrained learned component can absorb dynamics the baseline already
+316: % describes \cite{gyorok2026obc}.}
+317: % FEEDBACK: concise version (Dirk 2026-10-18); root cause tie-back left out,
+318: %   the sentence after the interpretability definition carries it.
+319: \\",Gyorok-2026-Orthogonal-by-construction.pdf,2; 3,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+forssell1999revisited,sections/03_augmentation.tex,789,deleted text,cite,,"786: %   discussion is relevant for your approach.""): indirect approach struck.
+787: \del[M-p6]{This bias is avoided in the indirect approach for linear systems with a known controller, which fits the closed-loop model using the reference.
+788: Because the reference is uncorrelated with the noise, the model
+789: can be identified from the output error~\cite{forssell1999revisited}.}
+790: % FEEDBACK (own, 2026-10-23): struck as a repeat of the new reason sentence
+791: %   at the start of IV-B; the earlier Jan49 change (""These reasons motivate""
+792: %   -> ""This motivates"") is folded into the strike (Dirk 2026-10-23).",Forssell-1999-Closed-loop-identification-revisited.pdf,6; 2,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hefny2015supervised,sections/03_augmentation.tex,1627,retained text,cite,Sec.~2,"1624: %   remains opaque""); that V is still minimised during S1 is said below
+1625: %   (""We continue minimising V during the first stage"").
+1626: \mv[own]{above}{PS is adapted from a two-stage regression of predictive-state
+1627: learning~\cite[Sec.~2]{hefny2015supervised}\chg[own]{, and it makes use of initialisation
+1628: before backpropagation through time (BPTT)}{\kwtwo{, which Downey et al.\ use to initialise a recurrent
+1629: network before backpropagation through time (BPTT)}}~\cite[Sec.~4.2]{downey2017psrnn}.}
+1630: \chg[own]{The first stage (S1)}{S1} predicts the residual of the model, instead",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hefny2015supervised,sections/03_augmentation.tex,1631,retained text,cite,,"1628: before backpropagation through time (BPTT)}{\kwtwo{, which Downey et al.\ use to initialise a recurrent
+1629: network before backpropagation through time (BPTT)}}~\cite[Sec.~4.2]{downey2017psrnn}.}
+1630: \chg[own]{The first stage (S1)}{S1} predicts the residual of the model, instead
+1631: of \kw{features of future observations} as in~\cite{hefny2015supervised}.
+1632: \chg[own]{The second stage (S2)}{S2} trains the nonlinear state update
+1633: instead of a \kw{\chg[own]{linear operator}{linear map}.}
+1634: \kw{We continue \kwtwo{minimising $V$} during the first stage\del[own]{, while Downey et al.\ finish",Hefny-2015-Supervised-learning-dynamical-systems.pdf,8; 4,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+hefny2015supervised,sections/03_augmentation.tex,1653,retained text,cite,Fig.~2,"1650:  % (28). S2 (bottom): g_aug maps x-hat^n_tau|tau and the recorded u_tau to
+1651:  % the added state encoded from the window shifted by one sample (30).""
+1652:  \caption{Samples used by PS on one record, with the layout
+1653:  of~\cite[Fig.~2]{hefny2015supervised}. In S1 (top), the encoder $\psi$ estimates
+1654:  $\hat x^{\mathrm n}_{\tau|\tau}$ from the window $\chi_\tau$. The decoder $p$ then
+1655:  predicts the residual $e_\tau$ of the next $H$ samples from the added states
+1656:  $\bar x_{\tau|\tau}$ \eqref{eq:ps2_s1}. In S2 (bottom), $g_{\mathrm{aug}}$ predicts",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 4,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hefny2015supervised,sections/03_augmentation.tex,1602,deleted text,cite,Sec.~2,"1599: \del[own]{Similar to $W^b$ after its initialisation is done,
+1600: the parameters are optimised through \mbox{\eqref{eq:aug_loss}}.}
+1601: \delmv[own]{below}{PS is adapted from a two-stage regression of predictive-state
+1602: learning~\mbox{\cite[Sec.~2]{hefny2015supervised}}, and it makes use of initialisation
+1603: before backpropagation through time (BPTT)~\mbox{\cite[Sec.~4.2]{downey2017psrnn}}.}
+1604: %\\
+1605: % RESTRUCTURE (2026-10-19, Maarten p9: ""This remains opaque for me"",",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hefny2015supervised,sections/03_augmentation.tex,1788,deleted text,cite,Sec.~2,"1785: % RESTRUCTURE (2026-10-22, Dirk; E5): noise remarks moved to Appendix PS
+1786: %   details (revnote ""appendix"", not needed to follow the method).
+1787: \delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{To avoid correlation between the history and future noise Hefny et al.\ separate
+1788: the past and future samples~\mbox{\cite[Sec.~2]{hefny2015supervised}}.
+1789: The encoder window ends at $\tau-1$, while the residual starts at $\tau$, so
+1790: no measurement sample is reused on both sides.
+1791: With filtered measurement noise, this separation does not guarantee noise",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hefny2015supervised,sections/99_appendix.tex,356,deleted text,cite,Sec.~2,"353: \chg[own]{Both}{where} $W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ are initially
+354: set to zero\del[own]{, so that the decoder starts by predicting zero residual}.}
+355: \delmv[own]{IV-E}{To avoid correlation between the history and future noise Hefny et al.\ separate
+356: the past and future samples~\mbox{\cite[Sec.~2]{hefny2015supervised}}.
+357: The encoder window ends at $\tau-1$, while the residual starts at $\tau$, so
+358: no measurement sample is reused on both sides.
+359: With filtered measurement noise, this separation does not guarantee noise",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hefny2015supervised,sections/03_augmentation.tex,1782,draft material,cite,Sec.~2,"1779: %   (Dirk 2026-10-23).
+1780: \todo{
+1781: Instead of using features of future observations 
+1782: as Hefny et al.~\cite[Sec.~2]{hefny2015supervised} for predictive-state learning, 
+1783: we use the model residual.
+1784: }
+1785: % RESTRUCTURE (2026-10-22, Dirk; E5): noise remarks moved to Appendix PS",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+hefny2015supervised,sections/03_augmentation.tex,1964,draft material,cite,Sec.~2,"1961: updates $f^{\mathrm n}_{\mathrm{aug}}$.}{\kwtwo{The physical rows of $W_L$ and $b_L$ stay unchanged, because \eqref{eq:ps2_s2}
+1962: only depends on the added-state rows, but the shared hidden layers also change
+1963: $f^{\mathrm n}_{\mathrm{aug}}$.}}
+1964: \todo{The encoder windows at $k_i$ and $k_i+1$ share measurement samples, so noise enters both sides of the S2 regression. Hefny et al.\ discuss how correlated noise can bias such a fit~\cite[Sec.~2]{hefny2015supervised}. We do not correct for this effect in S2.}
+1965: \chg[own]{When S2 is completed the optimisation continues minimising
+1966: \mbox{\eqref{eq:aug_loss}}, starting from}{\kwtwo{After S2, we continue minimising \eqref{eq:aug_loss} from}}
+1967: \begin{equation}",Hefny-2015-Supervised-learning-dynamical-systems.pdf,2; 3,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+downey2017psrnn,sections/03_augmentation.tex,1629,retained text,cite,Sec.~4.2,"1626: \mv[own]{above}{PS is adapted from a two-stage regression of predictive-state
+1627: learning~\cite[Sec.~2]{hefny2015supervised}\chg[own]{, and it makes use of initialisation
+1628: before backpropagation through time (BPTT)}{\kwtwo{, which Downey et al.\ use to initialise a recurrent
+1629: network before backpropagation through time (BPTT)}}~\cite[Sec.~4.2]{downey2017psrnn}.}
+1630: \chg[own]{The first stage (S1)}{S1} predicts the residual of the model, instead
+1631: of \kw{features of future observations} as in~\cite{hefny2015supervised}.
+1632: \chg[own]{The second stage (S2)}{S2} trains the nonlinear state update",Downey-2017-Predictive-state-recurrent-neural-networks.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+downey2017psrnn,sections/03_augmentation.tex,1603,deleted text,cite,Sec.~4.2,"1600: the parameters are optimised through \mbox{\eqref{eq:aug_loss}}.}
+1601: \delmv[own]{below}{PS is adapted from a two-stage regression of predictive-state
+1602: learning~\mbox{\cite[Sec.~2]{hefny2015supervised}}, and it makes use of initialisation
+1603: before backpropagation through time (BPTT)~\mbox{\cite[Sec.~4.2]{downey2017psrnn}}.}
+1604: %\\
+1605: % RESTRUCTURE (2026-10-19, Maarten p9: ""This remains opaque for me"",
+1606: %   ""Formalize the optimization problem that you solve for each stage""):",Downey-2017-Predictive-state-recurrent-neural-networks.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+downey2017psrnn,sections/03_augmentation.tex,1635,deleted text,cite,Sec.~4.2,"1632: \chg[own]{The second stage (S2)}{S2} trains the nonlinear state update
+1633: instead of a \kw{\chg[own]{linear operator}{linear map}.}
+1634: \kw{We continue \kwtwo{minimising $V$} during the first stage\del[own]{, while Downey et al.\ finish
+1635: their initialisation before starting BPTT~\mbox{\cite[Sec.~4.2]{downey2017psrnn}}}.}
+1636: % FEEDBACK (Dirk, 2026-10-23): ""operator"" -> ""map"" (Hefny's second stage is
+1637: %   a linear regression); the Downey contrast dropped, Downey stays cited in
+1638: %   the literature sentence above.",Downey-2017-Predictive-state-recurrent-neural-networks.pdf,5,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+venkatraman2017psd,sections/03_augmentation.tex,1796,draft material,ucite,Sec.~3,"1793: \todo{
+1794: Venkatraman et al.\ use a similar approach by predicting
+1795: future observations from the internal states during
+1796: training~\ucite[Sec.~3]{venkatraman2017psd}.
+1797: }
+1798: % FEEDBACK (own, 2026-10-22; E6): repeats ""a temporary decoder ... is used
+1799: %   to predict this residual"" and the hand-over (""since the decoder is",Venkatraman-2017-Predictive-state-decoders.pdf,5; 7,Numbered locator text found. Read the passage to judge support; a matching number alone is not evidence.,,
+karniadakis2021physicsinformed,sections/01_introduction.tex,238,retained text,cite,,"235: networks (PINNs)}{\kwtwo{such as physics-informed or physics-guided 
+236: neural networks and Gaussian-process-based methods}}, incorporate physical
+237: \chg[M-p2e]{laws as constraints}{knowledge} during training
+238: \cite{karniadakis2021physicsinformed, raissi2019physicsinformed}\add[M-p2e]{,
+239: \cite{willard2020integrating}}\chg[M-p2e]{.
+240: However, these methods require the physics equations to be known
+241: and}{, but} still rely on a black-box model for the entire system",Karniadakis-2021-Physics-informed-machine-learning.pdf,3; 17,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+karniadakis2021physicsinformed,sections/01_introduction.tex,216,deleted text,cite,,"213: % FEEDBACK v2: data-amount sentence struck (M-p2d, shorten); the rigid-body
+214: %   argument below is the one that leads to augmentation.
+215: \del[M-p2d]{These models can also require large amounts of data to train
+216: \cite{willard2020integrating, karniadakis2021physicsinformed}.}
+217: % CHANGED: ""and significant computational power"" dropped (no source); cited
+218: %   Willard Sec. 1, Karniadakis abstract
+219: In addition, these models need to learn behaviour that is already known",Karniadakis-2021-Physics-informed-machine-learning.pdf,7; 6,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+raissi2019physicsinformed,sections/01_introduction.tex,238,retained text,cite,,"235: networks (PINNs)}{\kwtwo{such as physics-informed or physics-guided 
+236: neural networks and Gaussian-process-based methods}}, incorporate physical
+237: \chg[M-p2e]{laws as constraints}{knowledge} during training
+238: \cite{karniadakis2021physicsinformed, raissi2019physicsinformed}\add[M-p2e]{,
+239: \cite{willard2020integrating}}\chg[M-p2e]{.
+240: However, these methods require the physics equations to be known
+241: and}{, but} still rely on a black-box model for the entire system",Physics-informed neural networks A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations.pdf,2; 13,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,
+bishop1995neural,sections/03_augmentation.tex,509,retained text,cite,,"506: \\
+507: The inputs to the neural network are normalised
+508: to zero mean and unit variance, which has been shown to improve
+509: the estimation of models containing neural networks~\chg[Q41]{\mbox{\cite[Sec.~5.3]{hoekstra2026lfr}}}{\cite{bishop1995neural}}\add[Q41]{\kwtwo{, as in~\cite[Sec.~5.3]{hoekstra2026lfr}}}.
+510: \todo{Add bib entry \texttt{bishop1995neural}: C.~M.~Bishop, \emph{Neural Networks for Pattern Recognition}, Oxford University Press, 1995 (the source Hoekstra et al.\ cite for this claim, their ref.~[6], Sec.~5.3).}
+511: % FEEDBACK v1 (2026-10-22, Q41 ""A more primary source can be used like Deep
+512: %   Learning by Goodfellow""): the general claim cites Hoekstra's own source",Book-Bishop-Neural Networks for Pattern Recognition.pdf,352; 8,"No numbered locator in the thesis. These are suggested starting pages from text overlap, not verified supporting passages.",,

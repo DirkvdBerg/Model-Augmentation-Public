@@ -77,7 +77,7 @@ In \eqref{eq:Msplit}, $M_0$ is \chg[Dirk]{\mbox{\eqref{eq:mass_matrix}} evaluate
 matrices do not depend on $Y$.
 We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
 with the scheduling being connected in feedback
-with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2025lpvlfr,hoekstra2026lfr}.}
+with $G$ (Fig.~\ref{fig:lfr}) \cite{drenth2026lpvlfr,hoekstra2026lfr}.}
 \begin{figure}[!ht]
   \centering
   \input{figures/lfr_loop}
@@ -121,7 +121,7 @@ with the Delta-block mapping $z$ to $w$,}
   \label{eq:delta}
 \end{equation}
 \mv[Dirk]{III-B}{We write the LTI part $G$ of the LFR in continuous time, adapting the
-discrete-time block structure of~\cite[Eq.~(2)]{drenth2025lpvlfr}:}
+discrete-time block structure of~\cite[Eq.~(2)]{drenth2026lpvlfr}:}
 \todo{Check this}
 \begin{equation}
   \begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}
@@ -138,7 +138,7 @@ The first block row is the state equation, with $\ddot q$ obtained from
 $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns \eqref{eq:lfr_constant} back
 into \eqref{eq:eom}. The LFR is therefore an exact realisation of the baseline.
 The LFR is well posed if the algebraic loop has a unique solution for
-every $Y$ \cite[Def.~1]{drenth2025lpvlfr}.}
+every $Y$ \cite[Def.~1]{drenth2026lpvlfr}.}
 
 % FEEDBACK (2026-10-22, Dirk): A.2 shortened; derivation unchanged and as in
 %   docs/Thesis-documentation/LPV_LFR_Stepwise_Derivation/main.tex (Overleaf,
@@ -153,11 +153,11 @@ $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
 $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
 \mbox{\eqref{eq:lfr_G}}, using a continuous-time adaptation of the block partition
-in~\mbox{\cite[Eq.~(2)]{drenth2025lpvlfr}}, is}
+in~\mbox{\cite[Eq.~(2)]{drenth2026lpvlfr}}, is}
 \add[own]{\kwtwo{With $R=M_0^{-1}$ ($M_0=M(0)\succ0$,
 Appendix~\ref{app:lfr-wellposed}), \eqref{eq:lfr_constant} gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$.
-Partitioning $G$ in \eqref{eq:lfr_G} as in~\cite[Eq.~(2)]{drenth2025lpvlfr},
+Partitioning $G$ in \eqref{eq:lfr_G} as in~\cite[Eq.~(2)]{drenth2026lpvlfr},
 with rows $(\dot{\tilde x},z,q)$ and columns $(\tilde x,w,u)$, gives the blocks}}
 % \begin{equation}
 %  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
@@ -202,7 +202,7 @@ Substituting $w=\Dsch(Y)z$ \del[own]{into the $z$ equation of
 \del[own]{The second block row gives $a_1=Y\ddot q$, and the first then gives
 $M(Y)\ddot q=u-C\dot q-Kq$, that is \mbox{\eqref{eq:eom}}, after multiplication by
 $M_0$. The condition of
-\mbox{\cite[Def.~1]{drenth2025lpvlfr}}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
+\mbox{\cite[Def.~1]{drenth2026lpvlfr}}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
 therefore the condition that $M(Y)$ is nonsingular: the Schur complement of
 the lower identity block gives}
 \add[own]{\kwtwo{The Schur complement of the lower identity block gives}}
@@ -213,7 +213,7 @@ the lower identity block gives}
  &=\det M(Y)/\det M_0,
 \end{aligned}
 \end{equation*}
-\add[own]{\kwtwo{so the condition of \cite[Def.~1]{drenth2025lpvlfr} holds if and only if
+\add[own]{\kwtwo{so the condition of \cite[Def.~1]{drenth2026lpvlfr} holds if and only if
 $M(Y)$ is nonsingular.}}
 % FEEDBACK (2026-10-22, own): closed-form sentence struck; it repeats the
 %   loop closing above (exact realisation), and Section IV no longer cites
@@ -320,9 +320,9 @@ Therefore, two different values of $\theta_{\mathrm{base}}$ cannot give the same
 \begin{wip}
 \todo{Remarks cut from Section~II-B; keep here or drop?}
 \begin{itemize}
-\item $Y^2$ is realised by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
-\item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}
-\item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+\item $Y^2$ is realised by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2026lpvlfr}
+\item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2026lpvlfr}
+\item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2026lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
 \item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
 \end{itemize}
 \end{wip}
@@ -510,9 +510,10 @@ baseline frozen at $Y=0$.}
 %   Fig. res_val_curves in Section VII-A.
 
 \section{Experiment design details}\label{app:setup}
-This appendix gives the details of Section~\ref{sec:setup} and the checks
+% FEEDBACK (own, 2026-10-24): Appendix D reduced to the math; removed text struck (Dirk 2026-10-24).
+\del[own]{This appendix gives the details of Section~\mbox{\ref{sec:setup}} and the checks
 of its design choices.
-The checks use the known simulated system where the text says so.
+The checks use the known simulated system where the text says so.}
 
 \subsection{Data-generating system}\label{app:setup_system}
 % Sources: vendor/ruleOfThumb.m, gtd_build_plant.m (K1); D-238, NOISE-INJECTION.md (noise).
@@ -538,9 +539,9 @@ The checks use the known simulated system where the text says so.
  K_{\mathrm e}=\operatorname{diag}(K,k_a),
 \end{gathered}
 \end{equation*}}
-\mv[own]{VI-A}{where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total payload mass.
+\mv[own]{VI-A}{where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total payload mass\chg[own]{.
 $M_a(Y,\ell)$ corrects it for $m_a$ being at $Y+\ell$ instead of $Y$,
-where $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.}
+where}{\kwtwo{,}} $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.}
 % FEEDBACK (Dirk 2026-10-24): k_a, c_a moved here from Section VI-A.
 \mv[own]{VI-A}{$k_a=m_a(2\pi f_a)^2$ and
 $c_a=2\zeta_a\sqrt{k_am_a}$, with natural frequency $f_a$
@@ -553,8 +554,8 @@ The controller of every record is, per stage axis $j$,
  \label{eq:setup_K1}
 \end{equation}
 where $\omega_b=2\pi f_b$ is the bandwidth and $\kappa_j$ sets the
-open-loop gain of axis $j$ to one at $\omega_b$, for the diagonal entry of
-the rigid baseline at $Y=0$ from stage force to stage position.
+open-loop gain of axis $j$ to one at $\omega_b$\del[own]{, for the diagonal entry of
+the rigid baseline at $Y=0$ from stage force to stage position}.
 $K_1$ is discretised by the Tustin rule at \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}%
 \add[own]{\kwtwo{ for the data, and by the same rule at $T_s$ for
 $K_{\mathrm{fb}}$ in the model}}.
@@ -563,16 +564,17 @@ $K_{\mathrm{fb}}$ in the model}}.
 %   discretisation". Tustin kept (data generated with it); Jasper's ZOH
 %   remark (revnote in IV-B) open as future work (Dirk 2026-10-21).
 
-The noise $v_j$ has the one-sided spectrum
-\begin{equation}
- S_{v,j}(f)=\lambda_j^2\,\lvert H_j(f)\rvert^2+\sigma_{v,j}^2,
- \label{eq:setup_noise}
-\end{equation}
-where $H_j$ is a second-order Butterworth low-pass with cutoff $f_{v,j}$,
-$\lambda_j$ its level and $\sigma_{v,j}$ a white floor.
-$\lambda_j$ and $f_{v,j}$ are fitted so that the simulated standstill servo
+\del[own]{The noise $v_j$ has the one-sided spectrum}
+% REMOVED (own, 2026-10-25): display, formulas in Appendix D cut (Dirk 2026-10-25). Was:
+% \begin{equation}
+%  S_{v,j}(f)=\lambda_j^2\,\lvert H_j(f)\rvert^2+\sigma_{v,j}^2,
+%  \label{eq:setup_noise}
+% \end{equation}
+\del[own]{where $H_j$ is a second-order Butterworth low-pass with cutoff $f_{v,j}$,
+$\lambda_j$ its level and $\sigma_{v,j}$ a white floor.}
+\del[own]{$\lambda_j$ and $f_{v,j}$ are fitted so that the simulated standstill servo
 error at $Y=0$ matches the measured one of the industrial machine, and
-$\sigma_{v,j}$ is its level above 5~kHz.
+$\sigma_{v,j}$ is its level above 5~kHz.}
 The signal-to-noise ratio of Section~\ref{sec:setup_system} is
 $\mathrm{SNR}_j=20\log_{10}\bigl(\mathrm{RMS}(y^{\circ}_j-r_j)/\mathrm{RMS}(y_j-y^{\circ}_j)\bigr)$
 over the training records.
@@ -587,17 +589,18 @@ over the training records.
 \item The five types of motion profile, the operational motion profiles of the test records and the operating range of all records
 \end{itemize}
 \fi
-In each channel $c\in\{X,\Theta,Y\}$ of the generalised force, the
-multisine is
-\begin{equation}
- u^{\mathrm{ms}}_c(t)=A_c\sqrt{\frac{2}{\lvert\mathcal L\rvert}}\sum_{l\in\mathcal L}
- \cos(2\pi l\,\Delta f\,t+\alpha_{c,l}),
- \label{eq:setup_ms}
-\end{equation}
-where $\Delta f=0.005\,f_b$, $\mathcal L=\{212,\dots,594\}$ spans
+\del[own]{In each channel $c\in\{X,\Theta,Y\}$ of the generalised force, the
+multisine is}
+% REMOVED (own, 2026-10-25): display, formulas in Appendix D cut (Dirk 2026-10-25). Was:
+% \begin{equation}
+%  u^{\mathrm{ms}}_c(t)=A_c\sqrt{\frac{2}{\lvert\mathcal L\rvert}}\sum_{l\in\mathcal L}
+%  \cos(2\pi l\,\Delta f\,t+\alpha_{c,l}),
+%  \label{eq:setup_ms}
+% \end{equation}
+\del[own]{where $\Delta f=0.005\,f_b$, $\mathcal L=\{212,\dots,594\}$ spans
 $1.06\,f_b$ to $2.97\,f_b$, and the phases $\alpha_{c,l}$ are drawn uniformly per record.
-It enters at the actuators as $u^{\mathrm{ff}}=P^{-1}u^{\mathrm{ms}}$.
-The grid places 18 lines inside the half-power width $2\zeta_af_a=0.09\,f_b$ of
+It enters at the actuators as $u^{\mathrm{ff}}=P^{-1}u^{\mathrm{ms}}$.}
+\del[own]{The grid places 18 lines inside the half-power width $2\zeta_af_a=0.09\,f_b$ of
 the anti-resonance, the narrowest feature of the system, and makes the
 multisine periodic in 2~s.
 Of 30 phase draws, the one with the lowest crest factor is kept; for $\Theta$
@@ -614,17 +617,13 @@ system with friction under $K_1$, measured at the five training positions.
 Above the crossover, the band holds 90\,\% of the squared difference between
 this response and that of the baseline, counted where the difference
 exceeds its uncertainty.
-A rerun with the friction law of \eqref{eq:setup_fric} gives the same
-edges.
-\todo{Missing: reason for the 90\,\% share of the upper edge and for 30 phase draws, and a cite key for the best linear approximation. Candidate: keep both as heuristic (D-217, D-219); cite Pintelon and Schoukens 2012 for the best linear approximation (no cite key yet).}
+A rerun with the friction law of \mbox{\eqref{eq:setup_fric}} gives the same
+edges.}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{setup_band.pdf}
-  \caption{Stage axis $Y$ of the simulated system and of the baseline,
-  linearised at the five training positions (lines overlap). Top: open
-  loop. Bottom: complementary sensitivity with $K_1$. Shaded: multisine
-  band; hatched: range of the $K_1$ crossovers over the axes and
-  positions.}
+  % FEEDBACK (own, 2026-10-25): one-panel figure, caption to match (Dirk 2026-10-25).
+  \caption{Open-loop Bode magnitude from $F_Y$ to $Y$ of the system and the baseline at the five training positions. Shaded: multisine band.}
   \label{fig:setup_band}
 \end{figure}
 
@@ -634,9 +633,9 @@ edges.
 sweeps of $Y$, $X$-$Y$ Lissajous paths, point-to-point moves with S-curve
 profiles, and operational motion profiles, which are sine-shaped moves
 representative of machine operation.}
-The test records I3 to I6 add new operational motion profiles: sine-shaped
+\del[own]{The test records I3 to I6 add new operational motion profiles: sine-shaped
 routes with $X$ and $Y$ together, alternating $X$-only and $Y$-only moves,
-an S-curve route and long strokes.
+an S-curve route and long strokes.}
 Table~\ref{tab:setup_records} lists the records, and
 Fig.~\ref{fig:setup_coverage} shows their operating range.
 \begin{table}[t]
@@ -701,41 +700,42 @@ amplitude for I6 and E4.
 \fi
 % FEEDBACK (own, 2026-10-21): f_s renamed f_sim here and at app:setup_system,
 %   since 1/T_s = 4 kHz (sec2-rate-review; Dirk 2026-10-21).
-With the argument counting samples at \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}, the records are
-reduced to $T_s$ by
-\begin{equation}
- u_k=\frac15\sum_{i=0}^{4}\uact(5k+i),\qquad
- y_k=r(5k)+\bigl(\mathcal B\ast(y-r)\bigr)(5k),
- \label{eq:setup_decim}
-\end{equation}
-where $\mathcal B$ is an eighth-order Butterworth low-pass at
-1.6~kHz, applied forward and backward.
+\del[own]{With the argument counting samples at $f_{\mathrm{sim}}$, the records are
+reduced to $T_s$ by}
+% REMOVED (own, 2026-10-25): display, formulas in Appendix D cut (Dirk 2026-10-25). Was:
+% \begin{equation}
+%  u_k=\frac15\sum_{i=0}^{4}\uact(5k+i),\qquad
+%  y_k=r(5k)+\bigl(\mathcal B\ast(y-r)\bigr)(5k),
+%  \label{eq:setup_decim}
+% \end{equation}
+\del[own]{where $\mathcal B$ is an eighth-order Butterworth low-pass at
+1.6~kHz, applied forward and backward.}
 \todo{Changed from: where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at 1.6~kHz.}
 \revnote{Noise-free twins: a noise-free TRAINING run point-samples y, $y_k=y(5k)$
 (config.py:33, data.py:175-176), but the evaluation loads the twins for the
 noise floor with the lowpass configuration (eval\_blackbox.py:117, 156-158), so
-every reported floor uses \eqref{eq:setup_decim} as written. No final run used
+every reported floor uses the low-pass of Section~\ref{sec:setup_system} as written. No final run used
 noise-free training data. Add a point-sampling sentence only if a noise-free
 training run is reported.}
-The block mean is the exact input of a zero-order-hold model at $T_s$.
+\del[own]{The block mean is the exact input of a zero-order-hold model at $T_s$.
 The filter acts on the servo error only, so the reference passes unchanged.
 It changes the noise-free output by at most $\SetupFiltDist$~m RMS.
 Its impulse response falls below 1\,\% of its peak within
 \SetupFiltDecay~ms, so the \SetupTrim~ms removed at both record ends hold
-its edge transient.
-\todo{Missing: source for the cutoff at 0.8 times the Nyquist frequency and for the order 8. Candidate: Gautier, Janot and Vandanjon, IEEE TCST 2013 (decimation at 0.8 of the Nyquist frequency; no cite key yet); order 8 heuristic (D-232).}
+its edge transient.}
 
 % FEEDBACK (own, 2026-10-24): v_fr tuning moved here from Section VI-A,
 %   next to its check (Dirk 2026-10-24).
-\mv[own]{VI-A}{$v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating
+\del[own]{$v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating
 the loop with values between 0.1 and 10~mm/s.
 Higher values turn the friction into viscous damping under the multisine,
-and lower values keep the standstill servo error above the noise level.}
+and lower values keep the standstill servo error above the noise level.
 For $\lvert v_i\rvert\ge3v_{\mathrm{fr}}$, the friction of
-\eqref{eq:setup_fric} is within 0.5\,\% of the Coulomb law.
-Table~\ref{tab:setup_checks} gives the checks of the design, including the
-share of samples in this range.
+\mbox{\eqref{eq:setup_fric}} is within 0.5\,\% of the Coulomb law.}
+Table~\ref{tab:setup_checks} gives the checks of the design\del[own]{, including the
+share of samples in this range}.
 \begin{table}[t]
+% FEEDBACK (own, 2026-10-25): only the rows Section VI uses; six rows cut (Dirk 2026-10-25).
 \caption{Checks of the experiment design.}
 \label{tab:setup_checks}
 \centering
@@ -747,25 +747,19 @@ Check & Value\\
 \midrule
 \multicolumn{2}{@{}l}{\emph{Simulated loop, linearised at the training positions}}\\
 Phase-margin loss, 4 / 2~kHz & \SetupPmLossFour$^\circ$ / \SetupPmLossTwo$^\circ$\\
-Slowest closed-loop time constant & \SetupTauMax~ms\\
-Response to a force error, 1\,\% & \SetupDecay~ms (window \SetupWindow~ms)\\
-Filter impulse response, 1\,\% & \SetupFiltDecay~ms (trim \SetupTrim~ms)\\
 \multicolumn{2}{@{}l}{\emph{Training records}}\\
-Noise above 2~kHz, raw / filtered & $\SetupAliasRaw$ / $\SetupAliasFilt$~m\\
 SNR $\fpeval{round(\SetupMotionFNN/100,2)}\,f_b$ to $1.05\,f_b$, without multisine & $\ge$\SetupGapSnrMinMotion~dB\\
-Samples with $\lvert v\rvert\ge3v_{\mathrm{fr}}$, multisine & $\ge$\SetupRailShareMin\,\%\\
 % CHANGED (2026-10-21, Dirk; D-265): controller_rate.py rerun on all training
 %   records. The old row compared the T_s controller with the block-mean force
 %   (10.6 %), which is the force change within one hold, not a controller
 %   error; both numbers are now reported separately.
-$K_1$ at 20~kHz, force error & $\SetupKcheck$\\
 $K_1$ at $T_s$, force error, median & \SetupKmismatchMed\,\%\\
 \quad largest; without multisine & \SetupKmismatchMax\,\%; \SetupKmismatchMotion\,\%\\
 Force change within one hold of $T_s$, median & \SetupKholdMed\,\%\\
 \bottomrule
 \end{tabular}
 \end{table}
-\kwtwo{The training loop re-discretises $K_1$ at $T_s$. At the same instants,
+\del[own]{The training loop re-discretises $K_1$ at $T_s$. At the same instants,
 its feedback force differs from that of the system by a median of
 \SetupKmismatchMed\,\% RMS on the training records.
 Within one hold of $T_s$, the force of the system changes by a median of
@@ -783,7 +777,7 @@ $\bar x^{\mathrm{fb}}_k$, plus $u^{\mathrm{ff}}_k$.
 The first three terms are the model loop, which contains no noise after $\tau$.
 The last term is the force error of $K_1$ at $T_s$ above.
 After $\tau$, the noise reaches the model only through this term.}
-\add[own]{\kwtwo{This force error is the last term of \eqref{eq:aug_residual_split}.}}
+\del[own]{This force error is the last term of \mbox{\eqref{eq:aug_residual_split}}.}
 % FEEDBACK (own, 2026-10-23; Codex math check 9, finding 7): u_bar must
 %   include u_ff, otherwise u_ff is counted twice; "after tau": the initial
 %   state (encoder, inherited controller state x-bar^fb_tau) carries earlier
@@ -814,86 +808,74 @@ in~\cite{beintema2023subnet}.
 Its settings are the black-box rows of Table~\ref{tab:hyper}.
 
 \subsection{Hyperparameters}\label{app:hyper}
-Table~\ref{tab:hyper} lists the settings of every grey-box run and of the
+\del[own]{Table~\mbox{\ref{tab:hyper}} lists the settings of every grey-box run and of the
 black-box search.
-The basis of a value is derived (computed in Section~\ref{sec:setup} or Appendix~\ref{app:setup}),
+The basis of a value is derived (computed in Section~\mbox{\ref{sec:setup}} or Appendix~\mbox{\ref{app:setup}}),
 inherited (from earlier work), tuned (on validation data), heuristic (fixed
 without a measurement) or compute-limited.
 Every model is trained once with one seed, so differences between models
-smaller than the variation between seeds are not resolved.
-\revnote{Issue: the hyperparameters are listed with their basis, and the
-values of the added mass (Table~\ref{tab:nominal_parameters}) without a
-reason; neither is argued per value.
-Hoekstra et al.\ do the same~\cite[Tables~5 and~7]{hoekstra2026lfr}.
-Question: is that enough, or do you expect a reason per value?}
+smaller than the variation between seeds are not resolved.}
 \begin{table}[t]
+% FEEDBACK (own, 2026-10-24): Basis column removed; a rule before each block (Dirk 2026-10-24).
 \caption{Hyperparameters of the identification.}
 \label{tab:hyper}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}ll@{}}
 \toprule
-Setting & Value & Basis\\
+Setting & Value\\
 \midrule
-\multicolumn{3}{@{}l}{\emph{Model and data}}\\
-Model rate $1/T_s$ & 4~kHz & derived\\
-RK4 steps per $T_s$ & 1 & heuristic\\
-Window $n_f$ & 400 (0.1~s) & derived\\
-Window stride & 10 samples & heuristic\\
-Encoder window $n+1$ & 30 samples & heuristic\\
-Encoder start & least squares (SVD) & \cite[Eq.~(33)]{hoekstra2026encoder}\\
-SVD cutoff ($N$ windows, $m$ regressors) & $\max(N,m)\,\epsilon$ & numerical\\
-Added states $n_{\bar x}$ & 0, 2, 8 & compared\\
-Network, encoder correction & $2\times16$, tanh & tuned (earlier)\\
-Precision & float64 & numerical\\
-Margin $\gamma$ & 0.99 & heuristic\\
-Detuning of the combinations & 10\,\% & heuristic\\
-\multicolumn{3}{@{}l}{\emph{Optimiser}}\\
-Adam rate, $\epsilon$ & $10^{-5}$, $10^{-16}$ & tuned (earlier)\\
-Batch & 512 windows & heuristic\\
-Epochs & 200 & compute-limited\\
-Validation interval & 1300 updates & compute-limited\\
-L-BFGS iterations, history & 100, 50 & inherited\\
-L-BFGS inner steps, windows & 20, 16384 & compute-limited\\
-L-BFGS tolerance (grad., change) & $2.6\cdot10^{-5}$, $2.6\cdot10^{-7}$ & inherited, scaled to the loss\\
-Seeds per model & 1 & compute-limited\\
-\multicolumn{3}{@{}l}{\emph{PS (Section~\ref{sec:aug_ps2}, Appendix~\ref{app:ps_stop})}}\\
-S1 and S2 Adam rate & $10^{-3}$ & Adam default\\
-S1 batch, windows $\lvert\mathcal C\rvert$ & 64, 128 & heuristic\\
-Decoder width $n_h$, horizon $H$ & 16, $n+1$ & as above\\
-Check interval $i_c$ & 25 updates & heuristic\\
-Plateau checks $w$, tolerance $\delta_\nu$ & 4, 0.02 & heuristic\\
-S1 updates $i_{\min}$, $i_{\max}$ & 100, 350 & heuristic\\
-Early check $i_s$, threshold $\nu_{\max}$ & 150, 0.90 & heuristic\\
-Held-out records & last per class with at least 3 records & heuristic\\
-S2 pairs $N_{\mathcal P}$ (fit, held-out) & 8192, 2048 & heuristic\\
-S2 batch, check interval & 512, 100 updates & heuristic\\
-S2 plateau (checks, tolerance) & 5, 0.01 & heuristic\\
-S2 updates (min, max) & 500, 8000 & heuristic\\
-\multicolumn{3}{@{}l}{\emph{Black box (Section~\ref{sec:setup_models})}}\\
-States $n_x$ & 8, 16, 32 & tuned\\
-Width of $f_{\mathrm{bb}}$, $h_{\mathrm{bb}}$ (encoder $2\times$) & 8, 16, 32 & tuned\\
-Adam rate & $10^{-3}$, $3\cdot10^{-3}$, $10^{-2}$ & tuned\\
-Batch, stride & 256, 25 & inherited\\
-Updates & 80000 & compute-limited\\
-Selection & lowest validation NRMS$_e$ & heuristic\\
+\multicolumn{2}{@{}l}{\emph{Model and data}}\\
+Model rate $1/T_s$ & 4~kHz\\
+RK4 steps per $T_s$ & 1\\
+Window $n_f$ & 400 (0.1~s)\\
+Window stride & 10 samples\\
+Encoder window $n+1$ & 30 samples\\
+Encoder start & least squares (SVD)\\
+SVD cutoff ($N$ windows, $m$ regressors) & $\max(N,m)\,\epsilon$\\
+Added states $n_{\bar x}$ & 0, 2, 8\\
+Network, encoder correction & $2\times16$, tanh\\
+Precision & float64\\
+Margin $\gamma$ & 0.99\\
+Detuning of the combinations & 10\,\%\\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Optimiser}}\\
+Adam rate, $\epsilon$ & $10^{-5}$, $10^{-16}$\\
+Batch & 512 windows\\
+Epochs & 200\\
+Validation interval & 1300 updates\\
+L-BFGS iterations, history & 100, 50\\
+L-BFGS inner steps, windows & 20, 16384\\
+L-BFGS tolerance (grad., change) & $2.6\cdot10^{-5}$, $2.6\cdot10^{-7}$\\
+Seeds per model & 1\\
+\midrule
+\multicolumn{2}{@{}l}{\emph{PS (Section~\ref{sec:aug_ps2}, Appendix~\ref{app:ps_stop})}}\\
+S1 and S2 Adam rate & $10^{-3}$\\
+S1 batch, windows $\lvert\mathcal C\rvert$ & 64, 128\\
+Decoder width $n_h$, horizon $H$ & 16, $n+1$\\
+Check interval $i_c$ & 25 updates\\
+Plateau checks $w$, tolerance $\delta_\nu$ & 4, 0.02\\
+S1 updates $i_{\min}$, $i_{\max}$ & 100, 350\\
+Early check $i_s$, threshold $\nu_{\max}$ & 150, 0.90\\
+Held-out records & last per class with at least 3 records\\
+S2 pairs $N_{\mathcal P}$ (fit, held-out) & 8192, 2048\\
+S2 batch, check interval & 512, 100 updates\\
+S2 plateau (checks, tolerance) & 5, 0.01\\
+S2 updates (min, max) & 500, 8000\\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Black box (Section~\ref{sec:setup_models})}}\\
+States $n_x$ & 8, 16, 32\\
+Width of $f_{\mathrm{bb}}$, $h_{\mathrm{bb}}$ (encoder $2\times$) & 8, 16, 32\\
+Adam rate & $10^{-3}$, $3\cdot10^{-3}$, $10^{-2}$\\
+Batch, stride & 256, 25\\
+Updates & 80000\\
+Selection & lowest validation NRMS$_e$\\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{Missing: a stated reason for the rows marked heuristic without one in \texttt{docs/decisions.md} (window stride, batch, RK4 steps, the PS rules). Candidate: keep them as heuristic, with D-234 as the source of the PS rules (prototype runs).}
-\todo{Missing: the black-box rows are the search grid of \texttt{thesis\_r8\_grid.conf}; the selected configuration is not known yet. Candidate: add a row with the selected $n_x$, width and rate once R8 has run.}
 
-\begin{wip}
-\subsection{OBC and experiment details}
-\begin{itemize}
-\item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension
-\item Derive $J^+\Delta^*$ and list the measured singular-direction contributions to the predicted parameter bias
-\item List dataset identifiers, split membership, hyperparameters, seed, and exact metric definitions for every reported arm
-\item Figure (existing, optional): place \texttt{controller-chain-v1} here only if the controller reconstruction cannot be audited adequately in prose and equations
-\end{itemize}
-\todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}
-\end{wip}
+% REMOVED (own, 2026-10-24): work-in-progress block "OBC and experiment details" (to-do bullets only).
 
 % NEW (2026-10-21, Dirk): proposed revision of Fig. 1 (Jasper, oral: the
 %   cross-arm may be held along its axis on one side only, one spring is

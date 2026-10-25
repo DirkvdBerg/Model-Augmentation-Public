@@ -616,13 +616,13 @@ This position dependence is included by representing
 form, with the payload position $Y$ as scheduling variable~\cite{toth2010modeling}.
 \add[own]{\kwtwo{For a given $Y$, \eqref{eq:base_ss} is then linear in $\tilde x$ and $u$.}}
 The payload position $Y$ is both a state and the scheduling variable,
-making the baseline a self-scheduled LPV model\add[own]{~\cite{drenth2025lpvlfr}}.
+making the baseline a self-scheduled LPV model\add[own]{~\cite{drenth2026lpvlfr}}.
 % FEEDBACK v2 (2026-10-22, own): todo "source, or do i state it
 %   earlier..?" resolved by the citation: Drenth (arXiv v1, PDF p2) embeds a
 %   nonlinear system in LPV form with p = psi(x, u), and calls such models
 %   self-scheduled LPV-LFR models (PDF p3); here psi selects Y from the
 %   state. Toth 2010 calls the same class quasi-LPV (Def. 7.2, p. 194).
-%   CITATION-LOG.md rows for drenth2025lpvlfr, self-scheduled (Dirk
+%   CITATION-LOG.md rows for drenth2026lpvlfr, self-scheduled (Dirk
 %   2026-10-22).
 % \kw{Because the scheduling variable is the state $Y$ itself,
 % this LPV form \kwtwo{coincides} with \eqref{eq:eom} for every motion of $Y$ and needs
@@ -656,7 +656,7 @@ that the algebraic loop is well posed if $M(Y)$ is nonsingular.}}
 matrices do not depend on $Y$.
 We move the dependence out of the LTI part $G$ and into a Delta-block $\Dsch(Y)$,
 with the scheduling being connected in feedback
-with $G$ (Fig.~\mbox{\ref{fig:lfr}}) \mbox{\cite{drenth2025lpvlfr,hoekstra2026lfr}}.
+with $G$ (Fig.~\mbox{\ref{fig:lfr}}) \mbox{\cite{drenth2026lpvlfr,hoekstra2026lfr}}.
 Substituting \mbox{\eqref{eq:Msplit}} into \mbox{\eqref{eq:eom}} gives (7).
 Here $Y$ only enters through $Y\ddot q$ and $Y^2\ddot q$,
 with $Y^2\ddot q=Y(Y\ddot q)$. This lets us apply the same scheduling variable twice
@@ -669,7 +669,7 @@ $a_1=Y\ddot q$ and $a_2=Ya_1$ again.
 The latent variables are $z=[\ddot q^\top\;a_1^\top]^\top$ and $w=[a_1^\top\;a_2^\top]^\top$,
 with the Delta-block mapping $z$ to $w$ (10).
 We write the LTI part $G$ of the LFR in continuous time, adapting the
-discrete-time block structure of~\mbox{\cite[Eq.~(2)]{drenth2025lpvlfr}} (11),
+discrete-time block structure of~\mbox{\cite[Eq.~(2)]{drenth2026lpvlfr}} (11),
 where $\tilde x=[q^\top\;\dot q^\top]^\top$ is the state and $q$ the output.
 The first block row is the state equation, with $\ddot q$ obtained from
 (9) by multiplying with $M_0^{-1}$.
@@ -678,7 +678,7 @@ Conversely, closing the algebraic loop with (10) results in
 $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns (9) back
 into \mbox{\eqref{eq:eom}}. The LFR is therefore an exact realisation of the baseline.
 The LFR is well posed if the algebraic loop has a unique solution for
-every $Y$ \mbox{\cite[Def.~1]{drenth2025lpvlfr}}.}
+every $Y$ \mbox{\cite[Def.~1]{drenth2026lpvlfr}}.}
 
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \ifdraft

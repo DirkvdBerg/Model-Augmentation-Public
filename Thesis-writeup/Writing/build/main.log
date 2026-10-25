@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  24 OCT 2026 22:11
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 10:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -706,12 +706,12 @@ File: mt-ptm.cfg 2006/04/20 v1.7 microtype config. file: Times (RS)
 ) (frontmatter/cover.tex (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-cmr.cfg
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
-<frontmatter/asmpt_logo.png, id=190, 515.67656pt x 118.19156pt>
+<frontmatter/asmpt_logo.png, id=186, 515.67656pt x 118.19156pt>
 File: frontmatter/asmpt_logo.png Graphic file (type png)
 <use frontmatter/asmpt_logo.png>
 Package pdftex.def Info: frontmatter/asmpt_logo.png  used on input line 38.
 (pdftex.def)             Requested size: 104.7072pt x 24.0pt.
-<frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png, id=192, 1177.39874pt x 321.2pt>
+<frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png, id=188, 1177.39874pt x 321.2pt>
 File: frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png Graphic file (type png)
 <use frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png>
 Package pdftex.def Info: frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png  used on input line 38.
@@ -877,15 +877,22 @@ LaTeX Warning: Citation `[' on page 7 undefined on input line 505.
 
 LaTeX Warning: Citation `[' on page 7 undefined on input line 509.
 
-
-LaTeX Warning: Citation `bishop1995neural' on page 7 undefined on input line 509.
-
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 510.
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-Underfull \hbox (badness 2080) in paragraph at lines 505--537
-\OT1/ptm/m/n/10 (+20) prove the es-ti-ma-tion of mod-els con-tain-ing neu-ral net-
+Underfull \hbox (badness 3312) in paragraph at lines 505--537
+\OT1/ptm/m/n/10 (+20) The in-puts to the neu-ral net-work are nor-malised to
+ []
+
+
+Underfull \hbox (badness 2027) in paragraph at lines 505--537
+\OT1/ptm/m/n/10 (+20) zero mean and unit vari-ance, which has been shown
+ []
+
+
+Underfull \hbox (badness 1910) in paragraph at lines 505--537
+\OT1/ptm/m/n/10 (+20) net-works []|   [][] [] [[]19[]][]$[]$[][], as in [[]5[],
  []
 
 
@@ -908,7 +915,7 @@ Underfull \hbox (badness 3219) in paragraph at lines 724--777
 
 LaTeX Warning: Citation `[' on page 8 undefined on input line 801.
 
-<figures/closed_loop_same_reference.pdf, id=508, 290.2805pt x 103.98448pt>
+<figures/closed_loop_same_reference.pdf, id=506, 290.2805pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
 Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 815.
@@ -951,10 +958,7 @@ Overfull \hbox (4.6546pt too wide) detected at line 1177
 [][][][][]
  []
 
-
-Underfull \vbox (badness 4132) has occurred while \output is active []
-
- [10]
+[10]
 
 LaTeX Warning: Citation `[' on page 11 undefined on input line 1261.
 
@@ -1092,22 +1096,22 @@ Underfull \hbox (badness 10000) in paragraph at lines 251--256
  []
 
 
-Underfull \hbox (badness 4647) in paragraph at lines 319--324
+Underfull \hbox (badness 4647) in paragraph at lines 319--326
 []|   []   |   []   |   []   |   [][] [][]\OT1/ptm/m/n/10 (+20) The records are down-sam-pled
  []
 
 [19] [20]) (sections/06_results.tex (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=963, 228.99803pt x 196.20125pt>
+<figures/res_time_trace.pdf, id=959, 228.99803pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 115.
 (pdftex.def)             Requested size: 252.0pt x 215.92082pt.
-<figures/res_val_curves.pdf, id=966, 225.3218pt x 157.83429pt>
+<figures/res_val_curves.pdf, id=962, 225.3218pt x 157.83429pt>
 File: figures/res_val_curves.pdf Graphic file (type pdf)
 <use figures/res_val_curves.pdf>
 Package pdftex.def Info: figures/res_val_curves.pdf  used on input line 124.
 (pdftex.def)             Requested size: 252.0pt x 176.52753pt.
-<figures/res_frf.pdf, id=967, 232.26022pt x 157.26341pt>
+<figures/res_frf.pdf, id=963, 232.26022pt x 157.26341pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 132.
@@ -1124,14 +1128,9 @@ Underfull \hbox (badness 2393) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[24]) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl
-Underfull \vbox (badness 10000) has occurred while \output is active []
+[24]) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl) [25] (sections/99_appendix.tex (figures/lfr_loop.tex)
 
- [25]) [26
-
-] (sections/99_appendix.tex (figures/lfr_loop.tex)
-
-LaTeX Warning: Citation `[' on page 27 undefined on input line 156.
+LaTeX Warning: Citation `[' on page 26 undefined on input line 156.
 
 
 Underfull \hbox (badness 3668) in paragraph at lines 156--174
@@ -1139,7 +1138,7 @@ Underfull \hbox (badness 3668) in paragraph at lines 156--174
  []
 
 
-LaTeX Warning: Reference `eq:app_G_partition' on page 27 undefined on input line 194.
+LaTeX Warning: Reference `eq:app_G_partition' on page 26 undefined on input line 194.
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 193--199
@@ -1157,9 +1156,9 @@ Underfull \hbox (badness 10000) in paragraph at lines 193--199
  []
 
 
-LaTeX Warning: Citation `[' on page 27 undefined on input line 207.
+LaTeX Warning: Citation `[' on page 26 undefined on input line 207.
 
-[27
+[26
 
 ]
 Underfull \hbox (badness 3954) in paragraph at lines 215--237
@@ -1181,7 +1180,7 @@ Including 'wip' comment.
 
  Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut)
 
-LaTeX Warning: Citation `[' on page 28 undefined on input line 360.
+LaTeX Warning: Citation `[' on page 27 undefined on input line 360.
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 354--378
@@ -1198,7 +1197,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 354--378
 |   []   |   []   |   []   |   []
  []
 
-[28]
+[27]
 Underfull \hbox (badness 10000) in paragraph at lines 438--439
 []\OT1/ptm/m/n/10 (+20) Full $\OT1/cmr/m/n/10 3 \OMS/cmsy/m/n/10 ^^B \OT1/cmr/m/n/10 3$ \OT1/ptm/m/n/10 (+20) re-sponse of Fig. []9[]: same
  []
@@ -1208,13 +1207,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 438--439
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
-<figures/res_frf_full.pdf, id=1176, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=1162, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
 Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 448.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
 (tables/res_all_splits.tex)
-<figures/res_lpv_lti.pdf, id=1180, 225.02066pt x 208.10849pt>
+<figures/res_lpv_lti.pdf, id=1166, 225.02066pt x 208.10849pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 481.
@@ -1224,36 +1223,41 @@ Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--508
  [][] 
  []
 
-[29] [30 <./figures/res_frf_full.pdf>]
-<figures/setup_band.pdf, id=1233, 239.52798pt x 194.67302pt>
+[28] [29 <./figures/res_frf_full.pdf>]
+<figures/setup_band.pdf, id=1217, 238.82224pt x 157.26341pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
-Package pdftex.def Info: figures/setup_band.pdf  used on input line 622.
-(pdftex.def)             Requested size: 252.0pt x 204.81667pt.
-<figures/setup_coverage.pdf, id=1236, 216.95761pt x 300.7344pt>
+Package pdftex.def Info: figures/setup_band.pdf  used on input line 624.
+(pdftex.def)             Requested size: 252.0pt x 165.94492pt.
+
+Underfull \hbox (badness 6944) in paragraph at lines 593--629
+|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
+ []
+
+
+Underfull \hbox (badness 3701) in paragraph at lines 593--629
+|   [][]$[]$ []|   []   |   []   |   []   |   []   |   []   |   []   |   []
+ []
+
+<figures/setup_coverage.pdf, id=1220, 216.95761pt x 300.7344pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
-Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 686.
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 685.
 (pdftex.def)             Requested size: 252.0pt x 349.31104pt.
 
-Underfull \hbox (badness 1762) in paragraph at lines 636--692
+Underfull \hbox (badness 1762) in paragraph at lines 635--691
 |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[31 <./figures/res_lpv_lti.pdf>] [32 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>]
-Overfull \hbox (101.11467pt too wide) in paragraph at lines 835--883
+[30 <./figures/res_lpv_lti.pdf> <./figures/setup_band.pdf>]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [31 <./figures/setup_coverage.pdf>]
+Overfull \hbox (5.03552pt too wide) in paragraph at lines 825--876
  [][] 
  []
 
-Including 'wip' comment.
-\openout4 = `comment.cut'.
-
- Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut
-Underfull \hbox (badness 10000) in paragraph at lines 6--7
-[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
- []
-
-) (figures/gantry_system_floating_joint.tex))
+(figures/gantry_system_floating_joint.tex))
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -1265,9 +1269,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[33] [34
-
-] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
+[32] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -1277,20 +1279,20 @@ L3 programming layer <2026-01-19>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 914B2D73842066C33E2E2C369AF1A77E;8297.
+(rerunfilecheck)             Checksum: D831223D8E2B0445B85C42B5AEBCFC39;8089.
  ) 
 Here is how much of TeX's memory you used:
- 28266 strings out of 467867
- 541897 string characters out of 5416882
- 1068664 words of memory out of 5000000
- 56066 multiletter control sequences out of 15000+600000
- 693789 words of font info for 368 fonts, out of 8000000 for 9000
+ 28255 strings out of 467867
+ 541574 string characters out of 5416882
+ 1069409 words of memory out of 5000000
+ 56062 multiletter control sequences out of 15000+600000
+ 693792 words of font info for 368 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,986s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (35 pages, 1782309 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (33 pages, 1780972 bytes).
 PDF statistics:
- 1492 PDF objects out of 1728 (max. 8388607)
- 197 named destinations out of 1000 (max. 500000)
- 66479 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 1467 PDF objects out of 1728 (max. 8388607)
+ 192 named destinations out of 1000 (max. 500000)
+ 66471 words of extra memory for PDF output out of 74296 (max. 10000000)
 

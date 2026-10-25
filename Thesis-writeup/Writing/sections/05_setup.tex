@@ -317,6 +317,8 @@ depending on the motion profile}\add[own]{\kwtwo{ and the multisine}}\mv[own]{VI
 %   introduced only in VI-D, so the sentence is about the records; the
 %   filter and window are not introduced in the main text.
 \chg[own]{The models run at}{\kwtwo{The records are downsampled to}}\mv[own]{VI-C}{ $T_s=0.25$~ms.}
+% FEEDBACK (Dirk, 2026-10-25): the reduction in words, formula cut from Appendix D.
+\add[Dirk]{\kwtwo{The servo error is filtered by an eighth-order Butterworth low-pass at 1.6~kHz, we apply it forward and backward. The force is averaged over each sample.}}
 \add[own]{\kwtwo{The simulated system and controller $K_1$ run at
 $f_{\mathrm{sim}}=20$~kHz, while Section~\ref{sec:problem}
 assumes the loop runs at $T_s$.
@@ -403,7 +405,7 @@ loop at $T_s$.}
 $K_1$ discretised at $T_s$ differs from the feedback force of the system
 by a median of \SetupKmismatchMed\,\%~RMS, the force changes by a median
 of \SetupKholdMed\,\%~RMS within one hold of $T_s$, and the reduction of
-the records to $T_s$ in \mbox{\eqref{eq:setup_decim}} changes the noise-free
+the records to $T_s$ changes the noise-free
 output by at most $\SetupFiltDist$~m~RMS (Table~\mbox{\ref{tab:setup_checks}}).}
 % FEEDBACK (own, 2026-10-21): all three deviations from the Section II
 %   assumptions named (controller rate, hold, reduction), as the
