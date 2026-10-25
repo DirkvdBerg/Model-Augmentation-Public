@@ -891,7 +891,10 @@ Selection & lowest validation NRMS$_e$\\
   at $X_1$ holds it in that direction. In Fig.~\ref{fig:gantry_system} both
   ends are held, which locks $\Theta$ for a rigid cross-arm; with the
   prismatic joint, $\Theta$ is free, as the coordinates of
-  \eqref{eq:Ptransform} assume. Both flexible joints turn through the same
+  \eqref{eq:Ptransform} assume. The length mismatch that
+  Fig.~\ref{fig:gantry_system} ignores is second order in $\Theta$, so the
+  linear model \eqref{eq:eom} is unaffected; the revision corrects the
+  drawing, not the model. Both flexible joints turn through the same
   angle $\Theta$, so only $k_{b1}+k_{b2}$ and $c_{b1}+c_{b2}$ enter the
   equations of motion \eqref{eq:eom}.}
   \label{fig:app_gantry_floating}

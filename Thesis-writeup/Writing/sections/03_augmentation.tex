@@ -497,16 +497,15 @@ physical states and the remaining $n_{\bar x}$ outputs
 %   2026-10-22); Y sentence shortened (Dirk 2026-10-22).
 \del[own]{These corrections act on all six physical states, the positions included,
 as in the dynamic-parallel structure~\mbox{\cite[Table~1]{hoekstra2026lfr}}.}
-The positions are also corrected\add[own]{,} because within one sample period
+The positions are also corrected\add[own]{ as in the dynamic parallel structure~\cite[Table~1]{hoekstra2026lfr}}\add[own]{,} because within one sample period
 an unmodelled force would change both the velocity and \add[own]{the }position\del[own]{,
-correcting only for the velocities would not be able to capture this}\add[own]{~\cite[Table~1]{hoekstra2026lfr}}.
+correcting only for the velocities would not be able to capture this}.
 \chg[own]{Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload
 position $Y$ through $\tilde x_k$, enabling}{\kwtwo{The payload position $Y$ in $\tilde x_k$ enables}} the neural network to learn
  position-dependent effects.}
 \\
 The inputs to the neural network are normalised
-to zero mean and unit variance, which has been shown to improve
-the estimation of models containing neural networks~\chg[Q41]{\mbox{\cite[Sec.~5.3]{hoekstra2026lfr}}}{\cite{bishop1995neural}}\add[Q41]{\kwtwo{, as in~\cite[Sec.~5.3]{hoekstra2026lfr}}}.
+to zero mean and unit variance~\cite{bishop1995neural}\add[Q41]{\kwtwo{, as in~\cite[Sec.~5.3]{hoekstra2026lfr}}}.
 \todo{Add bib entry \texttt{bishop1995neural}: C.~M.~Bishop, \emph{Neural Networks for Pattern Recognition}, Oxford University Press, 1995 (the source Hoekstra et al.\ cite for this claim, their ref.~[6], Sec.~5.3).}
 % FEEDBACK v1 (2026-10-22, Q41 "A more primary source can be used like Deep
 %   Learning by Goodfellow"): the general claim cites Hoekstra's own source
@@ -653,8 +652,8 @@ and the output map remains linear without an offset.}
 % FEEDBACK (Dirk, 2026-10-23): f^n_base cannot "add the means to" an
 %   equation; "we" subject as in the two sentences before; the zero-mean
 %   assumption attributed to Hoekstra 2026 Sec. 5.3, where (28) is derived.
-\add[Dirk]{We include the means in $f_{\mathrm{base}}^{\mathrm n}$, since we do not
-assume zero-mean signals as in~\cite[Sec.~5.3]{hoekstra2026lfr}.}
+\add[Dirk]{We include the means in $f_{\mathrm{base}}^{\mathrm n}$, whereas the transformation
+in~\cite[Sec.~5.3]{hoekstra2026lfr} assumes zero-mean signals.}
 \\
 % RESTRUCTURE (2026-10-22, Dirk; A6): the network paragraph moved before
 %   the normalisation paragraph (Hoekstra 2026 Sec. 3.3 follows the
@@ -1112,7 +1111,7 @@ Following Beintema et al., we use \kwtwo{an encoder network} that estimates $\ha
 % FEEDBACK (own, 2026-10-23): chi_tau named where IV-C introduces the
 %   encoder, so (22) does not use it before (23); Section II already
 %   introduces the encoder from past inputs and outputs (Dirk 2026-10-23).
-keeps the computation per gradient step independent of the record length\add[own]{,}
+This keeps the computation per gradient step independent of the record length\add[own]{,}
 for \add[own]{a }fixed batch size and window \chg[own]{lengths}{length}~\cite[Sec.~3.1, Eq.~(9)]{beintema2023subnet}.
 Using short simulation windows increases the loss function
 smoothness~\cite[Sec.~3.1, 4.2]{beintema2023subnet}.
@@ -1125,7 +1124,7 @@ smoothness~\cite[Sec.~3.1, 4.2]{beintema2023subnet}.
 %   window start (P6), non-uniqueness, optimiser.
 % RESTRUCTURE (2026-10-19, Maarten p8): joint estimation and the criterion moved here, after the encoder they use.
 \mv[M-p8]{IV-C start}{\kwtwo{The network parameters $\theta_{\mathrm{aug}}$, the encoder parameters $\theta_{\mathrm{enc}}$ and} $\theta_{\mathrm{base}}$ are jointly estimated,
-as in~\cite[Eq.~(22)]{hoekstra2026lfr}\kwtwo{, while the encoder paper keeps
+as in~\cite[Sec.~5.1]{hoekstra2026lfr}\kwtwo{, while the encoder paper keeps
 $\theta_{\mathrm{base}}$ fixed~\cite[footnote~1]{hoekstra2026encoder}}.}
 \mv[M-p8]{IV-C start}{The parameters
 $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
@@ -1246,7 +1245,7 @@ independent of the noise~\cite[Sec.~2.1]{beintema2023subnet} and }}that the syst
 incrementally exponentially output
 stable~\cite[Cond.~1]{beintema2023subnet}.
 The identification method we have adapted from~\cite{hoekstra2026lfr}
-relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions}~\cite[Sec.~5.5]{hoekstra2026lfr}.
+relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions} for its convergence and consistency guarantees~\cite[Sec.~5.5]{hoekstra2026lfr}.
 The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:
 a mismatch in the initial velocity will create a permanent position offset.
 In closed-loop the feedback controller is able to correct this offset\del[own]{, which is why each window is simulated in the closed loop of Section~\mbox{\ref{sec:aug_loop}}}.}
@@ -1372,12 +1371,12 @@ and $Y$ is a state (Section~\ref{sec:lfr})\del[own]{, the baseline is nonlinear}
 \chg[own]{To create a model-based state reconstruction map for the nonlinear baseline,
 a linearisation point has to be chosen,
 making the map only accurate around that
-point}{\kwtwo{A model-based state reconstruction map for the nonlinear baseline needs a
+point}{\kwtwo{Hoekstra et al.'s model-based state reconstruction map for the nonlinear baseline needs a
 linearisation point, so the map is only accurate around that point}}~\cite[Sec.~3.1]{hoekstra2026encoder}.
 Hoekstra et al.\ therefore suggest fitting the encoder to 
 states simulated with the 
 baseline~\cite[Sec.~3.2, Eq.~(35)]{hoekstra2026encoder}, as their 
-augmentation method does~\cite[Eq.~(30)]{hoekstra2026lfr}.
+augmentation method does~\cite[Sec.~5.4.2]{hoekstra2026lfr}.
 We apply this approach and simulate the baseline model once before training 
 to obtain the physical state at every sample \chg[M-p8]{$\tau$}{$k$}.
 % FEEDBACK v2 (2026-10-23, Maarten p8 on this tau: "\tau or k? you normally
@@ -1400,7 +1399,7 @@ from \eqref{eq:aug_cl_step}.
 %   here from after the fit, beside the simulation it explains (Maarten p8
 %   "simulate in closed loop?").
 \mv[own]{below}{We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the
-recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.}
+recorded input as in~\cite[Sec.~5.3]{hoekstra2026lfr}.}
 % FEEDBACK (own, 2026-10-22; D2): the x^c clause repeats the next sentence
 %   ("... zero added states and x^c=0") (Dirk 2026-10-22).
 We use $\hat y^{\mathrm n,0}_k$ as the model output\del[own]{
@@ -1538,7 +1537,7 @@ giving $a=\sqrt{6/(n_{\bar x}+6(n+1))}$}.
 At the start of training, $\theta_{\mathrm{base}}=\theta^0_{\mathrm{base}}$
 and $f^{\mathrm n}_{\mathrm{aug}}=0$.
 The augmented model and baseline model give the same $\tilde x$ and $\hat y$, 
-given they start from the same physical state.
+given they start from the same physical state and receive the same input.
 The added states $\bar x$ are still updated by
 $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
 \\
@@ -1650,7 +1649,7 @@ are used for \chg[Dirk]{both stages}{each stage}.
  % (28). S2 (bottom): g_aug maps x-hat^n_tau|tau and the recorded u_tau to
  % the added state encoded from the window shifted by one sample (30)."
  \caption{Samples used by PS on one record, with the layout
- of~\cite[Fig.~2]{hefny2015supervised}. In S1 (top), the encoder $\psi$ estimates
+ adapted from~\cite[Fig.~2]{hefny2015supervised}. In S1 (top), the encoder $\psi$ estimates
  $\hat x^{\mathrm n}_{\tau|\tau}$ from the window $\chi_\tau$. The decoder $p$ then
  predicts the residual $e_\tau$ of the next $H$ samples from the added states
  $\bar x_{\tau|\tau}$ \eqref{eq:ps2_s1}. In S2 (bottom), $g_{\mathrm{aug}}$ predicts
