@@ -15,7 +15,7 @@
 \newif\ifdraft
 \newif\ifshowkw
 \draftfalse
-\showkwtrue
+\showkwfalse
 \ifdefined\ReviewBuild\draftfalse\showkwfalse\fi   % review.tex defines \ReviewBuild: review PDF for supervisors
 \ifdraft
   \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}
@@ -114,6 +114,8 @@
 \fi
 
 % ------------------------------------------------------------ float pages
+% Keep normal heading and equation spacing; leave unused space at column bottoms.
+\raggedbottom
 % Floats on a float-only page start at the top instead of the vertical centre (Dirk 2026-10-25).
 \makeatletter
 \setlength{\@fptop}{0pt}

@@ -37,7 +37,7 @@ def main():
     rel, start = rel_errors()
     norm = lambda vals: sum(v ** 2 for v in vals) ** 0.5                          # noqa: E731
     fmt = lambda v: r"$%+.1f$" % v                                                # noqa: E731
-    lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l r r r r r}", r"\toprule",
+    lines = [r"\setlength{\tabcolsep}{2.7pt}", r"\begin{tabular}{l r r r r r}", r"\toprule",
              r" & & \multicolumn{2}{c}{$\mathcal{M}_{\mathrm{U}}$} & \multicolumn{2}{c}{$\mathcal{M}_{\mathrm{OBC}}$}\\",
              r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
              r"Rel.\ error (\%) & Detuned start & Detuned & True & Detuned & True\\"]   # was "Initial" (Dirk 2026-10-24)

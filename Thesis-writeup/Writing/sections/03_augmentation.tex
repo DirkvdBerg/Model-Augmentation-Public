@@ -1121,11 +1121,12 @@ encoder\del[M-mail]{ \kwtwo{described below}}:
 \begin{aligned}
  &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal W|\,n_f\,n_y}
  \sum_{\tau\in\mathcal W}\sum_{k=\tau}^{\tau+n_f-1}
- \norm{W_r\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)}_2^2\quad\text{s.t.}\\
+ \norm{W_r\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)}_2^2\\
+ &\text{s.t.}\\
  &\tilde x^{\mathrm n}_{k+1|\tau}
   =f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),
    \tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr)
-  +f^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
+  \!+f^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
    \hat x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr),\\
  &\bar x_{k+1|\tau}=g^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
    \hat x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr),\\
@@ -1474,7 +1475,8 @@ added-state rows random:
 \begin{equation}
 \begin{aligned}
  &\text{baseline:} &&\beta=0,\\
- &\text{network:}  &&W^{\tilde x}_L=0,\quad b_L=0,\quad W^{\bar x}_L\sim\mathcal U\bigl(-1/\sqrt{n_h},1/\sqrt{n_h}\bigr),\\
+ &\text{network:}  &&W^{\tilde x}_L=0,\quad b_L=0,\\
+ &                 &&W^{\bar x}_L\sim\mathcal U\bigl(-1/\sqrt{n_h},1/\sqrt{n_h}\bigr),\\
  % REWRITE (2026-10-23, Dirk): physical encoder rows written out (same values
  % as the former symbol theta^{b,0}_enc from (26)). OLD row:
  %  &\text{encoder:}  &&\theta^{b,0}_{\mathrm{enc}}\text{ from \eqref{eq:aug_enc_fit}},\\

@@ -235,7 +235,7 @@ The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term 
 %   dropped (implementation only). Degree 2 of adj M(Y) and det M(Y) checked by
 %   hand (2026-10-22) and symbolically (sympy, 2026-10-06).
 
-\subsection{Positive definiteness of the inertia matrix}
+\subsection[Positive definiteness of the inertia matrix]{Positive definiteness of the\\ inertia matrix}
 \label{app:lfr-wellposed}
 % REWRITE (2026-10-22, Dirk): formula-first, replaced without marks; Schur
 %   sentence dropped (minors taken from the lower-right corner), |r_0|<1
@@ -257,10 +257,10 @@ lower-right corner, $M(Y)\succ0$ if and only if
 with
 \begin{equation*}
 \begin{aligned}
- \frac{\det M(Y)}{m_h}
+ &\frac{\det M(Y)}{m_h}\\
  &=(m_\Sigma+m_h)(J_{\mathrm{eff}}+m_hY^2)-(a-m_hY)^2\\
- &=m_\Sigma m_h\Bigl(Y+\frac{a}{m_\Sigma}\Bigr)^2
-   +(m_\Sigma+m_h)\Bigl(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\Bigr).
+ &=m_\Sigma m_h\Bigl(Y+\frac{a}{m_\Sigma}\Bigr)^2\\
+ &\quad +(m_\Sigma+m_h)\Bigl(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\Bigr).
 \end{aligned}
 \end{equation*}
 For $m_h,m_\Sigma,J_{\mathrm{eff}}>0$, this expression is positive for every
@@ -277,9 +277,11 @@ In \eqref{eq:mdelta_map}, with
 $b=\gamma(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$ and $b_0$ its value at
 $\theta^0_{\mathrm{base}}$,
 \begin{equation*}
- r_0=\frac{m_{\Delta,0}}{b_0},\quad \lvert r_0\rvert<1,\quad
- \eta_0=\operatorname{atanh}(r_0),\quad
+\begin{aligned}
+ r_0&=\frac{m_{\Delta,0}}{b_0},\quad \lvert r_0\rvert<1,\\
+ \eta_0&=\operatorname{atanh}(r_0),\quad
  s=\frac{m_{\Delta,0}}{b_0(1-r_0^2)},
+\end{aligned}
 \end{equation*}
 so that at $\beta=0$, $m_\Delta=m_{\Delta,0}$ and
 $\partial m_\Delta/\partial\beta_{m_\Delta}=m_{\Delta,0}$.

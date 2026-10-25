@@ -18,9 +18,8 @@ STEM = "res_bb_selection"
 def main():
     with open(RESULTS_DIR / f"{STEM}.csv", newline="") as fh:
         rows = list(csv.DictReader(fh))
-    # footnotesize, 3 pt and a wrapping note: at 4 pt in body size the table was 22 pt wider
-    # than a column (Dirk 2026-10-25).
-    lines = [r"\footnotesize", r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{r r r r r r r l}", r"\toprule",
+    # Footnotesize, 2.8 pt spacing and a wrapping note keep the table within one column.
+    lines = [r"\footnotesize", r"\setlength{\tabcolsep}{2.8pt}", r"\begin{tabular}{r r r r r r r l}", r"\toprule",
              r"\# & $n_x$ & Width & LR & Param. & $\mathrm{NRMS}_e$ (\%) & Best update & Status\\", r"\midrule"]
     for r in rows:
         npar = float(r["n_params"])
