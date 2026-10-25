@@ -74,30 +74,52 @@ It remains unclear whether the improvements would hold with
 a different controller or on measured data.}
 
 % RESTRUCTURE (2026-10-19): subsection heading "Conclusion" removed, the section is the conclusion.
-\revnote{Issue: the conclusion lists the results but does not judge them,
-because no criterion per aspect is stated before the results.
-Plan: state one criterion per aspect in Section~\ref{sec:setup}; then
-conclude per aspect with the result and a verdict, followed by the
-answer to the research question, the contribution and the main limit.
-Question: is this the structure you expect?}
-A parallel augmentation with added states, initialised by PS and trained
-in closed loop, learns the missing dynamics and lowers the $Y$ error on
-the records with multisine from 116.6 to 6.2\,\% (Aspect~1).
-Without multisine it stays at the level of the baseline.
-OBC makes the estimates less sensitive to the start than unconstrained
-estimation, without loss of accuracy, but does not establish a unique
-estimate (Aspect~2).
-The augmented model keeps its accuracy outside the training range and is
-more accurate than the black box on every test record except $X_2$ of I2
-(Aspect~3).
-The physics-based plant model should therefore be augmented in parallel
-with added states, initialised by PS, and with OBC.
-This improves the prediction where the missing dynamics are excited and
-partly preserves interpretability.
-These results are from simulation with one seed.
-The next step is an evaluation under a changed controller on measured
-data.
-\todo{Missing: the R1 and R2 numbers are preliminary (update 19500 of 33400). Candidate: update 47.7 and 6.2 after the final rerun.}
+% FEEDBACK (own, 2026-10-25): conclusion rewritten at a higher level, no numbers (Maarten v2 p15:
+%   "a conclusion is typically merging the results, research questions and discussion together on a
+%   higher level"; "what start?" -> "where training starts"; no "not unique", p15). Per aspect, then
+%   the answer to the research question and the limit; consistent with the rewritten Discussion
+%   (Dirk 2026-10-25). The old text, its revnote and its todo (preliminary numbers, now final) are
+%   kept below as commented-out source.
+\add[own]{\kwtwo{A parallel augmentation with added states is able to capture
+the missing dynamics from closed-loop data, but only when the added states
+are initialised with PS.
+The augmented model improves the prediction compared to the baseline when
+the data excite the missing dynamics, and stays at the level of the
+baseline for the motion profiles without multisine.
+It keeps this accuracy on held-out positions and unseen motion profiles,
+and performs better than the black box model.
+Compared to $\mathcal M_{\mathrm U}$, OBC keeps the neural network for the
+most part out of the parameter directions, but the parameter estimates
+still deviate from their true values and depend on where training starts.
+The physics-based model should therefore be augmented in parallel with
+added states initialised with PS, and OBC should be extended to the
+simulated output to preserve interpretability.
+These results are limited to simulation with one controller.}}
+% OLD conclusion (until 2026-10-25), replaced by the paragraph above:
+% \revnote{Issue: the conclusion lists the results but does not judge them,
+% because no criterion per aspect is stated before the results.
+% Plan: state one criterion per aspect in Section~\ref{sec:setup}; then
+% conclude per aspect with the result and a verdict, followed by the
+% answer to the research question, the contribution and the main limit.
+% Question: is this the structure you expect?}
+% A parallel augmentation with added states, initialised by PS and trained
+% in closed loop, learns the missing dynamics and lowers the $Y$ error on
+% the records with multisine from 116.6 to 6.2\,\% (Aspect~1).
+% Without multisine it stays at the level of the baseline.
+% OBC makes the estimates less sensitive to the start than unconstrained
+% estimation, without loss of accuracy, but does not establish a unique
+% estimate (Aspect~2).
+% The augmented model keeps its accuracy outside the training range and is
+% more accurate than the black box on every test record except $X_2$ of I2
+% (Aspect~3).
+% The physics-based plant model should therefore be augmented in parallel
+% with added states, initialised by PS, and with OBC.
+% This improves the prediction where the missing dynamics are excited and
+% partly preserves interpretability.
+% These results are from simulation with one seed.
+% The next step is an evaluation under a changed controller on measured
+% data.
+% \todo{Missing: the R1 and R2 numbers are preliminary (update 19500 of 33400). Candidate: update 47.7 and 6.2 after the final rerun.}
 
 % Source material kept until Dirk removes it (wip blocks of the earlier outline, 2026-10-11 to 2026-10-18).
 % \begin{wip}

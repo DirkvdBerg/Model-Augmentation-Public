@@ -105,7 +105,7 @@ This estimate equals the true parameters only if the missing dynamics
 themselves are orthogonal to these directions.}}
 \\
 Gy\"or\"ok et al.\ have constructed this for input-output baseline models that
-are linear in their parameters~\cite{gyorok2026obc}.
+are linear in their parameters~\cite[Sec.~2]{gyorok2026obc}.
 We extend this to state-space models nonlinear in their parameters,
 specifically for our gantry system.
 % RESTRUCTURE (2026-10-20, Dirk): roadmap, as in Sections III and IV.
@@ -159,7 +159,7 @@ full column rank~\cite[Assumption~1]{gyorok2026obc}.
 Therefore different values of $\theta_{\mathrm b}$ are unable 
 % FEEDBACK (2026-10-23, Dirk): "training data" -> D_N; no "call".
 to give the same stacked prediction on \chg[own]{the training data}{\kwtwo{$\mathcal D_N$}}.
-\chg[Dirk]{Gy\"or\"ok et al.\ call an input with this property}{\kwtwo{An input with this property is}} persistently
+\chg[Dirk]{Gy\"or\"ok et al.\ call an input with this property}{\kwtwo{An input with this property is}} weakly persistently
 exciting~\cite[Eq.~(6), Sec.~4.3]{gyorok2026obc}.
 This also requires an identifiable baseline, where different
 values of $\theta_{\mathrm b}$ give different functions
@@ -199,7 +199,7 @@ $\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
 %   wording around Eq. (16); "so"/"because" tails and "part of" cut; the
 %   Eq. (18) reason says what the column does.
 \chg[Dirk]{\kw{The linearisation also leaves an offset that does not depend on
-$\beta$}}{\kwtwo{Expanding \eqref{eq:obc_sens} gives}}\kw{~\cite[Eq.~(16)]{gyorok2025l4dc}:}
+$\beta$}}{\kwtwo{A first-order expansion of the baseline state update gives}}\kw{~\cite[Eq.~(16)]{gyorok2025l4dc}:}
 \begin{equation}
 \begin{aligned}
  f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)
@@ -215,7 +215,7 @@ $\varphi\beta_{\mathrm{lin}}+\gamma$ is the next state predicted by the
 baseline at $\beta_{\mathrm{lin}}$}}{\kwtwo{ is an offset independent of $\beta$}}.
 \kw{Gy\"or\"ok et al.\ add this offset as an extra column to the Jacobian, to}
 \chg[Dirk]{\kw{include all components of the baseline model in the
-orthogonality}}{\kwtwo{make the neural network also orthogonal to the next
+orthogonality}}{\kwtwo{promote orthogonality between the neural network and the next
 states predicted by the baseline}}\kw{~\cite[Eq.~(18)]{gyorok2025l4dc}.
 We include it as well}\del[Dirk]{\kw{, so the neural network has no component along the
 stacked next states predicted by the baseline}}.
@@ -291,7 +291,7 @@ The fitted part is removed from the neural network correction of the
 % FEEDBACK (2026-10-23, Jasper v1 p8 JsV10 "which correction?"; Dirk): the
 %   Gyorok sentence is cut, "correction" now only means f_aug; the output
 %   contrast is in the "Third, ..." sentence; citation moved up.
-physical state at every step in the closed-loop simulation\add[JsV10]{\kwtwo{~\cite[Eqs.~(9), (13)]{gyorok2026obc}}}.
+physical state at every step in the closed-loop simulation, adapting the output correction in\add[JsV10]{\kwtwo{~\cite[Eqs.~(9), (13)]{gyorok2026obc}}}.
 At each step, we subtract the Jacobian \kw{and offset} multiplied by
 $\theta_{\mathrm{aux}}$ from the network correction,
 evaluated at the current state and input.
@@ -321,8 +321,8 @@ $f^{\mathrm n}_{\mathrm{base}}$, $f^{\mathrm n}_{\mathrm{aug}}$ and
 % FEEDBACK (2026-10-23, Dirk): "take the arguments of" -> "are evaluated as
 %   in" (the verb of the same sentence); "so ... is trained" -> "to train".
 $g^{\mathrm n}_{\mathrm{aug}}$ \chg[Dirk]{take the arguments of}{\kwtwo{are evaluated as in}} \eqref{eq:aug_loss}.
-We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, as
-in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
+We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, using its expression
+in~\cite[Eq.~(8)]{gyorok2026obc},
 \chg[Dirk]{\kw{so} the network is trained}{\kwtwo{to train the network}} using the gradient of its projected output.
 \subsection{Identification and recovery}\label{sec:obc_ident}
 \ifdraft
@@ -349,8 +349,8 @@ and\del[Dirk]{ it} is held fixed during the epoch.
 which requires rebuilding $\Phi_\Gamma$ at each evaluation
 of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to
 keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters,
-assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration
-or keep it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
+assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.}{\kwtwo{Gy\"or\"ok et al.\ propose updating $\beta_{\mathrm{lin}}$ at every iteration
+or keeping it fixed at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.}}
 \chg[M-mail]{Training as stated in Section~\ref{sec:setup} starts}{\kwtwo{To allow training to start}} from detuned parameters\add[Dirk]{\kwtwo{ without rebuilding $\Phi_\Gamma$ at each evaluation of $V$}},
 we instead adapt their recomputation 
 at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.

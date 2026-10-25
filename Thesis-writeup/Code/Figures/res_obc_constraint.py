@@ -1,7 +1,8 @@
 """Table D (Aspect 2): whether the orthogonality constraint holds and what it costs, unconstrained (R4)
-against OBC (R1), both from the detuned start: the network overlap rho(F_aug) on the training and the
-test records, the truth overlap rho(Xi) (eq:obc_overlap), and the NRMS_e per axis of the full model over the
-records of Table II, with and without a multisine (no physical-part rows, Dirk 2026-10-24).
+against OBC (R1), both from the detuned start: the network overlap rho(F_aug) and the truth overlap
+rho(Xi) (eq:obc_overlap) on the training, validation and test records (validation added, Dirk 2026-10-25),
+and the NRMS_e per axis of the full model over the records of Table II, with and without a multisine
+(no physical-part rows, Dirk 2026-10-24).
 
 Reads Results/res_obc_overlap.csv (Code/Evaluation/eval_overlap.py) and res_obc_accuracy.csv
 (Code/Evaluation/make_results.py), writes Writing/tables/res_obc_constraint.tex.
@@ -19,13 +20,15 @@ def main():
     lines = [r"\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{l r r}", r"\toprule",
              r" & $\mathcal{M}_{\mathrm{U}}$ & $\mathcal{M}_{\mathrm{OBC}}$\\", r"\midrule"]
     # the test overlaps use I1 to I6 only (eval_overlap.py)
-    for stack, name in (("train", "training"), ("test", "interpolation test")):
+    splits = (("train", "training"), ("val", "validation"), ("test", "interpolation test"))
+    for stack, name in splits:
         lines.append(" & ".join([r"$\rho(F_{\mathrm{aug}})$, %s records" % name]
                                 + [r"$%.2f$" % float(ov[(r, stack)]["network_overlap"]) for r in RUNS]) + r"\\")
     # the truth overlap depends on the data only, so it is printed once across both columns
-    xi = {"%.2f" % float(ov[(r, "test")]["truth_overlap"]) for r in RUNS}
-    assert len(xi) == 1, xi
-    lines.append(r"$\rho(\Xi)$, interpolation test records & \multicolumn{2}{c}{$%s$}\\" % xi.pop())
+    for stack, name in splits:
+        xi = {"%.2f" % float(ov[(r, stack)]["truth_overlap"]) for r in RUNS}
+        assert len(xi) == 1, xi
+        lines.append(r"$\rho(\Xi)$, %s records & \multicolumn{2}{c}{$%s$}\\" % (name, xi.pop()))
     # NRMS_e over the same records as Table II: 10 with a multisine, 8 without (Dirk 2026-10-24)
     e, ms = errors()
     r_ms, r_no = records(e, ms, "test")

@@ -75,24 +75,29 @@
   \def\Ha{20}        % absorber height
   \def\ga{30}        % spring and damper gap between absorber and payload
   \def\Mw{34.7}      % actuator mass box size
-  \def\gs{3}         % X2 joint: gap between beam end and prismatic block (u)
-  \def\Ls{14}        % X2 joint: prismatic block length (u)
-  \def\Hs{9.5}       % X2 joint: prismatic block height (v)
-  \def\rp{7.3}       % X2 joint: outer radius of the torsion spring (as X1)
-  \def\ap{1.5}       % X2 joint: link between block and spring (u)
+  \def\gs{6}         % X2 joint: gap between beam end and sleeve (u)
+  \def\Ls{14}        % X2 joint: sleeve length (u)
+  \def\Hs{9.5}       % X2 joint: sleeve height (v)
+  \def\ro{3}         % X2 joint: rod length beyond the sleeve, beam side (u)
+  \def\vb{10.5}      % X2 joint: bracket depth below the axis (v)
+  \def\ap{3}         % X2 joint: rod between sleeve and spring (u)
+  \def\rp{7.3}       % outer radius of both torsion springs
   \pgfmathsetmacro\yE{0.5*\Lb*sin(\th)}       % height of the beam ends
   \pgfmathsetmacro\hb{0.5*\Wb}
   \pgfmathsetmacro\vh{\hb+2*\rw+0.5*\Hh}      % payload centre height (v)
   \pgfmathsetmacro\ua{\Yp-0.5*\Lh-\ga-0.5*\Wa}  % absorber centre (u)
   \pgfmathsetmacro\vY{\vh+0.5*\Hh+30}          % height of the Y dimension line
   \pgfmathsetmacro\xM{0.5*\Lb*cos(\th)+22.3+0.5*\Mw}  % |x| of actuator 1 centre
-  % X2 joint on the arm axis: the rod ends inside the block, the spring sits
-  % beyond the block; m_2 is placed level with the spring, 6 units out
-  \pgfmathsetmacro\uR{0.5*\Lb+\gs+\Ls-3.5}     % rod tip (|u|)
-  \pgfmathsetmacro\uP{0.5*\Lb+\gs+\Ls+\ap+\rp} % pivot centre (|u|)
-  \pgfmathsetmacro\xP{-\uP*cos(\th)}           % pivot centre, world
+  % X2 joint (ISO 3952-1 prismatic pair), all on the arm axis: the sleeve
+  % belongs to the arm and is held at its side by a bracket from the beam end;
+  % the rod belongs to the m_2 side, runs through the sleeve and ends in the
+  % torsion spring; m_2 is placed level with the spring, 6 units out
+  \pgfmathsetmacro\uB{-(0.5*\Lb+\gs+0.5*\Ls)}  % sleeve centre (u)
+  \pgfmathsetmacro\uP{0.5*\Lb+\gs+\Ls+\ap+\rp} % spring centre (|u|)
+  \pgfmathsetmacro\xP{-\uP*cos(\th)}           % spring centre, world
   \pgfmathsetmacro\yP{-\uP*sin(\th)}
-  \pgfmathsetmacro\xMb{\uP*cos(\th)+\rp+6+0.5*\Mw}  % |x| of actuator 2 centre  % Lane for the d dimension and the F_Y arrow: on the CoM side of the payload
+  \pgfmathsetmacro\xMb{\uP*cos(\th)+\rp+6+0.5*\Mw}  % |x| of actuator 2 centre
+  % Lane for the d dimension and the F_Y arrow: on the CoM side of the payload
   % and clear of the red Y reference line, so it follows the sign of \Yp.
   \pgfmathsetmacro\ud{ifthenelse(\Yp<0,9,-9)}
   \pgfmathsetmacro\sd{ifthenelse(\Yp<0,1,-1)}
@@ -105,11 +110,11 @@
     \coordinate (E2) at (-\Lb/2,0);
 
     % ==== X2 joint: prismatic (block, arm through it) + revolute (spring) ====
-    \draw (-0.5*\Lb,0) -- (-\uR,0);                              % rod
-    \draw (-0.5*\Lb-\gs,-0.5*\Hs) rectangle (-0.5*\Lb-\gs-\Ls,0.5*\Hs);
-    \draw[<->] (-0.5*\Lb-\gs-\Ls,0.5*\Hs+3.5)                   % free direction
-               -- (-0.5*\Lb-\gs,0.5*\Hs+3.5);
-    \draw (-0.5*\Lb-\gs-\Ls,0) -- (-\uP,0);       % block to spring centre
+    \draw (\uB-0.5*\Ls,-0.5*\Hs) rectangle (\uB+0.5*\Ls,0.5*\Hs);   % sleeve
+    \draw (-0.5*\Lb,-\vb) -- (\uB,-\vb) -- (\uB,-0.5*\Hs);  % bracket to arm
+    \draw (-0.5*\Lb-\gs+\ro,0) -- (-\uP,0);     % rod: through sleeve to spring
+    \draw[<->] (\uB-0.5*\Ls,0.5*\Hs+3.5)                 % free direction
+               -- (\uB+0.5*\Ls,0.5*\Hs+3.5);
 
     % ==== payload m_h on its wheels ====
     \draw[fill=white] (\Yp-\Lh/2,\vh-\Hh/2) rectangle (\Yp+\Lh/2,\vh+\Hh/2);
@@ -161,12 +166,10 @@
       \node[anchor=south] at ({0.5*\Yp},\vY+1) {$Y$};
     \end{scope}
 
-    % ==== flexible joint and L_b ====
+    % ==== L_b ====
     \draw[dim] ( \Lb/2,-\hb-2) -- ++(0,-24)   (-\Lb/2,-\hb-2) -- ++(0,-24);
     \draw[<->] (-\Lb/2,-\hb-18) -- node[pos=0.72, below=1pt] {$L_b$}
                ( \Lb/2,-\hb-18);
-    \node[anchor=north west, inner sep=2.5pt, align=left]   % two lines: clear
-         at ( \Lb/2,-\hb-19) {$k_{b1}$\\$c_{b1}$};  % of the X_1 arrow
   \end{scope}
 
   % ===================== generalized coordinates X, Theta (blue) =============
@@ -206,15 +209,17 @@
             ({\xs+(3.4+3.9*\x/540)*cos(90*(1-\s)-\s*(\x-540))},
              {\y +(3.4+3.9*\x/540)*sin(90*(1-\s)-\s*(\x-540))});
       \draw (\xs+\s*7.3,\y) -- (\s*\xm-\s*\Mw/2,\y);
+      \node[anchor=south, inner sep=2.5pt, align=left]
+           at (\xs,\y+\rp) {$k_{b1}$\\$c_{b1}$};
     \else
-      % X2: torsion spring at the end of the block link (drawn with the cross
-      % arm), same spiral as X1, then the link to the actuator
+      % X2: torsion spring at the end of the rod (drawn with the cross arm),
+      % same spiral as X1, mirrored
       \draw[line width=0.4pt] plot[domain=0:540, samples=100, smooth]
             ({\xP+(3.4+3.9*\x/540)*cos(90*(1-\s)-\s*(\x-540))},
              {\yP+(3.4+3.9*\x/540)*sin(90*(1-\s)-\s*(\x-540))});
       \draw (\xP-\rp,\yP) -- (\s*\xm-\s*\Mw/2,\y);
       \node[anchor=north, inner sep=2.5pt, align=left]
-           at (\xP+2,\yP-\rp-1) {$k_{b2}$\\$c_{b2}$};
+           at (\xP,\yP-\rp) {$k_{b2}$\\$c_{b2}$};
     \fi
 
     % linear guide: two rollers against a hatched wall

@@ -167,6 +167,9 @@ The final model with the orthogonality constraint and the unconstrained model
 % FEEDBACK (own, 2026-10-24): overlap 0.00 on training, 0.24 on test; "However" links the limitation (Dirk 2026-10-24).
 \kw{OBC keeps the network out of the parameter directions\add[own]{\kwtwo{ on the training records}}: its network overlap is
 much lower than that of $\mathcal M_{\mathrm U}$\add[own]{\kwtwo{ (Table~\ref{tab:res_obc_constraint})}}.
+% FEEDBACK (Dirk, 2026-10-25): validation row added to Table res_obc_constraint; overlap on all splits.
+\add[Dirk]{\kwtwo{The network overlap of $\mathcal M_{\mathrm{OBC}}$ is also much lower than that of $\mathcal M_{\mathrm U}$ on the validation and test records.
+It increases from 0.00 on the training records to 0.24 on the test records.}}
 \chg[own]{The}{\kwtwo{However, the}} missing dynamics are not orthogonal to these directions, their overlap is 0.59.
 \del[own]{From the correct start, OBC also ends closer to the true values (Appendix~\mbox{\ref{app:choices}}).}
 \delmv[own]{below}{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}}
@@ -290,7 +293,8 @@ difference in controller rates contributes to this.
 From these results, we cannot conclude what the reason is.
 \\
 OBC is able to keep the neural network out of the parameter
-directions on the training tuples.
+directions on the training tuples, and for the most part on the validation and test records
+compared to $\mathcal M_{\mathrm U}$ (Table~\ref{tab:res_obc_constraint}).
 However, the missing dynamics are not orthogonal to these directions, 
 their overlap is 0.59 (Table~\ref{tab:res_obc_constraint}).
 Orthogonality is defined to hold only to first order and at $\bar x=0$, 
