@@ -389,7 +389,7 @@ The controller of every record is, per stage axis $j$,
  \label{eq:setup_K1}
 \end{equation}
 where $\omega_b=2\pi f_b$ is the bandwidth and $\kappa_j$ sets the
-open-loop gain of axis $j$ to one at $\omega_b$\del[own]{, for the diagonal entry of
+open-loop gain of axis $j$ to one at $\omega_b$ for the nominal baseline at $Y=0$\del[own]{, for the diagonal entry of
 the rigid baseline at $Y=0$ from stage force to stage position}.
 $K_1$ is discretised by the Tustin rule at \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}%
 \add[own]{ \kwtwo{for the data, and by the same rule at $T_s$ for
@@ -475,7 +475,7 @@ an S-curve route and long strokes.}%
 %   what each extrapolation record exceeds (Dirk 2026-10-25).
 The training set contains 18 records, 14 with a multisine.
 The validation set contains 6 records, 4 with a multisine, at held-out
-positions and with new signal realisations. Both sets contain all five motion types.
+positions and new multisine phases. Both sets contain all five motion types.
 The motion profiles of I3--I6 and E2--E5 are based on ASMPT motion profiles.
 Table~\ref{tab:setup_records} lists the test records\del[own]{, and
 Fig.~\mbox{\ref{fig:setup_coverage}} shows their operating range}.
@@ -498,8 +498,8 @@ I1 & point-to-point & yes & phases, setpoints\\
 I2 & standstill & yes & position\\
 I3 & simultaneous axes & no$^\dagger$ & motion type\\
 I4 & alternating axes & no & motion type\\
-I5 & S-curve route & no$^\dagger$ & motion type\\
-I6 & long strokes & no$^\dagger$ & motion type\\
+I5 & S-curve profiles & no$^\dagger$ & motion type\\
+I6 & long-distance profiles & no$^\dagger$ & motion type\\
 \bottomrule
 \end{tabular}
 
@@ -516,8 +516,8 @@ Record & Motion & Multisine & Outside training range & Reference record\\
 \midrule
 E1 & standstill & yes & $\lvert Y\rvert=\fpeval{round(\SetupEY/\SetupTrainY,1)}\,Y_{\mathrm{tr}}$ & I2\\
 E2 & simultaneous axes & no$^\dagger$ & stroke of $Y$ & I3\\
-E3 & S-curve route & no$^\dagger$ & acceleration, \SetupEAcc\,\% & I5\\
-E4 & long strokes & no$^\dagger$ & velocity, \SetupEVel\,\% & I6\\
+E3 & S-curve profiles & no$^\dagger$ & acceleration, \SetupEAcc\,\% & I5\\
+E4 & long-distance profiles & no$^\dagger$ & velocity, \SetupEVel\,\% & I6\\
 % FEEDBACK (own, 2026-10-24): E6 renamed E5; the changed-controller record E5 is not in the thesis (Dirk 2026-10-24).
 E5 & simultaneous axes & no$^\dagger$ & multiple limits, acceleration \SetupESixAcc\,\% & I3\\
 \bottomrule
@@ -529,8 +529,9 @@ Percentages refer to the machine limits.
 % FEEDBACK (Dirk, 2026-10-24): the M records are simulated with their own
 %   multisine phases, not the training multisine added afterwards (as in
 %   Section VI-C).
-$^\dagger$Also simulated with multisine (suffix M), with equal amplitude
-within each pair and 30\,\% of the training amplitude for I6M and E4M.
+$^\dagger$Also simulated with multisine (suffix M).
+Multisine amplitudes match between the I and E records.
+I6M and E4M use 30\,\% of the training amplitude.
 \end{minipage}
 \end{table}
 % REMOVED (own, 2026-10-25): figure setup_coverage (fig:setup_coverage) dropped (Dirk 2026-10-25).
@@ -674,6 +675,8 @@ The black-box settings are listed in Table~\ref{tab:hyper}.
   \input{tables/res_bb_selection}
 \end{table}
 
+% Keep the subsection heading and its non-floating table together.
+\par\noindent\begin{minipage}{\columnwidth}
 \subsection{Hyperparameters}\label{app:hyper}
 \del[own]{Table~\mbox{\ref{tab:hyper}} lists the settings of every grey-box run and of the
 black-box search.
@@ -682,7 +685,7 @@ inherited (from earlier work), tuned (on validation data), heuristic (fixed
 without a measurement) or compute-limited.
 Every model is trained once with one seed, so differences between models
 smaller than the variation between seeds are not resolved.}%
-\begin{table}[t]
+\captionsetup{type=table}
 % FEEDBACK (own, 2026-10-24): Basis column removed; a rule before each block (Dirk 2026-10-24).
 \caption{Hyperparameters of the identification.}
 \label{tab:hyper}
@@ -705,13 +708,13 @@ Encoder window $n+1$ & 30 samples\\
 %   updates (final-*.out progress bar 33400) (Dirk 2026-10-25).
 Added states $n_{\bar x}$ & 0, 2, 8\\
 % FEEDBACK (own, 2026-10-25): n_h named, as in eq:aug_init (Dirk 2026-10-25).
-Hidden layers, width $n_h$ (network, encoder correction) & 2, 16, tanh\\
+Hidden layers / width $n_h$ / activation (network, encoder correction) & 2 / 16 / tanh\\
 Margin $\gamma$ & 0.99\\
 Detuning of the combinations & 10\,\%\\
 \midrule
 \multicolumn{2}{@{}l}{\emph{Optimiser}}\\
-Adam rate & $10^{-5}$\\
-Batch & 512 windows\\
+Adam learning rate & $10^{-5}$\\
+Batch size & 512 windows\\
 Updates & 33\,400\\
 Validation interval & 1300 updates\\
 L-BFGS iterations, history & 100, 50\\
@@ -723,32 +726,33 @@ Seeds per model & 1\\
 \multicolumn{2}{@{}l}{\emph{PS (Section~\ref{sec:aug_ps2})}}\\
 % FEEDBACK (own, 2026-10-25): PS rows in plain words; the symbols of the dropped
 %   stopping rule are gone, same values (ps2_opening.py PS2Spec) (Dirk 2026-10-25).
-S1 and S2 Adam rate & $10^{-3}$\\
-S1 batch & 64 windows\\
+S1 and S2 Adam learning rate & $10^{-3}$\\
+S1 batch size & 64 windows\\
 Decoder width & 16\\
 Residual horizon $H$ & $n+1$\\
-Left out records & last per class with at least 3 records\\
+Records left out of S1 and S2 & Last record of each class containing at least 3 records\\
 Check of the decoder & every 25 updates, 128 left-out windows\\
 S1 length & 100 to 350 updates\\
-S1 stops improving & less than 2\,\% over 4 checks\\
-S2 runs if the decoder explains & at least 10\,\%, also checked at update 150\\
+S1 stopping criterion & Improvement below 2\,\% over 4 checks\\
+S2 starting criterion & Decoder explains at least 10\,\% of the residual\\
+Additional check of the S2 starting criterion & At S1 update 150\\
 S2 pairs $N_{\mathcal P}$ (fit, left out) & 8192, 2048\\
-S2 batch & 512\\
+S2 batch size & 512\\
 S2 length & 500 to 8000 updates\\
-S2 stops improving & less than 1\,\% over 5 checks of 100 updates\\
+S2 stopping criterion & Improvement below 1\,\% over 5 checks, 100 updates apart\\
 \midrule
 \multicolumn{2}{@{}l}{\emph{Black box (Section~\ref{sec:setup_models})}}\\
 % FEEDBACK (own, 2026-10-25): the selected configuration (#9 of Table app_bb_search)
 %   instead of the search grid, which that table shows (Dirk 2026-10-25).
 States $n_x$ & 16\\
 Width of $f_{\mathrm{bb}}$, $h_{\mathrm{bb}}$ (encoder $2\times$) & 16\\
-Adam rate & $10^{-3}$\\
-Batch, stride & 256, 25\\
+Adam learning rate & $10^{-3}$\\
+Batch size / stride & 256 windows / 25 samples\\
 Updates & at most 80\,000\\
 Selection & lowest validation NRMS$_e$ (Table~\ref{tab:app_bb_search})\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{minipage}\par
 
 % REMOVED (own, 2026-10-24): work-in-progress block "OBC and experiment details" (to-do bullets only).
 
