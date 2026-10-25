@@ -31,8 +31,8 @@ def main():
         if r["selected"] == "1":
             cells = [r"\textbf{%s}" % c if c else c for c in cells]
         lines.append(" & ".join(cells) + r"\\")
-    lines += [r"\bottomrule", r"\multicolumn{8}{p{0.9\columnwidth}}{Bold: selected on validation (lowest "
-              r"$\mathrm{NRMS}_e$; within 2\,\% the fewer parameters).}\\", r"\end{tabular}", ""]
+    lines += [r"\bottomrule", r"\multicolumn{8}{p{0.9\columnwidth}}{Bold: selected model. "
+              r"Failed: training loss became non-finite.}\\", r"\end{tabular}", ""]
     save_table("\n".join(lines), STEM)
 
 

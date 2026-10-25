@@ -392,7 +392,7 @@ where $\omega_b=2\pi f_b$ is the bandwidth and $\kappa_j$ sets the
 open-loop gain of axis $j$ to one at $\omega_b$\del[own]{, for the diagonal entry of
 the rigid baseline at $Y=0$ from stage force to stage position}.
 $K_1$ is discretised by the Tustin rule at \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}%
-\add[own]{\kwtwo{ for the data, and by the same rule at $T_s$ for
+\add[own]{ \kwtwo{for the data, and by the same rule at $T_s$ for
 $K_{\mathrm{fb}}$ in the model}}.
 % FEEDBACK (own, 2026-10-21): both discretisations of K_1 stated; answers the
 %   IV-B todo "Should be discussed in the setup for controller
@@ -473,48 +473,64 @@ routes with $X$ and $Y$ together, alternating $X$-only and $Y$-only moves,
 an S-curve route and long strokes.}%
 % FEEDBACK (own, 2026-10-25): coverage figure dropped; the records table states
 %   what each extrapolation record exceeds (Dirk 2026-10-25).
-Table~\ref{tab:setup_records} lists the records\del[own]{, and
+The training set contains 18 records, 14 with a multisine.
+The validation set contains 6 records, 4 with a multisine, at held-out
+positions and with new signal realisations. Both sets contain all five motion types.
+The motion profiles of I3--I6 and E2--E5 are based on ASMPT motion profiles.
+Table~\ref{tab:setup_records} lists the test records\del[own]{, and
 Fig.~\mbox{\ref{fig:setup_coverage}} shows their operating range}.
 \begin{table}[t]
-\caption{Training, validation and test records.}
+\caption{Interpolation and extrapolation test records.}
 \label{tab:setup_records}
 \centering
 \footnotesize
-\begin{tabular}{@{}lllll@{}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.10\linewidth}
+>{\raggedright\arraybackslash}p{0.24\linewidth}
+>{\raggedright\arraybackslash}p{0.14\linewidth}
+>{\raggedright\arraybackslash}p{0.41\linewidth}@{}}
 \toprule
-Record & Motion & Multisine & New & Pair\\
+\multicolumn{4}{@{}l}{\emph{Interpolation: within the training range}}\\
 \midrule
-Training & all five types & 14 of 18 & & \\
-Validation & all five types & 4 of 6 & positions, draws & \\
+Record & Motion & Multisine & Difference from training\\
 \midrule
-I1 & point-to-point & yes & phases, setpoints & \\
-I2 & standstill & yes & position & \\
-I3 & operational & no$^\dagger$ & motion type & \\
-I4 & route & no & motion type & \\
-I5 & route & no$^\dagger$ & motion type & \\
-I6 & route & no$^\dagger$ & motion type & \\
+I1 & point-to-point & yes & phases, setpoints\\
+I2 & standstill & yes & position\\
+I3 & simultaneous axes & no$^\dagger$ & motion type\\
+I4 & alternating axes & no & motion type\\
+I5 & S-curve route & no$^\dagger$ & motion type\\
+I6 & long strokes & no$^\dagger$ & motion type\\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.10\linewidth}
+>{\raggedright\arraybackslash}p{0.24\linewidth}
+>{\raggedright\arraybackslash}p{0.14\linewidth}
+>{\raggedright\arraybackslash}p{0.27\linewidth}
+>{\raggedright\arraybackslash}p{0.14\linewidth}@{}}
+\toprule
+\multicolumn{5}{@{}l}{\emph{Extrapolation: outside the training range}}\\
+\midrule
+Record & Motion & Multisine & Outside training range & Reference record\\
 \midrule
 E1 & standstill & yes & $\lvert Y\rvert=\fpeval{round(\SetupEY/\SetupTrainY,1)}\,Y_{\mathrm{tr}}$ & I2\\
-E2 & operational & no$^\dagger$ & stroke of $Y$ & I3\\
-E3 & route & no$^\dagger$ & acceleration, \SetupEAcc\,\% & I5\\
-E4 & route & no$^\dagger$ & velocity, \SetupEVel\,\% & I6\\
+E2 & simultaneous axes & no$^\dagger$ & stroke of $Y$ & I3\\
+E3 & S-curve route & no$^\dagger$ & acceleration, \SetupEAcc\,\% & I5\\
+E4 & long strokes & no$^\dagger$ & velocity, \SetupEVel\,\% & I6\\
 % FEEDBACK (own, 2026-10-24): E6 renamed E5; the changed-controller record E5 is not in the thesis (Dirk 2026-10-24).
-E5 & operational & no$^\dagger$ & several, \SetupESixAcc\,\% acc. & I3\\
+E5 & simultaneous axes & no$^\dagger$ & multiple limits, acceleration \SetupESixAcc\,\% & I3\\
 \bottomrule
 \end{tabular}
 
 \smallskip
 \begin{minipage}{\linewidth}\footnotesize
-I: interpolation, inside the training range. E: extrapolation, outside
-it in the setting under New, with the motion of the Pair record. New:
-what differs from the training records, for E from the Pair record.
-E5 differs in more than one setting and is a stress record.
+Percentages refer to the machine limits.
 % FEEDBACK (Dirk, 2026-10-24): the M records are simulated with their own
 %   multisine phases, not the training multisine added afterwards (as in
 %   Section VI-C).
-$^\dagger$Also \chg[own]{evaluated with the training multisine added}{\kwtwo{simulated with a multisine}} (I3M, E2M,
-and so on), at equal amplitude within a pair and 0.30 of the training
-amplitude for I6 and E4.
+$^\dagger$Also simulated with multisine (suffix M), with equal amplitude
+within each pair and 30\,\% of the training amplitude for I6M and E4M.
 \end{minipage}
 \end{table}
 % REMOVED (own, 2026-10-25): figure setup_coverage (fig:setup_coverage) dropped (Dirk 2026-10-25).
@@ -564,6 +580,10 @@ For $\lvert v_i\rvert\ge3v_{\mathrm{fr}}$, the friction of
 \mbox{\eqref{eq:setup_fric}} is within 0.5\,\% of the Coulomb law.}%
 Table~\ref{tab:setup_checks} gives the checks of the design\del[own]{, including the
 share of samples in this range}.
+The phase-margin loss is relative to the loop at 20~kHz.
+The controller force error compares the force computed by $K_1$ at $T_s$
+with the recorded feedback force at each sample time $kT_s$,
+using the relative RMS error.
 \begin{table}[t]
 % FEEDBACK (own, 2026-10-25): only the rows Section VI uses; six rows cut (Dirk 2026-10-25).
 \caption{Checks of the experiment design.}
@@ -571,23 +591,30 @@ share of samples in this range}.
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}ll@{}}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{0.76\linewidth}r@{}}
 \toprule
 Check & Value\\
 \midrule
-\multicolumn{2}{@{}l}{\emph{Simulated loop, linearised at the training positions}}\\
-Phase-margin loss, 4 / 2~kHz & \SetupPmLossFour$^\circ$ / \SetupPmLossTwo$^\circ$\\
-\multicolumn{2}{@{}l}{\emph{Training records}}\\
-SNR $\fpeval{round(\SetupMotionFNN/100,2)}\,f_b$ to $1.05\,f_b$, without multisine & $\ge$\SetupGapSnrMinMotion~dB\\
+\multicolumn{2}{@{}l}{\emph{Linearised loop at the training positions}}\\
+Maximum phase-margin loss at 4~kHz & \SetupPmLossFour$^\circ$\\
+Maximum phase-margin loss at 2~kHz & \SetupPmLossTwo$^\circ$\\
+\addlinespace
+\multicolumn{2}{@{}l}{\emph{Noise on the training records}}\\
+SNR without multisine,\newline
+$\fpeval{round(\SetupMotionFNN/100,2)}\,f_b$ to $1.05\,f_b$ & $\ge$\SetupGapSnrMinMotion~dB\\
+\addlinespace
+\multicolumn{2}{@{}l}{\emph{Actuator forces on the training records}}\\
 % CHANGED (2026-10-21, Dirk; D-265): controller_rate.py rerun on all training
 %   records. The old row compared the T_s controller with the block-mean force
 %   (10.6 %), which is the force change within one hold, not a controller
 %   error; both numbers are now reported separately.
-$K_1$ at $T_s$, force error, median & \SetupKmismatchMed\,\%\\
-\quad largest; without multisine & \SetupKmismatchMax\,\%; \SetupKmismatchMotion\,\%\\
-Force change within one hold of $T_s$, median & \SetupKholdMed\,\%\\
+Controller force error at $T_s$: median & \SetupKmismatchMed\,\%\\
+Controller force error at $T_s$: maximum & \SetupKmismatchMax\,\%\\
+Controller force error at $T_s$: maximum without multisine & \SetupKmismatchMotion\,\%\\
+Force change within one hold of $T_s$: median & \SetupKholdMed\,\%\\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 \del[own]{The training loop re-discretises $K_1$ at $T_s$. At the same instants,
 its feedback force differs from that of the system by a median of
@@ -635,14 +662,14 @@ The black box of Section~\ref{sec:setup_models} is
 where $x^{\mathrm{bb}}_k\in\R^{n_x}$ and an encoder estimates
 $x^{\mathrm{bb}}$ at the window start from past inputs and servo errors, as
 in~\cite{beintema2023subnet}.
-Its settings are the black-box rows of Table~\ref{tab:hyper}.
+The black-box settings are listed in Table~\ref{tab:hyper}.
 % FEEDBACK (own, 2026-10-25): search table moved here from the dropped Appendix C,
 %   with a sentence that references it (Dirk 2026-10-25).
-\add[own]{\kwtwo{Table~\ref{tab:app_bb_search} gives the configurations that were searched.}}
+\add[own]{\kwtwo{Table~\ref{tab:app_bb_search} shows the configurations compared during model selection.}}
 \begin{table}[t]
   \centering
   % FEEDBACK (own, 2026-10-24): update budget and the meaning of failed (D-264) added (float critique, Dirk yes).
-  \caption{Black-box search: the 11 configurations, each trained for at most 80\,000 updates, and their best validation $\mathrm{NRMS}_e$. Failed: the training loss became non-finite.}
+  \caption{Black-box configurations and their best validation $\mathrm{NRMS}_e$, using at most 80\,000 updates.}
   \label{tab:app_bb_search}
   \input{tables/res_bb_selection}
 \end{table}
