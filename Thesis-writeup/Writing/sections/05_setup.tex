@@ -64,7 +64,7 @@ The design details\del[own]{ and their checks} are in Appendix~\ref{app:setup}.
 %   a list of its subsections (Dirk 2026-10-24).
 \del[own]{Section~\mbox{\ref{sec:setup_system}} describes the simulated system,
 Section~\mbox{\ref{sec:setup_loop}} the closed loop and excitation, Section~\mbox{\ref{sec:setup_data}} the records, Section~\mbox{\ref{sec:setup_models}} the
-compared models and Section~\mbox{\ref{sec:setup_metrics}} the metrics.}
+compared models and Section~\mbox{\ref{sec:setup_metrics}} the metrics.}%
 
 \subsection{Simulated system}\label{sec:setup_system}
 % Sources: D-204, D-224 (truth), D-188 (absorber), D-223, D-226 (friction gain), D-221 (K1),
@@ -91,7 +91,7 @@ We left it out of the baseline to add nonlinear unmodelled dynamics to the
 system, for the augmented model to capture.
 % FEEDBACK (own, 2026-10-24): the display lead-in states this (Dirk 2026-10-24).
 \del[own]{The friction works as a force against each actuator
-force, this is modelled as a term entering \mbox{\eqref{eq:eom}} through the input.}
+force, this is modelled as a term entering \mbox{\eqref{eq:eom}} through the input.}%
 For the second addition, we split the payload mass $m_h$ into
 $m_a$ and $m_{h,r}=m_h-m_a$, with $m_a$ connected to $m_{h,r}$
 by a spring and damper in the $Y$ direction\del[own]{
@@ -112,7 +112,7 @@ baseline model is not able to represent with its states.
   unmodelled dynamics of the baseline.}
   \label{fig:gantry_absorber}
 \end{figure}
-With the friction acting against each actuator force on the input, 
+With the friction opposing each actuator's velocity on the input, 
 \eqref{eq:eom} becomes
 \begin{subequations}\label{eq:setup_truth}
 \begin{equation}
@@ -138,8 +138,8 @@ al.~\cite[Table~I]{garcia2013model}.}
 \delmv[own]{F-C}{$v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating
 the loop with values between 0.1 and 10~mm/s.
 Higher values turn the friction into viscous damping under the multisine,
-and lower values keep the standstill servo error above the noise level.}
-\\
+and lower values keep the standstill servo error above the noise level.}%
+
 % NEW (2026-10-21, Dirk): derivation of M_e; the implementation
 %   (Code/Data/gantrySystemExtendedTanh.m) uses only M, C, K in A.
 The added mass adds the displacement $q_a$ of $m_a$ relative to
@@ -164,23 +164,23 @@ system is
 are given in Appendix~\ref{app:setup_system}.}}
 \delmv[own]{F-A}{where $M(Y)$ is \mbox{\eqref{eq:mass_matrix}} with $m_h$ the total payload mass.
 $M_a(Y,\ell)$ corrects it for $m_a$ being at $Y+\ell$ instead of $Y$,
-where $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.}
+where $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.}%
 % FEEDBACK (Dirk 2026-10-24): k_a, c_a to Appendix F-A with the matrices;
 %   no values in the text, as for the baseline (the W3 values sentence
 %   deleted); f_a is no longer used as a symbol in the main text.
 \delmv[own]{F-A}{$k_a=m_a(2\pi f_a)^2$ and
 $c_a=2\zeta_a\sqrt{k_am_a}$, with natural frequency $f_a$
-and damping ratio $\zeta_a$.}
+and damping ratio $\zeta_a$.}%
 % FEEDBACK (own, 2026-10-24): repeats the M_a sentence (Dirk 2026-10-24).
 \del[own]{The added mass changes the inertia through $M_a$,
-which also includes its coupling to $\Theta$ and $Y$.}
+which also includes its coupling to $\Theta$ and $Y$.}%
 We simulate the system with fixed-step RK4 at
 \chg[own]{$f_{\mathrm s}$}{$f_{\mathrm{sim}}$}$=20$~kHz.
 % FEEDBACK (own, 2026-10-21): f_s renamed f_sim, since 1/T_s = 4 kHz
 %   (sec2-rate-review; Dirk 2026-10-21).
 All parameter values are listed in Table~\ref{tab:nominal_parameters}.
 \delmv[own]{above}{The friction levels $c_c$ are taken from Garc\'ia-Herreros et
-al.~\mbox{\cite[Table~I]{garcia2013model}}.}
+al.~\mbox{\cite[Table~I]{garcia2013model}}.}%
 % RESTRUCTURE (own, 2026-10-24): resonance placement, controller and
 %   feedforward moved to Section VI-B, after the crossover is introduced
 %   (Maarten v2: no forward references; Dirk 2026-10-24). The 2026-10-21
@@ -196,7 +196,7 @@ All data is generated in closed loop with the controller $K_1$ of
 Appendix~\mbox{\ref{app:setup_system}}; $K_{\mathrm{fb}}$ in \mbox{\eqref{eq:system_loop}}
 is $K_1$ discretised at $T_s$.
 The only feedforward, $u^{\mathrm{ff}}$ in \mbox{\eqref{eq:aug_two_loops}}, is the
-injected excitation force.}
+injected excitation force.}%
 % RESTRUCTURE (own, 2026-10-24): noise paragraph moved unchanged to
 %   Section VI-B, after the excitation; its two todos moved with it
 %   (Dirk 2026-10-24).
@@ -208,7 +208,7 @@ out (Appendix~\mbox{\ref{app:setup_system}}).
 The servo-error signal-to-noise ratio (SNR) ranges from
 \SetupSnrMinX{} to \SetupSnrMaxX~dB on the $X$ actuators
 and \SetupSnrMinY{} to \SetupSnrMaxY~dB on $Y$, depending on the motion of the record.
-The data is also generated without measurement noise, with output $y^\circ$.}
+The data is also generated without measurement noise, with output $y^\circ$.}%
 
 \subsection{Closed loop and excitation}\label{sec:setup_loop}
 % RESTRUCTURE (own, 2026-10-24): new subsection from moved sentences of
@@ -242,7 +242,7 @@ motion types: standstill at a fixed $Y$, slow sweeps of $Y$,
 $X$-$Y$ Lissajous paths, point-to-point moves with S-curve
 profiles, and operational motion profiles.
 The motion profiles excite the low frequencies up to the loop crossover
-(Table~\mbox{\ref{tab:setup_checks}}).}
+(Table~\mbox{\ref{tab:setup_checks}}).}%
 
 % FEEDBACK (own, 2026-10-24): frequencies in Hz, f_b = 100 Hz is stated
 %   (Dirk 2026-10-24).
@@ -250,7 +250,7 @@ The motion profiles excite the low frequencies up to the loop crossover
 %   the features, as in the caption (Dirk 2026-10-24).
 \mv[own]{VI-A}{The added mass}\add[own]{\kwtwo{, spring and damper}} \chg[own]{creates}{\kwtwo{create}}\mv[own]{VI-A}{ an anti-resonance
 at }\chg[own]{$f_a$}{$150$~Hz}\mv[own]{VI-A}{ and a resonance at }\chg[own]{$f_a\sqrt{1+m_a/m_{h,r}}\approx2.12\,f_b$}{$212$~Hz}\del[own]{,}\mv[own]{VI-A}{
-in the}\add[own]{\kwtwo{ open-loop}}\mv[own]{VI-A}{ transfer function from $F_Y$ to $Y$.
+in the}\add[own]{ \kwtwo{open-loop}}\mv[own]{VI-A}{ transfer function from $F_Y$ to $Y$.
 % REWRITE (Dirk 2026-10-24): from here to the end of VI-B in Dirk's words.
 We have chosen both frequencies to be above the crossover of the loop with $K_1$, so that the feedback does not suppress them in the data.}
 
@@ -304,14 +304,14 @@ level and spectral shape of the ASMPT gantry}}\mv[own]{VI-A}{\del[own]{ (Appendi
 %   range is over the training records (snr.py) and depends on the motion
 %   profile and the multisine.
 \add[own]{\kwtwo{The noise is not modelled to capture the machine's resonances.}}
-\mv[own]{VI-A}{The servo-error signal-to-noise ratio (SNR)}\add[own]{\kwtwo{ of the
+\mv[own]{VI-A}{The servo-error signal-to-noise ratio (SNR)}\add[own]{ \kwtwo{of the
 training records}}\mv[own]{VI-A}{ ranges from
 \SetupSnrMinX{} to \SetupSnrMaxX~dB on the $X$ actuators
 and \SetupSnrMinY{} to \SetupSnrMaxY~dB on $Y$,
-depending on the motion profile}\add[own]{\kwtwo{ and the multisine}}\mv[own]{VI-A}{.}
+depending on the motion profile}\add[own]{ \kwtwo{and the multisine}}\mv[own]{VI-A}{.}
 % FEEDBACK (own, 2026-10-24): y-circ is used only in VI-E; moved there
 %   (Dirk 2026-10-24).
-\delmv[own]{VI-E}{The data is also generated without measurement noise, with output $y^\circ$.}
+\delmv[own]{VI-E}{The data is also generated without measurement noise, with output $y^\circ$.}%
 
 % RESTRUCTURE (own, 2026-10-24): rate paragraph from Section VI-C,
 %   shortened (Dirk 2026-10-24).
@@ -322,11 +322,12 @@ depending on the motion profile}\add[own]{\kwtwo{ and the multisine}}\mv[own]{VI
 %   filter and window are not introduced in the main text.
 \chg[own]{The models run at}{\kwtwo{The records are downsampled to}}\mv[own]{VI-C}{ $T_s=0.25$~ms.}
 % FEEDBACK (Dirk, 2026-10-25): the reduction in words, formula cut from Appendix D.
-\add[Dirk]{\kwtwo{The servo error is filtered by an eighth-order Butterworth low-pass at 1.6~kHz, we apply it forward and backward. The force is averaged over each sample.}}
+\add[Dirk]{\kwtwo{The servo error is filtered forward and backward using an eighth-order
+Butterworth low-pass filter at 1.6~kHz. The force is averaged over each sample.}}
 \add[own]{\kwtwo{The simulated system and controller $K_1$ run at
 $f_{\mathrm{sim}}=20$~kHz, while Section~\ref{sec:problem}
 assumes the loop runs at $T_s$.
-We evaluate the effect of this difference in Table~\ref{tab:setup_checks}.}}
+We report the resulting differences in actuator force in Table~\ref{tab:setup_checks}.}}
 
 \subsection{Records}\label{sec:setup_data}
 % Sources: D-219, D-226 (band), D-221 (split), D-258 (twins), README validation story;
@@ -352,21 +353,21 @@ The force is applied to the actuators through $P^{-1}$.
 The multisine band starts at the highest loop crossover
 $\fpeval{round(\SetupCrossMax/100,2)}\,f_b$, to prevent feedback suppression.
 The band ends at $2.97\,f_b$, which keeps 90\,\% of the squared
-frequency-response error of the baseline above the crossover.}
+frequency-response error of the baseline above the crossover.}%
 \del[own]{This was
-measured on the system without noise.}
+measured on the system without noise.}%
 \delmv[own]{VI-B}{The band contains the anti-resonance and the
 resonance of the added mass (Fig.~\mbox{\ref{fig:setup_band}}),
-for all the positions used in training.}
+for all the positions used in training.}%
 \del[own]{This was determined from the frequency response of the known system model at
-each training position.}
+each training position.}%
 
 We use 18 records for training, 6 for validation and 11 for testing
 (Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).
 % FEEDBACK (own, 2026-10-24): replaced by the paired-records sentence
 %   below (Jasper: "twins" unclear; Dirk 2026-10-24).
 \del[own]{Seven of the test records without multisine are also evaluated with the
-training multisine added.}
+training multisine added.}%
 % FEEDBACK (own, 2026-10-24): one fact per sentence; the black box is
 %   introduced only in VI-D (Dirk 2026-10-24).
 Training and validation include all five motion types\chg[own]{, with}{\kwtwo{.
@@ -401,16 +402,16 @@ the test set.
 %   Section VI-B and shortened; the window is a row of Table hyper; the
 %   three numbers stay in Table setup_checks for the Discussion, which
 %   argues the controller-rate deviation (Dirk 2026-10-24).
-\delmv[own]{VI-B}{The models run at $T_s=0.25$~ms}\del[own]{ on training windows of 0.1~s}.
+\delmv[own]{VI-B}{The models run at $T_s=0.25$~ms}\del[own]{ on training windows of 0.1~s.}%
 \delmv[own]{VI-B}{The simulated system and its controller $K_1$ run at
 $f_{\mathrm{sim}}=20$~kHz, while Section~\mbox{\ref{sec:problem}} assumes the
-loop at $T_s$.}
+loop at $T_s$.}%
 \del[own]{The data therefore meet these assumptions only approximately:
 $K_1$ discretised at $T_s$ differs from the feedback force of the system
 by a median of \SetupKmismatchMed\,\%~RMS, the force changes by a median
 of \SetupKholdMed\,\%~RMS within one hold of $T_s$, and the reduction of
 the records to $T_s$ changes the noise-free
-output by at most $\SetupFiltDist$~m~RMS (Table~\mbox{\ref{tab:setup_checks}}).}
+output by at most $\SetupFiltDist$~m~RMS (Table~\mbox{\ref{tab:setup_checks}}).}%
 % FEEDBACK (own, 2026-10-21): all three deviations from the Section II
 %   assumptions named (controller rate, hold, reduction), as the
 %   second-opinion session sec2-rate-review found; numbers from
@@ -421,7 +422,7 @@ output by at most $\SetupFiltDist$~m~RMS (Table~\mbox{\ref{tab:setup_checks}}).}
 %   with the existing check of 99_appendix.tex (K_1 at T_s, force error),
 %   instead of rewriting Section II in continuous time (Dirk 2026-10-21).
 \delmv[own]{VI-B}{The rate, its anti-alias filter and the window length are supported by the
-checks in Table~\mbox{\ref{tab:setup_checks}}.}
+checks in Table~\mbox{\ref{tab:setup_checks}}.}%
 
 % FEEDBACK (Dirk, 2026-10-24): "Compared" cut from the title; no marks in
 %   a section title. Was: "Compared models".
@@ -500,7 +501,7 @@ signs.
 %   Dirk 2026-10-24).
 \add[own]{\kwtwo{Every model is trained once, with the same seed.}}
 \del[own]{Appendix~\mbox{\ref{app:choices}} shows the runs used to choose $n_{\bar x}$ and
-the PS initialisation of the added states.}
+the PS initialisation of the added states.}%
 % FEEDBACK (Dirk, 2026-10-24): comparisons rewritten in Dirk's pattern ("We"
 %   + plain verb, purpose with "to", reason with "because"); no ordinals.
 %   Placed after the training paragraph, so the detuned start is defined
@@ -508,7 +509,7 @@ the PS initialisation of the added states.}
 % FEEDBACK (Dirk, 2026-10-24): reworded, varied sentence openings; the
 %   number of added states is chosen by comparison, its outcome (two, as
 %   eight; one vibration mode) is stated in Results VII-A, not here.
-\\
+
 % FEEDBACK (Dirk, 2026-10-24): paragraph in Dirk's words (chat); gaps
 %   filled with the metric and what is varied for M_U; no outcome claimed.
 %   Three blocks, as Dirk split them.
@@ -520,14 +521,14 @@ initialisation, we compare the simulation error of $\mathcal M_{\mathrm U}$
 for each combination.
 These runs start from the true parameters, so that 
 parameter errors do not affect the choice.}}
-\\
+
 \add[Dirk]{\kwtwo{The simulation error of $\mathcal M_{\mathrm{OBC}}$ and
 $\mathcal M_{\mathrm U}$ determines whether the constraint on the neural
 network limits the performance of the model, and whether OBC keeps the parameters
 interpretable.
 Both are trained from the true parameters and from the 10\,\% detuned
 start, to test whether the estimate \chg[own]{is unique}{depends on the start}.}}
-\\
+
 \add[Dirk]{\kwtwo{We test generalisation by comparing the simulation error of
 $\mathcal M_{\mathrm{OBC}}$, $\mathcal M_{\mathrm{LPV}}$ and
 $\mathcal M_{\mathrm{BB}}$ on the interpolation and extrapolation
@@ -546,7 +547,7 @@ without modelling the controller separately
 % FEEDBACK (own, 2026-10-24): wording (Dirk 2026-10-24).
 \del[own]{Its state count, network widths and learning rate are selected
 from 11 configurations using the validation records,
-with the same data and training and encoder window as the grey-box models.}
+with the same data and training and encoder window as the grey-box models.}%
 \add[own]{\kwtwo{It uses the same records, training window and encoder window as the
 grey-box models.}}
 
@@ -578,7 +579,7 @@ but on the position output every model scores almost 100\,\%, because
 the reference motion dominates the output.
 On the servo error the BFR equals $100-\mathrm{NRMS}_e$, so I report
 $\mathrm{NRMS}_e$.
-Question: is this departure from the research plan acceptable?}
+Question: is this departure from the research plan acceptable?}%
 \mv[own]{VI-B}{The data is also generated without measurement noise, with output $y^\circ$.}
 % FEEDBACK (own, 2026-10-24): no errors in metres, confidentiality
 %   (Dirk 2026-10-24).
@@ -600,7 +601,7 @@ where $j$ is the stage axis, $N$ the record length, $n+1$ the encoder
 window length and $\sigma_{e,j}$ the\del[own]{ population} standard deviation of the servo error
 % FEEDBACK (Dirk, 2026-10-24): sample range named; servo_sigma uses k0 to N-1,
 %   k0 = n+1 = 30 (Clean/gantry_dynamic/data.py, eval_common.py).
-$y_j-r_j$\chg[own]{ over the same samples}{\kwtwo{ for $k=n+1$ to $N-1$}}.
+$y_j-r_j$\chg[own]{ over the same samples}{ \kwtwo{for $k=n+1$ to $N-1$}}.
 An NRMS of 100\,\% means the model performs no better than predicting the mean servo error.
 \add[own]{\kwtwo{
 The noise floor is taken as the $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms}, 
@@ -618,7 +619,7 @@ with $\hat y$ replaced by the noise-free output $y^\circ$.}}
 %   only in comments. Display math cannot be struck; the old display was:
 %   delta_j = (theta_base,j - theta*_base,j) / s_j, s_j = (m_1+m_2)/2 for
 %   m_Delta, |theta*_base,j| otherwise.
-\\
+
 % FEEDBACK (Dirk, 2026-10-24): both sentences tied to the M_U / M_OBC
 %   comparison of VI-D ("To ..." as in Dirk's VI-D sentence); the overlap
 %   says what it shows.
@@ -637,7 +638,7 @@ $\rho$ of \mbox{\eqref{eq:obc_overlap}} is computed at $\bar x=0$ on the one-ste
 tuples of the training, validation and test records (test: I1 to I6), for
 the network of $\mathcal M_{\mathrm U}$, the corrected network of
 $\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.
-On the training tuples the corrected overlap is zero by construction.}
+On the training tuples the corrected overlap is zero by construction.}%
 
 % REVNOTE RESOLVED (Dirk, 2026-10-24): res_obc_constraint shows M_U; the PS
 %   comparison (Maarten) is in the VI-D paragraph on the structure choice.

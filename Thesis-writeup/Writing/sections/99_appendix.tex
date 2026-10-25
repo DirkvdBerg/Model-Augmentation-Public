@@ -122,7 +122,7 @@ with the Delta-block mapping $z$ to $w$,}
 \end{equation}
 \mv[Dirk]{III-B}{We write the LTI part $G$ of the LFR in continuous time, adapting the
 discrete-time block structure of~\cite[Eq.~(2)]{drenth2026lpvlfr}:}
-\todo{Check this}
+\todo{Check this}%
 \begin{equation}
   \begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}
   =G\begin{bmatrix}\tilde x\\ w\\ u\end{bmatrix},
@@ -153,7 +153,7 @@ $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
 $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
 \mbox{\eqref{eq:lfr_G}}, using a continuous-time adaptation of the block partition
-in~\mbox{\cite[Eq.~(2)]{drenth2026lpvlfr}}, is}
+in~\mbox{\cite[Eq.~(2)]{drenth2026lpvlfr}}, is}%
 \add[own]{\kwtwo{With $R=M_0^{-1}$ ($M_0=M(0)\succ0$,
 Appendix~\ref{app:lfr-wellposed}), \eqref{eq:lfr_constant} gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$.
@@ -168,7 +168,7 @@ with rows $(\dot{\tilde x},z,q)$ and columns $(\tilde x,w,u)$, gives the blocks}
 %  \begin{bmatrix}\tilde x\\w\\u\end{bmatrix}.
 %  \label{eq:app_G_partition}
 % \end{equation}
-\del[own]{with blocks}
+\del[own]{with blocks}%
 {\footnotesize
 \setlength{\arraycolsep}{2.5pt}
 \begin{equation}
@@ -188,10 +188,10 @@ with rows $(\dot{\tilde x},z,q)$ and columns $(\tilde x,w,u)$, gives the blocks}
 }
 Here $\tilde x,z,w\in\R^6$ and $u,q\in\R^3$, so $G\in\R^{15\times15}$.
 \del[own]{The actuator frame enters only through $u=P\uact$ and $\qact=P^\top q$ in
-\mbox{\eqref{eq:Ptransform}}.}
+\mbox{\eqref{eq:Ptransform}}.}%
 
 Substituting $w=\Dsch(Y)z$ \del[own]{into the $z$ equation of
-\mbox{\eqref{eq:app_G_partition}}} gives the \del[own]{algebraic }loop equation
+\mbox{\eqref{eq:app_G_partition}}}gives the \del[own]{algebraic }loop equation
 \chg[own]{$(I_6-D_{zw}\Dsch(Y))z=C_zx+D_{zu}u$. Written out,}{\kwtwo{$(I_6-D_{zw}\Dsch(Y))z=C_z\tilde x+D_{zu}u$, with}}
 % FEEDBACK (2026-10-22, Dirk): display reduced to the matrix
 %   I_6 - D_zw Delta(Y); the product with z and the right-hand side dropped
@@ -204,7 +204,7 @@ $M(Y)\ddot q=u-C\dot q-Kq$, that is \mbox{\eqref{eq:eom}}, after multiplication 
 $M_0$. The condition of
 \mbox{\cite[Def.~1]{drenth2026lpvlfr}}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
 therefore the condition that $M(Y)$ is nonsingular: the Schur complement of
-the lower identity block gives}
+the lower identity block gives}%
 \add[own]{\kwtwo{The Schur complement of the lower identity block gives}}
 \begin{equation*}
 \begin{aligned}
@@ -222,7 +222,7 @@ $M(Y)$ is nonsingular.}}
 \del[own]{Since $M(Y)\succ0$ (Appendix~\mbox{\ref{app:lfr-wellposed}}), the
 loop has the closed-form solution $\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ of
 \mbox{\eqref{eq:base_ss}}, with
-$M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$.}
+$M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$.}%
 % FEEDBACK (2026-10-22, Dirk): "both quadratic in Y" dropped; nothing uses
 %   the degree (III-B states the rational dependence).
 % \begin{equation*}
@@ -230,7 +230,7 @@ $M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$.}
 % \end{equation*}
 \del[own]{where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic
 in $Y$.
-The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term by term.}
+The implementation evaluates the numerator with Horner's scheme and $d(Y)$ term by term.}%
 % TODO closed (2026-10-22, Dirk): N_0, N_1, N_2 and d(Y) not printed; Horner
 %   dropped (implementation only). Degree 2 of adj M(Y) and det M(Y) checked by
 %   hand (2026-10-22) and symbolically (sympy, 2026-10-06).
@@ -348,7 +348,7 @@ the training, validation and test records.
 % FEEDBACK (own, 2026-10-24): Appendix D reduced to the math; removed text struck (Dirk 2026-10-24).
 \del[own]{This appendix gives the details of Section~\mbox{\ref{sec:setup}} and the checks
 of its design choices.
-The checks use the known simulated system where the text says so.}
+The checks use the known simulated system where the text says so.}%
 
 \subsection{Data-generating system}\label{app:setup_system}
 % Sources: vendor/ruleOfThumb.m, gtd_build_plant.m (K1); D-238, NOISE-INJECTION.md (noise).
@@ -399,17 +399,17 @@ $K_{\mathrm{fb}}$ in the model}}.
 %   discretisation". Tustin kept (data generated with it); Jasper's ZOH
 %   remark (revnote in IV-B) open as future work (Dirk 2026-10-21).
 
-\del[own]{The noise $v_j$ has the one-sided spectrum}
+\del[own]{The noise $v_j$ has the one-sided spectrum}%
 % REMOVED (own, 2026-10-25): display, formulas in Appendix D cut (Dirk 2026-10-25). Was:
 % \begin{equation}
 %  S_{v,j}(f)=\lambda_j^2\,\lvert H_j(f)\rvert^2+\sigma_{v,j}^2,
 %  \label{eq:setup_noise}
 % \end{equation}
 \del[own]{where $H_j$ is a second-order Butterworth low-pass with cutoff $f_{v,j}$,
-$\lambda_j$ its level and $\sigma_{v,j}$ a white floor.}
+$\lambda_j$ its level and $\sigma_{v,j}$ a white floor.}%
 \del[own]{$\lambda_j$ and $f_{v,j}$ are fitted so that the simulated standstill servo
 error at $Y=0$ matches the measured one of the industrial machine, and
-$\sigma_{v,j}$ is its level above 5~kHz.}
+$\sigma_{v,j}$ is its level above 5~kHz.}%
 The signal-to-noise ratio of Section~\ref{sec:setup_system} is
 $\mathrm{SNR}_j=20\log_{10}\bigl(\mathrm{RMS}(y^{\circ}_j-r_j)/\mathrm{RMS}(y_j-y^{\circ}_j)\bigr)$
 over the training records.
@@ -425,7 +425,7 @@ over the training records.
 \end{itemize}
 \fi
 \del[own]{In each channel $c\in\{X,\Theta,Y\}$ of the generalised force, the
-multisine is}
+multisine is}%
 % REMOVED (own, 2026-10-25): display, formulas in Appendix D cut (Dirk 2026-10-25). Was:
 % \begin{equation}
 %  u^{\mathrm{ms}}_c(t)=A_c\sqrt{\frac{2}{\lvert\mathcal L\rvert}}\sum_{l\in\mathcal L}
@@ -434,7 +434,7 @@ multisine is}
 % \end{equation}
 \del[own]{where $\Delta f=0.005\,f_b$, $\mathcal L=\{212,\dots,594\}$ spans
 $1.06\,f_b$ to $2.97\,f_b$, and the phases $\alpha_{c,l}$ are drawn uniformly per record.
-It enters at the actuators as $u^{\mathrm{ff}}=P^{-1}u^{\mathrm{ms}}$.}
+It enters at the actuators as $u^{\mathrm{ff}}=P^{-1}u^{\mathrm{ms}}$.}%
 \del[own]{The grid places 18 lines inside the half-power width $2\zeta_af_a=0.09\,f_b$ of
 the anti-resonance, the narrowest feature of the system, and makes the
 multisine periodic in 2~s.
@@ -453,7 +453,7 @@ Above the crossover, the band holds 90\,\% of the squared difference between
 this response and that of the baseline, counted where the difference
 exceeds its uncertainty.
 A rerun with the friction law of \mbox{\eqref{eq:setup_fric}} gives the same
-edges.}
+edges.}%
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{setup_band.pdf}
@@ -467,10 +467,10 @@ edges.}
 \delmv[own]{VI-B}{The five types of motion profile are standstill at a fixed $Y$, slow
 sweeps of $Y$, $X$-$Y$ Lissajous paths, point-to-point moves with S-curve
 profiles, and operational motion profiles, which are sine-shaped moves
-representative of machine operation.}
+representative of machine operation.}%
 \del[own]{The test records I3 to I6 add new operational motion profiles: sine-shaped
 routes with $X$ and $Y$ together, alternating $X$-only and $Y$-only moves,
-an S-curve route and long strokes.}
+an S-curve route and long strokes.}%
 % FEEDBACK (own, 2026-10-25): coverage figure dropped; the records table states
 %   what each extrapolation record exceeds (Dirk 2026-10-25).
 Table~\ref{tab:setup_records} lists the records\del[own]{, and
@@ -531,7 +531,7 @@ amplitude for I6 and E4.
 % FEEDBACK (own, 2026-10-21): f_s renamed f_sim here and at app:setup_system,
 %   since 1/T_s = 4 kHz (sec2-rate-review; Dirk 2026-10-21).
 \del[own]{With the argument counting samples at $f_{\mathrm{sim}}$, the records are
-reduced to $T_s$ by}
+reduced to $T_s$ by}%
 % REMOVED (own, 2026-10-25): display, formulas in Appendix D cut (Dirk 2026-10-25). Was:
 % \begin{equation}
 %  u_k=\frac15\sum_{i=0}^{4}\uact(5k+i),\qquad
@@ -539,20 +539,20 @@ reduced to $T_s$ by}
 %  \label{eq:setup_decim}
 % \end{equation}
 \del[own]{where $\mathcal B$ is an eighth-order Butterworth low-pass at
-1.6~kHz, applied forward and backward.}
-\todo{Changed from: where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at 1.6~kHz.}
+1.6~kHz, applied forward and backward.}%
+\todo{Changed from: where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at 1.6~kHz.}%
 \revnote{Noise-free twins: a noise-free TRAINING run point-samples y, $y_k=y(5k)$
 (config.py:33, data.py:175-176), but the evaluation loads the twins for the
 noise floor with the lowpass configuration (eval\_blackbox.py:117, 156-158), so
 every reported floor uses the low-pass of Section~\ref{sec:setup_system} as written. No final run used
 noise-free training data. Add a point-sampling sentence only if a noise-free
-training run is reported.}
+training run is reported.}%
 \del[own]{The block mean is the exact input of a zero-order-hold model at $T_s$.
 The filter acts on the servo error only, so the reference passes unchanged.
 It changes the noise-free output by at most $\SetupFiltDist$~m RMS.
 Its impulse response falls below 1\,\% of its peak within
 \SetupFiltDecay~ms, so the \SetupTrim~ms removed at both record ends hold
-its edge transient.}
+its edge transient.}%
 
 % FEEDBACK (own, 2026-10-24): v_fr tuning moved here from Section VI-A,
 %   next to its check (Dirk 2026-10-24).
@@ -561,7 +561,7 @@ the loop with values between 0.1 and 10~mm/s.
 Higher values turn the friction into viscous damping under the multisine,
 and lower values keep the standstill servo error above the noise level.
 For $\lvert v_i\rvert\ge3v_{\mathrm{fr}}$, the friction of
-\mbox{\eqref{eq:setup_fric}} is within 0.5\,\% of the Coulomb law.}
+\mbox{\eqref{eq:setup_fric}} is within 0.5\,\% of the Coulomb law.}%
 Table~\ref{tab:setup_checks} gives the checks of the design\del[own]{, including the
 share of samples in this range}.
 \begin{table}[t]
@@ -594,7 +594,7 @@ its feedback force differs from that of the system by a median of
 \SetupKmismatchMed\,\% RMS on the training records.
 Within one hold of $T_s$, the force of the system changes by a median of
 \SetupKholdMed\,\% RMS, which is the cost of closing the loop at $T_s$ in
-simulation.}
+simulation.}%
 % RESTRUCTURE (2026-10-23, Dirk): the residual-form derivation moved to
 %   Section IV-B (eq:aug_residual_split); the number above stays here, with
 %   a one-line link to the term it measures.
@@ -606,8 +606,8 @@ $\bar x^{\mathrm{fb}}_k$, plus $u^{\mathrm{ff}}_k$.
 [derivation moved to Section~\mbox{\ref{sec:aug_loop}}]
 The first three terms are the model loop, which contains no noise after $\tau$.
 The last term is the force error of $K_1$ at $T_s$ above.
-After $\tau$, the noise reaches the model only through this term.}
-\del[own]{This force error is the last term of \mbox{\eqref{eq:aug_residual_split}}.}
+After $\tau$, the noise reaches the model only through this term.}%
+\del[own]{This force error is the last term of \mbox{\eqref{eq:aug_residual_split}}.}%
 % FEEDBACK (own, 2026-10-23; Codex math check 9, finding 7): u_bar must
 %   include u_ff, otherwise u_ff is counted twice; "after tau": the initial
 %   state (encoder, inherited controller state x-bar^fb_tau) carries earlier
@@ -654,7 +654,7 @@ The basis of a value is derived (computed in Section~\mbox{\ref{sec:setup}} or A
 inherited (from earlier work), tuned (on validation data), heuristic (fixed
 without a measurement) or compute-limited.
 Every model is trained once with one seed, so differences between models
-smaller than the variation between seeds are not resolved.}
+smaller than the variation between seeds are not resolved.}%
 \begin{table}[t]
 % FEEDBACK (own, 2026-10-24): Basis column removed; a rule before each block (Dirk 2026-10-24).
 \caption{Hyperparameters of the identification.}

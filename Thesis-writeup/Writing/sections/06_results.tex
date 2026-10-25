@@ -58,7 +58,7 @@ Appendix~\ref{app:splits} gives the training and validation records.
 % FEEDBACK (own, 2026-10-24): roadmap struck (no subsection roadmap, Dirk 2026-10-24).
 \del[own]{Sections~\mbox{\ref{sec:res_structure}} to~\mbox{\ref{sec:res_generalisation}} give the
 results for the three aspects of Section~\mbox{\ref{sec:intro}} in order, and
-Section~\mbox{\ref{sec:discussion}} discusses them.}
+Section~\mbox{\ref{sec:discussion}} discusses them.}%
 
 \subsection{Augmentation structure}\label{sec:res_structure}
 \ifdraft
@@ -140,7 +140,7 @@ lower validation error, compared to the other models during training.
 % REMOVED (own, 2026-10-24): revnote asking for a validation-curve figure, answered by
 %   Fig. res_val_curves.
 
-\revnote{Figuur heeft meerwaarde. om iets te laten zien niet de 3x3 frf.}
+\revnote{Figuur heeft meerwaarde. om iets te laten zien niet de 3x3 frf.}%
 
 % LAYOUT (own, 2026-10-25): the floats of this subsection moved to its start (Dirk yes).
 % REMOVED (own, 2026-10-24): revnote proposing a figure of the resonance against Y; the text states
@@ -162,10 +162,10 @@ lower validation error, compared to the other models during training.
 %   the truth after the overlap that explains it; "compares ... with ..." repeated the opening (Dirk 2026-10-24).
 Table~\ref{tab:res_obc} \chg[own]{compares $\mathcal M_{\mathrm{OBC}}$ with
 $\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2)}{\kwtwo{gives the estimates from the detuned and the true start}}.
-\delmv[own]{below}{Both models have deviated further from the true combinations, than their initial values.}
-\del[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}
+\delmv[own]{below}{Both models have deviated further from the true combinations, than their initial values.}%
+\del[own]{$\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.}%
 \delmv[own]{below}{The combinations describing the damping deviate the most,
-while the mass combinations stay close to their true values.}
+while the mass combinations stay close to their true values.}%
 % FEEDBACK (own, 2026-10-24): uniqueness from the two starts, the criterion of Section I.
 \add[own]{\kwtwo{The estimates of $\mathcal M_{\mathrm{OBC}}$ from the two starts differ by 31.3\,\%, while those of $\mathcal M_{\mathrm U}$ differ by 36.4\,\%.}}
 % FEEDBACK (own, 2026-10-24): OBC is 0.6 points worse on X (Table res_obc_constraint).
@@ -180,14 +180,14 @@ much lower than that of $\mathcal M_{\mathrm U}$\add[own]{\kwtwo{ (Table~\ref{ta
 \add[Dirk]{\kwtwo{The network overlap of $\mathcal M_{\mathrm{OBC}}$ is also much lower than that of $\mathcal M_{\mathrm U}$ on the validation and test records.
 It increases from 0.00 on the training records to 0.24 on the test records.}}
 \chg[own]{The}{\kwtwo{However, the}} missing dynamics are not orthogonal to these directions, their overlap is 0.59.
-\del[own]{From the correct start, OBC also ends closer to the true values (Appendix~\mbox{\ref{app:choices}}).}
+\del[own]{From the correct start, OBC also ends closer to the true values (Appendix~\mbox{\ref{app:choices}}).}%
 \delmv[own]{below}{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}}
 \mv[own]{above}{Both models have deviated further from the true combinations\del[own]{,} than their initial values.}
 % FEEDBACK (own, 2026-10-24): final numbers (Results/24-10-2026/CSV): 83.1 against 69.1 is not double.
 \add[own]{\kwtwo{With the detuned start, $\mathcal M_{\mathrm U}$ deviates 83.1\,\% from the true values and $\mathcal M_{\mathrm{OBC}}$ 69.1\,\%.}}
 % FEEDBACK (own, 2026-10-24): the only reference to Table app_obc_na0; after the detuned numbers it contrasts with.
 % FEEDBACK (own, 2026-10-25): sentence and Table app_obc_na0 dropped (Dirk 2026-10-25).
-\del[own]{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}
+\del[own]{Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}%
 \mv[own]{above}{The \add[Dirk]{\kwtwo{parameter }}combinations describing the damping deviate the most,
 while the mass combinations stay close to their true values.}
 % FEEDBACK (own, 2026-10-24): verdict for Aspect 2 with its reason (Maarten: argue every result).
@@ -233,7 +233,7 @@ while the mass combinations stay close to their true values.}
 %   opening; Dirk's two sentences with two corrections (E is up to 0.5 points lower on X; the black box
 %   is better than the baseline on Y with multisine) (Dirk 2026-10-24).
 \del[own]{The error per test record are shown in Fig.~\mbox{\ref{fig:res_generalisation}},
-for extrapolation (E) and interpolation (I) (Aspect~3).}
+for extrapolation (E) and interpolation (I) (Aspect~3).}%
 \add[Dirk]{\kwtwo{The errors between E and I differ only by at most 0.5 points.}}
 Without multisine the model performs \chg[own]{as well or slightly above}{\kwtwo{as well as or slightly worse than}} the baseline.
 \chg[own]{The black box has 74 to 193\,\% on the records without multisine, and it is
@@ -589,16 +589,16 @@ OBC could also be extended to the simulated output, using its Jacobian over a tr
 % Open points of this section (kept together so the text reads without interruption).
 \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section
 are preliminary (update 19500 of 33400). Candidate: update them after the
-final R1/R2 rerun (basis: handoff 2026-10-18, Sec.~3).}
+final R1/R2 rerun (basis: handoff 2026-10-18, Sec.~3).}%
 \todo{Missing: the network overlap of $\mathcal M_{\mathrm{OBC}}$ in
 Table~\ref{tab:res_obc} comes from update 18200 while labelled 19500, so the
 text gives no number for it. Candidate: recheck after the final R1 rerun
-(basis: handoff 2026-10-18, Sec.~12).}
+(basis: handoff 2026-10-18, Sec.~12).}%
 \todo{Missing: the caption of Fig.~\ref{fig:res_generalisation} says ``RMS,
 mean over $X_1$, $X_2$, $Y$'', while the text reads $\mathrm{NRMS}_e$ per
 axis. Candidate: check the figure and update the caption (Jasper p9: say
-error of what with respect to what).}
-\todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
+error of what with respect to what).}%
+\todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}%
 % \revnote{The ``OBC pred.'' columns are dropped (Dirk 2026-10-18). The
 % first-order bias of \eqref{eq:obc_recovery} is 100 to 1300\,\% against
 % observed errors of a few to 30\,\%: outside the range of the expansion, and

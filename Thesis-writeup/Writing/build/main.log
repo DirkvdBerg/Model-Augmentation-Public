@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 20:13
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 21:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -754,62 +754,52 @@ Overfull \hbox (5.86552pt too wide) in paragraph at lines 255--258
  []
 
 [2] [3]) (sections/03_augmentation.tex (figures/tex/augmentation_structure.tex) [4]
-Overfull \hbox (1.53186pt too wide) detected at line 619
+Overfull \hbox (1.53186pt too wide) detected at line 614
 [][][][][]
  []
 
 <figures/closed_loop_same_reference.pdf, id=376, 290.2805pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
-Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 800.
+Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 795.
 (pdftex.def)             Requested size: 252.0pt x 90.27534pt.
 [5 <./figures/closed_loop_same_reference.pdf>]
-Underfull \hbox (badness 1661) in paragraph at lines 1008--1162
-[][]\OT1/ptm/m/n/10 (+20) This sub-sec-tion states how the aug-mented model is
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1008--1162
-
- []
-
-
-Overfull \hbox (4.6546pt too wide) detected at line 1162
+Overfull \hbox (4.6546pt too wide) detected at line 1155
 [][][][][]
  []
 
 [6]
-Overfull \hbox (4.90492pt too wide) detected at line 1496
+Overfull \hbox (4.90492pt too wide) detected at line 1486
 [][][][][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1496--1530
+Underfull \hbox (badness 10000) in paragraph at lines 1486--1520
 
  []
 
 (figures/tex/ps2_windows.tex) [7]) (sections/04_obc.tex [8] [9]
-Underfull \hbox (badness 10000) in paragraph at lines 396--436
+Underfull \hbox (badness 10000) in paragraph at lines 397--437
 
  []
 
-) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [10]) (sections/06_results.tex [11] (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=665, 228.99803pt x 196.20125pt>
+) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [10]) (sections/06_results.tex (tables/res_structure.tex)
+<figures/res_time_trace.pdf, id=656, 228.99803pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 87.
 (pdftex.def)             Requested size: 252.0pt x 215.92082pt.
-<figures/res_val_curves.pdf, id=668, 225.3218pt x 157.83429pt>
+<figures/res_val_curves.pdf, id=659, 225.3218pt x 157.83429pt>
 File: figures/res_val_curves.pdf Graphic file (type pdf)
 <use figures/res_val_curves.pdf>
 Package pdftex.def Info: figures/res_val_curves.pdf  used on input line 100.
 (pdftex.def)             Requested size: 247.6778pt x 173.50023pt.
-<figures/res_frf.pdf, id=669, 232.26022pt x 157.26341pt>
+<figures/res_frf.pdf, id=660, 232.26022pt x 157.26341pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 106.
 (pdftex.def)             Requested size: 247.6778pt x 167.70865pt.
- [12 <./figures/res_time_trace.pdf>] (tables/res_obc_combinations.tex)
+ [11] [12 <./figures/res_time_trace.pdf>] (tables/res_obc_combinations.tex)
 Overfull \hbox (2.4674pt too wide) in paragraph at lines 2--206
  [][] 
  []
@@ -862,13 +852,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 Here is how much of TeX's memory you used:
  28275 strings out of 467867
  541570 string characters out of 5416882
- 995568 words of memory out of 5000000
+ 995063 words of memory out of 5000000
  56157 multiletter control sequences out of 15000+600000
  690849 words of font info for 349 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  89i,18n,97p,1131b,1051s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (20 pages, 916886 bytes).
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (20 pages, 916741 bytes).
 PDF statistics:
  1033 PDF objects out of 1200 (max. 8388607)
  165 named destinations out of 1000 (max. 500000)

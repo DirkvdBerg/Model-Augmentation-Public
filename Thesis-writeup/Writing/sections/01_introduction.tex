@@ -73,7 +73,7 @@ such motion system: a dual-drive gantry} in which two parallel
 linear actuators support a common beam carrying the payload.
 % CHANGED: project -> paper
 \del[own]{The gantry positions this payload at \kw{successive} placement
-locations.}
+locations.}%
 The shared beam couples the dynamics of
 both actuators, so the motion of one actuator
 influences the other\add[M-p2b]{ and therefore affects its tracking accuracy}\chg[own]{, and the system}{ \cite{garcia2013model, teo2007dynamic}.
@@ -87,7 +87,7 @@ The system} exhibits position-dependent behaviour
 %   Section III-B now spells out and defines LPV and says why it is the
 %   logical choice.
 \del[Dirk]{This position dependence can be described by a linear
-parameter-varying (LPV) model.}
+parameter-varying (LPV) model.}%
 % FEEDBACK: settling dropped, the thesis evaluates prediction (D-241, Dirk
 %   2026-10-18)
 % FEEDBACK v2: struck (M-p3b, repeat of the coupling sentence, Dirk
@@ -96,7 +96,7 @@ parameter-varying (LPV) model.}
 \del[M-p3b]{Furthermore, cross-coupling means that the motion of one
 actuator can disturb
 the other, which affects the tracking behaviour during
-simultaneous motion.}
+simultaneous motion.}%
 % FEEDBACK v2 (structure, Dirk 2026-10-20): one job per paragraph. P1 why
 %   such systems and this gantry; P2 why a model and what it must be; P3 and
 %   P4 why physics alone and data alone fall short; P5 augmentation; P6 gap.
@@ -163,7 +163,7 @@ models} valuable for root cause analysis~\cite{isermann1993fault}.
 %   dynamics, so it is stated in Section IV-C only
 % FEEDBACK v2: struck (M-p2c), the requirement sentence above says it.
 \del[M-p2c]{Both uses require an accurate representation of the underlying
-plant dynamics.}
+plant dynamics.}%
 % CHANGED: was "Improving settling performance"; settling stays as
 %   motivation, the paper evaluates prediction (D-241)
 % REMOVED: ASMPT currently captures part of the position dependence of the
@@ -212,7 +212,7 @@ by the training data \cite{willard2020integrating, hoekstra2026lfr}.
 % FEEDBACK v2: data-amount sentence struck (M-p2d, shorten); the rigid-body
 %   argument below is the one that leads to augmentation.
 \del[M-p2d]{These models can also require large amounts of data to train
-\cite{willard2020integrating, karniadakis2021physicsinformed}.}
+\cite{willard2020integrating, karniadakis2021physicsinformed}.}%
 % CHANGED: "and significant computational power" dropped (no source); cited
 %   Willard Sec. 1, Karniadakis abstract
 In addition, these models need to learn behaviour that is already known
@@ -243,7 +243,7 @@ Physical interpretability means that the identifiable combinations of the
 physical parameters are estimated uniquely \cite{gyorok2026obc}.
 This does not guarantee identifying the true parameters, but a deviation
 from the trained model can then indicate which physical parameter has
-changed.}
+changed.}%
 % FEEDBACK v2: summary sentence back in its own place and wording; "both
 %   requirements" now refers to P2. "However," struck (own): the sentence
 %   before already starts with "However".
@@ -252,7 +252,7 @@ changed.}
 %   approaches are neither purely physics-based nor purely data-driven.
 \del[M-p2e]{However, purely physics-based and purely data-driven models can
 each have limitations in meeting both requirements
-\cite{willard2020integrating}.}
+\cite{willard2020integrating}.}%
 % CHANGED: Noel removed; Willard Sec. 1, p. 2
 \\
 Grey-box modelling is the logical choice, because it is able to
@@ -320,11 +320,11 @@ the baseline already describes \cite{gyorok2026obc}.
 %   wire-bonder sentence already shows augmentation on an industrial
 %   machine. Retzler is now cited in P5 (model augmentation sentence).
 \del[own]{Learning-based hybrid modelling has already been demonstrated using
-measurements from an industrial robot \cite{retzler2024}.}
+measurements from an industrial robot \cite{retzler2024}.}%
 \delmv[own]{end of P6}{However, a key gap remains: there is no grey-box modelling framework for the
 dual-drive gantry that simultaneously addresses coupled multi-input
 multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,
-and preserves physical interpretability.}
+and preserves physical interpretability.}%
 % CHANGED: "validated" dropped (simulation only); "closed-loop data," added
 % FEEDBACK v2 (Jan26, Dirk 2026-10-20): the augmentation is Hoekstra's
 %   dynamic parallel structure, added outside the baseline LFR loop; the LFR
@@ -387,7 +387,7 @@ parameters remain interpretable.}}
 \item Aspect 4 asks how well the model generalises to held-out operating points and unseen motion profiles compared to a black-box state-space model; controller transfer is shown as a use case
 \item Scope: simulation only; aspects are answered by derivation where possible and by experiment where needed
 \end{itemize}
-\todo{Outline bullets updated to the changed research question and aspects (D-241).}
+\todo{Outline bullets updated to the changed research question and aspects (D-241).}%
 \fi
 
 % Research question in the running text and the contributions as a short list, as in
@@ -434,7 +434,7 @@ identification in closed loop, and \mbox{Section~\ref{sec:obc}} the orthogonal
 construction.
 The experiment design is described in \mbox{Section~\ref{sec:setup}}, and the results
 are given and discussed in \mbox{Section~\ref{sec:results}}.
-The conclusions are given in \mbox{Section~\ref{sec:conclusion}}.}
+The conclusions are given in \mbox{Section~\ref{sec:conclusion}}.}%
 \add[M-p3]{\kwtwo{The thesis is organised as follows:
 Section~\ref{sec:problem} states the identification problem,
 Section~\ref{sec:physics} the physics baseline,
@@ -447,7 +447,7 @@ and Section~\ref{sec:conclusion} the conclusions.}}
 equations of motion (Section~\ref{sec:baseline}), so it is a modelling choice rather than a
 research result. The LTI comparison (on $X$ the LTI error is 1.5 to 3.7 times
 the LPV error) moves to the appendix. Aspects 2 to 4 are reworded to the
-final method.}
+final method.}%
 % REMOVED (own, 2026-10-20): revnote "The current introduction is quite
 %   long ... Shall I remove the aspects, or shorten the introduction?",
 %   answered by Maarten (p3: shorten, introduction + abstract ~1.25 page).
@@ -479,17 +479,17 @@ final method.}
 \begin{quote}
 \textbf{For the dual-gantry system, how should a physics-based plant model be augmented to capture unmodelled dynamics, improving prediction accuracy across operating points and motion profiles while preserving the physical interpretability of its parameters?}
 \end{quote}
-\todo{changed rq and polished aspects}
+\todo{changed rq and polished aspects}%
 \noindent To answer this research question, the following four aspects are investigated:
 \begin{enumerate}
     \item \textbf{Position-dependent baseline modelling} \\
-    In what form should the baseline model be represented for subsequent augmentation, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives? \todo{LPV versus frozen LTI exists only as a baseline check (lpv\_lfr\_baseline/scripts/validate\_lfr.py), not in the final evaluation; Quinten wants LTI as second baseline.}
+    In what form should the baseline model be represented for subsequent augmentation, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives? \todo{LPV versus frozen LTI exists only as a baseline check (lpv\_lfr\_baseline/scripts/validate\_lfr.py), not in the final evaluation; Quinten wants LTI as second baseline.}%
     \item \textbf{Augmentation structure} \\
     What augmentation structure can effectively capture dynamics not modelled in the physics-based baseline model?
     \item \textbf{Interpretability preservation} \\
     How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained approaches?
     \item \textbf{Model generalisation} \\
-    How well does the augmented model generalise to (i) held-out operating points and (ii) unseen motion profiles, and how does its prediction accuracy compare to a black-box state-space model? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}
+    How well does the augmented model generalise to (i) held-out operating points and (ii) unseen motion profiles, and how does its prediction accuracy compare to a black-box state-space model? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}%
 \end{enumerate}
 \fi
 

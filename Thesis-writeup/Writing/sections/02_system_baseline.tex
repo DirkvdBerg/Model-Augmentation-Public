@@ -109,7 +109,7 @@
 %   deferred for that reason; Js3 ("back-end") deferred with it.
 \del[ASMPT]{The dual-drive gantry that we study in this thesis
 is a high-precision motion system of ASMPT, used in back-end
-semiconductor assembly and packaging equipment.}
+semiconductor assembly and packaging equipment.}%
 \chg[ASMPT]{The gantry}{\kwtwo{We consider a dual-drive gantry with}} \chg[Js21]{two actuators}{two parallel linear actuators} that are connected with a cross-arm and a
 third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref{fig:gantry_system})\add[own]{\kwtwo{, as in Garc\'ia-Herreros et al.~\cite{garcia2013model}}}.
 % \chg[ASMPT]{The gantry}{\kwtwo{The dual-drive gantry of Garc\'ia-Herreros 
@@ -138,13 +138,13 @@ third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref
   %   in captions (fragile argument). X1, X2 arrows moved off the fixed
   %   world (Js24).
   \todo{Will need to add springs to the current torsion; feedback from Jasper. Move X1 a bit down.
-  Jasper said I should keep both torsion but i can add the primsatic one but need to explain that it is that.}
+  Jasper said I should keep both torsion but i can add the primsatic one but need to explain that it is that.}%
   \label{fig:gantry_system}
 \end{figure}
 \revnote{
 Kan specifiek asmpt attributen voor gebruiken garcia in de matlab simulatie
 in principe niks gebruikt wat niet in garcia staat, met euler lagrange
-}
+}%
 % In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
 % the simulated ground-truth system additionally includes the light-grey absorber.
 The actuator forces are defined as
@@ -360,7 +360,7 @@ parameters \chg[Dirk]{with their parametrisation}{and how we parametrise them} f
 %   Lagrange equation (7) gives the equations of motion (8) in X, Theta, Y.
 \del[Dirk]{The physics baseline of the gantry system used in this thesis
 is the lumped-parameter model of the
-dual-drive gantry of Garc\'ia-Herreros et al.~\mbox{\cite{garcia2013model}}.}
+dual-drive gantry of Garc\'ia-Herreros et al.~\mbox{\cite{garcia2013model}}.}%
 % NEW (2026-10-21, Dirk): source of the 3x3 matrices; Garcia prints only the
 %   2x2 X-Theta matrices, Eqs. (12) to (17). The 3x3 form comes from the ASMPT
 %   implementation (kamtin-fp-model/02 EulerLagrange/EulerLagrange.m).
@@ -505,7 +505,7 @@ Appendix~\ref{app:params}.
 %   nothing implies he does otherwise (Dirk 2026-10-21).
 \delmv[Js33]{III-C}{To prevent the definition of \(q\) from being parameter-dependent,
 the cross-arm length \(L_b\) is fixed at the nominal value listed in Appendix~\mbox{\ref{app:params}}
-rather than treated as a free model parameter.}
+rather than treated as a free model parameter.}%
 % FEEDBACK: "As in [3]" removed again (2026-10-18): Garcia Table I is
 %   introduced as identified parameters and contains L_b; no passage says
 %   L_b is kept fixed.
@@ -513,10 +513,10 @@ rather than treated as a free model parameter.}
 %   III-B, where the LPV form is introduced; the factor-3.7 sentence dropped
 %   (the comparison stays in Appendix C).
 \delmv{III-B}{Moving the payload position $Y$ changes the mass distribution of the gantry and therefore its inertia matrix $M(Y)$.
-This position dependence is included by representing the baseline in linear parameter-varying (LPV) form, with the payload position \(Y\) as scheduling variable \cite{toth2010modeling}.}
+This position dependence is included by representing the baseline in linear parameter-varying (LPV) form, with the payload position \(Y\) as scheduling variable \cite{toth2010modeling}.}%
 \del{Freezing $M(Y)$ at $Y=0$ increases the simulation error on $X$ by
 up to a factor 3.7 (Fig.~\ref{fig:res_lpv_lti} in
-Appendix~\ref{app:choices}).}
+Appendix~\ref{app:choices}).}%
 % TODO moved (2026-10-21, Dirk): operating range of Y is not stated in
 %   Section III (M(Y) > 0 for every Y, so III needs no number); it is
 %   stated in Section V, normalised to the stroke (real gantry, ASMPT rule).
@@ -565,7 +565,7 @@ from \eqref{eq:eom}}}.
 %   "For this realisation, well-posedness is equivalent to nonsingularity
 %   of M(Y) (Appendix A.2)" moved to A.2, where the Schur step shows it.
 \delmv[Dirk]{A.2}{For this realisation, well-posedness is
-equivalent to nonsingularity of $M(Y)$ (Appendix~\mbox{\ref{app:lfr-details}}).}
+equivalent to nonsingularity of $M(Y)$ (Appendix~\mbox{\ref{app:lfr-details}}).}%
 % FEEDBACK v2 (2026-10-22, Maarten mail: narrative, forward references):
 %   reason for the state-space form, backward to Section II, which cites
 %   the augmentation [hoekstra2026lfr]. Hoekstra 2026 Eq. (2), PDF p3: "We
@@ -588,13 +588,13 @@ baseline model in state-space form~\cite{hoekstra2026lfr}.}}
 %   (eq:Ptransform and "where u denotes the generalised force"); the
 %   comma after eq:base_ss is now a full stop (Dirk 2026-10-22).
 \del[own]{where $u=Pu_{\mathrm{act}}$ is the generalised force
-\mbox{\eqref{eq:Ptransform}}.}
+\mbox{\eqref{eq:Ptransform}}.}%
 % REVNOTE closed (2026-10-22, Dirk): "Make clear that the acceleration is
 %   obtained from the formulas" is answered by eq:base_ss (Maarten v2 p5).
 % FEEDBACK v2 (2026-10-22, own): the rational-dependence sentence moved to
 %   the LFR paragraph, whose LFR it motivates (Dirk 2026-10-22).
 \delmv[own]{below}{Because of $M(Y)^{-1}$, \mbox{\eqref{eq:base_ss}}
-is rationally dependent on $Y$.}
+is rationally dependent on $Y$.}%
 % FEEDBACK (2026-10-22, Dirk): the separate LPV definition (added
 %   2026-10-20), "This position dependence is included by representing the
 %   baseline in LPV form ..." and the "logical choice" sentence were merged
@@ -608,7 +608,7 @@ is rationally dependent on $Y$.}
 \del[own]{Treating $Y$ as an externally specified scheduling signal,
 \mbox{\eqref{eq:base_ss}} is linear in $\tilde x$ and $u$, with matrices
 that depend on $Y$: it is a linear parameter-varying (LPV) model with $Y$
-as scheduling variable~\mbox{\cite{toth2010modeling}}.}
+as scheduling variable~\mbox{\cite{toth2010modeling}}.}%
 This position dependence is included by representing
 \chg[own]{the baseline}{\eqref{eq:base_ss}} in linear parameter-varying (LPV)
 form, with the payload position $Y$ as scheduling variable~\cite{toth2010modeling}.
@@ -634,7 +634,7 @@ an assumption on $\dot Y$.}
 %   its reason backward, via Section II and Hoekstra (Dirk 2026-10-22).
 \del[M-mail]{Equation \mbox{\eqref{eq:base_ss}} defines the continuous-time
 baseline from which the discrete-time transition used in
-Section~\mbox{\ref{sec:augmentation}} is obtained.}
+Section~\mbox{\ref{sec:augmentation}} is obtained.}%
 
 % FEEDBACK v2 (2026-10-22, own): rational-dependence sentence moved here
 %   from after eq:base_ss, as the reason for the LFR; "and eq:Msplit" added,
@@ -674,7 +674,7 @@ Conversely, closing the algebraic loop with (10) results in
 $a_1=Y\ddot q$ and $a_2=Y^2\ddot q$, which turns (9) back
 into \mbox{\eqref{eq:eom}}. The LFR is therefore an exact realisation of the baseline.
 The LFR is well posed if the algebraic loop has a unique solution for
-every $Y$ \mbox{\cite[Def.~1]{drenth2026lpvlfr}}.}
+every $Y$ \mbox{\cite[Def.~1]{drenth2026lpvlfr}}.}%
 
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \ifdraft
@@ -766,7 +766,7 @@ and $M(Y)=M'(Y)$. Since $M(Y)$ is quadratic in $Y$, this also
 implies that $M_0=M_0'$, $M_1=M_1'$ and $M_2=M_2'$. 
 If these matrices are equal, the input-output behaviour is also the same.
 \del[own]{Therefore, the part of $\theta$ that can be identified is
-determined by the parameter combinations in $M_0,M_1,M_2,C$ and $K$.}
+determined by the parameter combinations in $M_0,M_1,M_2,C$ and $K$.}%
 % FEEDBACK v2 (2026-10-22, Maarten mail): struck, the "exactly ten"
 %   sentence below states it (Dirk 2026-10-22).
 % Therefore the part of $\theta$ that can be identified 
@@ -779,7 +779,7 @@ are equal to $m_h$, where $M_{i,jk}$ denotes entry $(j,k)$ of $M_i$. This leaves
 The Jacobian of these ten functions with respect to
 $(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$
 is block triangular and has a determinant of $m_hL_b^2/2\neq0$,
-meaning that the functions are independent.}
+meaning that the functions are independent.}%
 % FEEDBACK v2 (2026-10-22, Maarten p5 (d) "To keep it short, I'd just talk
 %   about uniqueness in the parameters, explain why the original case is not
 %   unique, and what unique vector you have selected." and mail "kan wel wat
@@ -798,7 +798,7 @@ dynamics\cite{gautier1990minimum},} \chg[own]{We}{we} define \chg[own]{these ten
 with $k_{b,\Sigma}=k_{b1}+k_{b2}$, $c_{b,\Sigma}=c_{b1}+c_{b2}$,
 $m_\Sigma=m_1+m_2+m_b$, $m_\Delta=m_1-m_2$ and
 $J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$. 
-\del[own]{This follows the idea of base parameters used in robot dynamics~\cite{gautier1990minimum}.}\todo{check source}
+\del[own]{This follows the idea of base parameters used in robot dynamics~\cite{gautier1990minimum}.}\todo{check source}%
 % FEEDBACK v2 (2026-10-22, Dirk): sentence folded into the definition of
 %   theta_base above, in Dirk's words; Gautier still unchecked (no local PDF).
 \chg[own]{For $m_h>0$, $\theta_{\mathrm{base}}$}{Since $\theta_{\mathrm{base}}$} can be uniquely determined from
@@ -810,7 +810,7 @@ $J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$.
 %   the appendix (Dirk 2026-10-22).
 \del[own]{The four lost directions are $k_{b1}-k_{b2}$, $c_{b1}-c_{b2}$,
 $J_b-J_h$, and a mass shift from the carriages to the cross-arm at
-fixed $J_{\mathrm{eff}}$.}
+fixed $J_{\mathrm{eff}}$.}%
 % FEEDBACK v2 (2026-10-22, Maarten p5 (d) "explain why the original case is
 %   not unique, and what unique vector you have selected"): answered by
 %   "only these can be identified" (why theta is not unique) and theta_base

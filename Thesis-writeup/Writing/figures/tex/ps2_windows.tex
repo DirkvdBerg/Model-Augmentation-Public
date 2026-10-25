@@ -47,9 +47,9 @@
   \draw[->] (2*\w,-\yB) -- (psia.north);
   \node[blk] (v2) at (\xV,\yA) {$\|{\cdot}\|_2^2$};
   \draw[->] (psia.east) -- (v2.west) node[pos=0.25, above, lab] {$\bar x_{\tau+1|\tau+1}$};
-  \node[blk] (g) at (4*\w,\yG) {$g_{\mathrm{aug}}$};
+  \node[blk] (g) at (4*\w,\yG) {$g^{\mathrm n}_{\mathrm{aug}}$};
   % recorded input of the first residual sample, crossing the S2 bracket and the psi_a line
-  \draw[->, hop] (s4.south) -- (g.north) node[pos=0.33, left, lab] {$u_\tau$};
+  \draw[->, hop] (s4.south) -- (g.north) node[pos=0.33, left, lab] {$u^{\mathrm n}_\tau$};
   % encoded state at tau, from the top encoder around the left
   \draw[->] (psi.west) -- (\xL,\yS) -- (\xL,\yG) -- (g.west)
        node[pos=0.08, lab, anchor=south west] {$\hat x^{\mathrm n}_{\tau|\tau}$};
