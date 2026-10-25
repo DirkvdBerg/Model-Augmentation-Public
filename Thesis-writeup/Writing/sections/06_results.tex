@@ -284,9 +284,8 @@ baseline and the black box are above 47\,\%.}{\kwtwo{With multisine, the mean er
 %   mode (Dirk 2026-10-25).
 The improvement on \chg[own]{the multisine records}{\kwtwo{$Y$ with multisine}} is mainly caused
 by the learned \chg[own]{absorber mode}{\kwtwo{vibration mode of the added mass}} \add[own]{\kwtwo{(Fig.~\ref{fig:res_frf})}}.
-\add[own]{\kwtwo{The static correction without added states, 
-is only able to lower the error on $Y$ from 83.7\,\% for the baseline to 60.4\,\%,
-while two added states with PS reach 6.1\,\% (Table~\ref{tab:res_structure}).
+\add[own]{\kwtwo{The correction without added states leaves a much larger error on $Y$
+than two added states with PS (Table~\ref{tab:res_structure}).
 Training without PS does not seem to find this mode in the current setting, it stays above 50\,\%.}}
 Without multisine, the final model performs slightly worse than the baseline.
 For these records the baseline error is only a few percent of the servo error, 
@@ -302,8 +301,7 @@ From these results, we cannot conclude the reason.
 OBC is able to keep the neural network out of the parameter
 directions on the training tuples, and for the most part on the validation and test records
 compared to $\mathcal M_{\mathrm U}$ (Table~\ref{tab:res_obc_constraint}).
-However, the missing dynamics are not orthogonal to these directions, 
-their overlap is 0.59 on the interpolation test records (Table~\ref{tab:res_obc_constraint}).
+However, the missing dynamics are not orthogonal to these directions (Table~\ref{tab:res_obc_constraint}).
 Orthogonality holds exactly on the tuples at $\bar x=0$.
 The parameter directions are obtained from a first-order approximation of the baseline.
 The added states enter through $f_{\mathrm{aug}}$ without projection.
