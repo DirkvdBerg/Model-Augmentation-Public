@@ -257,54 +257,140 @@ baseline and the black box are above 47\,\%.}{\kwtwo{With multisine, the final m
 The improvement on the multisine records comes mainly from the
 learned absorber mode\add[Dirk]{\kwtwo{, which needs both the added states and their PS
 initialisation}} (Fig.~\ref{fig:res_frf}\add[Dirk]{\kwtwo{, Table~\ref{tab:res_structure}}}).
+% FEEDBACK (own, 2026-10-25): paragraph 1 rebuilt in the pattern of Hoekstra 2026 Secs. 6.3 and 7.4
+%   (claim, why, limit, test), merged discussion list A1, A2; damping-over-Y sentence cut, no float
+%   shows it (Dirk 2026-10-25).
+\add[own]{\kwtwo{With the same two added states, plain training keeps the
+error on $Y$ above 50\,\%, so the added states can represent the mode,
+but training only finds it from the PS start.}}
 Without multisine, the final model performs slightly worse than the baseline.
+\add[own]{\kwtwo{These records contribute little to the loss, because the
+loss weights each record by its own servo error, on which the baseline
+already reaches a few percent, against up to 120\,\% on the records with
+multisine.}}
+\add[own]{\kwtwo{The final model is also slightly worse on the training
+records without multisine (Table~\ref{tab:app_splits}), so this is not
+overfitting.}}
 % FEEDBACK (Dirk, 2026-10-24): review: observation first, the integrators as a possible cause only.
+% FEEDBACK (own, 2026-10-25): free integrators struck (closed loop is stable); controller rate kept as
+%   a candidate beside friction, with the test that separates them (Dirk 2026-10-25).
 \add[Dirk]{\kwtwo{Both models stay far above the noise floor on these records.
-A possible cause is the free integrators on $X$ and $Y$, which accumulate
-small errors.
-The training simulates the controller at 4~kHz, while the data are generated
+\del[own]{A possible cause is the free integrators on $X$ and $Y$, which accumulate
+small errors.}
+\chg[own]{The training simulates the controller at 4~kHz, while the data are generated
 with the controller at 20~kHz.
 The augmentation can therefore learn part of this difference as plant
-dynamics.}}
+dynamics.}{Possible causes are the unmodelled friction and the controller,
+which runs at 4~kHz in training and at 20~kHz in the data.
+The results do not separate these causes, but retraining with more weight
+on these records, or on data without friction, would.}}}
 \\
 OBC reduces the \del[Dirk]{final }combination error compared with the
 unconstrained model (69.1 against 83.1\,\%), but the parameters still end up
 further from the truth than at their initial values (Table~\ref{tab:res_obc}).
 % FEEDBACK (own, 2026-10-24): approved wording changes: separate the recovery explanation and name the comparison.
-\add[Dirk]{\kwtwo{The constraint holds, but the missing dynamics are not orthogonal to the
+% FEEDBACK (own, 2026-10-25): paragraph 2 rebuilt (claim, why, limit, test), merged discussion list
+%   A3 to A6: "holds" restricted to the training tuples (test overlap 0.24); why the parameters move
+%   from the true start, with friction and added mass as candidates; controller sentence moved to the
+%   limits paragraph (untested); start corrected (Table app_obc_na0 uses the detuned start); two-start
+%   limit (Maarten p14); projection sentence made precise; root-cause consequence (Dirk 2026-10-25).
+\add[Dirk]{\kwtwo{The constraint holds\add[own]{ on the training tuples}, but the missing dynamics are not orthogonal to the
 parameter directions\chg[own]{ (truth overlap 0.59)}{. Their overlap is 0.59}, so the recovery condition of
 Section~\ref{sec:obc_ident} is not met\del[own]{ and the parameters are biased}.
-In closed loop, the controller can also hide the effect of this bias on the
-output.
-\chg[own]{From the correct start and without added states}{Without added states and starting from the true parameters}, OBC does not end closer to
-the true values\add[own]{ than the unconstrained model}.}}
+\add[own]{This explains why the true values are not recovered, but not where
+the parameters end: even from the true start both models move far from the
+true values, mostly in the damper combinations, while the mass combinations
+stay close.
+Both the friction, which dissipates energy as the dampers do, and the added
+mass are candidates for what the dampers absorb.
+Training on data with only one of them would separate the two.}
+\delmv[own]{limits paragraph}{In closed loop, the controller can also hide the effect of this bias on the
+output.}
+\chg[own]{From the correct start and without added states}{Without added states}, OBC does not end closer to
+the true values\add[own]{ than the unconstrained model}\add[own]{ (Table~\ref{tab:app_obc_na0})}.}}
 With OBC the estimates from the \chg[Dirk]{true and detuned}{\kwtwo{two}} starts are closer together, but still
 differ\add[Dirk]{\kwtwo{ (31.3 against 36.4\,\%)}}.
+\add[own]{\kwtwo{With two starts and one training run each, this cannot separate
+a remaining dependence on the start from incomplete convergence.
+Training from several starts and seeds would.}}
 % FEEDBACK (Dirk, 2026-10-24): review: observation and possible reason separated (Dirk's two
 %   sentences); no uniqueness claim either way (Section IV, M-p15e).
-The orthogonality holds only to first order and at $\bar x=0$, and the added
-states enter through $f_{\mathrm{aug}}$ without projection.
+\chg[own]{The orthogonality holds only to first order and at $\bar x=0$, and the added
+states enter through $f_{\mathrm{aug}}$ without projection.}{\kwtwo{The projection
+is fitted to first order and at $\bar x=0$ on the training tuples, so the
+effect of the added states on $f_{\mathrm{aug}}$ is not removed.
+On the test records the network overlap rises to 0.24
+(Table~\ref{tab:res_obc_constraint}).}}
 \add[Dirk]{\kwtwo{OBC therefore reduces the dependence on the start, but does not recover
 the true values.}}
+\add[own]{\kwtwo{Only the mass combinations can therefore be read physically.
+A change in the damper estimates cannot indicate a change in the machine,
+which limits the root cause analysis of Section~\ref{sec:intro}.}}
 \\
-The final model maintains its accuracy on all extrapolation
+% FEEDBACK (own, 2026-10-25): paragraph 3 rebuilt (claim, why, limit, test), merged discussion list
+%   A8, A9: "all" -> on average (E1 is worse than I2 per record, CSV only); baseline equally good on
+%   E, so a weak test; E5 exceeds several limits; black box poor without multisine only, best update
+%   78000 of the 80000 budget; it fails on the reference motion; comparison shows prior knowledge,
+%   with the test that separates the causes (Dirk 2026-10-25).
+\chg[own]{The final model maintains its accuracy on all extrapolation
 records\add[Dirk]{\kwtwo{, but}} each record extends beyond the training range in only one
-direction (Table~\ref{tab:res_generalisation}).
-The black box model performs poorly on its training records and \chg[Dirk]{had not converged}{\kwtwo{did not converge}} within the available budget (Table~\ref{tab:app_bb_search}).
+direction}{\kwtwo{On average, the final model maintains its accuracy on the
+extrapolation records}} (Table~\ref{tab:res_generalisation}).
+\add[own]{\kwtwo{The baseline is not worse on these records either, so they
+test the extrapolation of the learned part only weakly.
+Most extrapolation records exceed one limit in one direction, and only E5
+exceeds several.
+Records further outside the training range, and on both sides of it, would
+test it more strongly.}}
+The black box model performs poorly on its training records \chg[own]{and \chg[Dirk]{had not converged}{\kwtwo{did not converge}} within the available budget}{\kwtwo{without multisine,
+and its best checkpoint lies at the end of the training budget, so it was
+still improving}} (Table~\ref{tab:app_bb_search}).
+\add[own]{\kwtwo{With multisine it performs much better
+(Table~\ref{tab:app_splits}).
+It therefore fails on the reference motion: it must learn how the closed
+loop turns the large reference into the small servo error, which the grey
+box obtains from the known controller and the baseline.}}
 % FEEDBACK (own, 2026-10-24): approved wording change: separate parameter initialisation from controller use.
 \chg[own]{It is also randomly initialised and
 trained without the controller, while the grey box
 starts from the baseline with the controller in the loop}{\kwtwo{The black box model starts from randomly initialised parameters, while the
 grey box starts from the physics baseline.
 The black box is also trained without the controller}}.
+\add[own]{\kwtwo{The comparison therefore shows the value of this prior
+knowledge, not a limit of black-box models.
+A black box of the plant inside the known loop, with a linear
+initialisation and a longer budget, would separate these causes.}}
 \\
+% FEEDBACK (own, 2026-10-25): paragraph 4 rebuilt, merged discussion list A10, A12 to A14: which
+%   claim the seed limits; feedback below the crossover, added mass above it by design (Section V);
+%   controller-hides-bias sentence from the interpretability paragraph returns as a possibility;
+%   changed-controller use untested (Section I); favourable simulated setting and the research-plan
+%   departure (validation on the machine); future work (Dirk 2026-10-25).
 The results are limited to simulation with one seed and the
 same controller used to generate the data.
+\add[own]{\kwtwo{With one training run per model, differences of about one
+point, such as between $\mathcal M_{\mathrm{OBC}}$ and $\mathcal M_{\mathrm U}$,
+are not resolved.
+The feedback suppresses plant errors below the crossover, while the added
+mass lies above it by design (Section~\ref{sec:setup_loop}), so the results
+show the accuracy above the crossover.
+Below it the controller can hide plant errors, possibly including the
+parameter bias discussed above.
+The use that motivates this thesis, evaluating a changed controller
+(Section~\ref{sec:intro}), is therefore not tested.
+Simulating the trained model with a second controller would test it.}}
 Through the feedback, the recorded input is correlated with the measurement
 noise, so the consistency of the \add[Dirk]{\kwtwo{SUBNET }}estimate\add[Dirk]{\kwtwo{~\cite{beintema2023subnet}}} is
 not shown.
+\add[own]{\kwtwo{The simulated system adds a chosen added mass and friction to
+the baseline, with an excitation designed from its known response, which is
+a favourable setting, while the research plan foresaw validation on the
+machine.}}
 It remains unclear whether the improvements would hold with a different
 controller or on measured data.
+\add[own]{\kwtwo{Future work is to include the friction in the baseline, to
+extend the projection to the added states, and to evaluate the model on
+measured data.}}
 % OLD Discussion (until 2026-10-24), replaced by the four paragraphs above:
 % \todo{Should this be a separate subsection? Didnt Maarten state to include it in the text itself...?}
 % % RESTRUCTURE (2026-10-19, Maarten p15): moved here from Section VIII (sec:conclusion), word for word.

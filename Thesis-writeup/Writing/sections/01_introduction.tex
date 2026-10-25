@@ -111,7 +111,7 @@ feedback controller before it is tested on the machine.
 %   (own): that result is not in the final results, see below. Clause on
 %   comparing controllers kept (Dirk 2026-10-20), "controller" ->
 %   "controllers" (own).
-A closed-loop simulation is faster than an experiment,
+A closed-loop simulation can be faster than an experiment,
 allowing multiple \chg[own]{controller}{controllers} to be compared simultaneously, and without risk
 of harming the hardware.
 % NEW: controller evaluation leads (Quinten, 18 Sep); the
@@ -132,11 +132,10 @@ of harming the hardware.
 \del[M-p2c]{This requires a model with physically meaningful
 parameters, because a change in machine behaviour can then be traced back to
 a physical cause, such as a change in stiffness or damping.}
-% NEW: no source
-\todo{Missing: source for the root cause analysis sentence. Candidate:
-Gy\"or\"ok et al.\ Sec.~3.2 (non-unique estimate loses physical meaning) or
-Kessels Sec.~6.2 (not yet checked). Checked 2026-10-20: Kessels PDF p.~41
-supports physical parameters for health monitoring, not root cause analysis.}
+% Source added 2026-10-25: Isermann 1993, PDF p. 3 (printed p. 817),
+% Section 2: physical coefficients contain information on process faults;
+% PDF p. 12 (printed p. 826), Section 5.2: symptoms linked to fault causes.
+% Citation remains unverified pending the user's evidence confirmation.
 % FEEDBACK v2 (own, structure): requirement and interpretability definition
 %   moved here from the physics-informed paragraph, in their own order; the
 %   definition now comes before P3 uses "interpretable", and its last sentence
@@ -144,16 +143,17 @@ supports physical parameters for health monitoring, not root cause analysis.}
 \mv[own]{P4}{For the plant model of the dual-drive gantry,
 \kw{both predictive accuracy and
 physical interpretability are required.}
-\del[own]{Physical interpretability means that }Physical interpretability means that the identifiable combinations of the physical
+\del[own]{Physical interpretability means that }In this thesis, physical interpretability means that the identifiable combinations of the physical
 parameters\del[M-mail]{ (Section~\ref{sec:params})} are estimated uniquely
 \cite{gyorok2026obc}.
 This does not guarantee identifying the true parameters,
 but a deviation\del[M-p2c]{ from the trained model} can then indicate which
-physical parameter has changed\chg[M-p2c]{.}{,}}
+physical parameter might have changed\chg[M-p2c]{.}{,}}
 % FEEDBACK v2 (M-p2c, Dirk 2026-10-20): last two sentences joined, "from the
 %   trained model" struck (the sentence before is about the estimates).
 \mv[Dirk]{above}{\chg[M-p2c]{Such models are therefore also}{making such
-models} valuable for root cause analysis. \todo{Source for root cause analysis.}}
+models} valuable for root cause analysis~\cite{isermann1993fault}.
+\todo{Confirm the supporting passages in Isermann 1993, PDF pp.~3 and~12.}}
 % FEEDBACK: link uniqueness to root cause analysis (Dirk 2026-10-18); own
 %   reasoning, holds while the missing dynamics do not change (discussion)
 % NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses
@@ -204,7 +204,7 @@ More accurate FP models can be developed, but this is labour-intensive
 %   position-dependent behaviour and cross-coupling.
 % FEEDBACK v2: white-box and black-box paragraphs merged into one (M-p2d);
 %   the paragraph break was here.
-\add[M-p2d]{}Purely data-driven (black-box) models such as neural-network or Gaussian-process state-space models
+\add[M-p2d]{}Purely data-driven (black-box) models such as neural-network state-space models
 can describe measured behaviour well, but can offer limited physical
 insight and are not guaranteed to be
 accurate at operating conditions not covered
@@ -238,7 +238,8 @@ neural networks and Gaussian-process-based methods}}, incorporate physical
 \cite{karniadakis2021physicsinformed, raissi2019physicsinformed}\add[M-p2e]{,
 \cite{willard2020integrating}}\chg[M-p2e]{.
 However, these methods require the physics equations to be known
-and}{, but} still rely on a black-box model for the entire system
+and}{, but} the physics-informed and physics-guided neural networks discussed by Hoekstra et al.
+still rely on a black-box model for the entire system
 \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 2
 \delmv[own]{P2}{For the plant model of the dual-drive gantry, both predictive
@@ -284,7 +285,7 @@ the physics-based model cannot describe \cite{hoekstra2026lfr}\add[own]{,
 %   "flexible dynamics" dropped: P1 says the system exhibits flexible
 %   dynamics and the baseline models the flexible joints (Fig. 1).
 Dynamic augmentation is chosen\chg[own]{ to be able to model missing
-dynamics, such as flexible dynamics. These}{, because missing dynamics}
+dynamics, such as flexible dynamics. These}{ to model missing dynamics that}
 require additional states, which
 parameter re-estimation
 and static output correction cannot provide \cite{hoekstra2026lfr}.
@@ -337,8 +338,8 @@ and preserves physical interpretability.}
 %   name LFR (Jan26: "If you only use parallel augmentation you can cut the
 %   LFR explanation").
 \chg[Jan26]{Model augmentation using a linear fractional representation (LFR)}{Dynamic augmentation} has
-already been demonstrated, but not for position-dependent baselines or
-\chg[own]{closed-loop data}{with a simulated feedback controller}
+already been demonstrated, but Hoekstra et al.'s examples do not consider position-dependent baselines or
+\chg[own]{closed-loop data}{training with a simulated feedback controller}
 \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026, absence: no closed loop, LPV only in a reference
 %   title
@@ -358,13 +359,13 @@ parameters fixed during training \cite{kessels2025ai}.
 % NEW: Kessels Sec. 5.1 (PDF p. 175, only network weights trained); wire
 %   bonder updated from closed-loop measurements (Sec. 5.3.2)
 Orthogonal-by-construction (OBC) augmentation keeps the learned component
-orthogonal to the baseline parameters, so that their 
-estimates are unique \cite{gyorok2026obc}. This has currently only been 
-formulated for discrete-time input-output models, and not for state-space models.
+orthogonal to the baseline regressor space, so that the physical parameter
+estimates are unique under the stated conditions \cite{gyorok2026obc}. Gy\"or\"ok et al. formulate this
+for discrete-time input-output models, leaving extension to state-space models for future work.
 % NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10
 %   (state-space form named as future research)
-\mv[own]{above}{\chg[own]{However, a}{A} key gap remains: there is no grey-box modelling framework\del[own]{ for the
-dual-drive gantry} that simultaneously addresses coupled multi-input
+\mv[own]{above}{\chg[own]{However, a}{A} key gap remains: the reviewed approaches do not\del[own]{ for the
+dual-drive gantry} simultaneously address coupled multi-input
 multi-output (MIMO) dynamics, position-dependent behaviour\chg[own]{, closed-loop data,
 and preserves}{ and closed-loop data while preserving} physical interpretability.}
 % FEEDBACK v2: last sentence struck (M-p3b, total length); the research
