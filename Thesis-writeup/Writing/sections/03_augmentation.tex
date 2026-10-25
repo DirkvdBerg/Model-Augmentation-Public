@@ -1718,8 +1718,8 @@ samples of the residual $e_\tau$.
 %  e_\tau&=\frac{1}{\sigma_e}[(y^n_\tau-\hat y^n_{\tau|\tau})^T ... (y^n_{\tau+H-1}-\hat y^n_{\tau+H-1|\tau})^T]^T,\\
 %  p(\theta_p,\bar x)&=W_{p,2}\tanh(W_{p,1}\bar x+b_{p,1})+b_{p,2},\\
 %  &\min_{\theta_p,\theta^a_enc} \frac{1}{|B|H n_y}\sum_{\tau\in B}\|p(\theta_p,\psi_a(\theta_enc,\chi_\tau))-e_\tau\|_2^2,
-Then a temporary decoder \chg[own]{$d$}{$p$}\add[own]{\kwtwo{, a neural network with one hidden layer
-(Appendix~\ref{app:ps_stop}),}} with only the added states as inputs
+% FEEDBACK (own, 2026-10-25): Appendix PS details dropped; pointer removed (Dirk 2026-10-25).
+Then a temporary decoder \chg[own]{$d$}{$p$}\add[own]{\kwtwo{, a neural network with one hidden layer,}} with only the added states as inputs
 $\bar x_{\tau|\tau}=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
 is used to predict this residual:
 \begin{equation}
@@ -1754,7 +1754,9 @@ the S1 update.
 %   definition repeats the sentence before (28); sigma_e said by what it
 %   does, its exact definition moved to Appendix PS details.
 \del[own]{$\mathcal B$ is the minibatch of samples $\tau$ and}
-\chg[own]{$\sigma_e$ is the RMS of all residual values in $\mathcal B$}{\kwtwo{$\sigma_e$ scales the residual to unit size (Appendix~\ref{app:ps_stop})}}.
+% FEEDBACK (own, 2026-10-25): Appendix PS details dropped; the definition of sigma_e is back
+%   here (checked: ps2_opening.py _residual, RMS over the whole minibatch) (Dirk 2026-10-25).
+\kwtwo{$\sigma_e$ is the RMS of all residual values in $\mathcal B$}.
 % RESTRUCTURE (2026-10-22, Dirk; E4): decoder dimensions and zero start
 %   moved to Appendix PS details (implementation; (28) defines p).
 \delmv[own]{App.~\mbox{\ref{app:ps_stop}}}{The decoder $d:\R^{n_{\bar x}}\to\R^{Hn_y}$ has parameters
@@ -1828,8 +1830,11 @@ The threshold rule for S2 is given in Appendix~\mbox{\ref{app:ps_stop}}.}
 %   skipped), referring to Dirk's left-out records; "still used in V" in
 %   Dirk's own wording (now in the appendix: "The left out data is still
 %   used in V").
-\add[own]{\kwtwo{We use the left out records to decide when S1 ends and whether S2 runs
-(Appendix~\ref{app:ps_stop}).}}
+% FEEDBACK (own, 2026-10-25): Appendix PS details dropped; the stopping rule in one
+%   sentence (ps2_opening.py: plateau of nu, S2 only if nu <= 0.90) (Dirk 2026-10-25).
+\chg[own]{We use the left out records to decide when S1 ends and whether S2 runs
+(Appendix~\mbox{\ref{app:ps_stop}}).}{\kwtwo{S1 ends when the decoder's prediction error on the left out
+records stops improving, and S2 runs only if the decoder explains at least 10\,\% of the residual there.}}
 \add[own]{\kwtwo{The left out records are still used to minimise $V$.}}
 % RESTRUCTURE (2026-10-19, Maarten p9 "Formalize the optimization problem
 %   that you solve for each stage"): S1 alternation written out; defines
@@ -1893,7 +1898,9 @@ actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser\chg
 % RESTRUCTURE (2026-10-23, Dirk, option a): the recorded-force sentence
 %   moved next to the sentence it justifies; the colon became a full stop,
 %   with "S2 solves" as the new lead-in to (30).
-\mv[own]{below}{At the start of a window, the recorded force equals the closed-loop input of $V$ when the encoder reproduces $y_{k_i}$ (Appendix~\ref{app:ps_stop}).}
+% FEEDBACK (own, 2026-10-25): Appendix PS details dropped; the pointer replaced by the
+%   equation it follows from (Dirk 2026-10-25).
+\mv[own]{below}{At the start of a window, the recorded force equals the closed-loop input of $V$ when the encoder reproduces $y_{k_i}$\chg[own]{ (Appendix~\mbox{\ref{app:ps_stop}})}{\kwtwo{, by \eqref{eq:aug_residual_loop} with $x^c_\tau=0$}}.}
 \add[own]{\kwtwo{S2 solves}}
 \begin{equation}
 \begin{aligned}

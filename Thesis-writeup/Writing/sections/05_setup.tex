@@ -285,8 +285,10 @@ frequency responses of the system and the baseline.}}
 % FEEDBACK (Dirk, 2026-10-24): phases per record stated where the
 %   multisine is introduced, so VI-C does not suggest the training signal
 %   is reused; draw count and selection stay in Appendix F-B.
+% FEEDBACK (own, 2026-10-25): appendix pointer removed; the crest-factor text was
+%   struck from Appendix D-B (Dirk 2026-10-25).
 \add[own]{\kwtwo{Each record has its own random multisine phases, chosen for a
-low crest factor (Appendix~\ref{app:setup_records}).}}
+low crest factor\del[own]{ (Appendix~\mbox{\ref{app:setup_records}})}.}}
 
 % RESTRUCTURE (own, 2026-10-24): noise paragraph from Section VI-A; second
 %   sentence reworded (Dirk 2026-10-24).
@@ -295,7 +297,9 @@ of each axis, $y=\qact+v$.}
 \chg[own]{The simulated servo error matches at standstill the noise level
 and spectral shape of the industrial gantry, but its resonances are left
 out}{\kwtwo{At standstill, the simulated servo error matches the noise
-level and spectral shape of the ASMPT gantry}}\mv[own]{VI-A}{ (Appendix~\ref{app:setup_system}).}
+level and spectral shape of the ASMPT gantry}}\mv[own]{VI-A}{\del[own]{ (Appendix~\mbox{\ref{app:setup_system}})}.}
+% FEEDBACK (own, 2026-10-25): appendix pointer removed; the noise text was struck
+%   from Appendix D-A, parameters confidential (Dirk 2026-10-25).
 % FEEDBACK (Dirk 2026-10-24): resonance sentence in Dirk's words; the SNR
 %   range is over the training records (snr.py) and depends on the motion
 %   profile and the multisine.
@@ -548,8 +552,9 @@ without modelling the controller separately
 % FEEDBACK (Dirk, 2026-10-24): selection sentence cut; VI-C states that the
 %   validation records select the hyperparameters, and the search table
 %   (tab:app_bb_search) is in Appendix C, now named in the pointer.
-(\chg[own]{Appendix~\mbox{\ref{app:setup_bb}}}{\kwtwo{Appendices~\ref{app:choices}
-and~\ref{app:setup_bb}}}).
+% FEEDBACK (own, 2026-10-25): Appendix C dropped; the search table moved into
+%   app:setup_bb, so the pointer names that appendix only (Dirk 2026-10-25).
+(Appendix~\ref{app:setup_bb}).
 % FEEDBACK (own, 2026-10-24): wording (Dirk 2026-10-24).
 \del[own]{Its state count, network widths and learning rate are selected
 from 11 configurations using the validation records,
