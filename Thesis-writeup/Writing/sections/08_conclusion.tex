@@ -80,21 +80,26 @@ a different controller or on measured data.}
 %   the answer to the research question and the limit; consistent with the rewritten Discussion
 %   (Dirk 2026-10-25). The old text, its revnote and its todo (preliminary numbers, now final) are
 %   kept below as commented-out source.
-\add[own]{\kwtwo{A parallel augmentation with added states is able to capture
-the missing dynamics from closed-loop data, but only when the added states
-are initialised with PS.
-The augmented model improves the prediction compared to the baseline when
-the data excite the missing dynamics, and stays at the level of the
-baseline for the motion profiles without multisine.
-It keeps this accuracy on held-out positions and unseen motion profiles,
-and performs better than the black box model.
-Compared to $\mathcal M_{\mathrm U}$, OBC keeps the neural network for the
-most part out of the parameter directions, but the parameter estimates
-still deviate from their true values and depend on where training starts.
-The physics-based model should therefore be augmented in parallel with
-added states initialised with PS, and OBC should be extended to the
-simulated output to preserve interpretability.
-These results are limited to simulation with one controller.}}
+% FEEDBACK (own, 2026-10-25): revised version on top, previous version below it for comparison
+%   (Dirk 2026-10-25); review of the previous version: "captures", no "but only when", Dirk's
+%   "performs slightly worse", generalisation and black box split, "reduces the overlap",
+%   limitation before the recommendation, recommendation and future work separated.
+% FEEDBACK (own, 2026-10-25): gantry-specific (research question "For the dual-drive gantry"): the
+%   vibration mode of the added mass, on Y, the damper combinations (Dirk 2026-10-25).
+For the dual-drive gantry, 
+a parallel augmentation with added states
+is able to capture the mode of the added mass, spring and damper from closed-loop data when
+the added states are initialised with PS.
+The resulting model reduces the prediction error on $Y$ 
+when this mode is sufficiently excited in the data.
+The final model performs slightly worse than the baseline model on records without 
+multisine excitation.
+The prediction errors on the interpolation and extrapolation records are similar, 
+and the final model performs better than the black box model.
+OBC is able to reduce the overlap between the neural network and the parameter directions. 
+However, the parameter estimates still deviate from their true
+values and depend on where training starts.
+These results are limited to simulation with one controller.
 % OLD conclusion (until 2026-10-25), replaced by the paragraph above:
 % \revnote{Issue: the conclusion lists the results but does not judge them,
 % because no criterion per aspect is stated before the results.

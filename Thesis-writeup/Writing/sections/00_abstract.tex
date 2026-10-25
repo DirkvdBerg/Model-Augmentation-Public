@@ -15,18 +15,43 @@
 \noindent\textbf{\textit{Abstract}}
 \par
 \fi
-\begin{wip}
+% FEEDBACK (own, 2026-10-25): abstract written in Dirk's wording (sentences 1 and 2 from Section I,
+%   the outcome from Section VIII), in the form of Hoekstra 2026: problem, what is proposed, how it is
+%   evaluated, no numbers; one outcome sentence with the positive and the negative result (Dirk
+%   2026-10-25). The wip outline is kept below as commented-out source.
 \begin{abstract}
-\begin{itemize}
-\item Problem: improve settling prediction for a position-dependent dual gantry without surrendering the meaning of its physical parameters
-\item Method: combine a quasi-LPV first-principles baseline, dynamic parallel LFR augmentation, closed-loop rollout training, and state-level orthogonal projection
-\item Evidence: compare baseline, unconstrained augmentation, orthogonal variants, and a black-box model on the completed validation ladder, including relevant motion and settling where available
-\item Main result: report predictive improvement together with the measured limits from short-horizon training, inactive added states, and non-orthogonal true missing dynamics
-\item Conclusion: state when the proposed decomposition is useful and which conditions prevent interpreting it as true parameter recovery
-\end{itemize}
-\todo{Write the numerical abstract only after the final simulation and Telica result tables are frozen.}
+\add[own]{\kwtwo{A plant model can be used to evaluate a changed feedback
+controller before it is tested on the machine.
+For this, both predictive accuracy and physical interpretability are
+required.
+Physics-based models do not capture all dynamics, while refitting their
+parameters or adding an unconstrained learned component can absorb
+dynamics the baseline already describes.
+We augment a physics-based model of a dual-drive gantry in parallel with a
+neural network and added states, with a predictive-state initialisation,
+trained in closed loop with the known controller.
+To keep the physical parameters interpretable, we extend
+orthogonal-by-construction (OBC) augmentation to a state-space baseline
+that is nonlinear in its parameters.
+The method is evaluated in simulation on held-out positions and unseen
+motion profiles, against the baseline and a black box model.
+The augmented model improves the prediction where the data excite the
+missing dynamics, but the parameter estimates still depend on where
+training starts.}}
 \end{abstract}
-\end{wip}
+% OLD abstract outline (wip, until 2026-10-25):
+% \begin{wip}
+% \begin{abstract}
+% \begin{itemize}
+% \item Problem: improve settling prediction for a position-dependent dual gantry without surrendering the meaning of its physical parameters
+% \item Method: combine a quasi-LPV first-principles baseline, dynamic parallel LFR augmentation, closed-loop rollout training, and state-level orthogonal projection
+% \item Evidence: compare baseline, unconstrained augmentation, orthogonal variants, and a black-box model on the completed validation ladder, including relevant motion and settling where available
+% \item Main result: report predictive improvement together with the measured limits from short-horizon training, inactive added states, and non-orthogonal true missing dynamics
+% \item Conclusion: state when the proposed decomposition is useful and which conditions prevent interpreting it as true parameter recovery
+% \end{itemize}
+% \todo{Write the numerical abstract only after the final simulation and Telica result tables are frozen.}
+% \end{abstract}
+% \end{wip}
 
 \begin{wip}
 \begin{IEEEkeywords}
