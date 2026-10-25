@@ -20,24 +20,25 @@
 %   evaluated, no numbers; one outcome sentence with the positive and the negative result (Dirk
 %   2026-10-25). The wip outline is kept below as commented-out source.
 \begin{abstract}
-\add[own]{\kwtwo{A plant model can be used to evaluate a changed feedback
-controller before it is tested on the machine.
-For this, both predictive accuracy and physical interpretability are
-required.
-Physics-based models do not capture all dynamics, while refitting their
-parameters or adding an unconstrained learned component can absorb
-dynamics the baseline already describes.
-We augment a physics-based model of a dual-drive gantry in parallel with a
-neural network and added states, with a predictive-state initialisation,
-trained in closed loop with the known controller.
-To keep the physical parameters interpretable, we extend
-orthogonal-by-construction (OBC) augmentation to a state-space baseline
-that is nonlinear in its parameters.
-The method is evaluated in simulation on held-out positions and unseen
-motion profiles, against the baseline and a black box model.
-The augmented model improves the prediction where the data excite the
-missing dynamics, but the parameter estimates still depend on where
-training starts.}}
+A plant model can be used to evaluate a changed feedback controller before it is tested 
+on the machine. For the dual-drive gantry, 
+both predictive accuracy and physical interpretability are required. 
+However, the physics-based baseline does not capture all dynamics. 
+When the parameters of the baseline model are refitted, they are able to absorb parts of the missing dynamics.
+As a result, the parameter estimates can deviate from their true values.
+Adding a neural network can capture the missing dynamics instead, 
+but it can also represent dynamics that the baseline parameters can already explain.
+We augment the baseline in parallel with a neural network and additional states 
+to model the missing dynamics. The added states are initialised with predictive-state (PS) 
+initialisation, and the model is trained in closed loop with the known controller. 
+To prevent the neural network from correcting what the baseline parameters can represent, 
+we extend orthogonal-by-construction (OBC) augmentation to a state-space baseline 
+nonlinear in its parameters. We evaluate the method in simulation on held-out positions 
+and unseen motion profiles, against the baseline and a black box model. 
+The augmented model reduces the prediction error when the missing vibration mode is 
+sufficiently excited. 
+OBC reduces the overlap between the neural network and the parameter directions.
+However, the parameter estimates still depend on their initial values.
 \end{abstract}
 % OLD abstract outline (wip, until 2026-10-25):
 % \begin{wip}
@@ -52,9 +53,3 @@ training starts.}}
 % \todo{Write the numerical abstract only after the final simulation and Telica result tables are frozen.}
 % \end{abstract}
 % \end{wip}
-
-\begin{wip}
-\begin{IEEEkeywords}
-% grey-box identification, LPV systems, model augmentation, orthogonal projection, dual gantry
-\end{IEEEkeywords}
-\end{wip}

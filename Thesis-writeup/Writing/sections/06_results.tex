@@ -70,6 +70,47 @@ Section~\mbox{\ref{sec:discussion}} discusses them.}
 \fi
 % FEEDBACK (own, 2026-10-24): subsection opens with what it tests (Hoekstra 2026 Sec. 6.3), wording of Section VI-D.
 % FEEDBACK (own, 2026-10-24): the black box belongs to Aspect 3 (Section VII-C), not to Aspect 1 (Dirk 2026-10-24).
+% LAYOUT (own, 2026-10-25): floats defined at the start of the subsection, [tb] instead of [t],
+%   and Figs. res_val_curves and res_frf side by side in one figure*, so the FloatBarrier
+%   below no longer forces a float-only page (Dirk yes).
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
+\begin{table}[tb]
+  \centering
+  % FEEDBACK (own, 2026-10-24): every record with a multisine in one group (Dirk 2026-10-24).
+  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the 10 records with a multisine and the 8 without. $\mathcal M_{\mathrm{OBC}}$ starts from the detuned parameters, the other grey-box models from the true parameters.}
+  \label{tab:res_structure}
+  \input{tables/res_structure}
+\end{table}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{res_time_trace.pdf}
+  % FEEDBACK (own, 2026-10-24): top is a local NRMS_e; bottom curves are servo errors of system and models (Dirk 2026-10-24).
+  \caption{Test record I1, $Y$ axis. Top: $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms} over 50~ms. Bottom: servo error $y-r$ of the system and $\hat y-r$ of the models, divided by $\sigma_{e,Y}$.}
+  \label{fig:res_time_trace}
+\end{figure}
+
+% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
+% FEEDBACK (own, 2026-10-24): semicolon replaced (no semicolons, Dirk).
+% FEEDBACK (own, 2026-10-24): open loop, from the linearised models, no normalisation, band range in Y_tr (Dirk 2026-10-24).
+\begin{figure*}[t]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{res_val_curves.pdf}
+    \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. Update 0 equals the baseline.}
+    \label{fig:res_val_curves}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{res_frf.pdf}
+    \caption{Open-loop Bode magnitude from $F_Y$ to $Y$ at $Y=0$, from the models linearised at standstill. Shaded: final model over $\lvert Y\rvert\le1.3\,Y_{\mathrm{tr}}$.}
+    \label{fig:res_frf}
+  \end{subfigure}
+  \caption{Training and frequency response of the augmentation structures.}
+  \label{fig:res_val_frf}
+\end{figure*}
+
 For Aspect 1, we compare the augmentation structures 
 with the baseline\del[own]{ and the black box}.
 % FEEDBACK (own, 2026-10-24): "final model" is not defined in Section VI; named once here.
@@ -101,39 +142,7 @@ lower validation error, compared to the other models during training.
 
 \revnote{Figuur heeft meerwaarde. om iets te laten zien niet de 3x3 frf.}
 
-% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
-\begin{table}[t]
-  \centering
-  % FEEDBACK (own, 2026-10-24): every record with a multisine in one group (Dirk 2026-10-24).
-  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the 10 records with a multisine and the 8 without. $\mathcal M_{\mathrm{OBC}}$ starts from the detuned parameters, the other grey-box models from the true parameters.}
-  \label{tab:res_structure}
-  \input{tables/res_structure}
-\end{table}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{res_time_trace.pdf}
-  % FEEDBACK (own, 2026-10-24): top is a local NRMS_e; bottom curves are servo errors of system and models (Dirk 2026-10-24).
-  \caption{Test record I1, $Y$ axis. Top: $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms} over 50~ms. Bottom: servo error $y-r$ of the system and $\hat y-r$ of the models, divided by $\sigma_{e,Y}$.}
-  \label{fig:res_time_trace}
-\end{figure}
-
-% FEEDBACK (own, 2026-10-24): float regenerated from Results/24-10-2026/CSV in the agreed design (results preview, Dirk 2026-10-24); running text not yet updated.
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{res_val_curves.pdf}
-  % FEEDBACK (own, 2026-10-24): semicolon replaced (no semicolons, Dirk).
-  \caption{Validation $\mathrm{NRMS}_e$ during training, mean over the validation records and axes. Update 0 equals the baseline.}
-  \label{fig:res_val_curves}
-\end{figure}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{res_frf.pdf}
-  % FEEDBACK (own, 2026-10-24): open loop, from the linearised models, no normalisation, band range in Y_tr (Dirk 2026-10-24).
-  \caption{Open-loop Bode magnitude from $F_Y$ to $Y$ at $Y=0$, from the models linearised at standstill. Shaded: final model over $\lvert Y\rvert\le1.3\,Y_{\mathrm{tr}}$.}
-  \label{fig:res_frf}
-\end{figure}
+% LAYOUT (own, 2026-10-25): the floats of this subsection moved to its start (Dirk yes).
 % REMOVED (own, 2026-10-24): revnote proposing a figure of the resonance against Y; the text states
 %   the frequency and damping range instead.
 

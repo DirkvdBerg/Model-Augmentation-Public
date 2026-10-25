@@ -10,9 +10,13 @@
 
 % ---------------------------------------------------------------- draft switch
 % \drafttrue  -> todo notes visible.   \draftfalse -> submission build.
+% \showkwtrue -> with \draftfalse: submission text, but \kw teal and \kwtwo red.
+%                Set \showkwfalse for the hand-in PDF.
 \newif\ifdraft
-\drafttrue
-\ifdefined\ReviewBuild\draftfalse\fi   % review.tex defines \ReviewBuild: review PDF for supervisors
+\newif\ifshowkw
+\draftfalse
+\showkwtrue
+\ifdefined\ReviewBuild\draftfalse\showkwfalse\fi   % review.tex defines \ReviewBuild: review PDF for supervisors
 \ifdraft
   \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}
   \newcommand{\note}[1]{\textcolor{blue}{[#1]}}
@@ -21,8 +25,13 @@
 \else
   \newcommand{\todo}[1]{}
   \newcommand{\note}[1]{}
-  \newcommand{\kw}[1]{#1}                     % submission build: plain text
-  \newcommand{\kwtwo}[1]{#1}                  % review build: plain text
+  \ifshowkw
+    \newcommand{\kw}[1]{\textcolor{teal}{#1}}
+    \newcommand{\kwtwo}[1]{\textcolor{red}{#1}}
+  \else
+    \newcommand{\kw}[1]{#1}                   % submission build: plain text
+    \newcommand{\kwtwo}[1]{#1}                % review build: plain text
+  \fi
 \fi
 
 % ---------------------------------------------------------------- review switch
@@ -103,6 +112,13 @@
   \newcommand{\delmv}[3][]{}
   \newcommand{\changelegend}{}
 \fi
+
+% ------------------------------------------------------------ float pages
+% Floats on a float-only page start at the top instead of the vertical centre (Dirk 2026-10-25).
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@dblfptop}{0pt}
+\makeatother
 
 % ------------------------------------------------------------ general notation
 % Copied verbatim from scripts/gantry/orthogonal-by-construction/documentation/

@@ -18,7 +18,9 @@ STEM = "res_bb_selection"
 def main():
     with open(RESULTS_DIR / f"{STEM}.csv", newline="") as fh:
         rows = list(csv.DictReader(fh))
-    lines = [r"\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{r r r r r r r l}", r"\toprule",
+    # footnotesize, 3 pt and a wrapping note: at 4 pt in body size the table was 22 pt wider
+    # than a column (Dirk 2026-10-25).
+    lines = [r"\footnotesize", r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{r r r r r r r l}", r"\toprule",
              r"\# & $n_x$ & Width & LR & Param. & $\mathrm{NRMS}_e$ (\%) & Best update & Status\\", r"\midrule"]
     for r in rows:
         npar = float(r["n_params"])
@@ -29,7 +31,7 @@ def main():
         if r["selected"] == "1":
             cells = [r"\textbf{%s}" % c if c else c for c in cells]
         lines.append(" & ".join(cells) + r"\\")
-    lines += [r"\bottomrule", r"\multicolumn{8}{l}{\footnotesize Bold: selected on validation (lowest "
+    lines += [r"\bottomrule", r"\multicolumn{8}{p{0.9\columnwidth}}{Bold: selected on validation (lowest "
               r"$\mathrm{NRMS}_e$; within 2\,\% the fewer parameters).}\\", r"\end{tabular}", ""]
     save_table("\n".join(lines), STEM)
 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 18:16
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 18:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -742,18 +742,10 @@ Underfull \hbox (badness 10000) in paragraph at lines 62--76
 
  []
 
-
-Overfull \hbox (2.1133pt too wide) in paragraph at lines 53--77
-[][]  [] 
- []
-
 [0
 
 
-{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./frontmatter/asmpt_logo.png> <./frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png>]) (sections/00_abstract.tex Including 'wip' comment.
-\openout4 = `comment.cut'.
-
- Straight input of comment.cut. (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\comment.cut)) (sections/01_introduction.tex
+{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./frontmatter/asmpt_logo.png> <./frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png>]) (sections/00_abstract.tex) (sections/01_introduction.tex
 Underfull \hbox (badness 2662) in paragraph at lines 64--384
 \OT1/ptm/m/n/10 (+20) Physics-informed ap-proaches, []|   []   |   []
  []
@@ -1135,41 +1127,39 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 LaTeX Warning: Reference `app:choices' on page 20 undefined on input line 515.
 
 [20]) (sections/06_results.tex (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=924, 228.99803pt x 196.20125pt>
+<figures/res_time_trace.pdf, id=918, 228.99803pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
-Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 115.
+Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 87.
 (pdftex.def)             Requested size: 252.0pt x 215.92082pt.
-<figures/res_val_curves.pdf, id=927, 225.3218pt x 157.83429pt>
+<figures/res_val_curves.pdf, id=921, 225.3218pt x 157.83429pt>
 File: figures/res_val_curves.pdf Graphic file (type pdf)
 <use figures/res_val_curves.pdf>
-Package pdftex.def Info: figures/res_val_curves.pdf  used on input line 124.
-(pdftex.def)             Requested size: 252.0pt x 176.52753pt.
-<figures/res_frf.pdf, id=928, 232.26022pt x 157.26341pt>
+Package pdftex.def Info: figures/res_val_curves.pdf  used on input line 100.
+(pdftex.def)             Requested size: 247.6778pt x 173.50023pt.
+<figures/res_frf.pdf, id=922, 232.26022pt x 157.26341pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
-Package pdftex.def Info: figures/res_frf.pdf  used on input line 132.
-(pdftex.def)             Requested size: 252.0pt x 170.63622pt.
- [21] [22 <./figures/res_time_trace.pdf> <./figures/res_val_curves.pdf> <./figures/res_frf.pdf>]
+Package pdftex.def Info: figures/res_frf.pdf  used on input line 106.
+(pdftex.def)             Requested size: 247.6778pt x 167.70865pt.
+ [21 <./figures/res_time_trace.pdf>]
 
-LaTeX Warning: Reference `app:choices' on page 23 undefined on input line 175.
+LaTeX Warning: Reference `app:choices' on page 22 undefined on input line 184.
 
 (tables/res_obc_combinations.tex)
-Overfull \hbox (2.4674pt too wide) in paragraph at lines 2--197
+Overfull \hbox (2.4674pt too wide) in paragraph at lines 2--206
  [][] 
  []
 
-(tables/res_obc_constraint.tex) [23
+(tables/res_obc_constraint.tex) [22 <./figures/res_val_curves.pdf> <./figures/res_frf.pdf>] (tables/res_generalisation.tex) [23]) (sections/07_discussion.tex) (sections/08_conclusion.tex
 
-] (tables/res_generalisation.tex)) (sections/07_discussion.tex) (sections/08_conclusion.tex [24]
-
-LaTeX Warning: Reference `tab:app_structure' on page 25 undefined on input line 45.
+LaTeX Warning: Reference `tab:app_structure' on page 24 undefined on input line 45.
 
 
-LaTeX Warning: Reference `app:choices' on page 25 undefined on input line 45.
+LaTeX Warning: Reference `app:choices' on page 24 undefined on input line 45.
 
 
-Underfull \hbox (badness 2393) in paragraph at lines 45--75
+Underfull \hbox (badness 1496) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
@@ -1178,11 +1168,9 @@ Underfull \hbox (badness 1728) in paragraph at lines 45--75
 |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [25]) [26
+) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [24]) [25] (sections/99_appendix.tex (figures/lfr_loop.tex)
 
-] (sections/99_appendix.tex (figures/lfr_loop.tex)
-
-LaTeX Warning: Citation `[' on page 27 undefined on input line 156.
+LaTeX Warning: Citation `[' on page 26 undefined on input line 156.
 
 
 Underfull \hbox (badness 3668) in paragraph at lines 156--174
@@ -1190,7 +1178,7 @@ Underfull \hbox (badness 3668) in paragraph at lines 156--174
  []
 
 
-LaTeX Warning: Reference `eq:app_G_partition' on page 27 undefined on input line 194.
+LaTeX Warning: Reference `eq:app_G_partition' on page 26 undefined on input line 194.
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 193--199
@@ -1208,9 +1196,9 @@ Underfull \hbox (badness 10000) in paragraph at lines 193--199
  []
 
 
-LaTeX Warning: Citation `[' on page 27 undefined on input line 207.
+LaTeX Warning: Citation `[' on page 26 undefined on input line 207.
 
-[27
+[26
 
 ]
 Underfull \hbox (badness 3954) in paragraph at lines 215--237
@@ -1227,8 +1215,8 @@ Overfull \hbox (1.9734pt too wide) detected at line 283
 \OML/cmm/m/it/10 r[] \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 ;  \OMS/cmsy/m/n/10 j\OML/cmm/m/it/10 r[]\OMS/cmsy/m/n/10 j \OML/cmm/m/it/10 < \OT1/cmr/m/n/10 1\OML/cmm/m/it/10 ;  ^^Q[] \OT1/cmr/m/n/10 = [](\OML/cmm/m/it/10 r[]\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 ;  s \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 ;
  []
 
-(tables/res_all_splits.tex) [28]
-<figures/setup_band.pdf, id=1125, 238.82224pt x 157.26341pt>
+(tables/res_all_splits.tex) [27]
+<figures/setup_band.pdf, id=1122, 238.82224pt x 157.26341pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
 Package pdftex.def Info: figures/setup_band.pdf  used on input line 459.
@@ -1244,23 +1232,18 @@ Underfull \hbox (badness 3701) in paragraph at lines 428--464
  []
 
 
-LaTeX Warning: Reference `fig:setup_coverage' on page 29 undefined on input line 477.
+LaTeX Warning: Reference `fig:setup_coverage' on page 28 undefined on input line 477.
 
 
 Underfull \hbox (badness 1762) in paragraph at lines 470--521
 |   []   |   []   |   []   |   []   |   []   |   []   |   []
  []
 
-[29 <./figures/setup_band.pdf>]
+[28 <./figures/setup_band.pdf>]
 Underfull \vbox (badness 2057) has occurred while \output is active []
 
  (tables/res_bb_selection.tex)
-Overfull \hbox (22.07501pt too wide) in paragraph at lines 2--648
- [][] 
- []
-
-
-Overfull \hbox (29.36989pt too wide) in paragraph at lines 665--720
+Overfull \hbox (2.0849pt too wide) in paragraph at lines 3--648
  [][] 
  []
 
@@ -1276,7 +1259,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[30] [31
+[29] [30
 
 ] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
  ***********
@@ -1288,20 +1271,20 @@ L3 programming layer <2026-01-19>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 5C35D6DEBEA61EDC4D3BC5AD9CB0EEB1;7567.
+(rerunfilecheck)             Checksum: 25E279734C2E57C1A5FC8CAD28FD5A70;7567.
  ) 
 Here is how much of TeX's memory you used:
- 28402 strings out of 467867
- 543375 string characters out of 5416882
- 1062640 words of memory out of 5000000
- 56208 multiletter control sequences out of 15000+600000
- 696491 words of font info for 385 fonts, out of 8000000 for 9000
+ 28419 strings out of 467867
+ 543423 string characters out of 5416882
+ 1064042 words of memory out of 5000000
+ 56213 multiletter control sequences out of 15000+600000
+ 697731 words of font info for 396 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 89i,18n,97p,1131b,996s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (32 pages, 1237109 bytes).
+ 89i,18n,97p,1131b,1053s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1256310 bytes).
 PDF statistics:
- 1324 PDF objects out of 1440 (max. 8388607)
- 180 named destinations out of 1000 (max. 500000)
+ 1330 PDF objects out of 1440 (max. 8388607)
+ 178 named destinations out of 1000 (max. 500000)
  72576 words of extra memory for PDF output out of 74296 (max. 10000000)
 
