@@ -130,7 +130,7 @@ third \add[Js21]{linear }actuator that moves a payload along this arm (Fig.~\ref
   \caption{
   Lumped-parameter model of the Dual-drive gantry stage, adapted from   
   \cite{garcia2013model}.
-  At $X_2$, a prismatic joint lets the cross-arm slide, allowing it to rotate.
+  At $X_2$ a prismatic joint lets the cross-arm slide, allowing it to rotate.
   Red labels are actuator coordinates and blue labels generalised coordinates,
   with $Y$ in both.}
   % FEEDBACK: caption taken out of its \todo, "Still need to add springs to
@@ -160,7 +160,7 @@ $X_1$, $X_2$ and $Y$ the measured positions of the
 %   two X actuators and the Y actuator" is Garcia's wording (Sec. 2.2, PDF
 %   p3: (X1, X2, Y) are the measured positions of the actuators)
 %   (Dirk 2026-10-21).
-\\
+
 The system to be identified is the gantry system
 described \chg{as,}{by}
 \begin{equation}
@@ -264,7 +264,7 @@ controller computes it from $y$.}
  %   (Dirk 2026-10-21).
  \label{fig:system_loop}
 \end{figure}
-\\
+
 We use the lumped-parameter model of Fig.~\ref{fig:gantry_system} as our
 physics-based baseline model of \eqref{eq:system}.
 This model does not capture all dynamics of the system.
@@ -277,11 +277,11 @@ states~\cite{hoekstra2026lfr}.
 % have\del[M-mail]{
 % (Section~\ref{sec:aug_structure})},}
 % so additional states are introduced.
-\\
+
 The goal is to estimate the \kw{physical and learned parameters} of the
 augmented model from $\mathcal D_N$, such that it captures the missing
 dynamics and accurately predicts the system, while the identifiable
-combinations of the physical parameters are estimated uniquely.
+combinations of the physical parameters are uniquely estimated.
 % \mv[Jan23]{IV-C}{The model is trained using short windows of the
 % closed-loop data, where each window is simulated with
 % \chg[own]{the known controller}{the controller $K_{\mathrm{fb}}$}.
@@ -418,7 +418,7 @@ where $u$ denotes the generalised force.
 % The baseline keeps this dependence in linear parameter-varying (LPV) form, 
 % with the measured position $Y$ as scheduling variable \cite{toth2010modeling}.
 Following Garc\'ia-Herreros et al. \cite{garcia2013model}, the baseline assumes $\cos(\Theta)\approx1$ and $\sin(\Theta)\approx0$, 
-valid for small yaw angles, and assumes that the Coriolis and centripetal force terms are
+valid for small yaw angles, and that the Coriolis and centripetal force terms are
 negligible compared to the inertia, damping, and stiffness forces.
 % NEW (2026-10-21, Dirk): Garcia Sec. 2.3 moves m_h d Ydd to the force
 %   vector (Eq. 15) and treats Y separately (Eq. 17); the baseline keeps it in M.
@@ -473,7 +473,7 @@ K=
 \label{eq:stiffness_matrix}
 \end{equation}
 \end{subequations}
-}
+}%
 From here on the notation for the time dependency is dropped.
 % TODO closed (2026-10-21, Dirk): "Proposed insertion" on Coulomb friction is
 %   covered by the friction sentence above (reason in D-204); "Look at this

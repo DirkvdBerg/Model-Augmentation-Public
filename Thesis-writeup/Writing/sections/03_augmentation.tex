@@ -725,7 +725,7 @@ closed-loop.}
 %   the next paragraph (subject first, the fact), with the Hoekstra
 %   contrast at its end; the old opening said the same and is struck.
 %   Earlier marks kept: M-p7, own (K_fb) on the moved sentence, Jan49 strike.
-\mv[Dirk]{IV-B, below}{\chg[M-p7]{Every training window is}{The model is} simulated in closed-loop with
+\mv[Dirk]{IV-B, below}{\chg[M-p7]{Every training window is}{The model is} simulated in closed loop with
 \chg[own]{the assumed known controller}{the controller $K_{\mathrm{fb}}$ of \eqref{eq:system_loop}},
 as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}}\add[Dirk]{, instead of using the recorded input as
 in~\cite[Eq.~(22)]{hoekstra2026lfr}}.
@@ -1234,7 +1234,7 @@ The identification method we have adapted from~\cite{hoekstra2026lfr}
 relies on \chg[own]{this SUBNET assumption}{these SUBNET assumptions} for its convergence and consistency guarantees~\cite[Sec.~5.5]{hoekstra2026lfr}.
 The open-loop gantry system does not satisfy \chg[own]{this assumption}{the second}:
 a mismatch in the initial velocity will create a permanent position offset.
-In closed-loop the feedback controller is able to correct this offset\del[own]{, which is why each window is simulated in the closed loop of Section~\mbox{\ref{sec:aug_loop}}}.}
+In closed loop the feedback controller is able to correct this offset\del[own]{, which is why each window is simulated in the closed loop of Section~\mbox{\ref{sec:aug_loop}}}.}
 % FEEDBACK (own, 2026-10-23): the struck clause (added 2026-10-19, M-p7)
 %   repeats the reason now stated at the start of IV-B (Dirk 2026-10-23).
 \\
@@ -1302,7 +1302,7 @@ $\mathcal D_{\mathrm{val}}$.}}
 \chg[own]{The error is the mean RMS simulation error divided by the standard deviation of the servo error, $\mathrm{NRMS}_{e,j}$, over the
 complete records of $\mathcal D_{\mathrm{val}}$ and axes,
 simulated in closed loop with the initial state estimated
-once by the encoder and $x^c=0$.}{\kwtwo{The records of $\mathcal D_{\mathrm{val}}$ are simulated in closed-loop and only
+once by the encoder and $x^c=0$.}{\kwtwo{The records of $\mathcal D_{\mathrm{val}}$ are simulated in closed loop and only
 initialised at the start. The encoder uses the first $n+1$ samples for this, and the
 validation error is calculated over the remaining samples.}}
 During the optimisation with Adam the parameters with the lowest validation
@@ -1370,7 +1370,7 @@ to obtain the physical state at every sample \chg[M-p8]{$\tau$}{$k$}.
 %   (Dirk 2026-10-23).
 The recorded actuator forces $\uact$ and positions $y$
 from \chg[own]{the training records}{the records of $\mathcal D_N$} with the known controller in
-\eqref{eq:aug_cl_step} are used to simulate the physical states in closed-loop:
+\eqref{eq:aug_cl_step} are used to simulate the physical states in closed loop:
 \begin{equation}
  \tilde x^{\mathrm n,0}_{k+1}=f^{\mathrm n}_{\mathrm{base}}\bigl(\theta^0_{\mathrm{base}},
    \tilde x^{\mathrm n,0}_k,\hat u^{\mathrm n,0}_k\bigr),\qquad
@@ -1877,7 +1877,7 @@ We calculate \chg[own]{these pairs}{$\hat x^{\mathrm n}_{k_i|k_i}$ and $\bar x_{
 Together with the recorded inputs $u^{\mathrm n}_{k_i}$, they form the fixed set $\mathcal P$ in \eqref{eq:ps2_s2}}}.
 % (2026-10-23, Dirk): says in words what P contains before (30) defines it.
 \\
-During S2 the model is not simulated in closed-loop \kw{and $V$ is \chg[own]{paused}{not minimised}.}
+During S2 the model is not simulated in closed loop \kw{and $V$ is \chg[own]{paused}{not minimised}.}
 We instead train $g^{\mathrm n}_{\mathrm{aug}}$ on
 $\mathcal P$ using one-step regression with the recorded
 actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser\chg[own]{:}{.}

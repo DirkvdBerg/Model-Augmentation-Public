@@ -50,8 +50,7 @@
 %   high-yield high-throughput bonding, cost); Teo p. 1 (H-type gantry
 %   stages in flat panel display, PCB manufacturing, precision metrology,
 %   circuit assembly).
-\add[M-p2b]{\kwtwo{
-Semiconductor devices are \chg[M-p2b]{used in technologies}{essential for applications} such as artificial
+\add[M-p2b]{\kwtwo{Semiconductor devices are \chg[M-p2b]{used in technologies}{essential for applications} such as artificial
 intelligence, 5G and autonomous vehicles.
 Shortages can affect entire industries and national security
 \cite{hwang2024semiconductor}.
@@ -101,7 +100,7 @@ simultaneous motion.}
 % FEEDBACK v2 (structure, Dirk 2026-10-20): one job per paragraph. P1 why
 %   such systems and this gantry; P2 why a model and what it must be; P3 and
 %   P4 why physics alone and data alone fall short; P5 augmentation; P6 gap.
-\\
+
 % FEEDBACK: paragraph reordered as Jan2 asks: use (controller design, root
 %   cause analysis) first, the need for an accurate model last. Digital twin
 %   dropped (Js9, Js10, Q10).
@@ -124,14 +123,14 @@ of harming the hardware.
 %   trial-and-error" dropped, not in Hwang
 % FEEDBACK v2 (Dirk 2026-10-20): moved to the end of this paragraph, after
 %   its justification (deviation indicates which parameter has changed).
-\delmv[Dirk]{end of P2}{Such models are also valuable for root cause analysis.}
+\delmv[Dirk]{end of P2}{Such models are also valuable for root cause analysis.}%
 % CHANGED: rest of the removed sentence above; condition monitoring ->
 %   process and root cause analysis
 % FEEDBACK v2: sentence struck (M-p2c): the requirement sentence below
 %   states it, and the last sentence of the moved block gives its reason.
 \del[M-p2c]{This requires a model with physically meaningful
 parameters, because a change in machine behaviour can then be traced back to
-a physical cause, such as a change in stiffness or damping.}
+a physical cause, such as a change in stiffness or damping.}%
 % Source added 2026-10-25: Isermann 1993, PDF p. 3 (printed p. 817),
 % Section 2: physical coefficients contain information on process faults;
 % PDF p. 12 (printed p. 826), Section 5.2: symptoms linked to fault causes.
@@ -220,7 +219,6 @@ In addition, these models need to learn behaviour that is already known
 from first principles, such as the rigid-body dynamics
 \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 1
-\\
 % FEEDBACK v2: more than PINNs, more compact (M-p2e). Willard Sec. 3.1,
 %   pp. 10-11 (physics-guided loss, Karpatne's PGNN) and p. 18
 %   (physics-guided Gaussian process regression). "laws as constraints" ->
@@ -231,14 +229,11 @@ from first principles, such as the rigid-body dynamics
 %   "one way" for GP methods), and only the black-box clause has a
 %   counterpart later (P5, the learned component captures only what the
 %   baseline cannot describe). Acronyms dropped, not used afterwards.
-Physics-informed approaches, \chg[M-p2e]{including physics-informed neural
-networks (PINNs)}{\kwtwo{such as physics-informed or physics-guided 
-neural networks and Gaussian-process-based methods}}, incorporate physical
-\chg[M-p2e]{laws as constraints}{knowledge} during training
-\cite{karniadakis2021physicsinformed, raissi2019physicsinformed}\add[M-p2e]{,
-\cite{willard2020integrating}}\chg[M-p2e]{.
-However, these methods require the physics equations to be known
-and}{, but} the physics-informed and physics-guided neural networks discussed by Hoekstra et al.
+
+Physics-informed approaches incorporate physical knowledge during training,
+for example in neural networks and Gaussian-process-based methods
+\cite{karniadakis2021physicsinformed, raissi2019physicsinformed, willard2020integrating}.
+However, the neural-network approaches discussed by Hoekstra et al.
 still rely on a black-box model for the entire system
 \cite{hoekstra2026lfr}.
 % NEW: Hoekstra 2026 Sec. 1, p. 2
@@ -265,10 +260,9 @@ combine a baseline model with interpretable parameters
 \chg[Dirk]{with data-driven flexibility needed}{and a data-driven model}
 for accurate prediction
 \cite{noel2018greybox}.
-Grey-box approaches include parameter
-re-estimation within the physics model structure, static residual
-correction on the model output, and dynamic augmentation that extends the
-baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
+Grey-box approaches include re-estimating the parameters of the physics model, 
+static residual correction on the model output, and dynamic augmentation that 
+extends the baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
 % NEW: research plan Literature.tex l.1 word for word, citation changed;
 %   Willard Secs. 2.3, 3.4.1 (calibration, residual modelling), Hoekstra
 %   2026 Sec. 2 (static vs dynamic)
@@ -358,9 +352,10 @@ The related work \chg[Jan1]{at ASMPT}{on the wire bonder} uses closed-loop data,
 parameters fixed during training \cite{kessels2025ai}.
 % NEW: Kessels Sec. 5.1 (PDF p. 175, only network weights trained); wire
 %   bonder updated from closed-loop measurements (Sec. 5.3.2)
-Orthogonal-by-construction (OBC) augmentation keeps the learned component
-orthogonal to the baseline regressor space, so that the physical parameter
-estimates are unique under the stated conditions \cite{gyorok2026obc}. Gy\"or\"ok et al. formulate this
+Orthogonal-by-construction (OBC) augmentation prevents the learned component 
+from representing changes that the baseline parameters can explain, 
+making the physical parameter estimates unique under the stated 
+conditions \cite{gyorok2026obc}. Gy\"or\"ok et al. formulate this
 for discrete-time input-output models, leaving extension to state-space models for future work.
 % NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10
 %   (state-space form named as future research)

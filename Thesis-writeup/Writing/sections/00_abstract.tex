@@ -27,7 +27,7 @@ However, the physics-based baseline does not capture all dynamics.
 When the parameters of the baseline model are refitted, they are able to absorb parts of the missing dynamics.
 As a result, the parameter estimates can deviate from their true values.
 Adding a neural network can capture the missing dynamics instead, 
-but it can also represent dynamics that the baseline parameters can already explain.
+but it can also represent dynamics that the baseline parameters can explain.
 We augment the baseline in parallel with a neural network and additional states 
 to model the missing dynamics. The added states are initialised with predictive-state (PS) 
 initialisation, and the model is trained in closed loop with the known controller. 
@@ -37,8 +37,8 @@ nonlinear in its parameters. We evaluate the method in simulation on held-out po
 and unseen motion profiles, against the baseline and a black box model. 
 The augmented model reduces the prediction error when the missing vibration mode is 
 sufficiently excited. 
-OBC reduces the overlap between the neural network and the parameter directions.
-However, the parameter estimates still depend on their initial values.
+OBC reduces the overlap between the neural network and the parameter directions,
+but the parameter estimates are not independent of their initial values.
 \end{abstract}
 % OLD abstract outline (wip, until 2026-10-25):
 % \begin{wip}
