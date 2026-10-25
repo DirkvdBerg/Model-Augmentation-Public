@@ -773,27 +773,13 @@ relies on this SUBNET assumption~\cite{hoekstra2026lfr}.
 The open-loop gantry system does not satisfy this assumption:
 a mismatch in the initial velocity will create a permanent position offset.
 In closed-loop the feedback controller is able to correct this offset.}
-
-\del[Jan49]{Second, the feedback controller causes a correlation between
-the recorded input and the measurement noise.
-Kessels was not able to identify an open-loop SUBNET model
-using closed-loop data from a wire bonder.
-Kessels cites earlier work suggesting that this could be explained by noise-induced bias
-due to this correlation and the integral term
-of the controller~\cite{kessels2025ai}.}
 % RESTRUCTURE (2026-10-19, Maarten p6: "I don't see how this part of the
 %   discussion is relevant for your approach."): indirect approach struck.
-\del[M-p6]{This bias is avoided in the indirect approach for linear systems with a known controller, which fits the closed-loop model using the reference.
-Because the reference is uncorrelated with the noise, the model
-can be identified from the output error~\cite{forssell1999revisited}.}
 % FEEDBACK (own, 2026-10-23): struck as a repeat of the new reason sentence
 %   at the start of IV-B; the earlier Jan49 change ("These reasons motivate"
 %   -> "This motivates") is folded into the strike (Dirk 2026-10-23).
-\del[own]{This motivates the choice for simulating in closed-loop.}
-\del[Jan49]{They do not prove that our estimate is consistent.}
 % RESTRUCTURE (2026-10-19): the D-140 todo on Kessels' Remark 5.6 removed;
 %   the argument is no longer in the text.
-\todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
 \\
 \delmv[Dirk]{IV-B start}{The model is simulated in closed-loop with
 the controller $K_{\mathrm{fb}}$ of \mbox{\eqref{eq:system_loop}},

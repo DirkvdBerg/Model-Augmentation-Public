@@ -478,7 +478,6 @@ $\mathcal M_{\mathrm{BB}}$ & none & 16 & no\\
 \end{table}
 % TODO RESOLVED (Dirk, 2026-10-24): model notation = the names of
 %   Table setup_models; the same todo in Section IV is still open.
-
 % FEEDBACK (own, 2026-10-24): Section I now has three aspects, so
 %   "Aspect 4" was stale; each comparison is tied to its aspect, and the PS
 %   comparison moved here from the training paragraph (Dirk 2026-10-24).
@@ -487,18 +486,7 @@ $\mathcal M_{\mathrm{BB}}$ & none & 16 & no\\
 %   "random W^a" there) is chosen without OBC from the true parameters; the
 %   split is set by the VI-C sentences on validation and test, so no split
 %   words here. Edited inside the unaccepted \add.
-\del[own]{The models of Table~\mbox{\ref{tab:setup_models}} are compared in pairs,
-each answering one aspect of the research question.
-The pairs are the final model $\mathcal M_{\mathrm{OBC}}$ with the
-baseline $\mathcal M_{\mathrm{LPV}}$ and the black box
-$\mathcal M_{\mathrm{BB}}$ for the augmentation, and
-$\mathcal M_{\mathrm{OBC}}$ with $\mathcal M_{\mathrm U}$ for the
-orthogonal construction.
-The extrapolation records compare the final model with the black box
-(Aspect~4).}
 % FEEDBACK (Dirk, 2026-10-24): deleted, the table row states it.
-\del[own]{$\mathcal M_{\mathrm{LPV}}$ is the baseline at the true parameters.}
-\\
 We identify $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$
 by minimising the loss of Section~\ref{sec:aug_closed_loop} 
 with the same training setup (Table~\ref{tab:hyper}).
@@ -619,23 +607,17 @@ The noise floor is taken as the $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},
 with $\hat y$ replaced by the noise-free output $y^\circ$.}}
 % FEEDBACK (own, 2026-10-24): the display defines the floor; the
 %   definition sentence repeats it (Dirk 2026-10-24).
-\del[own]{The noise floor is the RMS difference between the measured and noise-free
-outputs.}
 % FEEDBACK (Dirk, 2026-10-24): floor kept only as the RMS^fl line and the
 %   y-circ sentence; Results states it once ("more than an order of
 %   magnitude below every model, so it is not shown in the tables"). Cut,
 %   never accepted own text: the SNR relation, the per-record variation and
 %   the standstill sentence; both floor revnotes deleted on Dirk's yes.
-
 % FEEDBACK (Dirk, 2026-10-24): parameter error in one sentence; the display
 %   existed only for the m_Delta scaling, which the footnote of
 %   tab:res_obc now states with its reason; eq:setup_delta was referenced
 %   only in comments. Display math cannot be struck; the old display was:
 %   delta_j = (theta_base,j - theta*_base,j) / s_j, s_j = (m_1+m_2)/2 for
 %   m_Delta, |theta*_base,j| otherwise.
-\del[own]{The parameter error of combination $j$ is [display],
-where the true value of $m_\Delta=m_1-m_2$ is close to zero,
-so we scale its error by the mean actuator mass $(m_1+m_2)/2$ instead.}
 \\
 % FEEDBACK (Dirk, 2026-10-24): both sentences tied to the M_U / M_OBC
 %   comparison of VI-D ("To ..." as in Dirk's VI-D sentence); the overlap

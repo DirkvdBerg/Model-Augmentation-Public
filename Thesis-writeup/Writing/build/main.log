@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 18:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  25 OCT 2026 19:23
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -745,467 +745,80 @@ Underfull \hbox (badness 10000) in paragraph at lines 62--76
 [0
 
 
-{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./frontmatter/asmpt_logo.png> <./frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png>]) (sections/00_abstract.tex) (sections/01_introduction.tex
-Underfull \hbox (badness 2662) in paragraph at lines 64--384
-\OT1/ptm/m/n/10 (+20) Physics-informed ap-proaches, []|   []   |   []
- []
+{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map} <./frontmatter/asmpt_logo.png> <./frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png>]) (sections/00_abstract.tex) (sections/01_introduction.tex [1{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 
-Underfull \hbox (badness 3240) in paragraph at lines 64--384
-|   []   |   []   |   [][] [][]\OT1/ptm/m/n/10 (+20) such as physics-informed or
- []
-
-
-Underfull \hbox (badness 7814) in paragraph at lines 64--384
-\OT1/ptm/m/n/10 (+20) physics-guided neu-ral net-works and Gaussian-process-
- []
-
-
-Underfull \hbox (badness 4205) in paragraph at lines 64--384
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 64--384
-[]|   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 64--384
-|   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 3281) in paragraph at lines 64--384
-|   []   |   []   |   []   |   []   |   [][]$[]$
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 64--384
-|   [][] []\OT1/ptm/m/n/10 (+20) Dy-namic aug-men-ta-tion[]$[]$ has al-ready been
- []
-
-
-Underfull \hbox (badness 3803) in paragraph at lines 64--384
-\OT1/ptm/m/n/10 (+20) demon-strated, but Hoek-stra et al.'s ex-am-ples do not
- []
-
-[1{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
-
-
-]
-Underfull \hbox (badness 1769) in paragraph at lines 442--459
-|   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 1681) in paragraph at lines 442--459
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex) [2]
+]) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex)
 Overfull \hbox (5.86552pt too wide) in paragraph at lines 255--258
  [][] 
  []
 
-
-Underfull \hbox (badness 1377) in paragraph at lines 352--353
-\OT1/ptm/m/n/10 (+20) of the base-line[]   |   []   |   [][]$[]$, its []|   []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 352--353
-|   [][] []\OT1/ptm/m/n/10 (+20) position-dependent state-space model[]$[]$[]
- []
-
-[3]
-
-LaTeX Warning: Reference `fig:res_lpv_lti' on page 4 undefined on input line 519.
-
-
-LaTeX Warning: Reference `app:choices' on page 4 undefined on input line 519.
-
-
-Underfull \hbox (badness 4467) in paragraph at lines 570--584
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 1946) in paragraph at lines 600--641
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Citation `[' on page 4 undefined on input line 682.
-
-
-LaTeX Warning: Citation `[' on page 4 undefined on input line 682.
-
-[4]) (sections/03_augmentation.tex [5]
-Underfull \hbox (badness 3009) in paragraph at lines 211--259
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Citation `[' on page 6 undefined on input line 285.
-
-(figures/tex/augmentation_structure.tex)
-
-LaTeX Warning: Citation `[' on page 6 undefined on input line 364.
-
-
-Underfull \hbox (badness 2213) in paragraph at lines 283--369
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Citation `[' on page 6 undefined on input line 414.
-
-[6]
-
-LaTeX Warning: Citation `[' on page 7 undefined on input line 505.
-
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 509.
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
-File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
-)
+[2] [3]) (sections/03_augmentation.tex (figures/tex/augmentation_structure.tex) [4]
 Overfull \hbox (1.53186pt too wide) detected at line 619
 [][][][][]
  []
 
-[7]
-
-LaTeX Warning: Citation `[' on page 8 undefined on input line 687.
-
-
-LaTeX Warning: Citation `[' on page 8 undefined on input line 734.
-
-
-Underfull \hbox (badness 3219) in paragraph at lines 723--776
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Citation `[' on page 8 undefined on input line 800.
-
-<figures/closed_loop_same_reference.pdf, id=489, 290.2805pt x 103.98448pt>
+<figures/closed_loop_same_reference.pdf, id=378, 290.2805pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
-Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 814.
+Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 800.
 (pdftex.def)             Requested size: 252.0pt x 90.27534pt.
-
-Underfull \hbox (badness 3009) in paragraph at lines 783--842
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []
+[5 <./figures/closed_loop_same_reference.pdf>]
+Underfull \hbox (badness 1661) in paragraph at lines 1008--1162
+[][]\OT1/ptm/m/n/10 (+20) This sub-sec-tion states how the aug-mented model is
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 783--842
-[]|   []   |   []   |   []   |   []   |   []   |   []
+Underfull \hbox (badness 10000) in paragraph at lines 1008--1162
+
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 783--842
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
+Overfull \hbox (4.6546pt too wide) detected at line 1162
+[][][][][]
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 783--842
-|   []   |   [][]$[]$
- []
-
-
-Underfull \vbox (badness 4543) has occurred while \output is active []
-
- [8] [9 <./figures/closed_loop_same_reference.pdf>]
-Underfull \hbox (badness 3118) in paragraph at lines 1022--1176
-|   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 5260) in paragraph at lines 1022--1176
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Overfull \hbox (4.6546pt too wide) detected at line 1176
+[6]
+Overfull \hbox (4.90492pt too wide) detected at line 1496
 [][][][][]
  []
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [10]
-
-LaTeX Warning: Citation `[' on page 11 undefined on input line 1260.
-
-
-Underfull \hbox (badness 4726) in paragraph at lines 1215--1349
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 1728) in paragraph at lines 1215--1349
-\OT1/ptm/m/n/10 (+20) For train-ing we min-imise $\OML/cmm/m/it/10 V$[]\OT1/ptm/m/n/10 (+20) in [][]$[]$ with Adam[]   |   []
- []
-
-[11]
-
-LaTeX Warning: Citation `[' on page 12 undefined on input line 1476.
-
-
-LaTeX Warning: Citation `[' on page 12 undefined on input line 1492.
-
-
-Overfull \hbox (4.90492pt too wide) detected at line 1510
-[][][][][]
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1510--1544
+Underfull \hbox (badness 10000) in paragraph at lines 1496--1530
 
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [12]
-
-LaTeX Warning: Citation `[' on page 13 undefined on input line 1602.
-
-
-LaTeX Warning: Citation `[' on page 13 undefined on input line 1602.
-
-
-LaTeX Warning: Citation `[' on page 13 undefined on input line 1634.
-
-(figures/tex/ps2_windows.tex)
-
-LaTeX Warning: Reference `eq:ps2_nu' on page 13 undefined on input line 1701.
-
-[13]
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1768.
-
-
-LaTeX Warning: Citation `[' on page 14 undefined on input line 1793.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1793.
-
-
-Underfull \hbox (badness 1968) in paragraph at lines 1734--1804
-[]\OT1/ptm/m/n/10 (+20) [\OT1/ptm/b/n/10 (+20) Note: \OT1/ptm/m/n/10 (+20) (28) re-ordered (min-imi-sa-tion first, as (22) and
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1734--1804
-|   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 1796) in paragraph at lines 1734--1804
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 1953) in paragraph at lines 1734--1804
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Reference `eq:ps2_nu' on page 14 undefined on input line 1823.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1823.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1823.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1823.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1837.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 14 undefined on input line 1903.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [14]
-
-LaTeX Warning: Reference `app:ps_stop' on page 15 undefined on input line 1931.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 15 undefined on input line 1959.
-
-
-LaTeX Warning: Reference `app:ps_stop' on page 15 undefined on input line 1959.
-
-) (sections/04_obc.tex [15]
-Underfull \vbox (badness 1226) has occurred while \output is active []
-
-
-
-LaTeX Warning: Citation `[' on page 16 undefined on input line 229.
-
-
-LaTeX Warning: Citation `[' on page 16 undefined on input line 299.
-
-[16]
-
-LaTeX Warning: Citation `[' on page 17 undefined on input line 353.
-
-
-LaTeX Warning: Citation `[' on page 17 undefined on input line 353.
-
-
+(figures/tex/ps2_windows.tex) [7]) (sections/04_obc.tex [8] [9]
 Underfull \hbox (badness 10000) in paragraph at lines 396--436
 
  []
 
-[17]) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex)
-
-LaTeX Warning: Citation `[' on page 18 undefined on input line 183.
-
-
-Underfull \hbox (badness 1365) in paragraph at lines 157--212
-[][]\OT1/ptm/m/n/10 (+20) where $\OML/cmm/m/it/10 M[]$\OT1/ptm/m/n/10 (+20) , $\OML/cmm/m/it/10 C[]$ \OT1/ptm/m/n/10 (+20) and $\OML/cmm/m/it/10 K[]$ \OT1/ptm/m/n/10 (+20) are given in Ap-pendix []C.1[].[][]$[]$
- []
-
-
-Underfull \hbox (badness 1400) in paragraph at lines 157--212
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 3039) in paragraph at lines 157--212
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   [][]$[]$ \OT1/ptm/m/n/10 (+20) We sim-u-
- []
-
-
-Underfull \hbox (badness 3954) in paragraph at lines 157--212
-\OT1/ptm/m/n/10 (+20) late the sys-tem with fixed-step RK4 at []|   [][] []$\OML/cmm/m/it/10 f[]$[]$[]$$\OT1/cmr/m/n/10 =
- []
-
-
-Underfull \hbox (badness 1755) in paragraph at lines 157--212
-\OT1/cmr/m/n/10 20$ \OT1/ptm/m/n/10 (+20) kHz. All pa-ram-e-ter val-ues are listed in Ta-ble []VI[].
- []
-
-
-Underfull \hbox (badness 3098) in paragraph at lines 157--212
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 2617) in paragraph at lines 157--212
-|   []   |   []   |   [][]$[]$ []|   []   |   []
- []
-
-[18]
-Underfull \hbox (badness 10000) in paragraph at lines 251--256
-\OT1/ptm/m/n/10 (+20) a res-o-nance at []$[]$[]|   [][]
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 251--256
-[]$\OT1/cmr/m/n/10 212$ \OT1/ptm/m/n/10 (+20) Hz[]$[]$[]|   [][]$[]$$[]$[]in the[]$[]$[][]open-loop[][]$[]$$[]$[]transfer
- []
-
-
-Underfull \hbox (badness 4647) in paragraph at lines 323--330
-[]|   []   |   []   |   []   |   [][] [][]\OT1/ptm/m/n/10 (+20) The records are down-sam-pled
- []
-
-[19]
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-
-LaTeX Warning: Reference `app:choices' on page 20 undefined on input line 515.
-
-[20]) (sections/06_results.tex (tables/res_structure.tex)
-<figures/res_time_trace.pdf, id=918, 228.99803pt x 196.20125pt>
+) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [10]) (sections/06_results.tex [11] (tables/res_structure.tex)
+<figures/res_time_trace.pdf, id=667, 228.99803pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 87.
 (pdftex.def)             Requested size: 252.0pt x 215.92082pt.
-<figures/res_val_curves.pdf, id=921, 225.3218pt x 157.83429pt>
+<figures/res_val_curves.pdf, id=670, 225.3218pt x 157.83429pt>
 File: figures/res_val_curves.pdf Graphic file (type pdf)
 <use figures/res_val_curves.pdf>
 Package pdftex.def Info: figures/res_val_curves.pdf  used on input line 100.
 (pdftex.def)             Requested size: 247.6778pt x 173.50023pt.
-<figures/res_frf.pdf, id=922, 232.26022pt x 157.26341pt>
+<figures/res_frf.pdf, id=671, 232.26022pt x 157.26341pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 106.
 (pdftex.def)             Requested size: 247.6778pt x 167.70865pt.
- [21 <./figures/res_time_trace.pdf>]
-
-LaTeX Warning: Reference `app:choices' on page 22 undefined on input line 184.
-
-(tables/res_obc_combinations.tex)
+ [12 <./figures/res_time_trace.pdf>] (tables/res_obc_combinations.tex)
 Overfull \hbox (2.4674pt too wide) in paragraph at lines 2--206
  [][] 
  []
 
-(tables/res_obc_constraint.tex) [22 <./figures/res_val_curves.pdf> <./figures/res_frf.pdf>] (tables/res_generalisation.tex) [23]) (sections/07_discussion.tex) (sections/08_conclusion.tex
+(tables/res_obc_constraint.tex) [13 <./figures/res_val_curves.pdf> <./figures/res_frf.pdf>] (tables/res_generalisation.tex) [14]) (sections/07_discussion.tex) (sections/08_conclusion.tex) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [15]) [16
 
-LaTeX Warning: Reference `tab:app_structure' on page 24 undefined on input line 45.
-
-
-LaTeX Warning: Reference `app:choices' on page 24 undefined on input line 45.
-
-
-Underfull \hbox (badness 1496) in paragraph at lines 45--75
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 1728) in paragraph at lines 45--75
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-) (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.bbl [24]) [25] (sections/99_appendix.tex (figures/lfr_loop.tex)
-
-LaTeX Warning: Citation `[' on page 26 undefined on input line 156.
-
-
-Underfull \hbox (badness 3668) in paragraph at lines 156--174
-[]|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Reference `eq:app_G_partition' on page 26 undefined on input line 194.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 193--199
-[]\OT1/ptm/m/n/10 (+20) Substituting $\OML/cmm/m/it/10 w \OT1/cmr/m/n/10 = ^^A(\OML/cmm/m/it/10 Y\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 z$ []|   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 193--199
-|   []   |   [][]$[]$ \OT1/ptm/m/n/10 (+20) gives the []|   []   []$[]$loop equa-tion
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 193--199
-[]|   []   |   []   |   [][]
- []
-
-
-LaTeX Warning: Citation `[' on page 26 undefined on input line 207.
-
-[26
+] (sections/99_appendix.tex (figures/lfr_loop.tex) [17
 
 ]
-Underfull \hbox (badness 3954) in paragraph at lines 215--237
-|   []   |   []   |   []   |   [][]$[]$ []|   []
- []
-
-
 Overfull \hbox (9.31352pt too wide) detected at line 265
 [][]
  []
@@ -1215,39 +828,18 @@ Overfull \hbox (1.9734pt too wide) detected at line 283
 \OML/cmm/m/it/10 r[] \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 ;  \OMS/cmsy/m/n/10 j\OML/cmm/m/it/10 r[]\OMS/cmsy/m/n/10 j \OML/cmm/m/it/10 < \OT1/cmr/m/n/10 1\OML/cmm/m/it/10 ;  ^^Q[] \OT1/cmr/m/n/10 = [](\OML/cmm/m/it/10 r[]\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 ;  s \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 ;
  []
 
-(tables/res_all_splits.tex) [27]
-<figures/setup_band.pdf, id=1122, 238.82224pt x 157.26341pt>
+(tables/res_all_splits.tex)
+<figures/setup_band.pdf, id=848, 238.82224pt x 157.26341pt>
 File: figures/setup_band.pdf Graphic file (type pdf)
 <use figures/setup_band.pdf>
 Package pdftex.def Info: figures/setup_band.pdf  used on input line 459.
 (pdftex.def)             Requested size: 252.0pt x 165.94492pt.
-
-Underfull \hbox (badness 6944) in paragraph at lines 428--464
-|   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-Underfull \hbox (badness 3701) in paragraph at lines 428--464
-|   [][]$[]$ []|   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-
-LaTeX Warning: Reference `fig:setup_coverage' on page 28 undefined on input line 477.
-
-
-Underfull \hbox (badness 1762) in paragraph at lines 470--521
-|   []   |   []   |   []   |   []   |   []   |   []   |   []
- []
-
-[28 <./figures/setup_band.pdf>]
-Underfull \vbox (badness 2057) has occurred while \output is active []
-
  (tables/res_bb_selection.tex)
 Overfull \hbox (2.0849pt too wide) in paragraph at lines 3--648
  [][] 
  []
 
-)
+[18])
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -1259,32 +851,28 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[29] [30
+[19 <./figures/setup_band.pdf>] [20
 
 ] (C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 25E279734C2E57C1A5FC8CAD28FD5A70;7567.
  ) 
 Here is how much of TeX's memory you used:
- 28419 strings out of 467867
- 543423 string characters out of 5416882
- 1064042 words of memory out of 5000000
- 56213 multiletter control sequences out of 15000+600000
- 697731 words of font info for 396 fonts, out of 8000000 for 9000
+ 28289 strings out of 467867
+ 541744 string characters out of 5416882
+ 995654 words of memory out of 5000000
+ 56159 multiletter control sequences out of 15000+600000
+ 691288 words of font info for 355 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 89i,18n,97p,1131b,1053s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (31 pages, 1256310 bytes).
+ 89i,18n,97p,1131b,1051s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
+Output written on "C:/Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Thesis\build\main.pdf" (21 pages, 918253 bytes).
 PDF statistics:
- 1330 PDF objects out of 1440 (max. 8388607)
- 178 named destinations out of 1000 (max. 500000)
- 72576 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 1040 PDF objects out of 1200 (max. 8388607)
+ 168 named destinations out of 1000 (max. 500000)
+ 59776 words of extra memory for PDF output out of 61914 (max. 10000000)
 
