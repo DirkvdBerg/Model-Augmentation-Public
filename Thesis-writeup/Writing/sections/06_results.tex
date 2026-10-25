@@ -77,7 +77,7 @@ Section~\mbox{\ref{sec:discussion}} discusses them.}%
 \begin{table}[tb]
   \centering
   % FEEDBACK (own, 2026-10-24): every record with a multisine in one group (Dirk 2026-10-24).
-  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the 10 records with a multisine and the 8 without. $\mathcal M_{\mathrm{OBC}}$ starts from the detuned parameters, the other grey-box models from the true parameters.}
+  \caption{$\mathrm{NRMS}_e$ per axis on the test records, mean over the 10 records with a multisine and the 8 without. $\mathcal M_{\mathrm{OBC}}$ starts from the detuned parameters, the other grey-box models start from the true parameters.}
   \label{tab:res_structure}
   \input{tables/res_structure}
 \end{table}
@@ -107,7 +107,7 @@ Section~\mbox{\ref{sec:discussion}} discusses them.}%
     \caption{Open-loop Bode magnitude from $F_Y$ to $Y$ at $Y=0$, from the models linearised at standstill. Shaded: final model over $\lvert Y\rvert\le1.3\,Y_{\mathrm{tr}}$.}
     \label{fig:res_frf}
   \end{subfigure}
-  \caption{Training and frequency response of the augmentation structures.}
+  \caption{Training and frequency response of the augmented models.}
   \label{fig:res_val_frf}
 \end{figure*}
 
@@ -146,8 +146,8 @@ lower validation error, compared to the other models during training.
 % REMOVED (own, 2026-10-24): revnote proposing a figure of the resonance against Y; the text states
 %   the frequency and damping range instead.
 
-% Floats stay in their own subsection (Dirk 2026-10-24).
-\FloatBarrier
+% Let the text continue while the full-width figure waits for the next page;
+% a FloatBarrier here would leave the preceding right column empty.
 \subsection{Interpretability}\label{sec:res_obc}
 \ifdraft
 \begin{itemize}

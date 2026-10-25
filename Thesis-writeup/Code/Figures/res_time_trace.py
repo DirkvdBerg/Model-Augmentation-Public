@@ -46,7 +46,7 @@ def main():
     a2.plot(t[z], ((m - r) / sig)[z], zorder=3, **MOD)
     a2.set_xlim(t[z][0], t[z][-1])
     a2.set_xlabel("Time (s)")
-    a2.set_ylabel(r"Servo error / $\sigma_e$")
+    a2.set_ylabel(r"Servo error / $\sigma_{e,Y}$")
 
     hs = [plt.Line2D([], [], label=NAME[k], **s) for k, s in (("sys", SYS), ("base", BASE), ("model", MOD))]
     a1.legend(handles=hs, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False, handlelength=2.2,
