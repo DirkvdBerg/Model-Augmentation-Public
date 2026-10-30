@@ -51,7 +51,7 @@ def close(a, b, rtol=1e-12, atol=1e-12):
 def block():
     raw = torch.stack([getattr(gs, n) for n in Physics.PARAM_NAMES]).double()
     return Physics(params_init=raw, combo_init=Physics.combos_of(raw, gs.Lb),
-                   Y_op=None, std_x=torch.linspace(.8,1.3,6,dtype=DT),
+                   std_x=torch.linspace(.8,1.3,6,dtype=DT),  # K13: no Y_op
                    std_u=torch.linspace(.7,1.2,3,dtype=DT), x_mean=rand(6)*.02,
                    u_mean=rand(3)*.02, Ts=.00025, up_sample=1).double()
 def matrices(b, free=None):
@@ -146,7 +146,7 @@ def test_B_mdelta():
 @case('A_rk4')
 def test_A_rk4():
     b=block();x=rand(4,6,1)*.03;u=rand(4,3,1)
-    close(b.nonlinear_function(torch.cat((x,u),1)),rk(b,x,u))
+    close(b.nonlinear_function(torch.cat((x,u),1),b.pass_mats()),rk(b,x,u))  # K14: mats passed
 
 @case('A_normalization')
 def test_A_normalization():
@@ -296,7 +296,7 @@ def test_A_encoder_sim():
         expected=torch.cat((y[:,-1]+.1*vprev,.9*vprev+u[:,-1]),1)
         close(target,expected);captured.append(len(target))
         least_squares_start(e,nx,u,y,target)
-    cfg=NS(device='cpu',nx_phys=6,nx_ann=2,stride=1)
+    cfg=NS(device='cpu',nx_phys=6,n_a=2,stride=1)  # K8
     norm=NS(x_mean=np.zeros(6),std_x=np.ones(6))
     with patch.object(gm,'least_squares_start',side_effect=inspect_fit):
         gm.prefit_physical_encoder(fs,cfg,NS(train_data=NS(sdl=[sd])),norm)
@@ -417,9 +417,9 @@ def test_O_tuple_position():
         ref=og.build_reference_set(cfg,norm,2,['memory'],verbose=False)
     P=gs.P.double().numpy();q=np.linalg.solve(P.T,y.T).T
     v=np.stack([(-q[i+2]+8*q[i+1]-8*q[i-1]+q[i-2])/(12*.03) for i in range(2,13)])
-    k=np.arange(2,12);x=np.hstack((q[k],v[k-2]));xn=np.hstack((q[k+1],v[k-1]))
+    k=np.arange(2,12);x=np.hstack((q[k],v[k-2]))  # K15: no successor states
     expected=np.hstack(((x-norm.x_mean)/norm.std_x,(u[k]-norm.u_mean)/norm.std_u))
-    close(ref.Z_step.squeeze(-1),expected);close(ref.x_phys_next_rec,xn)
+    close(ref.Z_step.squeeze(-1),expected)
     close(ref.Z_field[:,6:8],torch.zeros(10,2,1,dtype=DT))
 
 @case('O_physical_step')

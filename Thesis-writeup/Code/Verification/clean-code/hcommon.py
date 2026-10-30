@@ -120,12 +120,22 @@ def make_cfg(row, noise, run_id, budget=None, **extra):
     from gantry_dynamic.config import RunConfig, PRESETS
     p = PRESETS[preset]
     assert (p['arm'], p['start'], p['n_a'], int(p['ps2'])) == (arm, start, na, ps2), (preset, p)
-    kw = dict(device='cpu', compile_mode=None, ps2_smoke=True)
+    kw = dict(device='cpu', compile_mode=None)
     kw.update(budget)
     kw.update(extra)
     cfg = RunConfig(**p, noise=noise, **kw)
+    short_ps2()
     import gantry_interconnect_dynamic as EP
     return cfg, EP
+
+
+def short_ps2():
+    """E2: the clean side's short PS2 opening (formerly RunConfig.ps2_smoke), patched in from outside Clean/ by
+    clean-up-verification/smoke.py."""
+    if os.path.join(REPO, 'clean-up-verification') not in sys.path:
+        sys.path.append(os.path.join(REPO, 'clean-up-verification'))
+    from smoke import use_short_ps2
+    use_short_ps2()
 
 
 def sha256_file(path):

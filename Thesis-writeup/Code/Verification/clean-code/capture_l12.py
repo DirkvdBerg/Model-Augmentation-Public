@@ -94,12 +94,21 @@ c1.add('sim/val_sigma_e', sim.val_sigma_e)
 c1.add('sim/train_weights', np.stack(sim.indexer.record_weights if MAIN else sim.record_weights))
 c1.info['sim/extra_array_names'] = list(sim.extra_array_names)
 
-ref = getattr(fit_sys, 'obc_reference', None)
+if MAIN:
+    ref = getattr(fit_sys, 'obc_reference', None)
+elif fit_sys.obc is not None:
+    # K15: the clean model keeps no reference set; the tuples are rebuilt here as attach_obc builds them
+    from gantry_dynamic.obc_gantry import build_reference_set
+    ref = build_reference_set(cfg, norm, nx_ann=fit_sys.hfn.nx - cfg.nx_phys, files=data.train_files,
+                              verbose=False)
+else:
+    ref = None
 if ref is not None:
-    for f in ('Z_step', 'Z_field', 'record_ix', 'sample_ix', 'x_phys_next_rec'):
+    for f in ('Z_step', 'Z_field') + (('record_ix', 'sample_ix', 'x_phys_next_rec') if MAIN else ()):
         c1.add('obcref/' + f, getattr(ref, f))
-    c1.info['obcref/record_names'] = list(ref.record_names)
-    c1.info['obcref/n'] = ref.n
+    if MAIN:
+        c1.info['obcref/record_names'] = list(ref.record_names)
+    c1.info['obcref/n'] = int(ref.Z_step.shape[0])
 
 # the encoder pre-fit, with its least-squares windows captured (harness-side wrapper)
 _ls = GDM.least_squares_start
@@ -174,7 +183,9 @@ with torch.no_grad():
                     c1.add('fwd/tangent/%d/%02d' % (j, q), mm)
             else:
                 c1.add('fwd/tangent/%d' % j, m)
-    y_pred, x_fin = fit_sys.simulate(x0, uf_b, yf_b, ctrl_ix=kw['ctrl_ix'])
+    # K14: the clean model has no per-step matrix fallback; the objective's matrices are passed, as fit does
+    mats = {} if MAIN else fit_sys.objective_matrices()
+    y_pred, x_fin = fit_sys.simulate(x0, uf_b, yf_b, ctrl_ix=kw['ctrl_ix'], **mats)
     c1.add('fwd/y_pred', y_pred)
     c1.add('fwd/x_final', x_fin)
 val = fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure)

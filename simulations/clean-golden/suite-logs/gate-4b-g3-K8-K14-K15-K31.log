@@ -1,0 +1,258 @@
+MM16_REVERTED data.py sha256 95ee79d6386e01ea4931318f6bef3a73742ba11e84fbc463fc4857726e7d98d2
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 3.390e+16; unexplained per state 2.10e-17 4.39e-13 9.48e-21 2.53e-12 8.54e-10 2.68e-13
+CAPTURE_DONE side=clean case=221-lowpass seconds=92.1 {'build_model': 13.416439294815063, 'build_closed_loop': 0.028703927993774414, 'prefit': 19.37893795967102, 'forward': 14.460756063461304, 'loss_backward': 8.629225969314575, 'total': 92.06114935874939}
+L12_CASE_END side=clean case=221-lowpass rc=0
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 1.384e+16; unexplained per state 2.40e-17 3.86e-13 1.02e-20 2.89e-12 9.28e-10 2.91e-13
+CAPTURE_DONE side=clean case=227-lowpass seconds=40.6 {'build_model': 4.536331415176392, 'build_closed_loop': 0.027583599090576172, 'prefit': 5.714133977890015, 'forward': 6.277086496353149, 'loss_backward': 3.22794771194458, 'total': 40.5903115272522}
+L12_CASE_END side=clean case=227-lowpass rc=0
+L12_ALL_DONE side=clean
+221-lowpass    L1 PASS   L2 PASS  
+227-lowpass    L1 PASS   L2 PASS  
+COMPARE_L12 PASS
+GATE_STEP run_l3.py --side clean --row 221 --noise lowpass
+[thesis run] arm=obc noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 3.390e+16; unexplained per state 2.10e-17 4.39e-13 9.48e-21 2.53e-12 8.54e-10 2.68e-13
+
+Training: nf=400  epochs=3  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.4862146378126559
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9983
+[ps2] update 4: calibration unexplained 1.0007 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 1.0283 -> 0.3974 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    5, sqrt loss   0.682, Val sim-NRMSe 0.4999
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.3848760880518622
+It   10, sqrt loss  0.6852, Val sim-NRMSe 0.3849
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.37925420752774347
+It   15, sqrt loss  0.5849, Val sim-NRMSe 0.3793
+Loaded model with best known validation sim-NRMSe of 0.3793, selected at update 15; last validation epoch_id=2.50
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0006792827615547], "s2": {"residual_start": 1.028266473186084, "residual_best": 0.3973955183982862, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9983133331960308], [4, 1.0006792827615547]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\_clean\L3\221-lowpass\out\thesis_taf_lowpass_noise_data_lsq\L3-221-lowpass\gantry_ckpt_L3-221-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 3.792542e-01 (selected checkpoint: 3.792542e-01)
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 2.97356158494949341e-01 vs 2.97356158494949341e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (8.7e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (10 closures, 127 s)
+  [lbfgs] iter    2 (+1 of 1)  (12 closures, 148 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 2.973562e-01 -> 2.753040e-01 | 2 iterations, 12 closures in 163 s
+  [lbfgs] sim-NRMSe 3.792542e-01 -> 3.585172e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\_clean\L3\221-lowpass\out\thesis_taf_lowpass_noise_data_lsq\L3-221-lowpass\gantry_ckpt_L3-221-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\_clean\L3\221-lowpass\out\thesis_taf_lowpass_noise_data_lsq\L3-221-lowpass\gantry_ckpt_L3-221-lowpass.npz
+Training done | 3 ep | 398s | bestfit=0.35852
+
+Training complete. Best validation sim-NRMSe: 0.358517
+L3_DONE side=clean case=221-lowpass seconds=645.2
+GATE_STEP_END rc=0 run_l3.py --side clean --row 221 --noise lowpass
+GATE_STEP compare.py l3 221-lowpass
+221-lowpass    L3 PASS  (golden 794 s, clean 640 s)
+COMPARE_L3 PASS
+GATE_STEP_END rc=0 compare.py l3 221-lowpass
+GATE_STEP run_l3bc.py --side clean --layer 3c --row 221 --noise lowpass --kind i
+[thesis run] arm=obc noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  PS2  resume from C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-i\run
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+  Adam moment estimates restored; lr/eps/betas come from this run's config.
+  Checkpoint format: whole
+Resumed from C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-i\run\previous\L3c-221-lowpass-i\AugmentedModel_L3-221-lowpass_best.pth  (2 epochs done)
+
+Training: nf=400  epochs=4  val=sim-NRMSe  NX_ANN=2
+  Resuming: 2 done, 2 remaining
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.379254204730015
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.3617110317739544
+It    5, sqrt loss  0.5297, Val sim-NRMSe 0.3617
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.34412545493810526
+It   10, sqrt loss  0.5322, Val sim-NRMSe 0.3441
+Loaded model with best known validation sim-NRMSe of 0.3441, selected at update 10; last validation epoch_id=1.67
+  Pre-polish checkpoint: C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-i\run\gantry_ckpt_L3-221-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 3.441255e-01 (selected checkpoint: 3.441255e-01)
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 2.62742966413497925e-01 vs 2.62742966413497925e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (9.9e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (7 closures, 122 s)
+  [lbfgs] iter    2 (+1 of 1)  (9 closures, 152 s)
+  [lbfgs] ROLLED BACK: sim-NRMSe did not improve (3.441255e-01 -> 3.454380e-01)
+  [lbfgs] loss 2.627430e-01 -> 2.555233e-01 | 2 iterations, 9 closures in 171 s
+  [lbfgs] sim-NRMSe 3.441255e-01 -> 3.454380e-01
+  Checkpoint weights: C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-i\run\gantry_ckpt_L3-221-lowpass.pt
+  Checkpoint meta: C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-i\run\gantry_ckpt_L3-221-lowpass.npz
+Training done | 4 ep | 239s | bestfit=0.34413
+
+Training complete. Best validation sim-NRMSe: 0.344125
+L3C clean asserts: {"previous_files": ["AugmentedModel_L3-221-lowpass_best.pth", "AugmentedModel_L3-221-lowpass_last.pth", "gantry_ckpt_L3-221-lowpass.npz", "gantry_ckpt_L3-221-lowpass.pt", "gantry_ckpt_L3-221-lowpass_pre_lbfgs.npz", "gantry_ckpt_L3-221-lowpass_pre_lbfgs.pt", "val_hist.npz"], "previous_byte_identical": true, "config_only_resumes": true, "resumes": [{"time": "2026-10-30T21:06:50", "type": "resume", "source": "previous\\L3c-221-lowpass-i\\AugmentedModel_L3-221-lowpass_best.pth", "code": "clean", "git": "6981b5a Augmentation dirty:670 diff:c23696f6", "rerun_id": "L3c-221-lowpass-i"}], "ok": true}
+L3BC_DONE side=clean layer=3c case=221-lowpass-i seconds=467.5
+GATE_STEP_END rc=0 run_l3bc.py --side clean --layer 3c --row 221 --noise lowpass --kind i
+GATE_STEP run_l3bc.py --side clean --layer 3c --row 221 --noise lowpass --kind ii
+[thesis run] arm=obc noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  PS2  polish-only from C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-ii\run
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+  Checkpoint format: pair
+Resumed from C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-ii\run\previous\L3c-221-lowpass-ii\gantry_ckpt_L3-221-lowpass_pre_lbfgs  (3 epochs done)
+
+Training: nf=400  epochs=3  val=sim-NRMSe  NX_ANN=2
+  Resuming: 3 done, 0 remaining
+  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly
+  Pre-polish checkpoint: C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-ii\run\gantry_ckpt_L3-221-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 3.792542e-01 (selected checkpoint: 3.792542e-01)
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 2.97356158494949341e-01 vs 2.97356158494949341e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (8.7e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (10 closures, 160 s)
+  [lbfgs] iter    2 (+1 of 1)  (12 closures, 196 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 2.973562e-01 -> 2.753040e-01 | 2 iterations, 12 closures in 215 s
+  [lbfgs] sim-NRMSe 3.792542e-01 -> 3.585172e-01
+  Checkpoint weights: C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-ii\run\gantry_ckpt_L3-221-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\AppData\Local\Temp\clean-harness\L3c\221-lowpass-ii\run\gantry_ckpt_L3-221-lowpass.npz
+Training done | 3 ep | 0s | bestfit=0.35852
+
+Training complete. Best validation sim-NRMSe: 0.358517
+L3C clean asserts: {"previous_files": ["gantry_ckpt_L3-221-lowpass.npz", "gantry_ckpt_L3-221-lowpass.pt", "gantry_ckpt_L3-221-lowpass_pre_lbfgs.npz", "gantry_ckpt_L3-221-lowpass_pre_lbfgs.pt", "val_hist.npz"], "previous_byte_identical": true, "config_only_resumes": true, "resumes": [{"time": "2026-10-30T21:15:00", "type": "polish-only", "source": "previous\\L3c-221-lowpass-ii\\gantry_ckpt_L3-221-lowpass_pre_lbfgs", "code": "clean", "git": "6981b5a Augmentation dirty:670 diff:8e3a7622", "rerun_id": "L3c-221-lowpass-ii"}], "ok": true}
+L3C D-278 checks: {"val_before": 0.37925420752774347, "selected_bestfit": 0.37925420752774347, "accepted": true, "ok": true}
+L3BC_DONE side=clean layer=3c case=221-lowpass-ii seconds=283.6
+GATE_STEP_END rc=0 run_l3bc.py --side clean --layer 3c --row 221 --noise lowpass --kind ii
+GATE_STEP compare.py l3c 221-lowpass-i 221-lowpass-ii
+221-lowpass-i      L3c PASS
+221-lowpass-ii     L3c PASS
+COMPARE_L3C PASS
+GATE_STEP_END rc=0 compare.py l3c 221-lowpass-i 221-lowpass-ii
+GATE_DONE
+MM16_RESTORED 1 2b3109f283ba9838

@@ -78,7 +78,7 @@ if args.polish_from is None:
     else:
         import dataclasses
         cfg = dataclasses.replace(cfg, out_root=OUT)
-        EP.main(cfg, run_id=run_id)
+        EP.main(cfg, run_id=run_id, evaluate_run=False)          # E1
         run_dir = os.path.join(OUT, '%s_data_lsq' % cfg.mode, run_id)
     from torch._dynamo.utils import counters
     res['unique_graphs'] = int(counters['stats']['unique_graphs'])
@@ -109,7 +109,7 @@ else:
         shutil.copytree(src, run_dir)
         os.environ['SLURM_JOB_ID'] = run_id
         cfg = RunConfig.from_config_json(json.load(open(os.path.join(run_dir, 'config.json'))))
-        EP.main(cfg, rerun=('polish-only', run_dir, None))
+        EP.main(cfg, rerun=('polish-only', run_dir, None), evaluate_run=False)          # E1
         rid = src_rid
     import numpy as np
     out = json.loads(str(np.load(os.path.join(run_dir, 'gantry_ckpt_%s.npz' % rid), allow_pickle=True)['lbfgs_outcome']))

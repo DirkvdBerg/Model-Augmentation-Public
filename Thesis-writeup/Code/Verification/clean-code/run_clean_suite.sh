@@ -26,5 +26,5 @@ bash run_seq.sh \
   "run_l3bc.py --side clean --layer 3c --row 224 --noise noisefree --kind vi" \
   "run_l3bc.py --side clean --layer 3c --row 226 --noise lowpass --kind vii" \
   "compare.py l3c" \
-  "../../../../Clean/gantry_interconnect_dynamic.py R6 lowpass --cpu --smoke"
+  "../../../../clean-up-verification/smoke.py"
 echo "CLEAN_SUITE_DONE"

@@ -18,7 +18,7 @@ MODULES = [
     'gantry_interconnect_dynamic',
     'gantry_dynamic', 'gantry_dynamic.config', 'gantry_dynamic.data', 'gantry_dynamic.controller',
     'gantry_dynamic.model', 'gantry_dynamic.obc_gantry', 'gantry_dynamic.training',
-    'gantry_dynamic.closed_loop_report',
+    'gantry_dynamic.evaluation',
     'model_augmentation', 'model_augmentation.fit_systems', 'model_augmentation.fit_systems.interconnect',
     'model_augmentation.fit_systems.blocks', 'model_augmentation.fit_systems.closed_loop',
     'model_augmentation.fit_systems.lbfgs_polish', 'model_augmentation.fit_systems.obc',

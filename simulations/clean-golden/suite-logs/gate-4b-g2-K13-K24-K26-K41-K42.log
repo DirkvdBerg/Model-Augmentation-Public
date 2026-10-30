@@ -1,0 +1,138 @@
+MM16_REVERTED data.py sha256 95ee79d6386e01ea4931318f6bef3a73742ba11e84fbc463fc4857726e7d98d2
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 3.390e+16; unexplained per state 2.10e-17 4.39e-13 9.48e-21 2.53e-12 8.54e-10 2.68e-13
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Verification\clean-code\capture_l12.py", line 207, in <module>
+    c1.save(out1, 'L1')
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Verification\clean-code\hcommon.py", line 311, in save
+    np.savez(os.path.join(out_dir, stem + '.npz'), **self.arrays)
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\numpy\lib\_npyio_impl.py", line 667, in savez
+    _savez(file, args, kwds, False)
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\numpy\lib\_npyio_impl.py", line 764, in _savez
+    zipf = zipfile_factory(file, mode="w", compression=compression)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\numpy\lib\_npyio_impl.py", line 102, in zipfile_factory
+    return zipfile.ZipFile(file, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\zipfile.py", line 1311, in __init__
+    self.fp = io.open(file, filemode)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'C:\\Users\\20203253\\OneDrive - TU Eindhoven\\Graduation Project\\Baseline FP model\\Baseline-LPV-Augmentation\\simulations\\clean-golden\\_clean\\L1\\221-lowpass\\L1.npz'
+ERROR conda.cli.main_run:execute(47): `conda run python -u capture_l12.py --side clean --row 221 --noise lowpass` failed. (See above for error)
+L12_CASE_END side=clean case=221-lowpass rc=1
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 1.384e+16; unexplained per state 2.40e-17 3.86e-13 1.02e-20 2.89e-12 9.28e-10 2.91e-13
+CAPTURE_DONE side=clean case=227-lowpass seconds=47.5 {'build_model': 5.052093982696533, 'build_closed_loop': 0.01990222930908203, 'prefit': 5.612808704376221, 'forward': 7.148218870162964, 'loss_backward': 4.4968860149383545, 'total': 47.49678158760071}
+L12_CASE_END side=clean case=227-lowpass rc=0
+L12_ALL_DONE side=clean
+C:/Users/20203253/AppData/Local/Temp/claude/C--Users-20203253-OneDrive---TU-Eindhoven-Graduation-Project-Baseline-FP-model-Baseline-LPV-Augmentation/8df64cd8-776a-48c6-b087-4904b4708439/scratchpad/gate_l12.sh: line 18: es: command not found
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 3.390e+16; unexplained per state 2.10e-17 4.39e-13 9.48e-21 2.53e-12 8.54e-10 2.68e-13
+CAPTURE_DONE side=clean case=221-lowpass seconds=133.5 {'build_model': 16.346844911575317, 'build_closed_loop': 0.03374195098876953, 'prefit': 31.578546285629272, 'forward': 35.32480502128601, 'loss_backward': 24.933473587036133, 'total': 133.50608944892883}
+L12_CASE_END side=clean case=221-lowpass rc=0
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 1.384e+16; unexplained per state 2.40e-17 3.86e-13 1.02e-20 2.89e-12 9.28e-10 2.91e-13
+CAPTURE_DONE side=clean case=227-lowpass seconds=54.3 {'build_model': 6.2723541259765625, 'build_closed_loop': 0.02845597267150879, 'prefit': 8.592129707336426, 'forward': 8.85265588760376, 'loss_backward': 4.0340735912323, 'total': 54.29264688491821}
+L12_CASE_END side=clean case=227-lowpass rc=0
+L12_ALL_DONE side=clean
+221-lowpass    L1 PASS   L2 PASS  
+227-lowpass    L1 PASS   L2 PASS  
+COMPARE_L12 PASS
+GATE_DONE rc=0
+MM16_RESTORED 1 2b3109f283ba9838

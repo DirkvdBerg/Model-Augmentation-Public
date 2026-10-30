@@ -1,0 +1,843 @@
+[thesis run] arm=obc noise=lowpass start=correct n_a=2 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 21510 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 21510 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.556e+16; unexplained per state 2.69e-11 1.09e-11 7.87e-21 2.02e-09 7.05e-10 1.22e-11
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9222394909028364
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9984
+[ps2] update 4: calibration unexplained 1.0018 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 0.9937 -> 0.3606 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    4, sqrt loss   250.5, Val sim-NRMSe  51.55
+Loaded model with best known validation sim-NRMSe of  1.922, selected at update 0; last validation epoch_id=0.00
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0018372102672846], "s2": {"residual_start": 0.9936898444054209, "residual_best": 0.36057265211176154, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9984385088823545], [4, 1.0018372102672846]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-222-lowpass\gantry_ckpt_cov-audit-before-222-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 1.922239e+00 (selected checkpoint: 1.922239e+00)
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.56846389770507812e+01 vs 5.56846389770507812e+01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.7e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (7 closures, 91 s)
+  [lbfgs] iter    2 (+1 of 1)  (9 closures, 113 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.568464e+01 -> 5.562228e+01 | 2 iterations, 9 closures in 123 s
+  [lbfgs] sim-NRMSe 1.922239e+00 -> 1.914884e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-222-lowpass\gantry_ckpt_cov-audit-before-222-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-222-lowpass\gantry_ckpt_cov-audit-before-222-lowpass.npz
+Training done | 200 ep | 110s | bestfit=1.91488
+
+Training complete. Best validation sim-NRMSe: 1.91488
+COVERAGE_CASE_END case=222-lowpass rc=0 seconds=314
+[thesis run] arm=u noise=lowpass start=correct n_a=2 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.556e+16; unexplained per state 2.69e-11 1.09e-11 7.87e-21 2.02e-09 7.05e-10 1.22e-11
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9222394909028364
+It    4, sqrt loss   249.8, Val sim-NRMSe  84.56
+Loaded model with best known validation sim-NRMSe of  1.922, selected at update 0; last validation epoch_id=0.00
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-223-lowpass\gantry_ckpt_cov-audit-before-223-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.56846389770507812e+01 vs 5.56846389770507812e+01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.7e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (6 closures, 36 s)
+  [lbfgs] iter    2 (+1 of 1)  (8 closures, 45 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.568464e+01 -> 5.562120e+01 | 2 iterations, 8 closures in 49 s
+  [lbfgs] sim-NRMSe 1.922239e+00 -> 1.914886e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-223-lowpass\gantry_ckpt_cov-audit-before-223-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-223-lowpass\gantry_ckpt_cov-audit-before-223-lowpass.npz
+Training done | 200 ep | 31s | bestfit=1.91489
+
+Training complete. Best validation sim-NRMSe: 1.91489
+COVERAGE_CASE_END case=223-lowpass rc=0 seconds=135
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.492e+16; unexplained per state 2.78e-11 1.04e-11 7.23e-21 2.09e-09 6.41e-10 8.80e-12
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9702551938489075
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9991
+[ps2] update 4: calibration unexplained 1.0009 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 0.9938 -> 0.3600 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    4, sqrt loss   220.0, Val sim-NRMSe  45.92
+Loaded model with best known validation sim-NRMSe of   1.97, selected at update 0; last validation epoch_id=0.00
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0008789381443237], "s2": {"residual_start": 0.9938079941659671, "residual_best": 0.35997742768684227, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9991020505806489], [4, 1.0008789381443237]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-224-lowpass\gantry_ckpt_cov-audit-before-224-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.74514122009277344e+01 vs 5.74514122009277344e+01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.5e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (6 closures, 31 s)
+  [lbfgs] iter    2 (+1 of 1)  (8 closures, 51 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.745141e+01 -> 5.740261e+01 | 2 iterations, 8 closures in 59 s
+  [lbfgs] sim-NRMSe 1.970255e+00 -> 1.965946e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-224-lowpass\gantry_ckpt_cov-audit-before-224-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-224-lowpass\gantry_ckpt_cov-audit-before-224-lowpass.npz
+Training done | 200 ep | 36s | bestfit=1.96595
+
+Training complete. Best validation sim-NRMSe: 1.96595
+COVERAGE_CASE_END case=224-lowpass rc=0 seconds=156
+[thesis run] arm=u noise=lowpass start=correct n_a=0 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.556e+16; unexplained per state 2.69e-11 1.09e-11 7.87e-21 2.02e-09 7.05e-10 1.22e-11
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=0
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9222394909028364
+It    4, sqrt loss   214.1, Val sim-NRMSe  66.31
+Loaded model with best known validation sim-NRMSe of  1.922, selected at update 0; last validation epoch_id=0.00
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-226-lowpass\gantry_ckpt_cov-audit-before-226-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.56846389770507812e+01 vs 5.56846389770507812e+01 -> OK
+  [lbfgs] 4894 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.7e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (11 closures, 65 s)
+  [lbfgs] iter    2 (+1 of 1)  (13 closures, 78 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.568464e+01 -> 5.538554e+01 | 2 iterations, 13 closures in 89 s
+  [lbfgs] sim-NRMSe 1.922239e+00 -> 1.913843e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-226-lowpass\gantry_ckpt_cov-audit-before-226-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-226-lowpass\gantry_ckpt_cov-audit-before-226-lowpass.npz
+Training done | 200 ep | 46s | bestfit=1.91384
+
+Training complete. Best validation sim-NRMSe: 1.91384
+COVERAGE_CASE_END case=226-lowpass rc=0 seconds=201
+[thesis run] arm=u noise=lowpass start=correct n_a=8 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.556e+16; unexplained per state 2.69e-11 1.09e-11 7.87e-21 2.02e-09 7.05e-10 1.22e-11
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=8
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9222394909028364
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9973
+[ps2] update 4: calibration unexplained 1.0020 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 1.0970 -> 0.5982 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    4, sqrt loss   211.5, Val sim-NRMSe  118.6
+Loaded model with best known validation sim-NRMSe of  1.922, selected at update 0; last validation epoch_id=0.00
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0020210948256048], "s2": {"residual_start": 1.0970283071961593, "residual_best": 0.5982104150231584, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9972721575355895], [4, 1.0020210948256048]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-227-lowpass\gantry_ckpt_cov-audit-before-227-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.56846389770507812e+01 vs 5.56846389770507812e+01 -> OK
+  [lbfgs] 6734 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.7e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (12 closures, 78 s)
+  [lbfgs] iter    2 (+1 of 1)  (15 closures, 94 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.568464e+01 -> 5.558407e+01 | 2 iterations, 15 closures in 98 s
+  [lbfgs] sim-NRMSe 1.922239e+00 -> 1.911975e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-227-lowpass\gantry_ckpt_cov-audit-before-227-lowpass.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-227-lowpass\gantry_ckpt_cov-audit-before-227-lowpass.npz
+Training done | 200 ep | 35s | bestfit=1.91197
+
+Training complete. Best validation sim-NRMSe: 1.91197
+COVERAGE_CASE_END case=227-lowpass rc=0 seconds=197
+[thesis run] arm=obc noise=lowpass start=detuned n_a=0 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 21510 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 21510 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.492e+16; unexplained per state 2.78e-11 1.04e-11 7.23e-21 2.09e-09 6.41e-10 8.80e-12
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=0
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9702551938489075
+It    4, sqrt loss   198.3, Val sim-NRMSe  61.57
+Loaded model with best known validation sim-NRMSe of   1.97, selected at update 0; last validation epoch_id=0.00
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-229-lowpass\gantry_ckpt_cov-audit-before-229-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 1.970255e+00 (selected checkpoint: 1.970255e+00)
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.74514122009277344e+01 vs 5.74514122009277344e+01 -> OK
+  [lbfgs] 4894 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.5e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (10 closures, 176 s)
+  [lbfgs] iter    2 (+1 of 1)  (13 closures, 254 s)
+  [lbfgs] ROLLED BACK: sim-NRMSe did not improve (1.970255e+00 -> 1.979809e+00)
+  [lbfgs] loss 5.745141e+01 -> 5.735865e+01 | 2 iterations, 13 closures in 282 s
+  [lbfgs] sim-NRMSe 1.970255e+00 -> 1.979809e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-229-lowpass\gantry_ckpt_cov-audit-before-229-lowpass.pt
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-229-lowpass\gantry_ckpt_cov-audit-before-229-lowpass.npz
+Training done | 200 ep | 107s | bestfit=1.97026
+
+Training complete. Best validation sim-NRMSe: 1.97026
+COVERAGE_CASE_END case=229-lowpass rc=0 seconds=467
+[thesis run] arm=u noise=lowpass start=detuned n_a=0 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 1200 samples  (Training/TR-S1_r1.mat)
+  T2: 1200 samples  (Training/TR-S2_r1.mat)
+  T3: 1200 samples  (Training/TR-S3_r1.mat)
+  T4: 1200 samples  (Training/TR-S4_r1.mat)
+  T5: 1200 samples  (Training/TR-S5_r1.mat)
+  T6: 1200 samples  (Training/TR-Y1_r1.mat)
+  T7: 1200 samples  (Training/TR-Y2_r1.mat)
+  T8: 1200 samples  (Training/TR-Y3_r1.mat)
+  T9: 1200 samples  (Training/TR-P1_r1.mat)
+  T10: 1200 samples  (Training/TR-P2_r1.mat)
+  T11: 1200 samples  (Training/TR-P3_r1.mat)
+  T12: 1200 samples  (Training/TR-P4_r1.mat)
+  T13: 1200 samples  (Training/TR-L1_r1.mat)
+  T14: 1200 samples  (Training/TR-L2_r1.mat)
+  T15: 1200 samples  (Training/TR-T1_r1.mat)
+  T16: 1200 samples  (Training/TR-T2_r1.mat)
+  T17: 1200 samples  (Training/TR-T3_r1.mat)
+  T18: 1200 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 2106 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 2.492e+16; unexplained per state 2.78e-11 1.04e-11 7.23e-21 2.09e-09 6.41e-10 8.80e-12
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=0
+Size of the training array =  27.7 MB
+N_training_samples = 1404, batch_size = 512, N_batch_updates_per_epoch = 2
+Initial Validation sim-NRMSe= 1.9702551938489075
+It    4, sqrt loss   196.1, Val sim-NRMSe  62.17
+Loaded model with best known validation sim-NRMSe of   1.97, selected at update 0; last validation epoch_id=0.00
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-230-lowpass\gantry_ckpt_cov-audit-before-230-lowpass_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 1404 windows (stride 10 -> 50), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.74514122009277344e+01 vs 5.74514122009277344e+01 -> OK
+  [lbfgs] 4894 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.5e-09 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (10 closures, 46 s)
+  [lbfgs] iter    2 (+1 of 1)  (13 closures, 59 s)
+  [lbfgs] ROLLED BACK: sim-NRMSe did not improve (1.970255e+00 -> 1.974998e+00)
+  [lbfgs] loss 5.745141e+01 -> 5.730598e+01 | 2 iterations, 13 closures in 63 s
+  [lbfgs] sim-NRMSe 1.970255e+00 -> 1.974998e+00
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-230-lowpass\gantry_ckpt_cov-audit-before-230-lowpass.pt
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_lowpass_noise_data_lsq\cov-audit-before-230-lowpass\gantry_ckpt_cov-audit-before-230-lowpass.npz
+Training done | 200 ep | 37s | bestfit=1.97026
+
+Training complete. Best validation sim-NRMSe: 1.97026
+COVERAGE_CASE_END case=230-lowpass rc=0 seconds=164
+[thesis run] arm=obc noise=noisefree start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 1.573e+16; unexplained per state 1.05e-17 1.71e-13 3.70e-21 1.26e-12 3.36e-10 1.06e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.48637122689897627
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9978
+[ps2] update 4: calibration unexplained 1.0005 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 1.0273 -> 0.3963 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    4, sqrt loss  0.6387, Val sim-NRMSe 0.5165
+Loaded model with best known validation sim-NRMSe of 0.4864, selected at update 0; last validation epoch_id=0.00
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.000533475051006], "s2": {"residual_start": 1.0273099098502692, "residual_best": 0.39626269137108083, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.997814279539147], [4, 1.000533475051006]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-221-noisefree\gantry_ckpt_cov-audit-before-221-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 4.863712e-01 (selected checkpoint: 4.863712e-01)
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.29061317443847656e-01 vs 5.29061317443847656e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.9e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (6 closures, 88 s)
+  [lbfgs] iter    2 (+1 of 1)  (8 closures, 114 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.290613e-01 -> 3.868924e-01 | 2 iterations, 8 closures in 132 s
+  [lbfgs] sim-NRMSe 4.863712e-01 -> 4.251257e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-221-noisefree\gantry_ckpt_cov-audit-before-221-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-221-noisefree\gantry_ckpt_cov-audit-before-221-noisefree.npz
+Training done | 200 ep | 129s | bestfit=0.42513
+
+Training complete. Best validation sim-NRMSe: 0.425126
+COVERAGE_CASE_END case=221-noisefree rc=0 seconds=339
+[thesis run] arm=obc noise=noisefree start=correct n_a=2 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 3.368e+16; unexplained per state 1.22e-17 1.41e-13 3.74e-21 1.46e-12 3.41e-10 1.07e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.41167669223299275
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9976
+[ps2] update 4: calibration unexplained 1.0006 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 1.0232 -> 0.3946 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    4, sqrt loss  0.5886, Val sim-NRMSe 0.4882
+Loaded model with best known validation sim-NRMSe of 0.4117, selected at update 0; last validation epoch_id=0.00
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0005778738388067], "s2": {"residual_start": 1.0231886529973861, "residual_best": 0.39462609805754045, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9975883523728011], [4, 1.0005778738388067]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-222-noisefree\gantry_ckpt_cov-audit-before-222-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 4.116767e-01 (selected checkpoint: 4.116767e-01)
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 4.37413096427917480e-01 vs 4.37413096427917480e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (5.9e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (5 closures, 90 s)
+  [lbfgs] iter    2 (+1 of 1)  (7 closures, 124 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 4.374131e-01 -> 2.808399e-01 | 2 iterations, 7 closures in 149 s
+  [lbfgs] sim-NRMSe 4.116767e-01 -> 3.492733e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-222-noisefree\gantry_ckpt_cov-audit-before-222-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-222-noisefree\gantry_ckpt_cov-audit-before-222-noisefree.npz
+Training done | 200 ep | 117s | bestfit=0.34927
+
+Training complete. Best validation sim-NRMSe: 0.349273
+COVERAGE_CASE_END case=222-noisefree rc=0 seconds=345
+[thesis run] arm=u noise=noisefree start=correct n_a=2 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 3.368e+16; unexplained per state 1.22e-17 1.41e-13 3.74e-21 1.46e-12 3.41e-10 1.07e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.41167669223299275
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.34667843696765066
+It    4, sqrt loss  0.5886, Val sim-NRMSe 0.3467
+Loaded model with best known validation sim-NRMSe of 0.3467, selected at update 4; last validation epoch_id=0.67
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-223-noisefree\gantry_ckpt_cov-audit-before-223-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 2.83049643039703369e-01 vs 2.83049643039703369e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (9.2e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (8 closures, 44 s)
+  [lbfgs] iter    2 (+1 of 1)  (10 closures, 58 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 2.830496e-01 -> 2.370796e-01 | 2 iterations, 10 closures in 69 s
+  [lbfgs] sim-NRMSe 3.466784e-01 -> 3.145652e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-223-noisefree\gantry_ckpt_cov-audit-before-223-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-223-noisefree\gantry_ckpt_cov-audit-before-223-noisefree.npz
+Training done | 200 ep | 37s | bestfit=0.31457
+
+Training complete. Best validation sim-NRMSe: 0.314565
+COVERAGE_CASE_END case=223-noisefree rc=0 seconds=153
+[thesis run] arm=u noise=noisefree start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 1.573e+16; unexplained per state 1.05e-17 1.71e-13 3.70e-21 1.26e-12 3.36e-10 1.06e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.48637122689897627
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9978
+[ps2] update 4: calibration unexplained 1.0004 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 1.0273 -> 0.3962 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+It    4, sqrt loss  0.6388, Val sim-NRMSe 0.5156
+Loaded model with best known validation sim-NRMSe of 0.4864, selected at update 0; last validation epoch_id=0.00
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0004150364963684], "s2": {"residual_start": 1.0273060594730528, "residual_best": 0.3961894180310088, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9978100651926035], [4, 1.0004150364963684]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-224-noisefree\gantry_ckpt_cov-audit-before-224-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 5.29061317443847656e-01 vs 5.29061317443847656e-01 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (4.9e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (5 closures, 21 s)
+  [lbfgs] iter    2 (+1 of 1)  (7 closures, 30 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 5.290613e-01 -> 3.954083e-01 | 2 iterations, 7 closures in 38 s
+  [lbfgs] sim-NRMSe 4.863712e-01 -> 4.276698e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-224-noisefree\gantry_ckpt_cov-audit-before-224-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-224-noisefree\gantry_ckpt_cov-audit-before-224-noisefree.npz
+Training done | 200 ep | 35s | bestfit=0.42767
+
+Training complete. Best validation sim-NRMSe: 0.42767
+COVERAGE_CASE_END case=224-noisefree rc=0 seconds=125
+[thesis run] arm=u noise=noisefree start=correct n_a=0 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 3.368e+16; unexplained per state 1.22e-17 1.41e-13 3.74e-21 1.46e-12 3.41e-10 1.07e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=0
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.41167669223299275
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.3569270980904192
+It    4, sqrt loss  0.6034, Val sim-NRMSe 0.3569
+Loaded model with best known validation sim-NRMSe of 0.3569, selected at update 4; last validation epoch_id=0.67
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-226-noisefree\gantry_ckpt_cov-audit-before-226-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 2.99099653959274292e-01 vs 2.99099653959274292e-01 -> OK
+  [lbfgs] 4894 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (8.7e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (8 closures, 35 s)
+  [lbfgs] iter    2 (+1 of 1)  (10 closures, 43 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 2.990997e-01 -> 2.763463e-01 | 2 iterations, 10 closures in 54 s
+  [lbfgs] sim-NRMSe 3.569271e-01 -> 3.404525e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-226-noisefree\gantry_ckpt_cov-audit-before-226-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-226-noisefree\gantry_ckpt_cov-audit-before-226-noisefree.npz
+Training done | 200 ep | 33s | bestfit=0.34045
+
+Training complete. Best validation sim-NRMSe: 0.340453
+COVERAGE_CASE_END case=226-noisefree rc=0 seconds=125
+[thesis run] arm=u noise=noisefree start=correct n_a=8 seed=1 nf=0.100 s detune=None  SMOKE g_aug=mlp/live  PS2
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 3.368e+16; unexplained per state 1.22e-17 1.41e-13 3.74e-21 1.46e-12 3.41e-10 1.07e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=8
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.41167669223299275
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}
+[ps2] update 2: calibration unexplained 0.9970
+[ps2] update 4: calibration unexplained 1.0016 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration cost 1.1498 -> 0.5219 in 100 steps
+[ps2] opening completed; the run continues as the plain method
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.36452165718744683
+It    4, sqrt loss  0.6034, Val sim-NRMSe 0.3645
+Loaded model with best known validation sim-NRMSe of 0.3645, selected at update 4; last validation epoch_id=0.67
+[ps2] summary: {"status": "completed", "phase": "S3", "updates": 4, "s1_end": [4, 1.0016130273215869], "s2": {"residual_start": 1.149762557840546, "residual_best": 0.5218592358663457, "steps": 100}, "calibration_records": ["TR-S5", "TR-Y3", "TR-P4", "TR-T4"], "history": [[2, 0.9970068925709127], [4, 1.0016130273215869]], "spec": {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 256, "n_snap_cal": 64, "s2_batch": 64, "s2_check": 50, "s2_min": 50, "s2_cap": 100, "s2_tol": 0.01, "seed": 1}}
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-227-noisefree\gantry_ckpt_cov-audit-before-227-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 3.17097693681716919e-01 vs 3.17097693681716919e-01 -> OK
+  [lbfgs] 6734 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (8.2e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (8 closures, 45 s)
+  [lbfgs] iter    2 (+1 of 1)  (10 closures, 55 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 3.170977e-01 -> 2.756300e-01 | 2 iterations, 10 closures in 63 s
+  [lbfgs] sim-NRMSe 3.645217e-01 -> 3.311188e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-227-noisefree\gantry_ckpt_cov-audit-before-227-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-227-noisefree\gantry_ckpt_cov-audit-before-227-noisefree.npz
+Training done | 200 ep | 41s | bestfit=0.33112
+
+Training complete. Best validation sim-NRMSe: 0.331119
+COVERAGE_CASE_END case=227-noisefree rc=0 seconds=142
+[thesis run] arm=obc noise=noisefree start=detuned n_a=0 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 1.573e+16; unexplained per state 1.05e-17 1.71e-13 3.70e-21 1.26e-12 3.36e-10 1.06e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=0
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.48637122689897627
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.40175512779743455
+It    4, sqrt loss  0.6539, Val sim-NRMSe 0.4018
+Loaded model with best known validation sim-NRMSe of 0.4018, selected at update 4; last validation epoch_id=0.67
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-229-noisefree\gantry_ckpt_cov-audit-before-229-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+[lbfgs] rebuilt-basis validation sim-NRMSe 4.017551e-01 (selected checkpoint: 4.017551e-01)
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 3.40468794107437134e-01 vs 3.40468794107437134e-01 -> OK
+  [lbfgs] 4894 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (7.6e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (10 closures, 129 s)
+  [lbfgs] iter    2 (+1 of 1)  (12 closures, 148 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 3.404688e-01 -> 3.112085e-01 | 2 iterations, 12 closures in 163 s
+  [lbfgs] sim-NRMSe 4.017551e-01 -> 3.890218e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-229-noisefree\gantry_ckpt_cov-audit-before-229-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-229-noisefree\gantry_ckpt_cov-audit-before-229-noisefree.npz
+Training done | 200 ep | 93s | bestfit=0.38902
+
+Training complete. Best validation sim-NRMSe: 0.389022
+COVERAGE_CASE_END case=229-noisefree rc=0 seconds=332
+[thesis run] arm=u noise=noisefree start=detuned n_a=0 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE g_aug=mlp/live  plain
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-noise-free
+y decimation: point sampling [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+
+Loss rollout: closed loop (the known controller around the model)
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 150, condition 1.573e+16; unexplained per state 1.05e-17 1.71e-13 3.70e-21 1.26e-12 3.36e-10 1.06e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=0
+Size of the training array =  70.3 MB
+N_training_samples = 3564, batch_size = 512, N_batch_updates_per_epoch = 6
+Initial Validation sim-NRMSe= 0.48637122689897627
+########## New lowest validation loss achieved ########### sim-NRMSe = 0.40162913560023195
+It    4, sqrt loss  0.6539, Val sim-NRMSe 0.4016
+Loaded model with best known validation sim-NRMSe of 0.4016, selected at update 4; last validation epoch_id=0.67
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-230-noisefree\gantry_ckpt_cov-audit-before-230-noisefree_pre_lbfgs.pt
+
+[lbfgs] polish phase: Adam is done, L-BFGS from here
+  [lbfgs] fixed batch: 256 of 3564 windows (stride 10 -> 130), 5.0 MB on cpu, extras=('ctrl_ix', 'loss_w')
+  [lbfgs] determinism check (eager): 3.40382069349288940e-01 vs 3.40382069349288940e-01 -> OK
+  [lbfgs] 4894 parameters in one group, m=50, strong-Wolfe, tol_grad=2.6e-05 tol_change=2.6e-07 (7.6e-07 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (9 closures, 31 s)
+  [lbfgs] iter    2 (+1 of 1)  (11 closures, 38 s)
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 3.403821e-01 -> 3.111202e-01 | 2 iterations, 11 closures in 44 s
+  [lbfgs] sim-NRMSe 4.016291e-01 -> 3.888434e-01
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-230-noisefree\gantry_ckpt_cov-audit-before-230-noisefree.pt  (Adam state omitted: weights were polished)
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage\runs\thesis_taf_noisefree_data_lsq\cov-audit-before-230-noisefree\gantry_ckpt_cov-audit-before-230-noisefree.npz
+Training done | 200 ep | 27s | bestfit=0.38884
+
+Training complete. Best validation sim-NRMSe: 0.388843
+COVERAGE_CASE_END case=230-noisefree rc=0 seconds=106
+COVERAGE_DONE cases=16 -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\clean-golden\perf\audit-before\coverage

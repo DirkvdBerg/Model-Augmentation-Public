@@ -1,0 +1,63 @@
+MM16_REVERTED data.py sha256 46427dcd342b6e1221dfabf8a10dce82361a959cb9cb38645e9fe2a72873f470
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 43110 tuples from 18 records
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 43110 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 3.390e+16; unexplained per state 2.10e-17 4.39e-13 9.48e-21 2.53e-12 8.54e-10 2.68e-13
+CAPTURE_DONE side=clean case=221-lowpass seconds=128.5 {'build_model': 12.649358749389648, 'build_closed_loop': 0.02923107147216797, 'prefit': 21.09640145301819, 'forward': 45.72716426849365, 'loss_backward': 27.335026025772095, 'total': 128.54489064216614}
+L12_CASE_END side=clean case=221-lowpass rc=0
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation: r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded 18 train, 6 val, 11 test trajectories
+  T1: 2400 samples  (Training/TR-S1_r1.mat)
+  T2: 2400 samples  (Training/TR-S2_r1.mat)
+  T3: 2400 samples  (Training/TR-S3_r1.mat)
+  T4: 2400 samples  (Training/TR-S4_r1.mat)
+  T5: 2400 samples  (Training/TR-S5_r1.mat)
+  T6: 2400 samples  (Training/TR-Y1_r1.mat)
+  T7: 2400 samples  (Training/TR-Y2_r1.mat)
+  T8: 2400 samples  (Training/TR-Y3_r1.mat)
+  T9: 2400 samples  (Training/TR-P1_r1.mat)
+  T10: 2400 samples  (Training/TR-P2_r1.mat)
+  T11: 2400 samples  (Training/TR-P3_r1.mat)
+  T12: 2400 samples  (Training/TR-P4_r1.mat)
+  T13: 2400 samples  (Training/TR-L1_r1.mat)
+  T14: 2400 samples  (Training/TR-L2_r1.mat)
+  T15: 2400 samples  (Training/TR-T1_r1.mat)
+  T16: 2400 samples  (Training/TR-T2_r1.mat)
+  T17: 2400 samples  (Training/TR-T3_r1.mat)
+  T18: 2400 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[encoder start] 4266 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 152, condition 1.384e+16; unexplained per state 2.40e-17 3.86e-13 1.02e-20 2.89e-12 9.28e-10 2.91e-13
+CAPTURE_DONE side=clean case=227-lowpass seconds=68.3 {'build_model': 7.138617515563965, 'build_closed_loop': 0.0372462272644043, 'prefit': 11.16572642326355, 'forward': 18.11202907562256, 'loss_backward': 9.10810112953186, 'total': 68.27234888076782}
+L12_CASE_END side=clean case=227-lowpass rc=0
+L12_ALL_DONE side=clean
+221-lowpass    L1 PASS   L2 PASS  
+227-lowpass    L1 PASS   L2 PASS  
+COMPARE_L12 PASS
+GATE_DONE rc=0
+MM16_RESTORED 1 f42d41189a155821

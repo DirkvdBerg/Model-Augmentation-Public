@@ -180,7 +180,7 @@ else:
             shutil.copytree(run_dir, sdir)
             before = _tree(sdir)
             try:
-                EP.main(cfg, run_id=rid_l3)
+                EP.main(cfg, run_id=rid_l3, evaluate_run=False)     # E1
                 r = dict(refused=False)
             except FileExistsError as e:
                 r = dict(refused=True, error=str(e))
@@ -196,7 +196,7 @@ else:
             def _attempt(label, need):
                 before = (_tree(run_dir), _tree(ckdir))
                 try:
-                    EP.main(cfg, rerun=('resume', run_dir, 'best'))
+                    EP.main(cfg, rerun=('resume', run_dir, 'best'), evaluate_run=False)     # E1
                     r = dict(refused=False)
                 except Exception as e:
                     r = dict(refused=True, error='%s: %s' % (type(e).__name__, str(e).splitlines()[0][:300]))
@@ -221,7 +221,7 @@ else:
                 len(attempts) == (2 if H.ROWS[args.row][4] else 1) and all(a['ok'] for a in attempts.values())))
         else:
             EP.main(cfg, rerun=('resume', run_dir, 'best' if kind == 'i' else 'last') if kind != 'ii'
-                    else ('polish-only', run_dir, None))
+                    else ('polish-only', run_dir, None), evaluate_run=False)     # E1
             # clean-only assertions (6.3 layer 3c)
             prev = os.path.join(run_dir, 'previous', run_id)
             moved = sorted(os.listdir(prev))

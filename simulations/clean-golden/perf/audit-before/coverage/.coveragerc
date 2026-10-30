@@ -1,0 +1,6 @@
+[run]
+branch = True
+source =
+    C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Clean
+omit =
+    C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Clean\blackbox\*

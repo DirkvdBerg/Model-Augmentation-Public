@@ -8,15 +8,18 @@ Section names below refer to the thesis.
 1. Generate the data (MATLAB): `data_generation/`.
 2. Train the grey-box rows: `gantry_interconnect_dynamic.py`.
 3. Train the black-box grid and select one configuration: `blackbox/`.
-4. Evaluate both on train, validation and test (`blackbox/eval_bb.py` for the black box).
+4. Evaluate both on train, validation and test: the grey box at the end of each run (`gantry_dynamic/evaluation.py`),
+   the black box with `blackbox/eval_bb.py`.
 
 ## Grey box: augmented model and OBC
 Entry point `gantry_interconnect_dynamic.py`: a fresh run, `--resume RUN_DIR` (continue Adam) or
-`--polish-only RUN_DIR` (polish from the pre-polish checkpoint). Rows R1 to R7, R13, R14 are presets in
+`--polish-only RUN_DIR` (polish from the pre-polish checkpoint), each followed by the evaluation of the final
+checkpoint into `RUN_DIR/evaluation/`; `--evaluate RUN_DIR` evaluates a finished run only. The parameters `EVALUATE`
+and `EVAL_RUN_DIR` at the top of the script set the same. Rows R1 to R7, R13, R14 are presets in
 `gantry_dynamic/config.py` (`PRESETS`: arm, baseline start, number of added states, PS initialisation).
 ```
-python -u Clean/gantry_interconnect_dynamic.py R6 lowpass --cpu --smoke   # launch test on CPU: 2 s records, 4 updates
 python -u Clean/gantry_interconnect_dynamic.py R1 lowpass                 # full run, CUDA and torch.compile
+python -u Clean/gantry_interconnect_dynamic.py --evaluate RUN_DIR         # evaluation of a finished run, CPU
 ```
 Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/gantry_clean/` (`--data-root`,
 `--out-root`).
@@ -30,7 +33,7 @@ Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/
 | `gantry_dynamic/model.py` | builds the augmented model and its encoder; least-squares start of the encoder | Augmented model; Initialisation |
 | `gantry_dynamic/obc_gantry.py` | gantry part of OBC: reference tuples, basis Phi_Gamma, correction f_obc | Extension to the gantry |
 | `gantry_dynamic/training.py` | Adam with PS, checkpoint selection, L-BFGS polish, checkpoint files | Identification |
-| `gantry_dynamic/closed_loop_report.py` | evaluation helpers: model without its learned part, true-parameter coordinate | Metrics |
+| `gantry_dynamic/evaluation.py` | NRMS_e of the augmented model and both baselines per split, figures and data | Metrics |
 | `model_augmentation/fit_systems/blocks.py` | model blocks: baseline vector field f_base (LPV-LFR, Y-scheduled M(Y)), RK4 | Baseline state-space model |
 | `model_augmentation/fit_systems/interconnect.py` | interconnect of blocks, encoder fit system, the training loss | Augmented model; Identification |
 | `model_augmentation/fit_systems/closed_loop.py` | closed-loop simulation with K_fb in residual form | Closed-loop simulation |

@@ -40,8 +40,12 @@ D278_PAIR = ('43bbf868595d4f67985fd8141700baf9a6b84c5b7b6cf74ed1eb6ebce627325a',
 #: D-281 (O8): golden fields the optimised clean code no longer has, with the item that dropped them.
 #: Skipped only when absent on the clean side, and listed as 'dropped'. Their content stays covered:
 #: bank.ystd and bank.stdu enter M_state and M_error (B41); the validation rows follow the val_files
-#: order the names came from (B51).
-DROPPED_IN_CLEAN = {'bank/ystd': 'B41', 'bank/stdu': 'B41', 'info:sim/val_labels': 'B51'}
+#: order the names came from (B51). D-284 K15: the clean reference set holds the tuples only (Z_step,
+#: Z_field and their count stay compared); record and sample index, names and successor states are
+#: built by no clean code path.
+DROPPED_IN_CLEAN = {'bank/ystd': 'B41', 'bank/stdu': 'B41', 'info:sim/val_labels': 'B51',
+                    'obcref/record_ix': 'K15', 'obcref/sample_ix': 'K15', 'obcref/x_phys_next_rec': 'K15',
+                    'info:obcref/record_names': 'K15'}
 
 
 def d278_kept(gmeta):

@@ -23,6 +23,8 @@ from .config import (RunConfig, AA_ORDER, AA_FC_HZ,
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
 # manifest block -> split
 _THESIS_SPLIT = {'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
+# the anti-aliasing filter B of _decimate_y, designed once
+SOS = butter(AA_ORDER, AA_FC_HZ, fs=RunConfig.fs_orig, output='sos')
 
 
 def record_files(cfg: RunConfig):
@@ -118,9 +120,8 @@ def _decimate_y(d, cfg: RunConfig):
     if cfg.noise != 'lowpass':
         return d['y'][::D]
     r = d['r_sim']
-    sos = butter(AA_ORDER, AA_FC_HZ, fs=cfg.fs_orig, output='sos')
     # Error-only filtering: y_k = r_k + [B(y - r)]_{k D}; r is unfiltered.
-    return r[::D] + sosfiltfilt(sos, d['y'] - r, axis=0)[::D]
+    return r[::D] + sosfiltfilt(SOS, d['y'] - r, axis=0)[::D]
 
 
 def _record_at_fs_new(d, cfg: RunConfig, fields=()):
@@ -215,17 +216,17 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     y_all = np.concatenate([t.y for t in data.train_list])
 
     fs = 1.0 / data.train_list[0].dt
-    P_inv_T = np.linalg.inv(P.numpy().astype(cfg.dtype_np).T)
-    x_logical_list = []
+    P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)
+    x_generalised_list = []
     for t in data.train_list:
         # Positions: q = P^-T y (so the position means are P^-T mu_y).
-        pos_logical = (P_inv_T @ t.y.T).T
+        pos_generalised = (P_inv_T @ t.y.T).T
         # Velocities: qdot_k = (q_k - q_{k-1}) / T_s for k >= 1, qdot_0 = qdot_1.
         # THEORY: var of a first difference of white noise = 2*sigma_n^2, so sigma_v = sigma_n*sqrt(2)*fs
-        vel_logical = np.diff(pos_logical, axis=0) * fs
-        vel_logical = np.vstack([vel_logical[:1], vel_logical])
-        x_logical_list.append(np.hstack([pos_logical, vel_logical]))
-    x_all = np.concatenate(x_logical_list)
+        vel_generalised = np.diff(pos_generalised, axis=0) * fs
+        vel_generalised = np.vstack([vel_generalised[:1], vel_generalised])
+        x_generalised_list.append(np.hstack([pos_generalised, vel_generalised]))
+    x_all = np.concatenate(x_generalised_list)
 
     # 2. Statistics.
     # mu_i = mean(i), sigma_i = (mean (i - mu_i)^2)^(1/2) + 1e-8 (keeps T_i finite), i in {x_tilde, u_act, y}.
