@@ -68,6 +68,7 @@ def _archive_rerun(kind, run_dir, cj, run_id, src):
 
 def main(cfg, run_id=None, rerun=None):
     """Build and train a fresh run or the requested resume/polish-only rerun; return its final validation score."""
+    # 1. Run folder.
     # rerun = ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None); None for a fresh run
     # run folder: a fresh run never writes into an existing one
     if rerun is None:
@@ -89,6 +90,7 @@ def main(cfg, run_id=None, rerun=None):
           + ' g_aug=mlp/live' + ('  PS2' if cfg.ps2 else '  plain')
           + ('  %s from %s' % (rerun[0], rerun[1]) if rerun else ''), flush=True)
 
+    # 2. Data and normalisation.
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     data = load_datasets(cfg)
@@ -102,7 +104,8 @@ def main(cfg, run_id=None, rerun=None):
             json.dump({**config_json_dict(cfg, git=git_provenance()),
                        'hp': hp, 'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
 
-    # model and closed loop; reseeded, so the initial draws of the model start from the seed
+    # 3. Model and closed loop.
+    # reseed before construction, so loading the data cannot alter the model's initial draws
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     fit_sys = build_model(hp, cfg, data, norm)
@@ -113,8 +116,8 @@ def main(cfg, run_id=None, rerun=None):
         e_train=data.e_train, e_val=data.e_val)
     print('\nLoss rollout: closed loop (the known controller around the model)')
 
-    # encoder start (it simulates the closed loop, so it follows the controller bank); a rerun restores
-    # the fitted encoder instead
+    # 4. Encoder start, or the restored checkpoint.
+    # the encoder prefit needs the controller bank to simulate the baseline in closed loop
     resume = None
     if src is None:
         prefit_physical_encoder(fit_sys, cfg, data, norm)
@@ -123,6 +126,7 @@ def main(cfg, run_id=None, rerun=None):
         meta = load_checkpoint(fit_sys, src, cfg.joint_estimation, start_phase=cfg.start_phase)
         resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
 
+    # 5. Training.
     bestfit = train(fit_sys, hp, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
     print(f"\nTraining complete. Best validation {cfg.validation_measure}: {bestfit:.6g}")
     return bestfit
@@ -141,6 +145,9 @@ def cli():
     grp.add_argument('--polish-only', metavar='RUN_DIR', help='polish the pre_lbfgs pair of this run folder')
     ap.add_argument('--from', dest='source', choices=('best', 'last'), default=None,
                     help='deepSI dump a --resume starts from (default best)')
+    ap.add_argument('--closed-form', action='store_true',
+                    help='baseline derivative as (qdot, a) directly instead of through the LFR output equation; '
+                         'results differ from the thesis runs by rounding')
     ap.add_argument('--data-root', default=DATA_ROOT)
     ap.add_argument('--out-root', default=OUT_ROOT)
     a = ap.parse_args()
@@ -149,11 +156,12 @@ def cli():
     run_dir = a.resume or a.polish_only
     if run_dir is None:
         cfg = RunConfig(**PRESETS[a.preset or 'R1'], noise=a.noise or 'lowpass',
+                        baseline_form='closed' if a.closed_form else 'lfr',
                         data_root=a.data_root, out_root=a.out_root)
         rerun = None
     else:
-        if a.preset is not None or a.noise is not None:
-            ap.error('a run folder fixes the configuration; give no preset or noise with it')
+        if a.preset is not None or a.noise is not None or a.closed_form:
+            ap.error('a run folder fixes the configuration; give no preset, noise or --closed-form with it')
         with open(os.path.join(run_dir, 'config.json')) as fh:
             cfg = RunConfig.from_config_json(json.load(fh), data_root=a.data_root, out_root=a.out_root)
         rerun = ('resume', run_dir, a.source or 'best') if a.resume else ('polish-only', run_dir, None)

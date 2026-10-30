@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>15 Training time-lapse</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">15</span><span class="idea">The core visual idea is a time-lapse of training in small multiples: the same window at four moments of S1 (prediction grows out of zero, the remainder shrinks) and of S2 (the step lands on the target).</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="40" y1="40" x2="120" y2="40" stroke="#9e9e9e"></line>
+<path d="{{icG}}" fill="#dcdcdc"></path><path d="{{icY}}" fill="none" stroke="#111" stroke-width="1.2"></path><path d="{{icH}}" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="{{ax}}" stroke="#c8c8c8"></path>
+<path d="{{st1}}" stroke="#111" stroke-width="1.1"></path>
+<path d="{{pr1}}" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="{{st2}}" stroke="#8a8a8a" stroke-width="1.1"></path>
+<path d="{{cells}}" fill="#d9f0f6" stroke="#0092B5" stroke-width=".8"></path>
+<path d="{{cellsD}}" fill="#4db4d0" stroke="#0092B5" stroke-width=".8"></path>
+<path d="{{nuB}}" fill="#9e9e9e"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:66px;top:66px;font-size:15px">i = 0</span>
+<span class="l g" style="left:246px;top:66px;font-size:15px">i<sub>1</sub>/4</span>
+<span class="l g" style="left:426px;top:66px;font-size:15px">i<sub>1</sub>/2</span>
+<span class="l g" style="left:606px;top:66px;font-size:15px">i<sub>1</sub></span>
+<span class="l" style="left:128px;top:30px;font-size:15px">e<sub>τ</sub> = y − ŷ, current model</span>
+<span class="l h" style="left:520px;top:30px;font-size:15px">p(x̄<sub>τ|τ</sub>)</span>
+<span class="l g" style="left:4px;top:186px;font-size:14px">e − p</span>
+<span class="l h" style="left:4px;top:244px;font-size:14px">x̄<sub>τ|τ</sub></span>
+<span class="l g" style="left:4px;top:276px;font-size:14px">ν</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="{{rings}}" fill="none" stroke="#e0e0e0"></path>
+<path d="{{x0s}}" fill="#555"></path>
+<path d="{{tg}}" fill="#fff" stroke="#111" stroke-width="1.3"></path>
+<path d="{{arr}}" fill="none" stroke="#0092B5" stroke-width="1.8"></path>
+<path d="{{pd}}" fill="#0092B5"></path>
+<path d="{{ring2}}" fill="none" stroke="#c8c8c8" stroke-width="1.4"></path>
+<path d="{{roll}}" fill="none" stroke="#0092B5" stroke-width="1.4"></path>
+<rect x="40" y="40" width="80" height="4" fill="#bdbdbd"></rect>
+<rect x="44" y="48" width="80" height="4" fill="none" stroke="#0092B5"></rect>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:66px;top:62px;font-size:15px">j = 0</span>
+<span class="l g" style="left:246px;top:62px;font-size:15px">j<sub>2</sub>/4</span>
+<span class="l g" style="left:426px;top:62px;font-size:15px">j<sub>2</sub>/2</span>
+<span class="l g" style="left:606px;top:62px;font-size:15px">j<sub>2</sub></span>
+<span class="l g" style="left:130px;top:34px;font-size:15px">χ<sub>τ</sub>, χ<sub>τ+1</sub></span>
+<span class="l g" style="left:270px;top:34px;font-size:14px">● x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:350px;top:34px;font-size:14px">○ ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:470px;top:34px;font-size:14px">●g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l g" style="left:260px;top:290px;font-size:14px">one step trained; 19 steps of g<sub>aug</sub> shown</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Icon: the gap of slide 13; column i = 0: stems of e<sub>τ</sub>, and p(x̄<sub>τ|τ</sub>) flat at zero (its last layer starts at zero).</li>
+<li>Columns i<sub>1</sub>/4, i<sub>1</sub>/2, i<sub>1</sub> appear: the prediction grows into the stems (highlight); e<sub>τ</sub> itself shrinks a little because V steps in between.</li>
+<li>Second row: the remainder e − p shrinks.</li>
+<li>Third row: the state cells x̄<sub>τ|τ</sub> change shade as ψ<sub>a</sub> learns; fourth row: bars of the unexplained fraction ν; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Windows one sample apart; four small x̄ planes; in each, x̄<sub>τ|τ</sub> (grey) and the target (open) at the same places.</li>
+<li>The prediction g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>) (highlight) moves from a random spot onto the target across the four.</li>
+<li>Second row: repeating the step 19 times (highlight) against the encoder ring (grey): spiral, then circle; S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: that the decoder starts at zero and what each stage changes over its iterations; real logged curves could fill it directly. Weakest: four panels per stage are small; the one-sample shift is only an icon and the rollout row shows evaluation, not the S2 loss.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=k=>(1-Math.exp(-(k+1)/5))*Math.sin(Wr*k+0.4)+0.2*Math.sin(k/8);
+const dot=(x,y,r)=>'M'+f(x-r)+' '+f(y)+'a'+r+' '+r+' 0 1 0 '+(2*r)+' 0a'+r+' '+r+' 0 1 0 '+(-2*r)+' 0';
+const cols=[40,220,400,580],gain=[0,0.45,0.78,0.9],amp=[1,0.97,0.94,0.92];
+let ax='',st1='',pr1='',st2='',cells='',cellsD='',nuB='';
+cols.forEach((x0,c)=>{ax+='M'+x0+' 130H'+(x0+150)+'M'+x0+' 194H'+(x0+150)+'M'+x0+' 286H'+(x0+150);const pr=[];
+for(let k=0;k<30;k++){const x=x0+3+5*k;const e=amp[c]*(resS(k)+0.12*nz(k+5));st1+='M'+f(x)+' 130V'+f(130-26*e);
+const p=gain[c]*resS(k+0.4);pr.push([x,130-26*p]);st2+='M'+f(x)+' 194V'+f(194-26*(e-p));}
+pr1+=P(pr);
+for(let i=0;i<3;i++){const s='M'+(x0+50+16*i)+' 236h14v14h-14z';if(c>=2&&i!==1)cellsD+=s;else cells+=s;}
+const nu=[1,0.7,0.42,0.32][c];nuB+='M'+(x0+60)+' 286h30v'+f(-26*nu)+'h-30z';});
+const icx=k=>52+1.2*k, icy=k=>34-4*Math.sin(k/9)-2.5*Math.sin(Wr*k+1.1);
+const iy=[],ih=[],ig=[];const gp=k=>4*(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4);
+for(let k=-10;k<=56;k++)iy.push([icx(k)+12,icy(k)]);for(let k=0;k<=56;k++)ih.push([icx(k)+12,icy(k)+gp(k)]);
+for(let k=0;k<=56;k++)ig.push([icx(k)+12,icy(k)]);for(let k=56;k>=0;k--)ig.push([icx(k)+12,icy(k)+gp(k)]);
+let rings='',x0s='',tg='',arr='',pd='',ring2='',roll='';const R=40,w=2*Math.PI*212/4000,a0=0.6;
+const tgtOff=[[34,22],[16,-8],[5,3],[0,0]];
+cols.forEach((x0,c)=>{const cx=x0+70,cy=130;rings+=dot(cx,cy,R);
+const p0=[cx+R*Math.cos(a0),cy-R*Math.sin(a0)],p1=[cx+R*Math.cos(a0+w),cy-R*Math.sin(a0+w)];
+const pp=[p1[0]+tgtOff[c][0],p1[1]+tgtOff[c][1]];
+x0s+=dot(p0[0],p0[1],3.5);tg+=dot(p1[0],p1[1],4.5);pd+=dot(pp[0],pp[1],3.5);arr+='M'+f(p0[0])+' '+f(p0[1])+'L'+f(pp[0])+' '+f(pp[1]);
+const cy2=230;ring2+=dot(cx,cy2,R);
+const rr=[0.86,0.93,0.97,1.0][c],dw=[1.8,1.35,1.1,1.0][c];const pts=[];let a=a0,r=R;
+for(let s=0;s<=19;s++){pts.push([cx+r*Math.cos(a),cy2-r*Math.sin(a)]);a+=w*dw;r*=rr;}roll+=P(pts);});
+return {ax,st1,pr1,st2,cells,cellsD,nuB,icY:P(iy),icH:P(ih),icG:P(ig)+'Z',rings,x0s,tg,arr,pd,ring2,roll};
+}
+}
+</script>
+</body>
+</html>

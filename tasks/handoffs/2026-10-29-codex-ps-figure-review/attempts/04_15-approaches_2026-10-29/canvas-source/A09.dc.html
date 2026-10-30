@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>09 Spectrum and pole</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">09</span><span class="idea">The core visual idea is the frequency view: S1 must remove the 212 Hz peak from the residual spectrum, and S2 must place the eigenvalues of g<sub>aug</sub> at that angle on the unit circle.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="30" y1="80" x2="170" y2="80" stroke="#9e9e9e"></line>
+<path d="{{icG}}" fill="#dcdcdc"></path><path d="{{icY}}" fill="none" stroke="#111" stroke-width="1.2"></path><path d="{{icH}}" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<line x1="220" y1="280" x2="710" y2="280" stroke="#111"></line>
+<line x1="220" y1="280" x2="220" y2="30" stroke="#111"></line>
+<path d="{{xt}}" stroke="#111"></path>
+<line x1="{{fx}}" y1="40" x2="{{fx}}" y2="280" stroke="#9e9e9e" stroke-dasharray="2 3"></line>
+<path d="{{spE}}" fill="none" stroke="#111" stroke-width="1.8"></path>
+<path d="{{spR}}" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="M60 186 H88 M120 186 H148" stroke="#0092B5" stroke-width="1.2"></path>
+<path d="M92 186 l-7 -4 v8 z" fill="#0092B5"></path><path d="M152 186 l-7 -4 v8 z" fill="#0092B5" ></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l" style="left:50px;top:96px;font-size:15px">e<sub>τ</sub> = y − ŷ</span>
+<span class="l g" style="left:30px;top:178px;font-size:16px">χ<sub>τ</sub></span>
+<span class="l h" style="left:96px;top:178px;font-size:16px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:156px;top:178px;font-size:16px">p</span>
+<span class="l h" style="left:58px;top:164px;font-size:13px">ψ<sub>a</sub></span>
+<span class="l" style="left:{{eLx}}px;top:40px;font-size:16px">|e|</span>
+<span class="l h" style="left:600px;top:{{rLy}}px;font-size:16px">|e − p(x̄)|</span>
+<span class="l g" style="left:{{fLx}}px;top:288px;font-size:15px">212 Hz</span>
+<span class="l g" style="left:650px;top:288px;font-size:15px">f</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<rect x="30" y="60" width="130" height="5" fill="#bdbdbd"></rect>
+<rect x="37" y="70" width="130" height="5" fill="none" stroke="#0092B5"></rect>
+<circle cx="95" cy="190" r="55" fill="none" stroke="#e0e0e0"></circle>
+<path d="{{oneStep}}" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="{{osDots}}" fill="#555"></path>
+<path d="{{osTarget}}" fill="#fff" stroke="#111" stroke-width="1.4"></path>
+<line x1="340" y1="160" x2="620" y2="160" stroke="#c8c8c8"></line>
+<line x1="480" y1="40" x2="480" y2="280" stroke="#c8c8c8"></line>
+<circle cx="480" cy="160" r="110" fill="none" stroke="#111"></circle>
+<path d="{{wedge}}" fill="none" stroke="#9e9e9e" stroke-dasharray="2 3"></path>
+<path d="{{xInit}}" stroke="#9e9e9e" stroke-width="1.6"></path>
+<path d="{{xFin}}" stroke="#0092B5" stroke-width="2.6"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:168px;top:52px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:174px;top:68px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l h" style="left:{{gLx}}px;top:{{gLy}}px;font-size:15px">g<sub>aug</sub></span>
+<span class="l g" style="left:40px;top:258px;font-size:15px">x̄<sub>τ|τ</sub> → ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:600px;top:{{pLy}}px;font-size:15px">eig ∂g<sub>aug</sub>/∂x̄</span>
+<span class="l g" style="left:612px;top:142px;font-size:14px">ωT<sub>s</sub> = 2π·212/4000</span>
+<span class="l g" style="left:370px;top:200px;font-size:14px">init</span>
+<span class="l g" style="left:476px;top:22px">Im z</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Inset: the slide-13 gap, e<sub>τ</sub> = y − ŷ.</li>
+<li>Spectrum |e| of the residual (black, log f); dotted mark at 212 Hz where the peak sits.</li>
+<li>Chain χ<sub>τ</sub> → ψ<sub>a</sub> → x̄<sub>τ|τ</sub> → p in labels (highlight).</li>
+<li>Spectrum of what p leaves unexplained, |e − p(x̄)| (highlight): the peak is gone, the floor stays; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Windows one sample apart; small ring with x̄<sub>τ|τ</sub> and the target one step further.</li>
+<li>g<sub>aug</sub> arrow: one sample = a turn of ωT<sub>s</sub> ≈ 19°.</li>
+<li>Unit circle; grey crosses: eigenvalues of the random initial g<sub>aug</sub>.</li>
+<li>After S2 (highlight): a lightly damped pair at ±ωT<sub>s</sub>; S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: what stepping the state forward means for a control audience (a pole pair at 212 Hz). Weakest: g<sub>aug</sub> is nonlinear, so the eigenvalues are of its linearisation; spectra of short windows are loose, and the decoder data pairing is not shown.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const fxp=fr=>220+480*Math.log10(fr/10)/Math.log10(200);
+const base=fr=>-20*Math.log10(1+fr/300)+1.5*nz(Math.round(fr));
+const pk=fr=>{const z=0.03,r=fr/212;return -20*Math.log10(Math.sqrt((1-r*r)**2+(2*z*r)**2));};
+const sE=[],sR=[];
+for(let i=0;i<=200;i++){const fr=10*Math.pow(200,i/200);const yE=230-3.2*(base(fr)+Math.max(0,pk(fr))*1.0+12);const yR=230-3.2*(base(fr)+0.08*Math.max(0,pk(fr))+12)+6;sE.push([fxp(fr),yE]);sR.push([fxp(fr),yR]);}
+let xt='';[10,100,1000,2000].forEach(fr=>{xt+='M'+f(fxp(fr))+' 280v6';});
+const icx=k=>48+2.2*k, icy=k=>72-5*Math.sin(k/9)-3*Math.sin(Wr*k+1.1);
+const iy=[],ih=[],ig=[];const gp=k=>5*(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4);
+for(let k=-8;k<=50;k++)iy.push([icx(k),icy(k)]);for(let k=0;k<=50;k++)ih.push([icx(k),icy(k)+gp(k)]);
+for(let k=0;k<=50;k++)ig.push([icx(k),icy(k)]);for(let k=50;k>=0;k--)ig.push([icx(k),icy(k)+gp(k)]);
+const w=2*Math.PI*212/4000, cx=480,cy=160,R=110;
+const cross=(x,y,s)=>'M'+f(x-s)+' '+f(y-s)+'L'+f(x+s)+' '+f(y+s)+'M'+f(x-s)+' '+f(y+s)+'L'+f(x+s)+' '+f(y-s);
+let xInit='';for(let i=0;i<6;i++){const r=0.25+0.5*(nz(i+5)+0.5),a=(nz(i+30))*2.4;xInit+=cross(cx+R*r*Math.cos(a),cy-R*r*Math.sin(a),5);}
+xInit+=cross(cx-R*0.6,cy,5);
+const rr=0.985;const xFin=cross(cx+R*rr*Math.cos(w),cy-R*rr*Math.sin(w),6)+cross(cx+R*rr*Math.cos(w),cy+R*rr*Math.sin(w),6);
+const wedge='M'+cx+' '+cy+'L'+f(cx+R*Math.cos(w))+' '+f(cy-R*Math.sin(w))+'M'+(cx+60)+' '+cy+'A60 60 0 0 0 '+f(cx+60*Math.cos(w))+' '+f(cy-60*Math.sin(w));
+const ox=95,oy=190,r0=55,a0=0.5;const p0=[ox+r0*Math.cos(a0),oy-r0*Math.sin(a0)],p1=[ox+r0*Math.cos(a0+w),oy-r0*Math.sin(a0+w)];
+const pg=[ox+(r0-5)*Math.cos(a0+w+0.04),oy-(r0-5)*Math.sin(a0+w+0.04)];
+const oneStep='M'+f(p0[0])+' '+f(p0[1])+'Q'+f(ox+(r0+30)*Math.cos(a0+w/2))+' '+f(oy-(r0+30)*Math.sin(a0+w/2))+' '+f(pg[0])+' '+f(pg[1]);
+const dot=(x,y,r)=>'M'+f(x-r)+' '+f(y)+'a'+r+' '+r+' 0 1 0 '+(2*r)+' 0a'+r+' '+r+' 0 1 0 '+(-2*r)+' 0';
+return {xt,spE:P(sE),spR:P(sR),fx:f(fxp(212)),fLx:f(fxp(212)-24),eLx:f(fxp(212)+8),rLy:f(sR[200][1]-24),icY:P(iy),icH:P(ih),icG:P(ig)+'Z',
+xInit,xFin,wedge,oneStep,osDots:dot(p0[0],p0[1],4),osTarget:dot(p1[0],p1[1],5),gLx:f(p0[0]+24),gLy:f(p0[1]-44),pLy:f(cy-R*rr*Math.sin(w)-34)};
+}
+}
+</script>
+</body>
+</html>

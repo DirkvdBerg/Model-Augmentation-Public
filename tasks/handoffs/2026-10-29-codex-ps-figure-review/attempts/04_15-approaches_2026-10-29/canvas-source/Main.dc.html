@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>01 Gap cut out</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">01</span><span class="idea">The core visual idea is the slide-13 time axis where the gap after τ is cut out and lifted up as the target, and the state at the cut must redraw it.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<rect x="55" y="150" width="300" height="104" fill="#f0f0f0"></rect>
+<line x1="40" y1="262" x2="720" y2="262" stroke="#9e9e9e"></line>
+<line x1="360" y1="140" x2="360" y2="268" stroke="#111" stroke-dasharray="3 3"></line>
+<line x1="650" y1="256" x2="650" y2="268" stroke="#9e9e9e"></line>
+<path d="{{gapFill}}" fill="#dcdcdc"></path>
+<path d="{{yPath}}" fill="none" stroke="#111" stroke-width="1.6"></path>
+<path d="{{yhPath}}" fill="none" stroke="#8a8a8a" stroke-width="1.6"></path>
+<line x1="360" y1="70" x2="650" y2="70" stroke="#9e9e9e"></line>
+<line x1="360" y1="74" x2="360" y2="196" stroke="#9e9e9e" stroke-dasharray="1 3"></line>
+<line x1="650" y1="74" x2="650" y2="{{dropY}}" stroke="#9e9e9e" stroke-dasharray="1 3"></line>
+<path d="{{eStems}}" stroke="#111" stroke-width="1.2"></path>
+<path d="{{eDots}}" fill="#111"></path>
+<path d="{{predPath}}" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="5 3"></path>
+<rect x="318" y="96" width="14" height="14" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="318" y="110" width="14" height="14" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="318" y="124" width="14" height="14" fill="#d9f0f6" stroke="#0092B5"></rect>
+<path d="M205 150 C 220 118, 280 117, 314 117" fill="none" stroke="#0092B5" stroke-width="1.4"></path>
+<path d="M314 117 l-7 -4 l0 8 z" fill="#0092B5"></path>
+<path d="M334 110 C 345 90, 352 82, 368 76" fill="none" stroke="#0092B5" stroke-width="1.4" stroke-dasharray="4 3"></path>
+<path d="M370 75 l-8 -1 l4 7 z" fill="#0092B5"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:62px;top:128px">χ<sub>τ</sub></span>
+<span class="l h" style="left:228px;top:96px">ψ<sub>a</sub></span>
+<span class="l h" style="left:288px;top:72px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:340px;top:88px">p</span>
+<span class="l" style="left:662px;top:58px">e<sub>τ</sub></span>
+<span class="l h" style="left:662px;top:{{predLabT}}px">p(x̄<sub>τ|τ</sub>)</span>
+<span class="l" style="left:692px;top:{{yLabT}}px">y</span>
+<span class="l g" style="left:692px;top:{{yhLabT}}px">ŷ</span>
+<span class="l" style="left:355px;top:270px">τ</span>
+<span class="l g" style="left:624px;top:270px">τ+H−1</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="20" y1="270" x2="720" y2="270" stroke="#9e9e9e"></line>
+<path d="{{y2Path}}" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="{{y2Dots}}" fill="#111"></path>
+<rect x="20" y="236" width="352" height="6" fill="#bdbdbd"></rect>
+<rect x="36" y="248" width="352" height="6" fill="none" stroke="#0092B5" stroke-width="1.4"></rect>
+<line x1="372" y1="60" x2="372" y2="262" stroke="#9e9e9e" stroke-dasharray="1 3"></line>
+<line x1="388" y1="60" x2="388" y2="262" stroke="#0092B5" stroke-dasharray="1 3"></line>
+<path d="M372 239 C 340 190, 260 150, 246 110" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="M388 251 C 450 200, 520 150, 536 110" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<rect x="230" y="60" width="16" height="16" fill="#9e9e9e" stroke="#555"></rect>
+<rect x="230" y="76" width="16" height="16" fill="#9e9e9e" stroke="#555"></rect>
+<rect x="230" y="92" width="16" height="16" fill="#9e9e9e" stroke="#555"></rect>
+<rect x="528" y="60" width="16" height="16" fill="#fff" stroke="#111"></rect>
+<rect x="528" y="76" width="16" height="16" fill="#fff" stroke="#111"></rect>
+<rect x="528" y="92" width="16" height="16" fill="#fff" stroke="#111"></rect>
+<rect x="566" y="62" width="16" height="16" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="566" y="79" width="16" height="16" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="566" y="90" width="16" height="16" fill="#d9f0f6" stroke="#0092B5"></rect>
+<path d="M248 66 C 330 6, 500 6, 562 62" fill="none" stroke="#0092B5" stroke-width="1.8"></path>
+<path d="M564 64 l-3 -9 l-6 6 z" fill="#0092B5"></path>
+<line x1="380" y1="{{u0y}}" x2="380" y2="30" stroke="#0092B5" stroke-width="1" stroke-dasharray="2 2"></line>
+<line x1="528" y1="116" x2="582" y2="116" stroke="#111"></line>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:206px;top:36px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:470px;top:36px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:262px;top:6px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l h" style="left:388px;top:126px">u<sub>τ</sub></span>
+<span class="l g" style="left:264px;top:152px">ψ<sub>a</sub></span>
+<span class="l g" style="left:494px;top:152px">ψ<sub>a</sub></span>
+<span class="l u" style="left:536px;top:122px;font-size:15px">‖ − ‖²</span>
+<span class="l g" style="left:300px;top:216px">χ<sub>τ</sub></span>
+<span class="l h" style="left:394px;top:244px">χ<sub>τ+1</sub></span>
+<span class="l" style="left:366px;top:278px">τ</span>
+<span class="l" style="left:384px;top:292px;font-size:15px">τ+1</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Time axis split at τ; measured y continuous.</li>
+<li>ŷ starts on y at τ (grey); the gap between them is shaded.</li>
+<li>The gap is lifted up as stems: e<sub>τ</sub>; definition of e<sub>τ</sub> appears.</li>
+<li>Grey band χ<sub>τ</sub> left of τ; ψ<sub>a</sub> arrow into the state cells x̄<sub>τ|τ</sub> at the cut (highlight).</li>
+<li>Dashed p from the cells; its dashed curve lies on the stems; the S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Same axis, zoomed to sample pitch; dots at τ and τ+1 labelled.</li>
+<li>Bar χ<sub>τ</sub> (grey) ending at τ−1, its encoded state x̄<sub>τ|τ</sub> above (grey, fixed).</li>
+<li>Bar χ<sub>τ+1</sub> one sample later (highlight outline), its encoded state as an open target.</li>
+<li>Arc g<sub>aug</sub> with u<sub>τ</sub> from the sample at τ lands next to the target (highlight).</li>
+<li>Bracket ‖ − ‖² under the two; the S2 minimisation and "target fixed" appear.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: what the residual is (it literally is the shaded gap of slide 13). Weakest: why x̄ must carry the dynamics stays a voice-over; S2 shift is only 16 px wide.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=k=>k<=0?0:(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4)+0.2*Math.sin(k/8);
+const res=k=>k<=0?0:resS(k)+0.12*nz(k);
+const osc=k=>0.8*Math.sin(Wr*k+1.1)+0.1*nz(k+50);
+const yp=k=>205-22*Math.sin(k/14)-13*osc(k);
+const X=k=>360+10*k;
+const ys=[],yh=[],st=[],dt=[],pr=[];
+for(let k=-32;k<=32;k++) ys.push([X(k),yp(k)]);
+for(let k=0;k<=32;k++) yh.push([X(k),yp(k)+14*res(k)]);
+const fill=[];for(let k=0;k<=29;k++) fill.push([X(k),yp(k)]);for(let k=29;k>=0;k--) fill.push([X(k),yp(k)+14*res(k)]);
+for(let k=0;k<=29;k++){const t=70-22*res(k);st.push('M'+f(X(k))+' 70L'+f(X(k))+' '+f(t));dt.push('M'+f(X(k)-2)+' '+f(t)+'a2 2 0 1 0 4 0a2 2 0 1 0 -4 0');pr.push([X(k),70-22*0.85*resS(k+0.6)]);}
+const X2=k=>380+16*k, y2=k=>200-26*Math.sin(k/14)-15*osc(k);
+const a2=[],d2=[];for(let k=-22;k<=18;k++){a2.push([X2(k),y2(k)]);d2.push('M'+f(X2(k)-2.2)+' '+f(y2(k))+'a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0');}
+return {yPath:P(ys),yhPath:P(yh),gapFill:P(fill)+'Z',eStems:st.join(''),eDots:dt.join(''),predPath:P(pr),dropY:f(yp(29)),
+predLabT:f(70-22*0.85*resS(29.6)+4),yLabT:f(yp(32)-9),yhLabT:f(yp(32)+14*res(32)-9),y2Path:P(a2),y2Dots:d2.join(''),u0y:f(y2(0)-6)};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>08 Loss landscape</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">08</span><span class="idea">The core visual idea is the landscape of V: a flat plateau where x̄ is unused traps normal training, and S1 and S2 are side steps that move the start into the basin without changing the landscape.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M560 70a40 18 0 1 0 80 0a40 18 0 1 0 -80 0M520 70a80 36 0 1 0 160 0a80 36 0 1 0 -160 0M480 70a120 54 0 1 0 240 0a120 54 0 1 0 -240 0M440 70a160 72 0 1 0 320 0a160 72 0 1 0 -320 0M400 70a200 90 0 1 0 400 0a200 90 0 1 0 -400 0M205 185 C 350 189, 500 183, 705 188M205 215 C 350 219, 500 213, 705 218M205 245 C 350 249, 500 243, 705 248" fill="none" stroke="#c8c8c8"></path>
+<line x1="200" y1="290" x2="710" y2="290" stroke="#111"></line>
+<line x1="200" y1="290" x2="200" y2="30" stroke="#111"></line>
+<path d="M300 262 C 360 262, 420 260, 470 258" stroke="#8a8a8a" stroke-dasharray="2 4" fill="none"></path>
+<path d="M318 262L318 232M336 232L336 202M354 202L354 172M372 172L372 142M390 142L390 112" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="M300 262L318 262M318 232L336 232M336 202L354 202M354 172L372 172M372 142L390 142" fill="none" stroke="#8a8a8a" stroke-width="2"></path>
+<circle cx="300" cy="262" r="5" fill="#555"></circle>
+<circle cx="390" cy="112" r="5" fill="#0092B5"></circle>
+<line x1="30" y1="80" x2="160" y2="80" stroke="#9e9e9e"></line>
+<path d="M48.0 69.3 L50.2 68.5 L52.4 68.0 L54.6 67.8 L56.8 67.9 L59.0 68.3 L61.2 68.8 L63.4 69.3 L65.6 69.9 L67.8 70.2 L70.0 70.4 L72.2 70.3 L74.4 69.9 L76.6 69.3 L78.8 68.5 L81.0 67.6 L83.2 66.7 L85.4 65.9 L87.6 65.3 L89.8 65.0 L92.0 65.0 L94.2 65.5 L96.4 66.2 L98.6 67.4 L100.8 68.7 L103.0 70.2 L105.2 71.7 L107.4 73.1 L109.6 74.3 L111.8 75.3 L114.0 75.9 L116.2 76.2 L118.4 76.2 L120.6 75.9 L122.8 75.5 L125.0 74.9 L127.2 74.3 L129.4 73.9 L131.6 73.7 L133.8 73.7 L136.0 73.9 L138.2 74.5 L140.4 75.2 L142.6 76.1 L144.8 77.0 L147.0 77.8 L149.2 78.5 L151.4 78.9 L153.6 79.0 L153.6 76.0 L151.4 77.4 L149.2 78.6 L147.0 79.5 L144.8 80.1 L142.6 80.3 L140.4 80.1 L138.2 79.4 L136.0 78.4 L133.8 77.2 L131.6 75.9 L129.4 74.6 L127.2 73.4 L125.0 72.4 L122.8 71.7 L120.6 71.3 L118.4 71.2 L116.2 71.5 L114.0 71.9 L111.8 72.4 L109.6 73.0 L107.4 73.4 L105.2 73.5 L103.0 73.4 L100.8 73.0 L98.6 72.2 L96.4 71.1 L94.2 69.8 L92.0 68.4 L89.8 67.0 L87.6 65.8 L85.4 64.8 L83.2 64.1 L81.0 63.9 L78.8 64.1 L76.6 64.7 L74.4 65.6 L72.2 66.8 L70.0 68.0 L67.8 69.2 L65.6 70.2 L63.4 70.9 L61.2 71.1 L59.0 71.0 L56.8 70.6 L54.6 70.0 L52.4 69.4 L50.2 69.1 L48.0 69.3Z" fill="#dcdcdc"></path><path d="M30.4 78.9 L32.6 78.3 L34.8 77.4 L37.0 76.2 L39.2 74.8 L41.4 73.3 L43.6 71.8 L45.8 70.5 L48.0 69.3 L50.2 68.5 L52.4 68.0 L54.6 67.8 L56.8 67.9 L59.0 68.3 L61.2 68.8 L63.4 69.3 L65.6 69.9 L67.8 70.2 L70.0 70.4 L72.2 70.3 L74.4 69.9 L76.6 69.3 L78.8 68.5 L81.0 67.6 L83.2 66.7 L85.4 65.9 L87.6 65.3 L89.8 65.0 L92.0 65.0 L94.2 65.5 L96.4 66.2 L98.6 67.4 L100.8 68.7 L103.0 70.2 L105.2 71.7 L107.4 73.1 L109.6 74.3 L111.8 75.3 L114.0 75.9 L116.2 76.2 L118.4 76.2 L120.6 75.9 L122.8 75.5 L125.0 74.9 L127.2 74.3 L129.4 73.9 L131.6 73.7 L133.8 73.7 L136.0 73.9 L138.2 74.5 L140.4 75.2 L142.6 76.1 L144.8 77.0 L147.0 77.8 L149.2 78.5 L151.4 78.9 L153.6 79.0" fill="none" stroke="#111" stroke-width="1.2"></path><path d="M48.0 69.3 L50.2 69.1 L52.4 69.4 L54.6 70.0 L56.8 70.6 L59.0 71.0 L61.2 71.1 L63.4 70.9 L65.6 70.2 L67.8 69.2 L70.0 68.0 L72.2 66.8 L74.4 65.6 L76.6 64.7 L78.8 64.1 L81.0 63.9 L83.2 64.1 L85.4 64.8 L87.6 65.8 L89.8 67.0 L92.0 68.4 L94.2 69.8 L96.4 71.1 L98.6 72.2 L100.8 73.0 L103.0 73.4 L105.2 73.5 L107.4 73.4 L109.6 73.0 L111.8 72.4 L114.0 71.9 L116.2 71.5 L118.4 71.2 L120.6 71.3 L122.8 71.7 L125.0 72.4 L127.2 73.4 L129.4 74.6 L131.6 75.9 L133.8 77.2 L136.0 78.4 L138.2 79.4 L140.4 80.1 L142.6 80.3 L144.8 80.1 L147.0 79.5 L149.2 78.6 L151.4 77.4 L153.6 76.0" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:540px;top:296px;font-size:15px">other parameters of ϑ</span>
+<span class="l g" style="left:136px;top:36px;font-size:15px">x̄ predicts e</span>
+<span class="l g" style="left:286px;top:270px;font-size:15px">start</span>
+<span class="l g" style="left:470px;top:240px;font-size:15px">V alone</span>
+<span class="l h" style="left:400px;top:104px;font-size:15px">after S1</span>
+<span class="l" style="left:52px;top:100px;font-size:15px">e<sub>τ</sub> = y − ŷ</span>
+<span class="l g" style="left:600px;top:48px;font-size:15px">basin of V</span>
+<span class="l h" style="left:240px;top:150px;font-size:15px">S1 step ↑ , V step →</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M550 76a50 16 0 1 0 100 0a50 16 0 1 0 -100 0M500 76a100 32 0 1 0 200 0a100 32 0 1 0 -200 0M450 76a150 48 0 1 0 300 0a150 48 0 1 0 -300 0M400 76a200 64 0 1 0 400 0a200 64 0 1 0 -400 0M350 76a250 80 0 1 0 500 0a250 80 0 1 0 -500 0" fill="none" stroke="#c8c8c8"></path>
+<line x1="200" y1="290" x2="710" y2="290" stroke="#111"></line>
+<line x1="200" y1="290" x2="200" y2="30" stroke="#111"></line>
+<circle cx="260" cy="120" r="5" fill="#555"></circle>
+<path d="M266 120 L 470 120" stroke="#0092B5" stroke-width="2.4"></path><path d="M476 120 l-9 -5 v10 z" fill="#0092B5"></path>
+<circle cx="480" cy="120" r="5" fill="#0092B5"></circle>
+<path d="M484 116 C 520 90, 560 80, 590 76" stroke="#8a8a8a" stroke-dasharray="5 4" fill="none" stroke-width="1.6"></path>
+<circle cx="594" cy="76" r="4" fill="#111"></circle>
+<rect x="30" y="70" width="110" height="5" fill="#bdbdbd"></rect>
+<rect x="36" y="80" width="110" height="5" fill="none" stroke="#0092B5"></rect>
+<path d="M50 150 C 70 120, 110 120, 128 146" fill="none" stroke="#0092B5" stroke-width="1.6"></path><path d="M130 149 l-1 -9 l-7 5 z" fill="#0092B5"></path>
+<circle cx="50" cy="152" r="5" fill="#555"></circle><circle cx="132" cy="152" r="5" fill="#fff" stroke="#111"></circle>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:620px;top:296px;font-size:15px">θ<sub>aug</sub></span>
+<span class="l g" style="left:136px;top:36px;font-size:15px">x̄ predicts e</span>
+<span class="l g" style="left:226px;top:94px;font-size:15px">after S1</span>
+<span class="l h" style="left:330px;top:96px;font-size:15px">S2: θ<sub>aug</sub> only</span>
+<span class="l g" style="left:540px;top:52px;font-size:15px">V continues, p dropped</span>
+<span class="l g" style="left:150px;top:64px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:154px;top:82px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l h" style="left:58px;top:106px;font-size:15px">g<sub>aug</sub></span>
+<span class="l g" style="left:30px;top:166px;font-size:15px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:110px;top:166px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Contours of V; a basin at the top, a wide flat plateau at the bottom where x̄ predicts nothing.</li>
+<li>Start point on the plateau; V alone creeps sideways (grey dotted), never up.</li>
+<li>Inset: the gap e<sub>τ</sub> = y − ŷ, the quantity S1 regresses.</li>
+<li>Staircase: each V step (grey →) followed by one S1 step (highlight ↑) up the "x̄ predicts e" direction; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Second slice: vertical "x̄ predicts e", horizontal θ<sub>aug</sub>; S1 end point at the left.</li>
+<li>Inset: windows one sample apart; g<sub>aug</sub> from x̄<sub>τ|τ</sub> to ψ<sub>a</sub>(χ<sub>τ+1</sub>).</li>
+<li>S2 moves only along θ<sub>aug</sub> (highlight); S2 minimisation appears.</li>
+<li>V continues from there into the basin (grey dashed), p dropped: PS changes the start, not the landscape.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: PS changes the start, not what is minimised, and why plain V stalls. Weakest: axes are abstract and the landscape is invented; the residual, decoder and shift live only in insets.</div>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>02 State cloud</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">02</span><span class="idea">The core visual idea is that every past window becomes one point in the x̄ plane: S1 sorts the points by the phase of the coming error, and S2 is a step of one sample along the ring.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="40" y1="96" x2="170" y2="96" stroke="#9e9e9e"></line>
+<line x1="100" y1="40" x2="100" y2="104" stroke="#111" stroke-dasharray="3 3"></line>
+<path d="M100.0 67.5 L103.0 66.7 L106.0 66.2 L109.0 66.2 L112.0 66.9 L115.0 67.2 L118.0 68.6 L121.0 69.6 L124.0 70.4 L127.0 71.1 L130.0 71.4 L133.0 71.3 L136.0 70.2 L139.0 69.0 L142.0 67.9 L145.0 65.8 L148.0 64.3 L151.0 62.0 L154.0 60.9 L157.0 59.9 L160.0 59.2 L163.0 59.4 L166.0 60.0 L169.0 61.3 L169.0 68.6 L166.0 67.0 L163.0 66.5 L160.0 65.2 L157.0 63.9 L154.0 63.0 L151.0 61.5 L148.0 61.9 L145.0 61.8 L142.0 63.4 L139.0 63.8 L136.0 65.6 L133.0 67.8 L130.0 68.9 L127.0 70.9 L124.0 72.0 L121.0 72.8 L118.0 73.1 L115.0 72.2 L112.0 71.1 L109.0 69.7 L106.0 68.7 L103.0 67.9 L100.0 67.5Z" fill="#dcdcdc"></path>
+<path d="M40.0 76.8 L43.0 75.6 L46.0 75.0 L49.0 74.8 L52.0 75.0 L55.0 76.0 L58.0 76.7 L61.0 77.7 L64.0 79.4 L67.0 80.5 L70.0 80.9 L73.0 81.1 L76.0 81.0 L79.0 80.6 L82.0 79.1 L85.0 77.2 L88.0 75.2 L91.0 73.5 L94.0 71.2 L97.0 68.9 L100.0 67.5 L103.0 66.7 L106.0 66.2 L109.0 66.2 L112.0 66.9 L115.0 67.2 L118.0 68.6 L121.0 69.6 L124.0 70.4 L127.0 71.1 L130.0 71.4 L133.0 71.3 L136.0 70.2 L139.0 69.0 L142.0 67.9 L145.0 65.8 L148.0 64.3 L151.0 62.0 L154.0 60.9 L157.0 59.9 L160.0 59.2 L163.0 59.4 L166.0 60.0 L169.0 61.3" fill="none" stroke="#111" stroke-width="1.4"></path>
+<path d="M100.0 67.5 L103.0 67.9 L106.0 68.7 L109.0 69.7 L112.0 71.1 L115.0 72.2 L118.0 73.1 L121.0 72.8 L124.0 72.0 L127.0 70.9 L130.0 68.9 L133.0 67.8 L136.0 65.6 L139.0 63.8 L142.0 63.4 L145.0 61.8 L148.0 61.9 L151.0 61.5 L154.0 63.0 L157.0 63.9 L160.0 65.2 L163.0 66.5 L166.0 67.0 L169.0 68.6" fill="none" stroke="#8a8a8a" stroke-width="1.4"></path>
+<path d="M40.0 200.6 L44.3 202.6 L48.6 204.6 L52.9 204.7 L57.2 204.4 L61.5 204.1 L65.8 202.3 L70.1 200.9 L74.4 198.2 L78.7 196.7 L83.0 194.7 L87.3 193.1 L91.6 192.4 L95.9 192.2 L100.2 192.5 L104.5 193.9 L108.8 194.9 L113.1 196.3 L117.4 198.6 L121.7 200.1 L126.0 200.8 L130.3 201.2 L134.6 201.2 L138.9 200.7 L143.2 198.7 L147.5 196.3 L151.8 193.8 L156.1 191.6 L160.4 188.6 L164.7 185.8" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<line x1="380" y1="150" x2="620" y2="150" stroke="#c8c8c8"></line>
+<line x1="500" y1="30" x2="500" y2="270" stroke="#c8c8c8"></line>
+<path d="M497.9 139.6a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M498.6 142.7a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M498.5 163.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M482.4 153.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M500.8 155.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M501.4 160.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M494.6 145.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M509.0 160.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M492.7 148.7a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M495.3 142.6a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M489.4 152.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M513.4 135.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M504.5 145.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M509.5 162.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M509.1 140.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M483.2 163.1a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M501.9 154.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M511.7 158.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M489.1 136.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M506.3 155.6a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M486.8 164.1a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M511.0 152.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M487.5 151.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M492.8 154.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M499.8 153.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M493.6 164.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M494.7 163.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M500.0 135.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M485.5 160.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M502.3 162.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M512.5 144.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M489.8 138.7a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M490.2 165.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M506.8 153.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M509.1 157.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M502.3 153.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M484.4 158.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M497.7 152.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0" fill="#c8c8c8"></path>
+<path d="M591.9 150.0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M585.0 119.7a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M574.7 89.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M550.3 68.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M520.1 57.7a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M488.7 55.2a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M458.2 63.2a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M435.5 84.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M412.4 105.5a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M402.4 135.7a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M405.0 167.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M411.7 198.5a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M435.6 220.0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M461.5 237.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M492.0 242.2a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M524.4 246.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M552.8 229.8a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M577.0 208.3a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M591.5 179.0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M587.8 147.0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M587.3 115.6a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M573.5 86.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M544.9 70.9a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M517.5 54.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M486.0 59.2a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M453.7 61.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M432.2 85.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M413.2 109.5a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M402.4 138.9a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M405.9 170.1a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M417.2 199.0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M436.5 223.8a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M465.5 235.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M495.0 246.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M527.5 244.9a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M552.6 224.2a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M573.9 202.2a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M591.8 175.7a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0" fill="#111"></path>
+<path d="M598.9 101.2 L601.1 98.2 L603.3 95.8 L605.5 95.1 L607.7 94.0 L609.9 95.7 L612.1 96.7 L614.3 99.7 L616.5 102.8 L618.7 106.8 L620.9 109.8 L623.1 112.2 L625.3 113.6 L627.5 114.5 L629.7 113.7 L631.9 112.9 L634.1 110.5 L636.3 106.9 L638.5 103.9 L640.7 100.7 L642.9 97.8 L645.1 95.8 L647.3 94.4 L649.5 94.8 L651.7 95.5M424.8 17.5 L427.0 18.6 L429.2 21.4 L431.4 24.5 L433.6 27.8 L435.8 31.0 L438.0 33.5 L440.2 35.8 L442.4 36.4 L444.6 36.6 L446.8 34.3 L449.0 32.7 L451.2 29.2 L453.4 26.9 L455.6 23.8 L457.8 19.8 L460.0 17.8 L462.2 16.6 L464.4 16.5 L466.6 17.2 L468.8 18.6 L471.0 22.1 L473.2 24.6 L475.4 27.7 L477.6 31.8M349.5 200.6 L351.7 202.9 L353.9 204.6 L356.1 206.7 L358.3 206.9 L360.5 205.3 L362.7 203.3 L364.9 200.9 L367.1 198.4 L369.3 194.6 L371.5 191.1 L373.7 188.7 L375.9 187.8 L378.1 186.7 L380.3 186.5 L382.5 188.1 L384.7 191.0 L386.9 194.1 L389.1 197.3 L391.3 201.0 L393.5 202.8 L395.7 205.6 L397.9 206.7 L400.1 206.4 L402.3 205.4M511.7 286.6 L513.9 285.7 L516.1 283.5 L518.3 280.4 L520.5 277.6 L522.7 273.3 L524.9 271.3 L527.1 269.1 L529.3 267.6 L531.5 267.5 L533.7 268.6 L535.9 270.9 L538.1 272.8 L540.3 276.0 L542.5 280.2 L544.7 282.6 L546.9 285.8 L549.1 286.4 L551.3 287.5 L553.5 287.1 L555.7 285.4 L557.9 283.1 L560.1 280.1 L562.3 277.3 L564.5 273.3" fill="none" stroke="#111" stroke-width="1.2"></path>
+<path d="M424.8 18.9 L427.0 20.9 L429.2 23.6 L431.4 26.5 L433.6 29.4 L435.8 32.0 L438.0 34.0 L440.2 35.2 L442.4 35.4 L444.6 34.6 L446.8 33.0 L449.0 30.6 L451.2 27.7 L453.4 24.8 L455.6 22.0 L457.8 19.7 L460.0 18.1 L462.2 17.5 L464.4 17.8 L466.6 19.1 L468.8 21.2 L471.0 23.8 L473.2 26.8 L475.4 29.7 L477.6 32.3" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="M460.3 61.7a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0" fill="#0092B5"></path>
+<path d="M170 190 C 260 210, 360 230, 460.8 64.7" fill="none" stroke="#0092B5" stroke-width="1.3"></path>
+<path d="M464.8 55.7 Q 454.8 31.7 426.8 38.4" fill="none" stroke="#0092B5" stroke-width="1.3" stroke-dasharray="4 3"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l" style="left:176px;top:84px;font-size:15px">e<sub>τ</sub></span>
+<span class="l g" style="left:56px;top:212px">χ<sub>τ</sub></span>
+<span class="l h" style="left:280px;top:232px">ψ<sub>a</sub></span>
+<span class="l g" style="left:628px;top:142px">x̄<sub>1</sub></span>
+<span class="l g" style="left:492px;top:12px">x̄<sub>2</sub></span>
+<span class="l g" style="left:470px;top:160px;font-size:14px">init</span>
+<span class="l h" style="left:430.8px;top:31.7px">p</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M40.0 73.4 L44.6 75.3 L49.2 77.2 L53.8 77.1 L58.4 76.5 L63.0 76.0 L67.6 73.8 L72.2 72.2 L76.8 69.1 L81.4 67.5 L86.0 65.3 L90.6 63.6 L95.2 63.0 L99.8 63.0 L104.4 63.6 L109.0 65.5 L113.6 67.0 L118.2 69.0 L122.8 72.0 L127.4 74.2 L132.0 75.5 L136.6 76.5 L141.2 77.1 L145.8 77.2 L150.4 75.6 L155.0 73.6 L159.6 71.4 L164.2 69.6 L168.8 67.0 L173.4 64.6" fill="none" stroke="#8a8a8a" stroke-width="1.3"></path>
+<path d="M40.0 105.3 L44.6 107.2 L49.2 107.1 L53.8 106.5 L58.4 106.0 L63.0 103.8 L67.6 102.2 L72.2 99.1 L76.8 97.5 L81.4 95.3 L86.0 93.6 L90.6 93.0 L95.2 93.0 L99.8 93.6 L104.4 95.5 L109.0 97.0 L113.6 99.0 L118.2 102.0 L122.8 104.2 L127.4 105.5 L132.0 106.5 L136.6 107.1 L141.2 107.2 L145.8 105.6 L150.4 103.6 L155.0 101.4 L159.6 99.6 L164.2 97.0 L168.8 94.6 L173.4 93.2" fill="none" stroke="#0092B5" stroke-width="1.3"></path>
+<line x1="380" y1="150" x2="620" y2="150" stroke="#c8c8c8"></line>
+<line x1="500" y1="30" x2="500" y2="270" stroke="#c8c8c8"></line>
+<path d="M592.8 150.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M587.6 119.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M572.6 91.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M549.3 70.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M520.5 57.7a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M489.1 55.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M458.7 63.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M432.6 80.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M413.6 106.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M403.9 135.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M404.4 167.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M415.1 196.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M434.9 221.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M461.6 237.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M492.3 244.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M523.5 241.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M552.0 228.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M574.5 206.1a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M588.6 178.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M592.7 146.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M586.5 116.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M570.6 88.9a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M546.7 68.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M517.4 57.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M486.0 55.7a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M455.9 64.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M430.3 83.1a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M412.2 108.8a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M403.4 139.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M405.0 170.4a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M416.7 199.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M437.3 223.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M464.6 239.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M495.4 245.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M526.6 240.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M554.5 226.2a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M576.3 203.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M589.5 175.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0" fill="#c8c8c8"></path>
+<path d="M593.2 168.6 L594.1 137.2 L584.8 107.2 L566.2 81.9 L540.3 64.0 L510.0 55.5 L478.7 57.4 L449.6 69.5" fill="none" stroke="#9e9e9e" stroke-width="1"></path>
+<path d="M500 150L566.2 81.9M500 150L540.3 64.0" fill="none" stroke="#9e9e9e" stroke-dasharray="2 3"></path>
+<path d="M561.2 81.9a5 5 0 1 0 10 0a5 5 0 1 0 -10 0" fill="#555"></path>
+<path d="M534.3 64.0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0" fill="#fff" stroke="#111" stroke-width="1.5"></path>
+<path d="M566.2 81.9 Q 576.7 38.9 533.3 68.6" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="M529.3 68.6a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" fill="#0092B5"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:200px;top:52px">χ<sub>τ</sub></span>
+<span class="l h" style="left:200px;top:82px">χ<sub>τ+1</sub></span>
+<span class="l g" style="left:576.2px;top:83.9px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:400.3px;top:38.0px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:606.2px;top:31.9px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l g" style="left:516px;top:126px;font-size:15px">2π·212/4000</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Inset: the slide-13 gap, labelled e<sub>τ</sub>.</li>
+<li>Empty x̄ plane; untrained encoder puts all windows in a grey blob at the origin ("init").</li>
+<li>One window χ<sub>τ</sub> with ψ<sub>a</sub> to one point (highlight).</li>
+<li>All windows as black points on a ring; next to four of them, the future error they precede (each a phase-shifted wave).</li>
+<li>Dashed p from the highlighted point draws its wave over the true one; the S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Ring of encoded points, light grey; consecutive τ joined by a thin trail.</li>
+<li>Two past windows, one sample apart (grey χ<sub>τ</sub>, highlight χ<sub>τ+1</sub>).</li>
+<li>Their points: filled x̄<sub>τ|τ</sub>, open target ψ<sub>a</sub>(χ<sub>τ+1</sub>) one step further; angle wedge labelled 2π·212/4000.</li>
+<li>Arrow g<sub>aug</sub> from the filled point lands near the open target (highlight); S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: why x̄ must carry the dynamics (windows with different coming error must land at different points) and what stepping looks like. Weakest: the clean ring is idealised; real encoded states need a measured scatter.</div>
+</div>
+
+
+</body>
+</html>

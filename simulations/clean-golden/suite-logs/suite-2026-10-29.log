@@ -1,0 +1,105 @@
+DRIVER start 2026-10-29T11:10:24+01:00
+DRIVER suite A (bitwise, MM16 line reverted) 2026-10-29T11:10:24+01:00
+
+# >>>>>>>>>>>>>>>>>>>>>> ERROR REPORT <<<<<<<<<<<<<<<<<<<<<<
+
+    Traceback (most recent call last):
+      File "C:\Users\20203253\AppData\Local\anaconda3\lib\site-packages\conda\exceptions.py", line 1132, in __call__
+        return func(*args, **kwargs)
+      File "C:\Users\20203253\AppData\Local\anaconda3\lib\site-packages\conda\cli\main.py", line 69, in main_subshell
+        exit_code = do_call(args, p)
+      File "C:\Users\20203253\AppData\Local\anaconda3\lib\site-packages\conda\cli\conda_argparse.py", line 122, in do_call
+        return getattr(module, func_name)(args, parser)
+      File "C:\Users\20203253\AppData\Local\anaconda3\lib\site-packages\conda\cli\main_run.py", line 19, in execute
+        script, command = wrap_subprocess_call(
+      File "C:\Users\20203253\AppData\Local\anaconda3\lib\site-packages\conda\utils.py", line 409, in wrap_subprocess_call
+        assert not any("\n" in arg for arg in arguments), (
+    AssertionError: Support for scripts where arguments contain newlines not implemented.
+    .. requires writing the script to an external file and knowing how to transform the command-line (e.g. `python -c args` => `python file`) in a tool dependent way, or attempting something like:
+    .. https://stackoverflow.com/a/15032476 (adds unacceptable escapingrequirements)
+
+`$ C:\Users\20203253\AppData\Local\anaconda3\Scripts\conda-script.py run -n GraduationProject python -c 
+import sys; p, a, b = sys.argv[1:4]; s = open(p, encoding='utf-8', newline='').read()
+assert s.count(a) == 1, (s.count(a), a); open(p, 'w', encoding='utf-8', newline='').write(s.replace(a, b)) C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Clean/gantry_dynamic/data.py     P_inv_T = np.linalg.inv(P.numpy().astype(cfg.dtype_np).T)     P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)`
+
+  environment variables:
+                 CIO_TEST=<not set>
+               CONDA_ROOT=C:\Users\20203253\AppData\Local\anaconda3
+           CURL_CA_BUNDLE=<not set>
+                  EXEPATH=C:\Program Files\Git\bin
+                 HOMEPATH=\Users\20203253
+               LD_PRELOAD=<not set>
+NODEFAULTCURRENTDIRECTORYINEXEPATH=1
+                     PATH=C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users
+                          \20203253\bin;C:\Python313\Scripts;C:\Python313;C:\Program
+                          Files\Eclipse Adoptium\jdk-21.0.2.13-hotspot\bin;C:\Program
+                          Files\youtube-dl;C:\Program Files\MATLAB\R2025a\bin;C:\Program Files\M
+                          ATLAB\R2021b\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wb
+                          em;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\Open
+                          SSH;C:\Program Files\playit_gg\bin;C:\Program
+                          Files\CMake\bin;C:\Program
+                          Files\nodejs;C:\ProgramData\chocolatey\bin;C:\Program Files
+                          (x86)\Windows Kits\10\Windows Performance Toolkit;C:\Program
+                          Files\Git\cmd;C:\Program Files\Docker\Docker\resources\bin;C:\Strawber
+                          ry\c\bin;C:\Strawberry\perl\site\bin;C:\Strawberry\perl\bin;C:\Users\2
+                          0203253\.cargo\bin;C:\Users\20203253\AppData\Local\Microsoft\WindowsAp
+                          ps;C:\Users\20203253\AppData\Local\GitHubDesktop\bin;C:\Users\20203253
+                          \Documents\PumMa;C:\Program
+                          Files\VMD;C:\Users\20203253\AppData\Local\Programs\Microsoft VS Code\b
+                          in;C:\Users\20203253\AppData\Local\anaconda3;C:\Users\20203253\AppData
+                          \Local\anaconda3\Scripts;C:\Users\20203253\AppData\Local\anaconda3\Lib
+                          rary\bin;C:\Users\20203253\AppData\Local\Programs\Microsoft VS Code In
+                          siders\bin;C:\Users\20203253\AppData\Roaming\npm;C:\Users\20203253\App
+                          Data\Local\Programs\Antigravity\bin;C:\Users\20203253\AppData\Local\Mi
+                          crosoft\WinGet\Packages\oschwartz10612.Poppler_Microsoft.Winget.Source
+                          _8wekyb3d8bbwe\poppler-
+                          25.07.0\Library\bin;C:\Users\20203253\AppData\Local\Programs\cursor\re
+                          sources\app\bin;C:\Users\20203253\AppData\Local\Programs\MiKTeX\miktex
+                          \bin\x64;C:\Users\20203253\AppData\Local\Programs\Antigravity
+                          IDE\bin;C:\Users\20203253\AppData\Local\Programs\Microsoft VS
+                          Code\bin\copilot-shim;C:\Program Files\nodejs;C:\Program
+                          Files\Python38;C:\Program Files\Git\mingw64\bin
+             PSMODULEPATH=C:\Users\20203253\Documents\WindowsPowerShell\Modules;C:\Program Files
+                          \WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\
+                          Modules
+  PYTHONDONTWRITEBYTECODE=1
+         PYTHONIOENCODING=utf-8
+       REQUESTS_CA_BUNDLE=<not set>
+            SSL_CERT_FILE=<not set>
+
+     active environment : None
+       user config file : C:\Users\20203253\.condarc
+ populated config files : C:\Users\20203253\.condarc
+          conda version : 23.3.1
+    conda-build version : 3.24.0
+         python version : 3.10.9.final.0
+       virtual packages : __archspec=1=x86_64
+                          __cuda=12.8=0
+                          __win=0=0
+       base environment : C:\Users\20203253\AppData\Local\anaconda3  (writable)
+      conda av data dir : C:\Users\20203253\AppData\Local\anaconda3\etc\conda
+  conda av metadata url : None
+           channel URLs : https://repo.anaconda.com/pkgs/main/win-64
+                          https://repo.anaconda.com/pkgs/main/noarch
+                          https://repo.anaconda.com/pkgs/r/win-64
+                          https://repo.anaconda.com/pkgs/r/noarch
+                          https://repo.anaconda.com/pkgs/msys2/win-64
+                          https://repo.anaconda.com/pkgs/msys2/noarch
+          package cache : C:\Users\20203253\AppData\Local\anaconda3\pkgs
+                          C:\Users\20203253\.conda\pkgs
+                          C:\Users\20203253\AppData\Local\conda\conda\pkgs
+       envs directories : C:\Users\20203253\AppData\Local\anaconda3\envs
+                          C:\Users\20203253\.conda\envs
+                          C:\Users\20203253\AppData\Local\conda\conda\envs
+               platform : win-64
+             user-agent : conda/23.3.1 requests/2.28.1 CPython/3.10.9 Windows/10 Windows/10.0.26200
+          administrator : False
+             netrc file : None
+           offline mode : False
+
+
+An unexpected error has occurred. Conda has prepared the above report.
+
+If submitted, this report will be used by core maintainers to improve
+future releases of conda.
+Would you like conda to send this report to the core maintainers? [y/N]: 

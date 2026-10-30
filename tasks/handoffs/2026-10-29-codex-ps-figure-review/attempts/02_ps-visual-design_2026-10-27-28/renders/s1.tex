@@ -1,0 +1,61 @@
+% Slide 14b-2a, PS stage 1: why, the residual ahead, its prediction from x-bar_tau alone (thesis eq. ps2_s1, simplified).
+% Concept figure (Dirk 2026-10-28). e_tau: real residual of the baseline, record I1, axis Y, H = 30 samples = 7.5 ms.
+% The dashed prediction is an illustration: one damped sinusoid fitted to e_tau (curves.py), not a decoder output.
+% Pages: 1 why, and the error the model still makes after tau; 2 encoder, decoder, prediction; 3 cost and takeaway.
+% r4: legend beside the curve ends, horizon label under the axis; takeaway in one line under the diagram.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{amsmath}
+\usetikzlibrary{arrows.meta,calc}
+\definecolor{hl}{HTML}{0092B5}
+\tikzset{>={Latex[length=2.8mm,width=2.1mm]}, line width=0.9pt,
+  blk/.style={draw, line width=1.1pt, rounded corners=2pt, fill=white, align=center},
+  st/.style={draw, circle, line width=1.3pt, minimum size=1.25cm, inner sep=0pt, fill=white}}
+\input{curves.tex}
+\newcommand{\sm}{\fontsize{14}{17}\selectfont}
+\newcommand{\sone}[1]{%
+\ifnum#1=1 \colorlet{c1}{hl}\else\colorlet{c1}{black}\fi
+\ifnum#1=2 \colorlet{c2}{hl}\else\colorlet{c2}{black}\fi
+\begin{tikzpicture}
+  \useasboundingbox (0,0) rectangle (21.5,9);
+  \fontsize{17}{20}\selectfont
+  % ---------- why ----------
+  \node[anchor=west] at (0.1,8.5) {$V$ scores only the output: nothing asks $\bar x$ to carry the missing dynamics};
+  % ---------- time axis, past window, the error ahead ----------
+  \draw[->, black!55] (0.6,4.3) -- (17.0,4.3) node[right, text=black!55] {$k$};
+  \draw[black!55, dash pattern=on 4pt off 3pt] (8.9,7.6) -- (8.9,4.3);
+  \node[anchor=north, text=black!55] at (8.9,4.25) {$\tau$};
+  \fill[black!12] (1.2,4.5) rectangle (8.7,7.4);
+  \node at (4.95,6.5) {$\chi_\tau$: past window};
+  \node at (4.95,5.6) {\sm recorded $y_k,\ u_{\mathrm{act},k}$};
+  \begin{scope}[shift={(9.3,5.95)}, xscale=7.2, yscale=1.2]
+    \draw[c1, line width=1.8pt] plot coordinates {\rescurve};
+    \ifnum#1>1 \draw[c2, line width=1.8pt, dash pattern=on 6pt off 4pt] plot coordinates {\predcurve}; \fi
+  \end{scope}
+  % legend beside the curve ends; the horizon under the axis
+  \draw[c1, line width=1.8pt] (17.3,7.1) -- (18.3,7.1);
+  \node[anchor=west, text=c1] at (18.35,7.1) {$e_\tau$};
+  \node[anchor=west, text=c1] at (17.25,6.45) {\sm model error};
+  \node[anchor=north, text=c1] at (15.2,4.2) {\sm next $H$ samples};
+  \ifnum#1>1
+    \draw[c2, line width=1.8pt, dash pattern=on 6pt off 4pt] (17.3,5.55) -- (18.3,5.55);
+    \node[anchor=west, text=c2] at (18.35,5.55) {$p(\bar x_\tau)$};
+    \node[anchor=west, text=c2] at (17.25,4.9) {\sm predicted};
+  % ---------- encoder in, decoder out: x-bar_tau is the only link ----------
+    \node[blk, minimum width=1.8cm, minimum height=1.0cm] (psi) at (4.95,3.0) {$\psi$};
+    \draw[->] (4.95,4.45) -- (psi.north);
+    \node[st, draw=c2] (xb) at (8.9,1.75) {\color{c2}$\bar x_\tau$};
+    \draw[->, c2, line width=1.3pt] (psi.south) |- (xb.west);
+    \node[blk, draw=c2, minimum width=1.3cm, minimum height=1.0cm] (p) at (11.6,3.0) {\color{c2}$p$};
+    \draw[->, c2, line width=1.3pt] (xb.east) -| (p.south);
+    \draw[->, c2, line width=1.3pt] (p.north) -- (11.6,4.45);
+    \node[anchor=west, text=c2] at (12.4,2.85) {\sm temporary decoder};
+  \fi
+  % ---------- cost and takeaway ----------
+  \ifnum#1>2
+    \node[anchor=west, text=hl] at (0.1,0.45) {S1:\ \ $\min_{p,\,\psi_a}\ \sum_\tau \big\|\,p(\bar x_\tau)-e_\tau\big\|^2$};
+    \node[anchor=east, text=hl] at (21.4,0.45) {so $\bar x_\tau$ must hold what predicts the error};
+  \fi
+\end{tikzpicture}}
+\begin{document}
+\sone{1}\sone{2}\sone{3}
+\end{document}

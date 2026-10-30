@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>02 State cloud</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">02</span><span class="idea">The core visual idea is that every past window becomes one point in the x̄ plane: S1 sorts the points by the phase of the coming error, and S2 is a step of one sample along the ring.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="40" y1="96" x2="170" y2="96" stroke="#9e9e9e"></line>
+<line x1="100" y1="40" x2="100" y2="104" stroke="#111" stroke-dasharray="3 3"></line>
+<path d="{{inGap}}" fill="#dcdcdc"></path>
+<path d="{{inY}}" fill="none" stroke="#111" stroke-width="1.4"></path>
+<path d="{{inYh}}" fill="none" stroke="#8a8a8a" stroke-width="1.4"></path>
+<path d="{{chiP}}" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<line x1="380" y1="150" x2="620" y2="150" stroke="#c8c8c8"></line>
+<line x1="500" y1="30" x2="500" y2="270" stroke="#c8c8c8"></line>
+<path d="{{initDots}}" fill="#c8c8c8"></path>
+<path d="{{ringDots}}" fill="#111"></path>
+<path d="{{glyphs}}" fill="none" stroke="#111" stroke-width="1.2"></path>
+<path d="{{glyphPred}}" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="{{selDot}}" fill="#0092B5"></path>
+<path d="M170 190 C 260 210, 360 230, {{selX}} {{selY}}" fill="none" stroke="#0092B5" stroke-width="1.3"></path>
+<path d="{{pArrow}}" fill="none" stroke="#0092B5" stroke-width="1.3" stroke-dasharray="4 3"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l" style="left:176px;top:84px;font-size:15px">e<sub>τ</sub></span>
+<span class="l g" style="left:56px;top:212px">χ<sub>τ</sub></span>
+<span class="l h" style="left:280px;top:232px">ψ<sub>a</sub></span>
+<span class="l g" style="left:628px;top:142px">x̄<sub>1</sub></span>
+<span class="l g" style="left:492px;top:12px">x̄<sub>2</sub></span>
+<span class="l g" style="left:470px;top:160px;font-size:14px">init</span>
+<span class="l h" style="left:{{pLabX}}px;top:{{pLabY}}px">p</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="{{s2a}}" fill="none" stroke="#8a8a8a" stroke-width="1.3"></path>
+<path d="{{s2b}}" fill="none" stroke="#0092B5" stroke-width="1.3"></path>
+<line x1="380" y1="150" x2="620" y2="150" stroke="#c8c8c8"></line>
+<line x1="500" y1="30" x2="500" y2="270" stroke="#c8c8c8"></line>
+<path d="{{ringDotsL}}" fill="#c8c8c8"></path>
+<path d="{{trail}}" fill="none" stroke="#9e9e9e" stroke-width="1"></path>
+<path d="{{wedge}}" fill="none" stroke="#9e9e9e" stroke-dasharray="2 3"></path>
+<path d="{{x0Dot}}" fill="#555"></path>
+<path d="{{x1Ring}}" fill="#fff" stroke="#111" stroke-width="1.5"></path>
+<path d="{{gArr}}" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="{{gDot}}" fill="#0092B5"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:200px;top:52px">χ<sub>τ</sub></span>
+<span class="l h" style="left:200px;top:82px">χ<sub>τ+1</sub></span>
+<span class="l g" style="left:{{x0lx}}px;top:{{x0ly}}px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:{{x1lx}}px;top:{{x1ly}}px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:{{glx}}px;top:{{gly}}px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l g" style="left:516px;top:126px;font-size:15px">2π·212/4000</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Inset: the slide-13 gap, labelled e<sub>τ</sub>.</li>
+<li>Empty x̄ plane; untrained encoder puts all windows in a grey blob at the origin ("init").</li>
+<li>One window χ<sub>τ</sub> with ψ<sub>a</sub> to one point (highlight).</li>
+<li>All windows as black points on a ring; next to four of them, the future error they precede (each a phase-shifted wave).</li>
+<li>Dashed p from the highlighted point draws its wave over the true one; the S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Ring of encoded points, light grey; consecutive τ joined by a thin trail.</li>
+<li>Two past windows, one sample apart (grey χ<sub>τ</sub>, highlight χ<sub>τ+1</sub>).</li>
+<li>Their points: filled x̄<sub>τ|τ</sub>, open target ψ<sub>a</sub>(χ<sub>τ+1</sub>) one step further; angle wedge labelled 2π·212/4000.</li>
+<li>Arrow g<sub>aug</sub> from the filled point lands near the open target (highlight); S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: why x̄ must carry the dynamics (windows with different coming error must land at different points) and what stepping looks like. Weakest: the clean ring is idealised; real encoded states need a measured scatter.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=k=>k<=0?0:(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4)+0.2*Math.sin(k/8);
+const res=k=>k<=0?0:resS(k)+0.12*nz(k);
+const osc=k=>0.8*Math.sin(Wr*k+1.1)+0.1*nz(k+50);
+const dot=(x,y,r)=>'M'+f(x-r)+' '+f(y)+'a'+r+' '+r+' 0 1 0 '+(2*r)+' 0a'+r+' '+r+' 0 1 0 '+(-2*r)+' 0';
+const yp=k=>72-8*Math.sin(k/14)-6*osc(k), X=k=>100+3*k;
+const iy=[],ih=[],gf=[];for(let k=-20;k<=23;k++)iy.push([X(k),yp(k)]);for(let k=0;k<=23;k++)ih.push([X(k),yp(k)+7*res(k)]);
+for(let k=0;k<=23;k++)gf.push([X(k),yp(k)]);for(let k=23;k>=0;k--)gf.push([X(k),yp(k)+7*res(k)]);
+const ch=[];for(let k=-30;k<=-1;k++)ch.push([40+4.3*(k+30),190-9*Math.sin(k/14)-8*osc(k)]);
+const cx=500,cy=150,R=95;
+let ring='',init='';
+for(let i=0;i<38;i++){const a=i*2*Math.PI/18.9, r=R+10*nz(i+3);ring+=dot(cx+r*Math.cos(a),cy-r*Math.sin(a),2.6);
+init+=dot(cx+16*nz(i+7)*2,cy+16*nz(i+90)*2,2.2);}
+const glyph=(a,ph,pred)=>{const gx=cx+(R+38)*Math.cos(a), gy=cy-(R+38)*Math.sin(a), pts=[];
+for(let j=0;j<=24;j++){const k=j; const v=pred?0.9*Math.sin(Wr*k+ph+0.2):Math.sin(Wr*k+ph)+0.12*nz(k+ph*10);pts.push([gx-26+j*2.2,gy-10*v]);}return P(pts);};
+const ang=[0.35,1.95,3.5,5.0];let gl='';ang.forEach(a=>{gl+=glyph(a,a,false);});
+const sa=1.95, sx=cx+R*Math.cos(sa), sy=cy-R*Math.sin(sa);
+const gpx=cx+(R+38)*Math.cos(sa)-28, gpy=cy-(R+38)*Math.sin(sa);
+const s2a=[],s2b=[];for(let k=-30;k<=-1;k++){s2a.push([40+4.6*(k+30),70-9*osc(k)]);}for(let k=-29;k<=0;k++){s2b.push([40+4.6*(k+29),100-9*osc(k)]);}
+let ringL='';const trailPts=[];for(let i=0;i<38;i++){const a=i*2*Math.PI/18.9;ringL+=dot(cx+R*Math.cos(a),cy-R*Math.sin(a),2.2);}
+const a0=0.8, a1=a0+2*Math.PI/18.9;
+for(let j=-3;j<=4;j++){const a=a0+j*2*Math.PI/18.9;trailPts.push([cx+R*Math.cos(a),cy-R*Math.sin(a)]);}
+const p0=[cx+R*Math.cos(a0),cy-R*Math.sin(a0)], p1=[cx+R*Math.cos(a1),cy-R*Math.sin(a1)];
+const pg=[cx+(R-7)*Math.cos(a1+0.05),cy-(R-7)*Math.sin(a1+0.05)];
+const gArr='M'+f(p0[0])+' '+f(p0[1])+' Q '+f(cx+(R+40)*Math.cos((a0+a1)/2))+' '+f(cy-(R+40)*Math.sin((a0+a1)/2))+' '+f(pg[0])+' '+f(pg[1]);
+const wedge='M'+cx+' '+cy+'L'+f(p0[0])+' '+f(p0[1])+'M'+cx+' '+cy+'L'+f(p1[0])+' '+f(p1[1]);
+return {inY:P(iy),inYh:P(ih),inGap:P(gf)+'Z',chiP:P(ch),ringDots:ring,initDots:init,glyphs:gl,glyphPred:glyph(sa,sa,true),
+selDot:dot(sx,sy,4.5),selX:f(sx-4),selY:f(sy+3),pArrow:'M'+f(sx)+' '+f(sy-6)+' Q '+f(sx-10)+' '+f(sy-30)+' '+f(gpx+4)+' '+f(gpy+12),
+pLabX:f(sx-34),pLabY:f(sy-30),s2a:P(s2a),s2b:P(s2b),ringDotsL:ringL,trail:P(trailPts),wedge:wedge,x0Dot:dot(p0[0],p0[1],5),x1Ring:dot(p1[0],p1[1],6),
+gArr:gArr,gDot:dot(pg[0],pg[1],4),x0lx:f(p0[0]+10),x0ly:f(p0[1]+2),x1lx:f(p1[0]-140),x1ly:f(p1[1]-26),glx:f(p0[0]+40),gly:f(p0[1]-50)};
+}
+}
+</script>
+</body>
+</html>

@@ -136,16 +136,29 @@ def sha256_file(path):
     return h.hexdigest()
 
 
+GREY_BOX = ('gantry_interconnect_dynamic.py', 'gantry_dynamic', 'model_augmentation')
+
+
+def grey_box_files():
+    """The 24 grey-box .py files under Clean/ (package initialisers included, __pycache__
+    excluded), as paths relative to Clean/ with '/' separators. Clean/blackbox/ and
+    Clean/data_generation/ belong to other sessions and are left out (D-284 amendment 5)."""
+    out = []
+    for top in GREY_BOX:
+        p = os.path.join(CLEAN, top)
+        if os.path.isfile(p):
+            out.append(top)
+            continue
+        for root, dirs, files in os.walk(p):
+            dirs[:] = sorted(d for d in dirs if d != '__pycache__')
+            out += [os.path.relpath(os.path.join(root, f), CLEAN).replace(os.sep, '/')
+                    for f in sorted(files) if f.endswith('.py')]
+    return sorted(out)
+
+
 def clean_tree_hashes():
-    """H2: SHA256 of every file under Clean/ (package initialisers and the import-origin guard
-    included, __pycache__ excluded), keyed by the path relative to Clean/ with '/' separators."""
-    out = {}
-    for root, dirs, files in os.walk(CLEAN):
-        dirs[:] = sorted(d for d in dirs if d != '__pycache__')
-        for f in sorted(files):
-            p = os.path.join(root, f)
-            out[os.path.relpath(p, CLEAN).replace(os.sep, '/')] = sha256_file(p)
-    return out
+    """H2: SHA256 of every grey-box .py file under Clean/, keyed by its path relative to Clean/."""
+    return {k: sha256_file(os.path.join(CLEAN, *k.split('/'))) for k in grey_box_files()}
 
 
 def clean_tree_problems(recorded):
@@ -160,7 +173,7 @@ def clean_tree_problems(recorded):
 
 
 def source_hashes():
-    """SHA256 of the 19 copied mainline files, and of the full clean tree (H2)."""
+    """SHA256 of the 19 copied mainline files, and of the grey-box clean files (H2)."""
     return {'mainline': {k: sha256_file(os.path.join(REPO, k)) for k in COPIED},
             'clean': clean_tree_hashes()}
 
@@ -228,7 +241,7 @@ def output_problems(out_dir, meta, legacy_newer=()):
 
 
 def write_meta(out_dir, cfg, data, extra=None):
-    """meta.json of design 6.2: sources (the clean manifest is the full tree, H2), manifests,
+    """meta.json of design 6.2: sources (the clean manifest is the grey-box files, H2), manifests,
     records, config, data root, libraries, threads, git provenance, budget, and `outputs`, the
     SHA256 of every file already in out_dir. Call it LAST, once every output of the case is saved:
     a meta.json then exists only for a complete case and pins the files it was written for."""

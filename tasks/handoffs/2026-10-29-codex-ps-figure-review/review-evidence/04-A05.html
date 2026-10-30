@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>05 Curtain game</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+.pn{position:absolute;font-size:16px;color:#333;white-space:nowrap}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">05</span><span class="idea">The core visual idea is a guessing game in three panels: the future is behind a curtain, the decoder may look only at the state card, then the curtain lifts and the miss is scored.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<defs><pattern id="ht5" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#efefef"></rect><line x1="0" y1="0" x2="0" y2="6" stroke="#cfcfcf" stroke-width="2"></line></pattern></defs>
+<path d="M245 40 V280 M490 40 V280" stroke="#e0e0e0"></path>
+<path d="M15 222H235M260 222H480M505 222H725" stroke="#9e9e9e"></path>
+<path d="M17.0 175.6 L20.6 178.1 L24.2 180.7 L27.8 181.0 L31.4 180.6 L35.0 180.4 L38.6 178.1 L42.2 176.4 L45.8 173.0 L49.4 171.2 L53.0 168.7 L56.6 166.6 L60.2 165.7 L63.8 165.3 L67.4 165.6 L71.0 167.3 L74.6 168.4 L78.2 170.1 L81.8 172.8 L85.4 174.6 L89.0 175.2 L92.6 175.6 L96.2 175.4 L99.8 174.7 L103.4 172.1 L107.0 168.9 L110.6 165.5 L114.2 162.6 L117.8 158.7 L121.4 155.0M262.0 175.6 L265.6 178.1 L269.2 180.7 L272.8 181.0 L276.4 180.6 L280.0 180.4 L283.6 178.1 L287.2 176.4 L290.8 173.0 L294.4 171.2 L298.0 168.7 L301.6 166.6 L305.2 165.7 L308.8 165.3 L312.4 165.6 L316.0 167.3 L319.6 168.4 L323.2 170.1 L326.8 172.8 L330.4 174.6 L334.0 175.2 L337.6 175.6 L341.2 175.4 L344.8 174.7 L348.4 172.1 L352.0 168.9 L355.6 165.5 L359.2 162.6 L362.8 158.7 L366.4 155.0M507.0 175.6 L510.6 178.1 L514.2 180.7 L517.8 181.0 L521.4 180.6 L525.0 180.4 L528.6 178.1 L532.2 176.4 L535.8 173.0 L539.4 171.2 L543.0 168.7 L546.6 166.6 L550.2 165.7 L553.8 165.3 L557.4 165.6 L561.0 167.3 L564.6 168.4 L568.2 170.1 L571.8 172.8 L575.4 174.6 L579.0 175.2 L582.6 175.6 L586.2 175.4 L589.8 174.7 L593.4 172.1 L597.0 168.9 L600.6 165.5 L604.2 162.6 L607.8 158.7 L611.4 155.0" fill="none" stroke="#111" stroke-width="1.4"></path>
+<rect x="125" y="90" width="110" height="130" fill="url(#ht5)"></rect>
+<rect x="370" y="90" width="110" height="130" fill="url(#ht5)"></rect>
+<rect x="615" y="56" width="110" height="20" fill="url(#ht5)"></rect>
+<path d="M370.0 157.9 L373.6 156.2 L377.2 154.4 L380.8 153.0 L384.4 152.2 L388.0 152.3 L391.6 153.4 L395.2 155.2 L398.8 157.5 L402.4 159.9 L406.0 162.2 L409.6 164.0 L413.2 165.1 L416.8 165.2 L420.4 164.4 L424.0 162.7 L427.6 160.3 L431.2 157.5 L434.8 154.7 L438.4 152.1 L442.0 150.1 L445.6 148.8 L449.2 148.6 L452.8 149.4 L456.4 151.2 L460.0 153.7 L463.6 156.8 L467.2 160.1 L470.8 163.3 L474.4 166.0 L478.0 168.0" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="M615.0 152.5 L618.6 151.1 L622.2 150.3 L625.8 150.1 L629.4 151.3 L633.0 151.7 L636.6 154.0 L640.2 155.7 L643.8 156.9 L647.4 158.0 L651.0 158.5 L654.6 158.3 L658.2 156.4 L661.8 154.4 L665.4 152.6 L669.0 149.1 L672.6 146.6 L676.2 142.8 L679.8 140.8 L683.4 139.2 L687.0 138.1 L690.6 138.3 L694.2 139.3 L697.8 141.5 L701.4 143.2 L705.0 146.4 L708.6 149.3 L712.2 151.4 L715.8 153.4 L719.4 155.7 L723.0 156.6 L723.0 146.2 L719.4 147.9 L715.8 150.2 L712.2 151.0 L708.6 153.5 L705.0 153.2 L701.4 153.5 L697.8 152.9 L694.2 150.3 L690.6 149.5 L687.0 147.4 L683.4 145.5 L679.8 144.2 L676.2 141.9 L672.6 142.9 L669.0 142.8 L665.4 145.5 L661.8 146.3 L658.2 149.3 L654.6 152.8 L651.0 154.7 L647.4 157.8 L643.8 159.5 L640.2 160.7 L636.6 161.1 L633.0 159.6 L629.4 158.0 L625.8 155.8 L622.2 154.1 L618.6 153.0 L615.0 152.5Z" fill="#dcdcdc"></path>
+<path d="M507.0 175.6 L510.6 178.1 L514.2 180.7 L517.8 181.0 L521.4 180.6 L525.0 180.4 L528.6 178.1 L532.2 176.4 L535.8 173.0 L539.4 171.2 L543.0 168.7 L546.6 166.6 L550.2 165.7 L553.8 165.3 L557.4 165.6 L561.0 167.3 L564.6 168.4 L568.2 170.1 L571.8 172.8 L575.4 174.6 L579.0 175.2 L582.6 175.6 L586.2 175.4 L589.8 174.7 L593.4 172.1 L597.0 168.9 L600.6 165.5 L604.2 162.6 L607.8 158.7 L611.4 155.0 L615.0 152.5 L618.6 151.1 L622.2 150.3 L625.8 150.1 L629.4 151.3 L633.0 151.7 L636.6 154.0 L640.2 155.7 L643.8 156.9 L647.4 158.0 L651.0 158.5 L654.6 158.3 L658.2 156.4 L661.8 154.4 L665.4 152.6 L669.0 149.1 L672.6 146.6 L676.2 142.8 L679.8 140.8 L683.4 139.2 L687.0 138.1 L690.6 138.3 L694.2 139.3 L697.8 141.5 L701.4 143.2 L705.0 146.4 L708.6 149.3 L712.2 151.4 L715.8 153.4 L719.4 155.7 L723.0 156.6" fill="none" stroke="#111" stroke-width="1.4"></path>
+<path d="M615.0 152.5 L618.6 153.0 L622.2 154.1 L625.8 155.8 L629.4 158.0 L633.0 159.6 L636.6 161.1 L640.2 160.7 L643.8 159.5 L647.4 157.8 L651.0 154.7 L654.6 152.8 L658.2 149.3 L661.8 146.3 L665.4 145.5 L669.0 142.8 L672.6 142.9 L676.2 141.9 L679.8 144.2 L683.4 145.5 L687.0 147.4 L690.6 149.5 L694.2 150.3 L697.8 152.9 L701.4 153.5 L705.0 153.2 L708.6 153.5 L712.2 151.0 L715.8 150.2 L719.4 147.9 L723.0 146.2" fill="none" stroke="#8a8a8a" stroke-width="1.4"></path>
+<path d="M615.0 151.9 L618.6 150.8 L622.2 150.1 L625.8 150.3 L629.4 151.7 L633.0 153.5 L636.6 156.0 L640.2 157.4 L643.8 158.6 L647.4 159.2 L651.0 158.5 L654.6 158.4 L658.2 155.9 L661.8 153.0 L665.4 151.4 L669.0 147.0 L672.6 144.7 L676.2 140.9 L679.8 140.4 L683.4 139.1 L687.0 139.0 L690.6 139.9 L694.2 140.4 L697.8 143.9 L701.4 146.2 L705.0 148.5 L708.6 151.9 L712.2 152.6 L715.8 155.0 L719.4 155.5 L723.0 155.8" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="M110 238h12v12h-12zM122 238h12v12h-12zM134 238h12v12h-12zM355 252h12v12h-12zM367 252h12v12h-12zM379 252h12v12h-12z" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="M70 222 C 80 240, 98 246, 108 246" fill="none" stroke="#0092B5" stroke-width="1.3"></path>
+<path d="M370 252 C 380 230, 390 200, 400 162.5" fill="none" stroke="#0092B5" stroke-width="1.3" stroke-dasharray="4 3"></path>
+<path d="M660 270 C 600 300, 200 300, 130 268" fill="none" stroke="#0092B5" stroke-width="1.2"></path><path d="M128 266 l9 1 l-4 7 z" fill="#0092B5"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="pn" style="left:40px;top:40px">1 hide</span>
+<span class="pn" style="left:285px;top:40px">2 guess</span>
+<span class="pn" style="left:530px;top:40px">3 reveal</span>
+<span class="l" style="left:172px;top:140px;font-size:28px">?</span>
+<span class="l g" style="left:40px;top:70px">χ<sub>τ</sub></span>
+<span class="l h" style="left:70px;top:240px">ψ<sub>a</sub></span>
+<span class="l h" style="left:146px;top:250px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:384px;top:236px">p</span>
+<span class="l" style="left:690px;top:158.6px">e<sub>τ</sub></span>
+<span class="l h" style="left:340px;top:282px;font-size:15px">update ψ<sub>a</sub>, p</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M245 40 V280 M490 40 V280" stroke="#e0e0e0"></path>
+<path d="M40 140h16v16h-16zM56 140h16v16h-16zM72 140h16v16h-16z" fill="#9e9e9e" stroke="#555"></path>
+<path d="M150 140h16v16h-16zM560 140h18v18h-18zM166 140h16v16h-16zM578 140h18v18h-18zM182 140h16v16h-16zM596 140h18v18h-18z" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="M360 140h16v16h-16zM630 140h18v18h-18zM376 140h16v16h-16zM648 140h18v18h-18zM392 140h16v16h-16zM666 140h18v18h-18z" fill="#fff" stroke="#111" stroke-width="1.5"></path>
+<path d="M92 130 C 120 100, 150 100, 172 128" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M174 131 l-1 -9 l-7 5 z" fill="#0092B5"></path>
+<path d="M120 210 V160" stroke="#0092B5" stroke-dasharray="2 2"></path>
+<line x1="265" y1="230" x2="475" y2="230" stroke="#9e9e9e"></line>
+<path d="M266.0 203.8 L273.0 201.6 L280.0 198.8 L287.0 196.5 L294.0 195.7 L301.0 195.6 L308.0 196.5 L315.0 199.0 L322.0 201.0 L329.0 203.7 L336.0 207.7 L343.0 210.6 L350.0 212.3 L357.0 213.7 L364.0 214.4 L371.0 214.5 L378.0 212.5 L385.0 209.7 L392.0 206.9 L399.0 204.5 L406.0 201.0 L413.0 197.8 L420.0 196.0 L427.0 195.5 L434.0 195.8 L441.0 196.7 L448.0 199.2 L455.0 201.0 L462.0 204.8 L469.0 207.9" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="M264.2 203.8a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M271.2 201.6a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M278.2 198.8a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M285.2 196.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M292.2 195.7a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M299.2 195.6a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M306.2 196.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M313.2 199.0a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M320.2 201.0a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M327.2 203.7a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M334.2 207.7a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M341.2 210.6a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M348.2 212.3a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M355.2 213.7a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M362.2 214.4a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M369.2 214.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M376.2 212.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M383.2 209.7a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M390.2 206.9a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M397.2 204.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M404.2 201.0a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M411.2 197.8a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M418.2 196.0a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M425.2 195.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M432.2 195.8a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M439.2 196.7a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M446.2 199.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M453.2 201.0a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M460.2 204.8a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0M467.2 207.9a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0" fill="#111"></path>
+<rect x="265" y="244" width="140.0" height="6" fill="#bdbdbd"></rect>
+<rect x="272.0" y="254" width="140.0" height="6" fill="none" stroke="#0092B5" stroke-width="1.3"></rect>
+<path d="M412.0 252 C 412.0 200, 380 170, 380 160" fill="none" stroke="#555" stroke-width="1.2"></path>
+<path d="M555 175 H690" stroke="#111"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="pn" style="left:40px;top:40px">1 guess the next card</span>
+<span class="pn" style="left:285px;top:40px">2 slide one sample</span>
+<span class="pn" style="left:530px;top:40px">3 compare</span>
+<span class="l g" style="left:56px;top:176px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:150px;top:176px">?</span>
+<span class="l h" style="left:70px;top:84px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l h" style="left:110px;top:214px">u<sub>τ</sub></span>
+<span class="l" style="left:396px;top:120px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l g" style="left:270px;top:262px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:420px;top:262px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l u" style="left:600px;top:184px;font-size:16px">‖ − ‖²</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Panel 1: the past χ<sub>τ</sub>; the future hidden by a hatched curtain and a "?".</li>
+<li>ψ<sub>a</sub> hands out a small card x̄<sub>τ|τ</sub> (highlight). Only the card goes to panel 2.</li>
+<li>Panel 2: p draws its guess on the curtain (dashed), from the card alone.</li>
+<li>Panel 3: curtain lifts; y and ŷ with the gap e<sub>τ</sub>; the guess is overlaid on the gap; e<sub>τ</sub> definition appears.</li>
+<li>Arrow back to the card: update ψ<sub>a</sub>, p; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Panel 1: card x̄<sub>τ|τ</sub> (grey) and u<sub>τ</sub>; g<sub>aug</sub> guesses the next card (highlight, "?").</li>
+<li>Panel 2: the data slide one sample; χ<sub>τ+1</sub> bar ends one sample later; ψ<sub>a</sub> deals the true next card (outline).</li>
+<li>Panel 3: the two cards side by side, ‖ − ‖²; S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: why x̄ must carry the dynamics (the guesser sees only the card, so the card must hold what predicts the miss). Weakest: the game framing may feel playful for the committee; the alternation with V is only implied.</div>
+</div>
+
+
+</body>
+</html>

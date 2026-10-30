@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>12 Parameter bar</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">12</span><span class="idea">The core visual idea is the parameter vector as one segmented bar that lights up per stage, each lit segment tied by a thin line to the part of the signal picture it changes.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<rect x="60" y="40" width="160" height="26" fill="#fff" stroke="#9e9e9e"></rect>
+<rect x="220" y="40" width="140" height="26" fill="#fff" stroke="#9e9e9e"></rect>
+<rect x="360" y="40" width="110" height="26" fill="#fff" stroke="#9e9e9e"></rect>
+<rect x="470" y="40" width="100" height="26" fill="#0092B5" stroke="#0092B5"></rect>
+<rect x="570" y="40" width="110" height="26" fill="#b3dfeb" stroke="#0092B5" stroke-dasharray="4 3"></rect>
+<rect x="60" y="80" width="510" height="10" fill="#c8c8c8"></rect>
+<path d="M520 66 C 520 110, 300 120, 290 186 M625 66 C 625 120, 400 130, 372 176" fill="none" stroke="#0092B5" stroke-width="1" stroke-dasharray="1 3"></path>
+<rect x="80" y="190" width="200" height="72" fill="#f0f0f0"></rect>
+<line x1="60" y1="270" x2="700" y2="270" stroke="#9e9e9e"></line>
+<line x1="290" y1="160" x2="290" y2="276" stroke="#111" stroke-dasharray="3 3"></line>
+<path d="M290.0 225.2 L293.3 224.2 L296.6 223.6 L299.9 223.7 L303.2 224.9 L306.5 225.5 L309.8 227.7 L313.1 229.4 L316.4 230.7 L319.7 231.8 L323.0 232.3 L326.3 232.3 L329.6 230.7 L332.9 229.0 L336.2 227.5 L339.5 224.4 L342.8 222.3 L346.1 218.9 L349.4 217.2 L352.7 215.8 L356.0 214.9 L359.3 215.1 L362.6 215.9 L365.9 218.0 L369.2 219.5 L372.5 222.3 L375.8 224.9 L379.1 226.7 L382.4 228.5 L385.7 230.4 L389.0 231.1 L389.0 221.7 L385.7 223.3 L382.4 225.5 L379.1 226.3 L375.8 228.7 L372.5 228.5 L369.2 228.8 L365.9 228.4 L362.6 225.9 L359.3 225.2 L356.0 223.3 L352.7 221.5 L349.4 220.3 L346.1 218.1 L342.8 218.9 L339.5 218.7 L336.2 221.1 L332.9 221.7 L329.6 224.2 L326.3 227.3 L323.0 228.9 L319.7 231.5 L316.4 233.0 L313.1 234.0 L309.8 234.1 L306.5 232.6 L303.2 231.0 L299.9 228.8 L296.6 227.1 L293.3 225.9 L290.0 225.2Z" fill="#dcdcdc"></path>
+<path d="M82.1 228.1 L85.4 227.0 L88.7 225.2 L92.0 222.7 L95.3 221.1 L98.6 218.8 L101.9 217.6 L105.2 217.1 L108.5 217.6 L111.8 218.6 L115.1 220.6 L118.4 223.1 L121.7 226.4 L125.0 229.4 L128.3 231.8 L131.6 234.5 L134.9 236.6 L138.2 238.0 L141.5 237.9 L144.8 237.7 L148.1 236.9 L151.4 235.5 L154.7 233.8 L158.0 232.6 L161.3 230.8 L164.6 229.9 L167.9 229.8 L171.2 229.9 L174.5 231.7 L177.8 233.6 L181.1 236.2 L184.4 238.3 L187.7 241.4 L191.0 243.9 L194.3 246.0 L197.6 248.3 L200.9 248.4 L204.2 248.1 L207.5 247.8 L210.8 245.7 L214.1 244.2 L217.4 241.1 L220.7 239.4 L224.0 237.2 L227.3 235.4 L230.6 234.6 L233.9 234.4 L237.2 234.7 L240.5 236.2 L243.8 237.4 L247.1 239.0 L250.4 241.6 L253.7 243.3 L257.0 244.0 L260.3 244.5 L263.6 244.5 L266.9 244.0 L270.2 241.8 L273.5 239.1 L276.8 236.2 L280.1 233.8 L283.4 230.4 L286.7 227.3 L290.0 225.2 L293.3 224.2 L296.6 223.6 L299.9 223.7 L303.2 224.9 L306.5 225.5 L309.8 227.7 L313.1 229.4 L316.4 230.7 L319.7 231.8 L323.0 232.3 L326.3 232.3 L329.6 230.7 L332.9 229.0 L336.2 227.5 L339.5 224.4 L342.8 222.3 L346.1 218.9 L349.4 217.2 L352.7 215.8 L356.0 214.9 L359.3 215.1 L362.6 215.9 L365.9 218.0 L369.2 219.5 L372.5 222.3 L375.8 224.9 L379.1 226.7 L382.4 228.5 L385.7 230.4 L389.0 231.1" fill="none" stroke="#111" stroke-width="1.5"></path>
+<path d="M290.0 225.2 L293.3 225.9 L296.6 227.1 L299.9 228.8 L303.2 231.0 L306.5 232.6 L309.8 234.1 L313.1 234.0 L316.4 233.0 L319.7 231.5 L323.0 228.9 L326.3 227.3 L329.6 224.2 L332.9 221.7 L336.2 221.1 L339.5 218.7 L342.8 218.9 L346.1 218.1 L349.4 220.3 L352.7 221.5 L356.0 223.3 L359.3 225.2 L362.6 225.9 L365.9 228.4 L369.2 228.8 L372.5 228.5 L375.8 228.7 L379.1 226.3 L382.4 225.5 L385.7 223.3 L389.0 221.7" fill="none" stroke="#8a8a8a" stroke-width="1.5"></path>
+<path d="M290 186 h12v12h-12z M290 198 h12v12h-12z M290 210 h12v12h-12z" fill="#d9f0f6" stroke="#0092B5"></path>
+<line x1="390" y1="160" x2="650" y2="160" stroke="#9e9e9e"></line>
+<path d="M394.0 160V160.0M402.4 160V156.9M410.8 160V153.8M419.2 160V150.8M427.6 160V149.0M436.0 160V147.2M444.4 160V148.5M452.8 160V151.8M461.2 160V155.7M469.6 160V160.4M478.0 160V166.2M486.4 160V169.0M494.8 160V171.7M503.2 160V173.3M511.6 160V171.6M520.0 160V170.3M528.4 160V166.1M536.8 160V161.5M545.2 160V154.4M553.6 160V149.7M562.0 160V144.8M570.4 160V141.7M578.8 160V142.0M587.2 160V141.3M595.6 160V143.1M604.0 160V148.8M612.4 160V153.2M620.8 160V160.7M629.2 160V165.4M637.6 160V172.7" stroke="#111" stroke-width="1.1"></path>
+<path d="M394.0 159.0 L402.4 156.2 L410.8 153.2 L419.2 150.8 L427.6 149.5 L436.0 149.7 L444.4 151.5 L452.8 154.5 L461.2 158.3 L469.6 162.5 L478.0 166.3 L486.4 169.3 L494.8 171.1 L503.2 171.3 L511.6 169.9 L520.0 167.1 L528.4 163.1 L536.8 158.4 L545.2 153.7 L553.6 149.3 L562.0 145.9 L570.4 143.9 L578.8 143.5 L587.2 144.8 L595.6 147.8 L604.0 152.0 L612.4 157.2 L620.8 162.7 L629.2 168.1 L637.6 172.6" fill="none" stroke="#0092B5" stroke-width="1.8" stroke-dasharray="4 3"></path>
+<path d="M304 196 C 330 180, 350 170, 384 164" fill="none" stroke="#0092B5" stroke-dasharray="4 3"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:118px;top:20px;font-size:15px">θ<sub>phys</sub></span>
+<span class="l g" style="left:270px;top:20px;font-size:15px">θ<sub>aug</sub></span>
+<span class="l g" style="left:396px;top:20px;font-size:15px">θ<sub>enc</sub></span>
+<span class="l h" style="left:500px;top:20px;font-size:15px">θ<sup>a</sup><sub>enc</sub></span>
+<span class="l h" style="left:612px;top:20px;font-size:15px">θ<sub>p</sub></span>
+<span class="l g" style="left:20px;top:78px;font-size:14px">V</span>
+<span class="l g" style="left:20px;top:46px;font-size:14px">S1</span>
+<span class="l g" style="left:90px;top:170px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:306px;top:226px;font-size:15px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:656px;top:150px;font-size:15px">e<sub>τ</sub></span>
+<span class="l g" style="left:580px;top:80px;font-size:13px">alternate</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<rect x="60" y="40" width="160" height="26" fill="#fff" stroke="#9e9e9e"></rect>
+<rect x="220" y="40" width="140" height="26" fill="#0092B5" stroke="#0092B5"></rect>
+<rect x="360" y="40" width="110" height="26" fill="#fff" stroke="#9e9e9e"></rect>
+<rect x="470" y="40" width="100" height="26" fill="#fff" stroke="#9e9e9e"></rect>
+<rect x="570" y="40" width="110" height="26" fill="#fff" stroke="#c8c8c8" stroke-dasharray="4 3"></rect>
+<rect x="60" y="250" width="510" height="10" fill="#c8c8c8"></rect>
+<path d="M600 244 l14 14 m0 -14 l-14 14" stroke="#9e9e9e" stroke-width="1.6"></path>
+<path d="M290 66 C 290 90, 330 100, 360 110" fill="none" stroke="#0092B5" stroke-width="1" stroke-dasharray="1 3"></path>
+<rect x="80" y="190" width="200" height="5" fill="#bdbdbd"></rect>
+<rect x="88" y="200" width="200" height="5" fill="none" stroke="#0092B5"></rect>
+<path d="M240 120 h14v14h-14z M240 134 h14v14h-14z M240 148 h14v14h-14z" fill="#9e9e9e" stroke="#555"></path>
+<path d="M470 120 h14v14h-14z M470 134 h14v14h-14z M470 148 h14v14h-14z" fill="#fff" stroke="#111"></path>
+<path d="M500 122 h14v14h-14z M500 137 h14v14h-14z M500 150 h14v14h-14z" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="M256 128 C 330 96, 440 96, 500 126" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M502 129 l-3 -9 l-6 6 z" fill="#0092B5"></path>
+<path d="M280 190 C 270 180, 260 172, 250 164 M288 200 C 360 190, 450 180, 476 164" fill="none" stroke="#9e9e9e"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:118px;top:20px;font-size:15px">θ<sub>phys</sub></span>
+<span class="l h" style="left:270px;top:20px;font-size:15px">θ<sub>aug</sub></span>
+<span class="l g" style="left:396px;top:20px;font-size:15px">θ<sub>enc</sub></span>
+<span class="l g" style="left:500px;top:20px;font-size:15px">θ<sup>a</sup><sub>enc</sub></span>
+<span class="l g" style="left:612px;top:20px;font-size:15px">θ<sub>p</sub></span>
+<span class="l g" style="left:20px;top:46px;font-size:14px">S2</span>
+<span class="l g" style="left:14px;top:248px;font-size:14px">then V</span>
+<span class="l g" style="left:620px;top:248px;font-size:14px">p dropped</span>
+<span class="l g" style="left:40px;top:186px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:296px;top:200px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l g" style="left:206px;top:166px;font-size:15px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:440px;top:172px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:320px;top:78px;font-size:15px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>The bar: θ<sub>phys</sub>, θ<sub>aug</sub>, θ<sub>enc</sub>, θ<sup>a</sup><sub>enc</sub>, all outlined; below it the slide-13 picture with the gap.</li>
+<li>Segment θ<sub>p</sub> appears, dashed (temporary); its p draws over the stems of e<sub>τ</sub>.</li>
+<li>θ<sup>a</sup><sub>enc</sub> and θ<sub>p</sub> light up (highlight); dotted leaders to x̄<sub>τ|τ</sub> and p; S1 minimisation appears.</li>
+<li>Thin grey bar "V" below: V updates the rest in alternation.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Same bar, all dark segments off; windows one sample apart and their two encoded states.</li>
+<li>θ<sub>aug</sub> lights up; leader to the g<sub>aug</sub> arc; S2 minimisation appears.</li>
+<li>Bottom: "then V" bar over everything except θ<sub>p</sub>, which is crossed out.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: what is trained and what is fixed in each stage, at a glance. Weakest: the bar itself says nothing about why; the signal picture under it carries the rest at small size.</div>
+</div>
+
+
+</body>
+</html>

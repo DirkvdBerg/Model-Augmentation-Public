@@ -1,0 +1,10 @@
+{"id": "Q-001", "date": "2026-10-29", "mode": "chain", "result": "shaky", "gap": "claimed negation success; overlap is vs parameter directions, not baseline output; cite 0.00/0.24 vs 0.59", "next_due": "2026-10-31"}
+{"id": "Q-004", "date": "2026-10-29", "mode": "practice", "result": "shaky", "gap": "FRF named; missing 100 Hz bandwidth argument and one-controller limit", "next_due": "2026-10-31"}
+{"id": "Q-005", "date": "2026-10-29", "mode": "practice", "result": "solid", "gap": "", "next_due": "2026-11-03"}
+{"id": "Q-007", "date": "2026-10-29", "mode": "practice", "result": "shaky", "gap": "say same rule in data and model, 0.5 % rate mismatch, ZOH where force is held; O-05 open", "next_due": "2026-10-31"}
+{"id": "Q-009", "date": "2026-10-29", "mode": "chain", "result": "shaky", "gap": "controller acts on y - y_hat, not the reference; order encoder, loop, loss, trained set; keep PS out", "next_due": "2026-10-31"}
+{"id": "Q-002", "date": "2026-10-30", "mode": "chain", "result": "wrong", "gap": "network IS orthogonal on tuples; missing dynamics are not (0.59); overlap vs parameter directions, not baseline output; multi-step and unprojected added states", "next_due": "2026-10-30"}
+{"id": "Q-003", "date": "2026-10-30", "mode": "chain", "result": "shaky", "gap": "window 400 samples 0.1 s; bound from closed-loop memory 44 ms (Beintema), not absorber frequency; checkpoint on full-record free runs", "next_due": "2026-11-01"}
+{"id": "Q-024", "date": "2026-10-30", "mode": "practice", "result": "shaky", "gap": "only positions measured; xbar=0 in tuples; per-step subtraction physical rows only; beta_lin per epoch; order", "next_due": "2026-11-01"}
+{"id": "Q-019", "date": "2026-10-30", "mode": "chain", "result": "wrong", "gap": "machine controller as known block, synced force and position logs, multisine records; noise floor needs noise-free output", "next_due": "2026-10-30"}
+{"id": "Q-021", "date": "2026-10-30", "mode": "practice", "result": "wrong", "gap": "Lur'e = LTI block with static nonlinearity in feedback; friction already has that shape; Shakib's own topic (O-07)", "next_due": "2026-10-30"}

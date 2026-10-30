@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>13 Waterfall</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">13</span><span class="idea">The core visual idea is a waterfall of the same picture at τ, τ+1, τ+2, … stacked in depth: the coming error changes from frame to frame, so the state must too; S2 links the states of neighbouring frames.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="{{backAx}}" stroke="#d6d6d6"></path>
+<path d="{{backGap}}" fill="#ececec"></path>
+<path d="{{backY}}" fill="none" stroke="#b0b0b0" stroke-width="1"></path>
+<path d="{{backCells}}" fill="#e6f4f8" stroke="#80c9de" stroke-width=".8"></path>
+<rect x="60" y="150" width="180" height="116" fill="#f0f0f0" opacity=".85"></rect>
+<line x1="40" y1="270" x2="440" y2="270" stroke="#9e9e9e"></line>
+<line x1="240" y1="140" x2="240" y2="276" stroke="#111" stroke-dasharray="3 3"></line>
+<path d="{{fGap}}" fill="#dcdcdc"></path>
+<path d="{{fY}}" fill="none" stroke="#111" stroke-width="1.6"></path>
+<path d="{{fH}}" fill="none" stroke="#8a8a8a" stroke-width="1.6"></path>
+<path d="{{fP}}" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="M226 104 h14v14h-14z M226 118 h14v14h-14z M226 132 h14v14h-14z" fill="#d9f0f6" stroke="#0092B5" stroke-width="1.3"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:66px;top:156px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l" style="left:236px;top:278px;font-size:15px">τ</span>
+<span class="l h" style="left:170px;top:112px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:448px;top:{{pLy}}px;font-size:15px">ŷ + p(x̄<sub>τ|τ</sub>)</span>
+<span class="l" style="left:448px;top:{{yLy}}px;font-size:15px">y</span>
+<span class="l g" style="left:448px;top:{{hLy}}px;font-size:15px">ŷ</span>
+<span class="l g" style="left:{{bLx}}px;top:{{bLy}}px;font-size:15px">τ+1</span>
+<span class="l g" style="left:{{cLx}}px;top:{{cLy}}px;font-size:15px">τ+4</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="{{backAx}}" stroke="#d6d6d6"></path>
+<path d="{{backY}}" fill="none" stroke="#c8c8c8" stroke-width="1"></path>
+<line x1="40" y1="270" x2="440" y2="270" stroke="#9e9e9e"></line>
+<path d="{{fY}}" fill="none" stroke="#8a8a8a" stroke-width="1.3"></path>
+<path d="{{s2grey}}" fill="#9e9e9e" stroke="#555"></path>
+<path d="{{s2tgt}}" fill="#fff" stroke="#111" stroke-width="1.3"></path>
+<path d="{{s2arr}}" fill="none" stroke="#0092B5" stroke-width="2"></path>
+<path d="{{s2head}}" fill="#0092B5"></path>
+<line x1="240" y1="{{u0}}" x2="240" y2="150" stroke="#0092B5" stroke-dasharray="2 2"></line>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:160px;top:112px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:{{t1x}}px;top:{{t1y}}px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:{{gx}}px;top:{{gy}}px;font-size:15px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l h" style="left:246px;top:178px;font-size:15px">u<sub>τ</sub></span>
+<span class="l g" style="left:{{bLx}}px;top:{{bLy}}px;font-size:15px">τ+1</span>
+<span class="l g" style="left:{{cLx}}px;top:{{cLy}}px;font-size:15px">τ+4</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Front frame: the slide-13 picture at τ (y, ŷ, gap, window χ<sub>τ</sub>).</li>
+<li>Frames τ+1 … τ+4 appear behind, each the same record one sample later; the gap pattern visibly slides.</li>
+<li>State cells x̄<sub>τ|τ</sub> at the front split (highlight); faint cells at each back split, each a different shade.</li>
+<li>Dashed ŷ + p(x̄<sub>τ|τ</sub>) closes the gap in the front frame; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Same waterfall, signals greyed; cells at every split: grey at τ, outlines behind (targets ψ<sub>a</sub>(χ<sub>τ+1</sub>), …).</li>
+<li>u<sub>τ</sub> marked at the front split.</li>
+<li>Highlight arrows g<sub>aug</sub> from each frame's cells to the next frame's cells; S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: why the state has to move with τ (the error pattern slides frame by frame) and that S2 is a frame-to-frame step. Weakest: depth stacks get busy; one-sample shift per frame is implied, not measured on an axis.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=(k,j)=>k<=0?0:(1-Math.exp(-k/5))*Math.sin(Wr*(k+j)+0.4)+0.2*Math.sin((k+j)/8);
+const res=(k,j)=>k<=0?0:resS(k,j)+0.1*nz(k+j);
+const osc=k=>0.8*Math.sin(Wr*k+1.1)+0.1*nz(k+50);
+const yp=k=>210-14*Math.sin(k/14)-12*osc(k);
+const DX=44,DY=-30;
+const frame=j=>{const ox=DX*j,oy=DY*j,X=k=>240+ox+6.4*k;const y=[],h=[],g=[];
+for(let k=-30;k<=30;k++)y.push([X(k),yp(k+j)+oy]);for(let k=0;k<=30;k++)h.push([X(k),yp(k+j)+oy+12*res(k,j)]);
+for(let k=0;k<=30;k++)g.push([X(k),yp(k+j)+oy]);for(let k=30;k>=0;k--)g.push([X(k),yp(k+j)+oy+12*res(k,j)]);
+return {y:P(y),h:P(h),g:P(g)+'Z',ax:'M'+(40+ox)+' '+(270+oy)+'H'+(440+ox)+'M'+(240+ox)+' '+(150+oy)+'V'+(276+oy)};};
+let backAx='',backGap='',backY='',backCells='';
+for(let j=4;j>=1;j--){const F=frame(j);backAx+=F.ax;backGap+=F.g;backY+=F.y;
+const cx=226+DX*j,cy=104+DY*j;for(let i=0;i<3;i++)backCells+='M'+cx+' '+(cy+10*i)+'h10v10h-10z';}
+const F0=frame(0);const pr=[];for(let k=0;k<=30;k++)pr.push([240+6.4*k,yp(k)+12*res(k,0)-12*0.88*resS(k+0.4,0)]);
+let s2grey='',s2tgt='',s2arr='',s2head='';
+for(let i=0;i<3;i++)s2grey+='M226 '+(104+14*i)+'h14v14h-14z';
+for(let j=1;j<=4;j++){const cx=226+DX*j,cy=104+DY*j;for(let i=0;i<3;i++)s2tgt+='M'+cx+' '+(cy+12*i)+'h12v12h-12z';}
+for(let j=0;j<4;j++){const x0=242+DX*j,y0=110+DY*j,x1=224+DX*(j+1),y1=108+DY*(j+1);s2arr+='M'+x0+' '+y0+'Q'+(x0+30)+' '+(y0-34)+' '+x1+' '+(y1);
+s2head+='M'+x1+' '+y1+'l-7 -6l-2 8z';}
+return {backAx,backGap,backY,backCells,fGap:F0.g,fY:F0.y,fH:F0.h,fP:P(pr),pLy:f(pr[30][1]-20),yLy:f(yp(30)-8),hLy:f(yp(30)+12*res(30,0)+4),
+bLx:440+DX-6,bLy:270+DY-8,cLx:440+DX*4-6,cLy:270+DY*4-8,s2grey,s2tgt,s2arr,s2head,u0:f(yp(0)-4),t1x:226+DX+20,t1y:104+DY-6,gx:300,gy:30};
+}
+}
+</script>
+</body>
+</html>

@@ -24,6 +24,8 @@ PLAN.md
 !Thesis-writeup/Writing/.vscode/settings.json
 *.pt
 *.txt
+*.tgz
+*.npz
 
 # ML checkpoints
 *.pth

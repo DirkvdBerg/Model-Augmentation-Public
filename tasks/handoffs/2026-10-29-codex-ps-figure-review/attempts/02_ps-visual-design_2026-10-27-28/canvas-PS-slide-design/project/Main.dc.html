@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PS concept A: predict the error ahead</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0092B5}a:hover{color:#006f8a}
+</style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 720px; background: #ffffff; color: #111111; font-family: 'STIX Two Text', Georgia, serif; font-size: 22px; overflow: hidden">
+<svg role="img" aria-label="Model error over the past and the next H samples, with the prediction from x-bar dashed" width="1040" height="260" viewBox="0 0 1040 260" style="position: absolute; left: 120px; top: 170px; width: 1040px; height: 260px; overflow: visible"><line x1="0" y1="250" x2="1040" y2="250" stroke="#8a8a8a" stroke-width="1.5"></line><line x1="529" y1="0" x2="529" y2="250" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="6 5"></line><polyline fill="none" stroke="#111111" stroke-width="3" stroke-linejoin="round" points="0,111 18,124 35,135 53,142 71,147 88,150 106,151 123,152 141,152 159,153 176,153 194,152 212,151 229,149 247,145 264,140 282,134 300,128 317,122 335,116 353,110 370,106 388,102 405,99 423,96 441,93 458,91 476,89 494,90 511,92 529,98 546,108 564,122 582,140 599,160 617,179 635,197 652,209 670,214 687,210 705,196 723,173 740,144 758,111 776,79 793,50 811,30 828,20 846,22 864,35 881,58 899,88 917,119 934,150 952,174 969,191 987,197 1005,195 1022,184 1040,169"></polyline><polyline fill="none" stroke="#0092B5" stroke-width="3" stroke-dasharray="10 7" stroke-linejoin="round" points="529,64 546,88 564,115 582,143 599,168 617,189 635,204 652,210 670,208 687,197 705,179 723,156 740,129 758,102 776,77 793,57 811,42 828,36 846,38 864,49 881,66 899,89 917,115 934,142 952,166 969,187 987,200 1005,207 1022,204 1040,194"></polyline></svg>
+<svg width="8" height="66" viewBox="0 0 8 66" preserveAspectRatio="none" style="position: absolute; left: 376px; top: 436px; width: 8px; height: 66px; overflow: visible; fill: none; stroke: #111111; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M 4 0 L 4 66"></path></svg>
+<svg width="236" height="8" viewBox="0 0 236 8" preserveAspectRatio="none" style="position: absolute; left: 380px; top: 498px; width: 236px; height: 8px; overflow: visible; fill: none; stroke: #111111; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><defs><marker id="dc-arrow-head-filled-1" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#111111" stroke="none" style="stroke: none; fill: #111111; fill: context-stroke"/></marker></defs><path d="M 0 4 L 232 4" marker-end="url(#dc-arrow-head-filled-1)"></path></svg>
+<svg width="218" height="8" viewBox="0 0 218 8" preserveAspectRatio="none" style="position: absolute; left: 682px; top: 498px; width: 218px; height: 8px; overflow: visible; fill: none; stroke: #0092B5; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M 0 4 L 218 4"></path></svg>
+<svg width="8" height="65" viewBox="0 0 8 65" preserveAspectRatio="none" style="position: absolute; left: 896px; top: 437px; width: 8px; height: 65px; overflow: visible; fill: none; stroke: #0092B5; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><defs><marker id="dc-arrow-head-filled-2" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#0092B5" stroke="none" style="stroke: none; fill: #0092B5; fill: context-stroke"/></marker></defs><path d="M 4 65 L 4 4" marker-end="url(#dc-arrow-head-filled-2)"></path></svg>
+<div style="position: absolute; left: 617px; top: 470px; width: 64px; height: 64px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid #111111; border-radius: 50%; background: #ffffff; font-style: italic; font-size: 24px"><span>x̄<sub style="font-size: 15px">τ</sub></span></div>
+<h1 style="position: absolute; left: 64px; top: 40px; margin: 0; font-size: 34px; font-weight: 600">PS first teaches the added states to predict the error</h1>
+<div style="position: absolute; left: 120px; top: 134px; color: #6b6b6b">past</div>
+<div style="position: absolute; left: 661px; top: 134px; color: #6b6b6b">next <i>H</i> samples</div>
+<div style="position: absolute; left: 130px; top: 236px">model error</div>
+<div style="position: absolute; left: 642px; top: 426px; color: #6b6b6b; font-style: italic">τ</div>
+<div style="position: absolute; left: 392px; top: 452px; font-style: italic; font-size: 24px">ψ</div>
+<div style="position: absolute; left: 780px; top: 462px; font-style: italic; font-size: 24px; color: #0092B5">p</div>
+<div style="position: absolute; left: 920px; top: 452px; color: #0092B5"><span>predicted from <i>x̄<sub style="font-size: 14px">τ</sub></i> alone</span></div>
+<div style="position: absolute; left: 120px; top: 580px"><span>S2: <i>g</i><sub style="font-size: 14px">aug</sub> learns the step <i>x̄<sub style="font-size: 14px">τ</sub></i> → <i>x̄<sub style="font-size: 14px">τ+1</sub></i>, target from the window one sample later</span></div>
+<div style="position: absolute; left: 120px; top: 628px; color: #0092B5"><span>then train <i>V</i> as usual, from this start</span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

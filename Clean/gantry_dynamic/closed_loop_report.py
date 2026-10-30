@@ -9,7 +9,15 @@ from model_augmentation.fit_systems.blocks import Static_ANN_Block
 
 
 def _without_learned(fit_sys, free=None):
-    """Return a copy with the network and OBC correction disabled, optionally at another training coordinate."""
+    """Baseline-only copy of a model (M_LPV in the evaluation).
+
+    The network gate and theta_aux set to zero, optionally at another beta, so the copy simulates the baseline alone.
+
+    Args:
+        fit_sys: the augmented model; free: (10,) beta, or None to keep the current one.
+    Returns:
+        The modified copy.
+    """
     m = copy.deepcopy(fit_sys)
     blocks = m.hfn.connected_blocks
     ann = next(b for b in blocks if isinstance(b, Static_ANN_Block))
@@ -24,7 +32,15 @@ def _without_learned(fit_sys, free=None):
 
 
 def _true_free(phy):
-    """The training coordinate beta at which the physics block holds the true combinations."""
+    """Training coordinate of the true parameters.
+
+    beta_star = beta(theta_base(theta^0)), the coordinate at which the baseline holds the true combinations.
+
+    Args:
+        phy: the identifiable baseline block.
+    Returns:
+        (10,) beta_star.
+    """
     dt = phy.free_params.dtype
     c_true = type(phy).combos_of(phy.params_init.double(), float(phy.Lb)).to(dt)
     return phy.free_from_combinations(c_true)

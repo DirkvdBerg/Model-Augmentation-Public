@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>05 Curtain game</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+.pn{position:absolute;font-size:16px;color:#333;white-space:nowrap}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">05</span><span class="idea">The core visual idea is a guessing game in three panels: the future is behind a curtain, the decoder may look only at the state card, then the curtain lifts and the miss is scored.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<defs><pattern id="ht5" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#efefef"></rect><line x1="0" y1="0" x2="0" y2="6" stroke="#cfcfcf" stroke-width="2"></line></pattern></defs>
+<path d="M245 40 V280 M490 40 V280" stroke="#e0e0e0"></path>
+<path d="{{ax}}" stroke="#9e9e9e"></path>
+<path d="{{yPast}}" fill="none" stroke="#111" stroke-width="1.4"></path>
+<rect x="125" y="90" width="110" height="130" fill="url(#ht5)"></rect>
+<rect x="370" y="90" width="110" height="130" fill="url(#ht5)"></rect>
+<rect x="615" y="56" width="110" height="20" fill="url(#ht5)"></rect>
+<path d="{{guessB}}" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="{{gapC}}" fill="#dcdcdc"></path>
+<path d="{{yC}}" fill="none" stroke="#111" stroke-width="1.4"></path>
+<path d="{{yhC}}" fill="none" stroke="#8a8a8a" stroke-width="1.4"></path>
+<path d="{{guessC}}" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="{{cards}}" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="M70 222 C 80 240, 98 246, 108 246" fill="none" stroke="#0092B5" stroke-width="1.3"></path>
+<path d="M370 252 C 380 230, 390 200, 400 {{bStart}}" fill="none" stroke="#0092B5" stroke-width="1.3" stroke-dasharray="4 3"></path>
+<path d="M660 270 C 600 300, 200 300, 130 268" fill="none" stroke="#0092B5" stroke-width="1.2"></path><path d="M128 266 l9 1 l-4 7 z" fill="#0092B5"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="pn" style="left:40px;top:40px">1 hide</span>
+<span class="pn" style="left:285px;top:40px">2 guess</span>
+<span class="pn" style="left:530px;top:40px">3 reveal</span>
+<span class="l" style="left:172px;top:140px;font-size:28px">?</span>
+<span class="l g" style="left:40px;top:70px">χ<sub>τ</sub></span>
+<span class="l h" style="left:70px;top:240px">ψ<sub>a</sub></span>
+<span class="l h" style="left:146px;top:250px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:384px;top:236px">p</span>
+<span class="l" style="left:690px;top:{{eLabC}}px">e<sub>τ</sub></span>
+<span class="l h" style="left:340px;top:282px;font-size:15px">update ψ<sub>a</sub>, p</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M245 40 V280 M490 40 V280" stroke="#e0e0e0"></path>
+<path d="{{c2grey}}" fill="#9e9e9e" stroke="#555"></path>
+<path d="{{c2pred}}" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="{{c2true}}" fill="#fff" stroke="#111" stroke-width="1.5"></path>
+<path d="M92 130 C 120 100, 150 100, 172 128" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M174 131 l-1 -9 l-7 5 z" fill="#0092B5"></path>
+<path d="M120 210 V160" stroke="#0092B5" stroke-dasharray="2 2"></path>
+<line x1="265" y1="230" x2="475" y2="230" stroke="#9e9e9e"></line>
+<path d="{{yS2}}" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="{{dS2}}" fill="#111"></path>
+<rect x="265" y="244" width="{{bw1}}" height="6" fill="#bdbdbd"></rect>
+<rect x="{{bx2}}" y="254" width="{{bw1}}" height="6" fill="none" stroke="#0092B5" stroke-width="1.3"></rect>
+<path d="M{{bx2e}} 252 C {{bx2e}} 200, 380 170, 380 160" fill="none" stroke="#555" stroke-width="1.2"></path>
+<path d="M555 175 H690" stroke="#111"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="pn" style="left:40px;top:40px">1 guess the next card</span>
+<span class="pn" style="left:285px;top:40px">2 slide one sample</span>
+<span class="pn" style="left:530px;top:40px">3 compare</span>
+<span class="l g" style="left:56px;top:176px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:150px;top:176px">?</span>
+<span class="l h" style="left:70px;top:84px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l h" style="left:110px;top:214px">u<sub>τ</sub></span>
+<span class="l" style="left:396px;top:120px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l g" style="left:270px;top:262px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:420px;top:262px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l u" style="left:600px;top:184px;font-size:16px">‖ − ‖²</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Panel 1: the past χ<sub>τ</sub>; the future hidden by a hatched curtain and a "?".</li>
+<li>ψ<sub>a</sub> hands out a small card x̄<sub>τ|τ</sub> (highlight). Only the card goes to panel 2.</li>
+<li>Panel 2: p draws its guess on the curtain (dashed), from the card alone.</li>
+<li>Panel 3: curtain lifts; y and ŷ with the gap e<sub>τ</sub>; the guess is overlaid on the gap; e<sub>τ</sub> definition appears.</li>
+<li>Arrow back to the card: update ψ<sub>a</sub>, p; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Panel 1: card x̄<sub>τ|τ</sub> (grey) and u<sub>τ</sub>; g<sub>aug</sub> guesses the next card (highlight, "?").</li>
+<li>Panel 2: the data slide one sample; χ<sub>τ+1</sub> bar ends one sample later; ψ<sub>a</sub> deals the true next card (outline).</li>
+<li>Panel 3: the two cards side by side, ‖ − ‖²; S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: why x̄ must carry the dynamics (the guesser sees only the card, so the card must hold what predicts the miss). Weakest: the game framing may feel playful for the committee; the alternation with V is only implied.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=k=>k<=0?0:(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4)+0.2*Math.sin(k/8);
+const res=k=>k<=0?0:resS(k)+0.12*nz(k);
+const osc=k=>0.8*Math.sin(Wr*k+1.1)+0.1*nz(k+50);
+const yp=k=>160-14*Math.sin(k/14)-10*osc(k);
+const box=(x,y,s)=>'M'+x+' '+y+'h'+s+'v'+s+'h-'+s+'z';
+let ax='',yPast='';
+[0,245,490].forEach(o=>{ax+='M'+(o+15)+' 222H'+(o+235);const a=[];for(let k=-30;k<=-1;k++)a.push([o+125+3.6*k,yp(k)]);yPast+=P(a);});
+const ox=490,X=k=>ox+125+3.6*k;
+const yc=[],yh=[],gc=[],gC=[];for(let k=-30;k<=30;k++)yc.push([X(k),yp(k)]);
+for(let k=0;k<=30;k++){yh.push([X(k),yp(k)+11*res(k)]);gC.push([X(k),yp(k)+11*res(k)-11*0.85*resS(k+0.5)]);}
+for(let k=0;k<=30;k++)gc.push([X(k),yp(k)]);for(let k=30;k>=0;k--)gc.push([X(k),yp(k)+11*res(k)]);
+const gB=[];for(let k=0;k<=30;k++)gB.push([245+125+3.6*k,yp(0)-11*0.85*resS(k+0.5)+6]);
+let cards='';[[110,238],[355,252]].forEach(c=>{for(let i=0;i<3;i++)cards+=box(c[0]+i*12,c[1],12);});
+let c2grey='',c2pred='',c2true='';
+for(let i=0;i<3;i++){c2grey+=box(40+i*16,140,16);c2pred+=box(150+i*16,140,16);c2true+=box(360+i*16,140,16);
+c2pred+=box(560+i*18,140,18);c2true+=box(630+i*18,140,18);}
+const X2=k=>420+7*k,y2=k=>205-12*osc(k);const a2=[];let d2='';for(let k=-22;k<=7;k++){a2.push([X2(k),y2(k)]);d2+='M'+f(X2(k)-1.8)+' '+f(y2(k))+'a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0';}
+return {ax,yPast,guessB:P(gB),gapC:P(gc)+'Z',yC:P(yc),yhC:P(yh),guessC:P(gC),cards,bStart:f(yp(0)+10),eLabC:f(yp(30)+2),
+c2grey,c2pred,c2true,yS2:P(a2),dS2:d2,bw1:f(7*20),bx2:f(265+7),bx2e:f(265+7+140)};
+}
+}
+</script>
+</body>
+</html>

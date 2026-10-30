@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>14 Phasor projection</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">14</span><span class="idea">The core visual idea is the textbook phasor: x̄ is a hand on a clock whose projection, turned forward in time, traces the coming error; S2 turns the hand by one sample.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="30" y1="70" x2="150" y2="70" stroke="#9e9e9e"></line>
+<path d="M50.0 59.3 L51.6 58.5 L53.2 58.0 L54.8 57.8 L56.4 57.9 L58.0 58.3 L59.6 58.8 L61.2 59.3 L62.8 59.9 L64.4 60.2 L66.0 60.4 L67.6 60.3 L69.2 59.9 L70.8 59.3 L72.4 58.5 L74.0 57.6 L75.6 56.7 L77.2 55.9 L78.8 55.3 L80.4 55.0 L82.0 55.0 L83.6 55.5 L85.2 56.2 L86.8 57.4 L88.4 58.7 L90.0 60.2 L91.6 61.7 L93.2 63.1 L94.8 64.3 L96.4 65.3 L98.0 65.9 L99.6 66.2 L101.2 66.2 L102.8 65.9 L104.4 65.5 L106.0 64.9 L107.6 64.3 L109.2 63.9 L110.8 63.7 L112.4 63.7 L114.0 63.9 L115.6 64.5 L117.2 65.2 L118.8 66.1 L120.4 67.0 L122.0 67.8 L123.6 68.5 L125.2 68.9 L126.8 69.0 L128.4 68.7 L130.0 68.0 L131.6 67.0 L133.2 65.8 L134.8 64.3 L136.4 62.8 L138.0 61.3 L139.6 60.0 L141.2 59.0 L142.8 58.2 L144.4 57.8 L146.0 57.7 L146.0 62.7 L144.4 62.4 L142.8 61.9 L141.2 61.3 L139.6 60.8 L138.0 60.5 L136.4 60.4 L134.8 60.6 L133.2 61.2 L131.6 62.0 L130.0 63.2 L128.4 64.5 L126.8 66.0 L125.2 67.4 L123.6 68.6 L122.0 69.5 L120.4 70.1 L118.8 70.3 L117.2 70.1 L115.6 69.4 L114.0 68.4 L112.4 67.2 L110.8 65.9 L109.2 64.6 L107.6 63.4 L106.0 62.4 L104.4 61.7 L102.8 61.3 L101.2 61.2 L99.6 61.5 L98.0 61.9 L96.4 62.4 L94.8 63.0 L93.2 63.4 L91.6 63.5 L90.0 63.4 L88.4 63.0 L86.8 62.2 L85.2 61.1 L83.6 59.8 L82.0 58.4 L80.4 57.0 L78.8 55.8 L77.2 54.8 L75.6 54.1 L74.0 53.9 L72.4 54.1 L70.8 54.7 L69.2 55.6 L67.6 56.8 L66.0 58.0 L64.4 59.2 L62.8 60.2 L61.2 60.9 L59.6 61.1 L58.0 61.0 L56.4 60.6 L54.8 60.0 L53.2 59.4 L51.6 59.1 L50.0 59.3Z" fill="#dcdcdc"></path><path d="M40.4 67.4 L42.0 66.2 L43.6 64.8 L45.2 63.3 L46.8 61.8 L48.4 60.5 L50.0 59.3 L51.6 58.5 L53.2 58.0 L54.8 57.8 L56.4 57.9 L58.0 58.3 L59.6 58.8 L61.2 59.3 L62.8 59.9 L64.4 60.2 L66.0 60.4 L67.6 60.3 L69.2 59.9 L70.8 59.3 L72.4 58.5 L74.0 57.6 L75.6 56.7 L77.2 55.9 L78.8 55.3 L80.4 55.0 L82.0 55.0 L83.6 55.5 L85.2 56.2 L86.8 57.4 L88.4 58.7 L90.0 60.2 L91.6 61.7 L93.2 63.1 L94.8 64.3 L96.4 65.3 L98.0 65.9 L99.6 66.2 L101.2 66.2 L102.8 65.9 L104.4 65.5 L106.0 64.9 L107.6 64.3 L109.2 63.9 L110.8 63.7 L112.4 63.7 L114.0 63.9 L115.6 64.5 L117.2 65.2 L118.8 66.1 L120.4 67.0 L122.0 67.8 L123.6 68.5 L125.2 68.9 L126.8 69.0 L128.4 68.7 L130.0 68.0 L131.6 67.0 L133.2 65.8 L134.8 64.3 L136.4 62.8 L138.0 61.3 L139.6 60.0 L141.2 59.0 L142.8 58.2 L144.4 57.8 L146.0 57.7" fill="none" stroke="#111" stroke-width="1.2"></path><path d="M50.0 59.3 L51.6 59.1 L53.2 59.4 L54.8 60.0 L56.4 60.6 L58.0 61.0 L59.6 61.1 L61.2 60.9 L62.8 60.2 L64.4 59.2 L66.0 58.0 L67.6 56.8 L69.2 55.6 L70.8 54.7 L72.4 54.1 L74.0 53.9 L75.6 54.1 L77.2 54.8 L78.8 55.8 L80.4 57.0 L82.0 58.4 L83.6 59.8 L85.2 61.1 L86.8 62.2 L88.4 63.0 L90.0 63.4 L91.6 63.5 L93.2 63.4 L94.8 63.0 L96.4 62.4 L98.0 61.9 L99.6 61.5 L101.2 61.2 L102.8 61.3 L104.4 61.7 L106.0 62.4 L107.6 63.4 L109.2 64.6 L110.8 65.9 L112.4 67.2 L114.0 68.4 L115.6 69.4 L117.2 70.1 L118.8 70.3 L120.4 70.1 L122.0 69.5 L123.6 68.6 L125.2 67.4 L126.8 66.0 L128.4 64.5 L130.0 63.2 L131.6 62.0 L133.2 61.2 L134.8 60.6 L136.4 60.4 L138.0 60.5 L139.6 60.8 L141.2 61.3 L142.8 61.9 L144.4 62.4 L146.0 62.7" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="M30.0 218.8 L34.0 220.8 L38.0 223.0 L42.0 222.9 L46.0 222.2 L50.0 221.7 L54.0 219.2 L58.0 217.4 L62.0 214.0 L66.0 212.2 L70.0 209.8 L74.0 207.9 L78.0 207.2 L82.0 207.2 L86.0 207.9 L90.0 210.0 L94.0 211.7 L98.0 213.9 L102.0 217.2 L106.0 219.7 L110.0 221.1 L114.0 222.2 L118.0 222.9 L122.0 223.0 L126.0 221.2 L130.0 219.0 L134.0 216.6 L138.0 214.6 L142.0 211.7 L146.0 209.0" fill="none" stroke="#8a8a8a" stroke-width="1.2"></path>
+<path d="M150 210 C 170 200, 180 190, 192 182" fill="none" stroke="#0092B5" stroke-width="1.3"></path><path d="M195 180 l-9 1 l4 7 z" fill="#0092B5"></path>
+<circle cx="270" cy="160" r="70" fill="none" stroke="#9e9e9e"></circle>
+<line x1="190" y1="160" x2="350" y2="160" stroke="#e0e0e0"></line>
+<line x1="270" y1="80" x2="270" y2="240" stroke="#e0e0e0"></line>
+<path d="M270 160L313.5 105.2" stroke="#0092B5" stroke-width="3"></path>
+<path d="M313.5 105.2L380 105.2M313.5 105.2L313.5 160" stroke="#0092B5" stroke-width="1" stroke-dasharray="3 3"></path>
+<line x1="380" y1="160" x2="710" y2="160" stroke="#9e9e9e"></line>
+<path d="M380.0 160V105.6M391.0 160V95.3M402.0 160V85.0M413.0 160V88.5M424.0 160V101.0M435.0 160V117.0M446.0 160V137.5M457.0 160V164.8M468.0 160V181.0M479.0 160V199.6M490.0 160V215.3M501.0 160V217.8M512.0 160V222.3M523.0 160V213.5M534.0 160V200.8M545.0 160V173.9M556.0 160V154.2M567.0 160V129.9M578.0 160V109.3M589.0 160V101.0M600.0 160V85.3M611.0 160V79.7M622.0 160V91.8M633.0 160V98.9M644.0 160V123.2M655.0 160V138.1M666.0 160V169.3M677.0 160V190.9M688.0 160V208.5M699.0 160V224.9" stroke="#111" stroke-width="1.2"></path>
+<path d="M378.0 105.6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M389.0 95.3a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M400.0 85.0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M411.0 88.5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M422.0 101.0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M433.0 117.0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M444.0 137.5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M455.0 164.8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M466.0 181.0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M477.0 199.6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M488.0 215.3a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M499.0 217.8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M510.0 222.3a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M521.0 213.5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M532.0 200.8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M543.0 173.9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M554.0 154.2a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M565.0 129.9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M576.0 109.3a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M587.0 101.0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M598.0 85.3a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M609.0 79.7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M620.0 91.8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M631.0 98.9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M642.0 123.2a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M653.0 138.1a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M664.0 169.3a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M675.0 190.9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M686.0 208.5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M697.0 224.9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" fill="#111"></path>
+<path d="M380.0 105.2 L381.1 103.8 L382.2 102.4 L383.3 101.1 L384.4 99.9 L385.5 98.7 L386.6 97.6 L387.7 96.6 L388.8 95.7 L389.9 94.8 L391.0 94.0 L392.1 93.2 L393.2 92.6 L394.3 92.0 L395.4 91.5 L396.5 91.0 L397.6 90.7 L398.7 90.4 L399.8 90.2 L400.9 90.1 L402.0 90.0 L403.1 90.0 L404.2 90.1 L405.3 90.3 L406.4 90.6 L407.5 90.9 L408.6 91.3 L409.7 91.8 L410.8 92.4 L411.9 93.0 L413.0 93.7 L414.1 94.5 L415.2 95.3 L416.3 96.3 L417.4 97.3 L418.5 98.3 L419.6 99.5 L420.7 100.7 L421.8 101.9 L422.9 103.3 L424.0 104.7 L425.1 106.1 L426.2 107.6 L427.3 109.2 L428.4 110.8 L429.5 112.5 L430.6 114.2 L431.7 116.0 L432.8 117.9 L433.9 119.7 L435.0 121.7 L436.1 123.6 L437.2 125.7 L438.3 127.7 L439.4 129.8 L440.5 131.9 L441.6 134.0 L442.7 136.2 L443.8 138.4 L444.9 140.6 L446.0 142.9 L447.1 145.2 L448.2 147.4 L449.3 149.7 L450.4 152.0 L451.5 154.4 L452.6 156.7 L453.7 159.0 L454.8 161.3 L455.9 163.7 L457.0 166.0 L458.1 168.3 L459.2 170.6 L460.3 172.9 L461.4 175.2 L462.5 177.4 L463.6 179.7 L464.7 181.9 L465.8 184.1 L466.9 186.3 L468.0 188.4 L469.1 190.5 L470.2 192.6 L471.3 194.6 L472.4 196.6 L473.5 198.6 L474.6 200.5 L475.7 202.4 L476.8 204.2 L477.9 206.0 L479.0 207.7 L480.1 209.4 L481.2 211.0 L482.3 212.6 L483.4 214.1 L484.5 215.5 L485.6 216.9 L486.7 218.3 L487.8 219.5 L488.9 220.7 L490.0 221.8 L491.1 222.9 L492.2 223.9 L493.3 224.8 L494.4 225.6 L495.5 226.4 L496.6 227.1 L497.7 227.7 L498.8 228.3 L499.9 228.8 L501.0 229.2 L502.1 229.5 L503.2 229.7 L504.3 229.9 L505.4 230.0 L506.5 230.0 L507.6 229.9 L508.7 229.8 L509.8 229.6 L510.9 229.3 L512.0 228.9 L513.1 228.5 L514.2 227.9 L515.3 227.3 L516.4 226.7 L517.5 225.9 L518.6 225.1 L519.7 224.2 L520.8 223.2 L521.9 222.2 L523.0 221.1 L524.1 219.9 L525.2 218.7 L526.3 217.4 L527.4 216.0 L528.5 214.6 L529.6 213.1 L530.7 211.6 L531.8 210.0 L532.9 208.3 L534.0 206.6 L535.1 204.9 L536.2 203.1 L537.3 201.2 L538.4 199.3 L539.5 197.3 L540.6 195.4 L541.7 193.3 L542.8 191.3 L543.9 189.2 L545.0 187.0 L546.1 184.9 L547.2 182.7 L548.3 180.5 L549.4 178.2 L550.5 176.0 L551.6 173.7 L552.7 171.4 L553.8 169.1 L554.9 166.8 L556.0 164.5 L557.1 162.2 L558.2 159.8 L559.3 157.5 L560.4 155.2 L561.5 152.9 L562.6 150.6 L563.7 148.3 L564.8 146.0 L565.9 143.7 L567.0 141.4 L568.1 139.2 L569.2 137.0 L570.3 134.8 L571.4 132.7 L572.5 130.5 L573.6 128.4 L574.7 126.4 L575.8 124.4 L576.9 122.4 L578.0 120.4 L579.1 118.5 L580.2 116.7 L581.3 114.9 L582.4 113.1 L583.5 111.4 L584.6 109.8 L585.7 108.2 L586.8 106.6 L587.9 105.2 L589.0 103.8 L590.1 102.4 L591.2 101.1 L592.3 99.9 L593.4 98.7 L594.5 97.6 L595.6 96.6 L596.7 95.7 L597.8 94.8 L598.9 94.0 L600.0 93.2 L601.1 92.6 L602.2 92.0 L603.3 91.5 L604.4 91.0 L605.5 90.7 L606.6 90.4 L607.7 90.2 L608.8 90.1 L609.9 90.0 L611.0 90.0 L612.1 90.1 L613.2 90.3 L614.3 90.6 L615.4 90.9 L616.5 91.3 L617.6 91.8 L618.7 92.4 L619.8 93.0 L620.9 93.7 L622.0 94.5 L623.1 95.3 L624.2 96.3 L625.3 97.3 L626.4 98.3 L627.5 99.5 L628.6 100.7 L629.7 101.9 L630.8 103.3 L631.9 104.7 L633.0 106.1 L634.1 107.6 L635.2 109.2 L636.3 110.8 L637.4 112.5 L638.5 114.2 L639.6 116.0 L640.7 117.9 L641.8 119.7 L642.9 121.7 L644.0 123.6 L645.1 125.7 L646.2 127.7 L647.3 129.8 L648.4 131.9 L649.5 134.0 L650.6 136.2 L651.7 138.4 L652.8 140.6 L653.9 142.9 L655.0 145.2 L656.1 147.4 L657.2 149.7 L658.3 152.0 L659.4 154.4 L660.5 156.7 L661.6 159.0 L662.7 161.3 L663.8 163.7 L664.9 166.0 L666.0 168.3 L667.1 170.6 L668.2 172.9 L669.3 175.2 L670.4 177.4 L671.5 179.7 L672.6 181.9 L673.7 184.1 L674.8 186.3 L675.9 188.4 L677.0 190.5 L678.1 192.6 L679.2 194.6 L680.3 196.6 L681.4 198.6 L682.5 200.5 L683.6 202.4 L684.7 204.2 L685.8 206.0 L686.9 207.7 L688.0 209.4 L689.1 211.0 L690.2 212.6 L691.3 214.1 L692.4 215.5 L693.5 216.9 L694.6 218.3 L695.7 219.5 L696.8 220.7 L697.9 221.8 L699.0 222.9" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="5 3"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l" style="left:156px;top:62px;font-size:15px">e<sub>τ</sub> = y − ŷ</span>
+<span class="l g" style="left:40px;top:236px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:150px;top:176px;font-size:15px">ψ<sub>a</sub></span>
+<span class="l h" style="left:321.5px;top:83.2px">x̄<sub>τ|τ</sub></span>
+<span class="l g" style="left:352px;top:152px;font-size:14px">x̄<sub>1</sub></span>
+<span class="l g" style="left:262px;top:62px;font-size:14px">x̄<sub>2</sub></span>
+<span class="l" style="left:690px;top:110px">e<sub>τ</sub></span>
+<span class="l h" style="left:560px;top:250px">p(x̄<sub>τ|τ</sub>)</span>
+<span class="l" style="left:376px;top:256px;font-size:15px">τ</span>
+<span class="l g" style="left:640px;top:256px;font-size:15px">τ+H−1</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<rect x="30" y="50" width="140" height="5" fill="#bdbdbd"></rect>
+<rect x="37" y="60" width="140" height="5" fill="none" stroke="#0092B5"></rect>
+<circle cx="300" cy="170" r="105" fill="none" stroke="#9e9e9e"></circle>
+<line x1="180" y1="170" x2="420" y2="170" stroke="#e0e0e0"></line>
+<line x1="300" y1="50" x2="300" y2="290" stroke="#e0e0e0"></line>
+<path d="M300 170L376.8 98.4" stroke="#555" stroke-width="3"></path>
+<path d="M300 170L349.2 77.2" stroke="#111" stroke-width="1.4"></path>
+<path d="M344.2 77.2a5 5 0 1 0 10 0a5 5 0 1 0 -10 0" fill="#fff" stroke="#111" stroke-width="1.4"></path>
+<path d="M386.9 85.8 L385.5 84.3 L384.0 82.9 L382.6 81.5 L381.1 80.2 L379.6 78.8 L378.0 77.5 L376.5 76.2 L374.9 75.0 L373.3 73.7 L371.7 72.5 L370.1 71.4 L368.4 70.2 L366.7 69.1 L365.1 68.0 L363.4 66.9 L361.6 65.9 L359.9 64.9 L358.1 63.9 L356.4 62.9 L354.6 62.0" fill="none" stroke="#0092B5" stroke-width="2.2"></path>
+<path d="M354.6 62.0l2 -9l7 6z" fill="#0092B5"></path>
+<path d="M376.8 98.4L500 98.4" stroke="#9e9e9e" stroke-dasharray="3 3"></path>
+<path d="M349.2 77.2L514 77.2" stroke="#0092B5" stroke-dasharray="3 3"></path>
+<line x1="470" y1="170" x2="710" y2="170" stroke="#9e9e9e"></line>
+<path d="M500.0 98.4 L501.4 95.9 L502.8 93.5 L504.2 91.1 L505.6 88.9 L507.0 86.7 L508.4 84.6 L509.8 82.6 L511.2 80.8 L512.6 79.0 L514.0 77.3 L515.4 75.7 L516.8 74.2 L518.2 72.8 L519.6 71.6 L521.0 70.4 L522.4 69.4 L523.8 68.4 L525.2 67.6 L526.6 66.9 L528.0 66.3 L529.4 65.8 L530.8 65.4 L532.2 65.2 L533.6 65.0 L535.0 65.0 L536.4 65.1 L537.8 65.3 L539.2 65.6 L540.6 66.1 L542.0 66.6 L543.4 67.3 L544.8 68.1 L546.2 69.0 L547.6 70.0 L549.0 71.1 L550.4 72.3 L551.8 73.7 L553.2 75.1 L554.6 76.7 L556.0 78.3 L557.4 80.1 L558.8 81.9 L560.2 83.9 L561.6 85.9 L563.0 88.0 L564.4 90.3 L565.8 92.6 L567.2 95.0 L568.6 97.5 L570.0 100.0 L571.4 102.7 L572.8 105.4 L574.2 108.2 L575.6 111.0 L577.0 113.9 L578.4 116.9 L579.8 120.0 L581.2 123.1 L582.6 126.2 L584.0 129.4 L585.4 132.6 L586.8 135.9 L588.2 139.3 L589.6 142.6 L591.0 146.0 L592.4 149.4 L593.8 152.8 L595.2 156.3 L596.6 159.8 L598.0 163.2 L599.4 166.7 L600.8 170.2 L602.2 173.7 L603.6 177.2 L605.0 180.7 L606.4 184.1 L607.8 187.6 L609.2 191.0 L610.6 194.4 L612.0 197.8 L613.4 201.2 L614.8 204.5 L616.2 207.7 L617.6 211.0 L619.0 214.2 L620.4 217.3 L621.8 220.4 L623.2 223.4 L624.6 226.4 L626.0 229.3 L627.4 232.2 L628.8 234.9 L630.2 237.7 L631.6 240.3 L633.0 242.8 L634.4 245.3 L635.8 247.7 L637.2 250.0 L638.6 252.2 L640.0 254.3 L641.4 256.4 L642.8 258.3 L644.2 260.2 L645.6 261.9 L647.0 263.5 L648.4 265.1 L649.8 266.5 L651.2 267.8 L652.6 269.0 L654.0 270.1 L655.4 271.1 L656.8 272.0 L658.2 272.8 L659.6 273.4 L661.0 274.0 L662.4 274.4 L663.8 274.7 L665.2 274.9 L666.6 275.0 L668.0 275.0 L669.4 274.8 L670.8 274.5 L672.2 274.2 L673.6 273.7 L675.0 273.0 L676.4 272.3 L677.8 271.5 L679.2 270.5 L680.6 269.5 L682.0 268.3 L683.4 267.0 L684.8 265.6 L686.2 264.1 L687.6 262.5 L689.0 260.8 L690.4 259.0 L691.8 257.1 L693.2 255.1 L694.6 253.0 L696.0 250.9 L697.4 248.6 L698.8 246.2 L700.2 243.8 L701.6 241.3 L703.0 238.7 L704.4 236.0 L705.8 233.2 L707.2 230.4 L708.6 227.5 L710.0 224.6" fill="none" stroke="#c8c8c8" stroke-width="1.4"></path>
+<path d="M495.5 98.4a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0" fill="#555"></path>
+<path d="M509.5 77.2a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0" fill="#0092B5"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:176px;top:42px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:184px;top:58px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l g" style="left:386.8px;top:102.4px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:199.2px;top:57.2px;font-size:16px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:379.2px;top:37.2px;font-size:16px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l g" style="left:322px;top:196px;font-size:14px">ωT<sub>s</sub> ≈ 19°</span>
+<span class="l" style="left:496px;top:180px;font-size:15px">τ</span>
+<span class="l" style="left:506px;top:196px;font-size:15px">τ+1</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Inset gap e<sub>τ</sub> = y − ŷ; on the right, its stems after τ.</li>
+<li>Past χ<sub>τ</sub>; ψ<sub>a</sub> sets a hand on the clock: x̄<sub>τ|τ</sub> = (x̄<sub>1</sub>, x̄<sub>2</sub>) (highlight).</li>
+<li>Dashed projection from the hand tip to τ.</li>
+<li>Turning the hand traces a dashed wave p(x̄<sub>τ|τ</sub>) over the stems; S1 minimisation appears. Message: the hand angle is what the past must deliver.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Two windows one sample apart.</li>
+<li>Grey hand x̄<sub>τ|τ</sub>; thin hand ψ<sub>a</sub>(χ<sub>τ+1</sub>) one tick further (ωT<sub>s</sub> = 2π·212/4000 ≈ 19°).</li>
+<li>g<sub>aug</sub> arc between the tips (highlight); S2 minimisation appears.</li>
+<li>Right: the two projections are neighbouring samples τ and τ+1 of one wave.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: what stepping a state forward looks like (a hand turning one tick), in a picture every control engineer already reads. Weakest: it presumes x̄ is exactly an oscillator pair; with other added states or the slow drift the metaphor overstates the result.</div>
+</div>
+
+
+</body>
+</html>

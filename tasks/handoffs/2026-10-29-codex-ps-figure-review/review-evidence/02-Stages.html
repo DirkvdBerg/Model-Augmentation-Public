@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PS concept C: two stages, then training</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+a{color:#0092B5}a:hover{color:#006f8a}
+</style>
+
+<div style="position: relative; width: 1280px; height: 720px; background: #ffffff; color: #111111; font-family: 'STIX Two Text', Georgia, serif; font-size: 22px; overflow: hidden">
+<svg width="47" height="8" viewBox="0 0 47 8" preserveAspectRatio="none" style="position: absolute; left: 416px; top: 371px; width: 47px; height: 8px; overflow: visible; fill: none; stroke: #111111; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><defs><marker id="dc-arrow-head-filled-1" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#111111" stroke="none" style="stroke: none; fill: #111111; fill: context-stroke"/></marker></defs><path d="M 0 4 L 43 4" marker-end="url(#dc-arrow-head-filled-1)"></path></svg>
+<svg width="47" height="8" viewBox="0 0 47 8" preserveAspectRatio="none" style="position: absolute; left: 816px; top: 371px; width: 47px; height: 8px; overflow: visible; fill: none; stroke: #111111; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><defs><marker id="dc-arrow-head-filled-2" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#111111" stroke="none" style="stroke: none; fill: #111111; fill: context-stroke"/></marker></defs><path d="M 0 4 L 43 4" marker-end="url(#dc-arrow-head-filled-2)"></path></svg>
+<h1 style="position: absolute; left: 64px; top: 40px; margin: 0; font-size: 34px; font-weight: 600">PS first teaches the added states to predict the error</h1>
+<div style="position: absolute; left: 64px; top: 140px; width: 352px; height: 470px; box-sizing: border-box; padding: 28px; border: 1.5px solid #bdbdbd; border-radius: 4px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 18px; color: #6b6b6b; font-weight: 600">S1</div>
+<div style="font-size: 26px; font-weight: 600; line-height: 1.2"><span><i>x̄</i> learns to predict the error</span></div>
+<div style="font-size: 19px; color: #6b6b6b; line-height: 1.3"><span>The loss only scores the output, so nothing asks <i>x̄</i> to carry the missing mode.</span></div>
+<svg role="img" aria-label="The error over the next H samples and its prediction from x-bar" width="272" height="110" viewBox="0 0 272 110" style="width: 272px; height: 110px; overflow: visible; margin-top: 6px"><polyline fill="none" stroke="#111111" stroke-width="2.5" stroke-linejoin="round" points="0,45 9,49 19,55 28,62 38,71 47,79 56,86 66,92 75,94 84,92 94,86 103,77 113,64 122,50 131,37 141,25 150,16 159,12 169,13 178,18 188,28 197,40 206,54 216,67 225,77 234,84 244,87 253,85 263,81 272,75"></polyline><polyline fill="none" stroke="#0092B5" stroke-width="2.5" stroke-dasharray="8 6" stroke-linejoin="round" points="0,31 9,41 19,52 28,64 38,74 47,83 56,89 66,92 75,91 84,87 94,79 103,69 113,58 122,47 131,36 141,27 150,21 159,19 169,20 178,24 188,31 197,41 206,52 216,63 225,74 234,82 244,88 253,90 263,90 272,85"></polyline></svg>
+<div style="font-size: 17px; line-height: 1.3"><span>error ahead, and <span style="color: #0092B5">predicted from <i>x̄<sub style="font-size: 12px">τ</sub></i> alone</span></span></div>
+<div style="margin-top: auto; font-size: 17px; color: #6b6b6b"><span>trains the encoder and a temporary decoder <i>p</i></span></div>
+</div>
+<div style="position: absolute; left: 464px; top: 140px; width: 352px; height: 470px; box-sizing: border-box; padding: 28px; border: 1.5px solid #bdbdbd; border-radius: 4px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 18px; color: #6b6b6b; font-weight: 600">S2</div>
+<div style="font-size: 26px; font-weight: 600; line-height: 1.2"><span><i>g</i><sub style="font-size: 16px">aug</sub> learns to step <i>x̄</i></span></div>
+<div style="font-size: 19px; color: #6b6b6b; line-height: 1.3"><span>In simulation only <i>g</i><sub style="font-size: 13px">aug</sub> moves <i>x̄</i>, and it starts random.</span></div>
+<svg role="img" aria-label="x-bar at tau and tau plus one from the encoder, and the one-step prediction of g_aug" width="272" height="110" viewBox="0 0 272 110" style="width: 272px; height: 110px; overflow: visible; margin-top: 6px"><path d="M 0 96 C 60 96 110 80 150 56 S 230 14 272 10" fill="none" stroke="#bdbdbd" stroke-width="2"></path><circle cx="40" cy="93" r="5" fill="#bdbdbd"></circle><circle cx="95" cy="82" r="5" fill="#bdbdbd"></circle><circle cx="150" cy="56" r="8" fill="#111111"></circle><circle cx="215" cy="26" r="8" fill="#111111"></circle><path d="M 158 60 Q 190 76 205 60" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M 199 55 L 207 58 L 203 66" fill="none" stroke="#0092B5" stroke-width="2"></path><circle cx="215" cy="56" r="7" fill="#ffffff" stroke="#0092B5" stroke-width="2.5"></circle></svg>
+<div style="font-size: 17px; line-height: 1.3"><span>filled: <i>x̄</i> from the encoder at <i>τ</i> and <i>τ</i>+1; <span style="color: #0092B5">open: one step of <i>g</i><sub style="font-size: 12px">aug</sub></span></span></div>
+<div style="margin-top: auto; font-size: 17px; color: #6b6b6b"><span>trains <i>g</i><sub style="font-size: 12px">aug</sub>; the target is the encoder one sample later</span></div>
+</div>
+<div style="position: absolute; left: 864px; top: 140px; width: 352px; height: 470px; box-sizing: border-box; padding: 28px; border: 1.5px solid #bdbdbd; border-radius: 4px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 18px; color: #6b6b6b; font-weight: 600">then</div>
+<div style="font-size: 26px; font-weight: 600; line-height: 1.2"><span>train <i>V</i> as usual</span></div>
+<div style="font-size: 19px; color: #6b6b6b; line-height: 1.3"><span>PS changes the start, not what is minimised.</span></div>
+<div style="height: 110px; margin-top: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px"><span><i>V</i> = Σ ‖ <i>y</i> − <i>ŷ</i> ‖²</span></div>
+<div style="font-size: 17px; line-height: 1.3"><span>same model, same loss, same selection</span></div>
+<div style="margin-top: auto; font-size: 17px; color: #6b6b6b"><span><i>p</i> is dropped</span></div>
+</div>
+</div>
+
+
+</body>
+</html>

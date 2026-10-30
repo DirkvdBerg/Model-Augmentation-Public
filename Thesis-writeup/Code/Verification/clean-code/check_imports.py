@@ -32,6 +32,9 @@ for m in MODULES:
 bad = [(n, getattr(mod, '__file__', None)) for n, mod in sys.modules.items()
        if n.split('.')[0] in ('gantry_dynamic', 'model_augmentation', 'gantry_interconnect_dynamic')
        and not os.path.abspath(mod.__file__).startswith(CLEAN + os.sep)]
-n_files = sum(1 for r, _, fs in os.walk(CLEAN) for f in fs if f.endswith('.py'))
-print('imported %d modules; %d .py files under Clean/; outside Clean/: %s' % (len(MODULES), n_files, bad or 'none'))
+# grey box only: Clean/blackbox/ and Clean/data_generation/ belong to other sessions (D-284 amendment 5)
+n_files = sum(1 for top in ('gantry_dynamic', 'model_augmentation')
+              for r, _, fs in os.walk(os.path.join(CLEAN, top)) for f in fs if f.endswith('.py')) + 1
+print('imported %d modules; %d grey-box .py files under Clean/; outside Clean/: %s'
+      % (len(MODULES), n_files, bad or 'none'))
 sys.exit(1 if bad or n_files != len(MODULES) else 0)

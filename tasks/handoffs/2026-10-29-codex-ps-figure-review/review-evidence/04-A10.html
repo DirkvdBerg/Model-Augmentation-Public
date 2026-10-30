@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>10 Nested zoom</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">10</span><span class="idea">The core visual idea is a nested zoom: from the whole record, into one split at τ, into the state at that split; S2 zooms one level deeper, to the single sample between τ and τ+1.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M40.0 50.5 L42.0 52.8 L44.0 51.8 L46.0 47.4 L48.0 43.5 L50.0 43.0 L52.0 44.8 L54.0 46.3 L56.0 43.9 L58.0 39.3 L60.0 37.8 L62.0 40.1 L64.0 42.5 L66.0 41.8 L68.0 38.8 L70.0 35.8 L72.0 36.9 L74.0 40.6 L76.0 41.5 L78.0 38.9 L80.0 35.5 L82.0 35.8 L84.0 39.3 L86.0 41.4 L88.0 39.8 L90.0 36.4 L92.0 35.1 L94.0 37.2 L96.0 40.8 L98.0 41.0 L100.0 37.3 L102.0 35.0 L104.0 36.4 L106.0 39.4 L108.0 41.2 L110.0 38.4 L112.0 35.5 L114.0 35.4 L116.0 38.6 L118.0 41.2 L120.0 40.1 L122.0 36.2 L124.0 34.9 L126.0 37.6 L128.0 40.5 L130.0 40.7 L132.0 37.9 L134.0 35.1 L136.0 35.6 L138.0 39.7 L140.0 41.1 L142.0 38.8 L144.0 35.2 L146.0 35.2 L148.0 38.7 L150.0 41.1 L152.0 39.9 L154.0 36.8 L156.0 35.0 L158.0 36.6 L160.0 40.7 L162.0 41.0 L164.0 37.8 L166.0 35.3 L168.0 36.1 L170.0 38.8 L172.0 41.2 L174.0 39.8 L176.0 35.7 L178.0 35.1 L180.0 37.8 L182.0 41.2 L184.0 40.4 L186.0 36.3 L188.0 35.0 L190.0 36.9 L192.0 40.0 L194.0 41.1 L196.0 38.6 L198.0 35.2 L200.0 35.6 L202.0 39.1 L204.0 41.3 L206.0 39.6 L208.0 36.2 L210.0 35.1 L212.0 38.6 L214.0 41.1 L216.0 40.2 L218.0 37.4 L220.0 35.1 L222.0 36.4 L224.0 40.5 L226.0 41.4 L228.0 38.7 L230.0 35.8 L232.0 36.3 L234.0 39.3 L236.0 42.2 L238.0 41.3 L240.0 37.4 L242.0 36.7 L244.0 39.9 L246.0 43.5 L248.0 43.7 L250.0 40.9 L252.0 39.6 L254.0 42.1 L256.0 46.2 L258.0 48.9 L260.0 47.9 L262.0 45.6 L264.0 47.0 L266.0 52.2 L268.0 56.2 L270.0 56.0 L272.0 54.4 L274.0 54.1 L276.0 57.6 L278.0 62.3 L280.0 63.0 L282.0 61.2 L284.0 59.3 L286.0 61.0 L288.0 65.5 L290.0 67.3 L292.0 64.9 L294.0 62.1 L296.0 62.2 L298.0 65.1 L300.0 68.4 L302.0 67.7 L304.0 64.0 L306.0 62.3 L308.0 64.7 L310.0 67.8 L312.0 68.5 L314.0 65.0 L316.0 62.8 L318.0 64.2 L320.0 67.2 L322.0 69.2 L324.0 67.1 L326.0 63.4 L328.0 62.8 L330.0 66.5 L332.0 68.8 L334.0 68.1 L336.0 65.1 L338.0 62.7 L340.0 64.6 L342.0 68.3 L344.0 69.0 L346.0 65.9 L348.0 62.7 L350.0 63.6 L352.0 67.5 L354.0 69.3 L356.0 66.9 L358.0 63.9 L360.0 63.2 L362.0 65.4 L364.0 69.2 L366.0 68.7 L368.0 64.9 L370.0 62.9 L372.0 64.7 L374.0 67.9 L376.0 69.2 L378.0 66.6 L380.0 63.0 L382.0 64.1 L384.0 67.0 L386.0 69.3 L388.0 67.7 L390.0 63.7 L392.0 62.9 L394.0 66.0 L396.0 68.5 L398.0 68.4 L400.0 65.4 L402.0 62.8 L404.0 63.9 L406.0 68.1 L408.0 69.3 L410.0 66.2 L412.0 63.5 L414.0 63.2 L416.0 67.1 L418.0 69.3 L420.0 67.4 L422.0 64.2 L424.0 63.0 L426.0 65.2 L428.0 69.0 L430.0 68.7 L432.0 65.2 L434.0 63.0 L436.0 64.4 L438.0 67.3 L440.0 69.1 L442.0 67.2 L444.0 63.1 L446.0 62.7 L448.0 66.1 L450.0 68.8 L452.0 67.4 L454.0 63.7 L456.0 62.2 L458.0 64.9 L460.0 67.5 L462.0 67.6 L464.0 64.7 L466.0 61.3 L468.0 62.2 L470.0 65.8 L472.0 67.0 L474.0 63.9 L476.0 60.5 L478.0 58.8 L480.0 60.7 L482.0 63.0 L484.0 60.4 L486.0 56.3 L488.0 52.9 L490.0 53.4 L492.0 55.9 L494.0 54.8 L496.0 49.7 L498.0 45.5 L500.0 45.1 L502.0 46.8 L504.0 48.0 L506.0 45.4 L508.0 40.3 L510.0 38.8 L512.0 41.5 L514.0 43.3 L516.0 42.5 L518.0 38.3 L520.0 36.4 L522.0 38.2 L524.0 41.2 L526.0 41.5 L528.0 39.2 L530.0 35.4 L532.0 35.8 L534.0 39.7 L536.0 41.5 L538.0 39.3 L540.0 36.4 L542.0 35.4 L544.0 37.6 L546.0 40.8 L548.0 40.7 L550.0 37.1 L552.0 34.8 L554.0 36.6 L556.0 40.3 L558.0 41.3 L560.0 38.0 L562.0 35.3 L564.0 35.8 L566.0 38.5 L568.0 41.3 L570.0 39.9 L572.0 36.0 L574.0 34.8 L576.0 37.6 L578.0 40.5 L580.0 40.7 L582.0 37.6 L584.0 34.9 L586.0 36.8 L588.0 39.6 L590.0 41.1 L592.0 38.7 L594.0 35.0 L596.0 35.3 L598.0 38.7 L600.0 41.0 L602.0 39.5 L604.0 36.6 L606.0 34.8 L608.0 37.1 L610.0 40.7 L612.0 41.0 L614.0 37.6 L616.0 35.0 L618.0 36.3 L620.0 40.2 L622.0 41.3 L624.0 38.6 L626.0 35.7 L628.0 35.6 L630.0 38.2 L632.0 41.2 L634.0 40.1 L636.0 36.4 L638.0 34.9 L640.0 37.1 L642.0 40.1 L644.0 40.7 L646.0 38.1 L648.0 34.9 L650.0 35.4 L652.0 39.5 L654.0 41.2 L656.0 39.4 L658.0 35.5 L660.0 35.0 L662.0 38.4 L664.0 40.9 L666.0 40.1 L668.0 36.9 L670.0 34.9 L672.0 36.6 L674.0 40.8 L676.0 41.2 L678.0 38.4 L680.0 35.6 L682.0 36.1 L684.0 39.3 L686.0 42.0 L688.0 39.6 L690.0 37.0 L692.0 36.4 L694.0 39.1 L696.0 43.0 L698.0 42.8 L700.0 39.5 L702.0 38.0 L704.0 40.8 L706.0 44.8 L708.0 46.8 L710.0 45.5 L712.0 43.2 L714.0 44.4 L716.0 49.7 L718.0 53.4 L720.0 53.1" fill="none" stroke="#111" stroke-width="1"></path>
+<path d="M40.0 52.0 L42.0 50.5 L44.0 49.0 L46.0 47.5 L48.0 46.2 L50.0 45.0 L52.0 44.0 L54.0 43.1 L56.0 42.3 L58.0 41.6 L60.0 41.1 L62.0 40.6 L64.0 40.2 L66.0 39.9 L68.0 39.7 L70.0 39.5 L72.0 39.3 L74.0 39.1 L76.0 39.0 L78.0 38.9 L80.0 38.8 L82.0 38.7 L84.0 38.6 L86.0 38.5 L88.0 38.4 L90.0 38.3 L92.0 38.2 L94.0 38.1 L96.0 38.0 L98.0 37.9 L100.0 37.8 L102.0 37.7 L104.0 37.5 L106.0 37.4 L108.0 37.3 L110.0 37.2 L112.0 37.2 L114.0 37.1 L116.0 37.0 L118.0 37.0 L120.0 36.9 L122.0 36.9 L124.0 36.9 L126.0 36.9 L128.0 37.0 L130.0 37.0 L132.0 37.1 L134.0 37.1 L136.0 37.2 L138.0 37.4 L140.0 37.5 L142.0 37.6 L144.0 37.8 L146.0 37.9 L148.0 38.1 L150.0 38.3 L152.0 38.5 L154.0 38.6 L156.0 38.8 L158.0 39.0 L160.0 39.1 L162.0 39.3 L164.0 39.4 L166.0 39.5 L168.0 39.6 L170.0 39.7 L172.0 39.7 L174.0 39.8 L176.0 39.8 L178.0 39.7 L180.0 39.7 L182.0 39.6 L184.0 39.5 L186.0 39.4 L188.0 39.3 L190.0 39.1 L192.0 38.9 L194.0 38.7 L196.0 38.5 L198.0 38.3 L200.0 38.1 L202.0 37.8 L204.0 37.6 L206.0 37.4 L208.0 37.2 L210.0 36.9 L212.0 36.7 L214.0 36.6 L216.0 36.4 L218.0 36.3 L220.0 36.2 L222.0 36.1 L224.0 36.1 L226.0 36.1 L228.0 36.2 L230.0 36.3 L232.0 36.4 L234.0 36.7 L236.0 37.0 L238.0 37.3 L240.0 37.7 L242.0 38.3 L244.0 38.9 L246.0 39.6 L248.0 40.4 L250.0 41.3 L252.0 42.4 L254.0 43.6 L256.0 44.9 L258.0 46.3 L260.0 47.9 L262.0 49.6 L264.0 51.3 L266.0 53.1 L268.0 54.9 L270.0 56.6 L272.0 58.3 L274.0 59.8 L276.0 61.1 L278.0 62.4 L280.0 63.4 L282.0 64.3 L284.0 65.0 L286.0 65.5 L288.0 65.9 L290.0 66.2 L292.0 66.4 L294.0 66.5 L296.0 66.5 L298.0 66.5 L300.0 66.3 L302.0 66.2 L304.0 66.0 L306.0 65.7 L308.0 65.5 L310.0 65.2 L312.0 64.9 L314.0 64.6 L316.0 64.4 L318.0 64.1 L320.0 63.9 L322.0 63.7 L324.0 63.5 L326.0 63.3 L328.0 63.2 L330.0 63.1 L332.0 63.0 L334.0 63.0 L336.0 63.0 L338.0 63.1 L340.0 63.2 L342.0 63.4 L344.0 63.5 L346.0 63.8 L348.0 64.0 L350.0 64.3 L352.0 64.6 L354.0 64.9 L356.0 65.2 L358.0 65.6 L360.0 65.9 L362.0 66.3 L364.0 66.6 L366.0 67.0 L368.0 67.3 L370.0 67.6 L372.0 67.9 L374.0 68.1 L376.0 68.4 L378.0 68.6 L380.0 68.7 L382.0 68.9 L384.0 68.9 L386.0 69.0 L388.0 69.0 L390.0 68.9 L392.0 68.9 L394.0 68.7 L396.0 68.6 L398.0 68.4 L400.0 68.2 L402.0 67.9 L404.0 67.6 L406.0 67.3 L408.0 67.0 L410.0 66.6 L412.0 66.3 L414.0 66.0 L416.0 65.6 L418.0 65.3 L420.0 64.9 L422.0 64.6 L424.0 64.3 L426.0 64.0 L428.0 63.8 L430.0 63.6 L432.0 63.4 L434.0 63.2 L436.0 63.1 L438.0 63.0 L440.0 63.0 L442.0 63.0 L444.0 63.0 L446.0 63.1 L448.0 63.2 L450.0 63.3 L452.0 63.4 L454.0 63.6 L456.0 63.8 L458.0 63.9 L460.0 64.1 L462.0 64.2 L464.0 64.4 L466.0 64.4 L468.0 64.5 L470.0 64.4 L472.0 64.3 L474.0 64.1 L476.0 63.8 L478.0 63.3 L480.0 62.7 L482.0 61.9 L484.0 61.0 L486.0 59.9 L488.0 58.7 L490.0 57.3 L492.0 55.8 L494.0 54.3 L496.0 52.7 L498.0 51.1 L500.0 49.6 L502.0 48.2 L504.0 46.8 L506.0 45.6 L508.0 44.4 L510.0 43.4 L512.0 42.5 L514.0 41.6 L516.0 40.9 L518.0 40.2 L520.0 39.6 L522.0 39.1 L524.0 38.6 L526.0 38.1 L528.0 37.7 L530.0 37.4 L532.0 37.1 L534.0 36.8 L536.0 36.6 L538.0 36.4 L540.0 36.2 L542.0 36.1 L544.0 36.0 L546.0 36.0 L548.0 36.0 L550.0 36.0 L552.0 36.1 L554.0 36.1 L556.0 36.3 L558.0 36.4 L560.0 36.6 L562.0 36.7 L564.0 36.9 L566.0 37.1 L568.0 37.4 L570.0 37.6 L572.0 37.8 L574.0 38.0 L576.0 38.2 L578.0 38.4 L580.0 38.6 L582.0 38.8 L584.0 39.0 L586.0 39.1 L588.0 39.3 L590.0 39.4 L592.0 39.5 L594.0 39.5 L596.0 39.6 L598.0 39.6 L600.0 39.6 L602.0 39.6 L604.0 39.5 L606.0 39.4 L608.0 39.4 L610.0 39.3 L612.0 39.1 L614.0 39.0 L616.0 38.9 L618.0 38.7 L620.0 38.6 L622.0 38.4 L624.0 38.3 L626.0 38.1 L628.0 38.0 L630.0 37.8 L632.0 37.7 L634.0 37.6 L636.0 37.5 L638.0 37.4 L640.0 37.3 L642.0 37.2 L644.0 37.2 L646.0 37.1 L648.0 37.1 L650.0 37.1 L652.0 37.1 L654.0 37.1 L656.0 37.2 L658.0 37.2 L660.0 37.3 L662.0 37.4 L664.0 37.5 L666.0 37.5 L668.0 37.6 L670.0 37.8 L672.0 37.9 L674.0 38.0 L676.0 38.1 L678.0 38.2 L680.0 38.4 L682.0 38.5 L684.0 38.7 L686.0 38.8 L688.0 39.0 L690.0 39.2 L692.0 39.5 L694.0 39.8 L696.0 40.1 L698.0 40.5 L700.0 41.0 L702.0 41.5 L704.0 42.2 L706.0 43.0 L708.0 43.9 L710.0 44.9 L712.0 46.1 L714.0 47.4 L716.0 48.7 L718.0 50.2 L720.0 51.7" fill="none" stroke="#8a8a8a" stroke-width="1"></path>
+<rect x="340" y="30" width="20" height="44" fill="none" stroke="#555"></rect>
+<path d="M340 74 L40 110 M360 74 L420 110" stroke="#c8c8c8"></path>
+<rect x="40" y="110" width="380" height="150" fill="none" stroke="#c8c8c8"></rect>
+<rect x="46" y="130" width="184" height="124" fill="#f0f0f0"></rect>
+<path d="M232.0 191.0 L238.0 189.4 L244.0 188.5 L250.0 188.3 L256.0 189.7 L262.0 190.4 L268.0 193.1 L274.0 195.2 L280.0 196.8 L286.0 198.1 L292.0 198.7 L298.0 198.5 L304.0 196.3 L310.0 193.9 L316.0 191.8 L322.0 187.6 L328.0 184.6 L334.0 180.1 L340.0 177.7 L346.0 175.8 L352.0 174.5 L358.0 174.8 L364.0 175.9 L370.0 178.6 L376.0 180.6 L382.0 184.4 L388.0 188.0 L394.0 190.4 L400.0 192.9 L406.0 195.5 L412.0 196.6 L418.0 196.0 L418.0 183.0 L412.0 185.3 L406.0 187.0 L400.0 189.3 L394.0 190.0 L388.0 192.5 L382.0 191.9 L376.0 191.9 L370.0 191.1 L364.0 187.9 L358.0 187.0 L352.0 184.6 L346.0 182.7 L340.0 181.5 L334.0 179.1 L328.0 180.6 L322.0 180.7 L316.0 184.1 L310.0 185.1 L304.0 188.5 L298.0 192.6 L292.0 194.6 L286.0 197.8 L280.0 199.6 L274.0 200.7 L268.0 200.8 L262.0 198.9 L256.0 197.1 L250.0 194.5 L244.0 192.6 L238.0 191.5 L232.0 191.0Z" fill="#dcdcdc"></path>
+<path d="M46.0 214.6 L52.0 218.0 L58.0 221.0 L64.0 224.1 L70.0 224.4 L76.0 224.0 L82.0 223.6 L88.0 220.9 L94.0 218.9 L100.0 214.8 L106.0 212.6 L112.0 209.6 L118.0 207.2 L124.0 206.1 L130.0 205.6 L136.0 206.0 L142.0 208.0 L148.0 209.4 L154.0 211.5 L160.0 214.8 L166.0 216.9 L172.0 217.8 L178.0 218.3 L184.0 218.1 L190.0 217.2 L196.0 214.1 L202.0 210.3 L208.0 206.4 L214.0 202.9 L220.0 198.3 L226.0 193.9 L232.0 191.0 L238.0 189.4 L244.0 188.5 L250.0 188.3 L256.0 189.7 L262.0 190.4 L268.0 193.1 L274.0 195.2 L280.0 196.8 L286.0 198.1 L292.0 198.7 L298.0 198.5 L304.0 196.3 L310.0 193.9 L316.0 191.8 L322.0 187.6 L328.0 184.6 L334.0 180.1 L340.0 177.7 L346.0 175.8 L352.0 174.5 L358.0 174.8 L364.0 175.9 L370.0 178.6 L376.0 180.6 L382.0 184.4 L388.0 188.0 L394.0 190.4 L400.0 192.9 L406.0 195.5 L412.0 196.6 L418.0 196.0" fill="none" stroke="#111" stroke-width="1.5"></path>
+<path d="M232.0 191.0 L238.0 191.5 L244.0 192.6 L250.0 194.5 L256.0 197.1 L262.0 198.9 L268.0 200.8 L274.0 200.7 L280.0 199.6 L286.0 197.8 L292.0 194.6 L298.0 192.6 L304.0 188.5 L310.0 185.1 L316.0 184.1 L322.0 180.7 L328.0 180.6 L334.0 179.1 L340.0 181.5 L346.0 182.7 L352.0 184.6 L358.0 187.0 L364.0 187.9 L370.0 191.1 L376.0 191.9 L382.0 191.9 L388.0 192.5 L394.0 190.0 L400.0 189.3 L406.0 187.0 L412.0 185.3 L418.0 183.0" fill="none" stroke="#8a8a8a" stroke-width="1.5"></path>
+<line x1="232" y1="116" x2="232" y2="256" stroke="#111" stroke-dasharray="3 3"></line>
+<rect x="222" y="122" width="20" height="20" fill="none" stroke="#555"></rect>
+<path d="M242 122 L470 70 M242 142 L470 290" stroke="#c8c8c8"></path>
+<rect x="470" y="70" width="250" height="220" fill="none" stroke="#c8c8c8"></rect>
+<rect x="490" y="150" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="490" y="170" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="490" y="190" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<line x1="540" y1="120" x2="710" y2="120" stroke="#9e9e9e"></line>
+<path d="M545.0 120V120.0M550.6 120V115.8M556.2 120V111.7M561.8 120V107.7M567.4 120V105.3M573.0 120V102.9M578.6 120V104.6M584.2 120V109.0M589.8 120V114.3M595.4 120V120.6M601.0 120V128.2M606.6 120V131.9M612.2 120V135.6M617.8 120V137.7M623.4 120V135.5M629.0 120V133.7M634.6 120V128.2M640.2 120V122.0M645.8 120V112.5M651.4 120V106.2M657.0 120V99.7M662.6 120V95.6M668.2 120V96.0M673.8 120V95.0M679.4 120V97.5M685.0 120V105.1M690.6 120V110.9M696.2 120V120.9M701.8 120V127.2M707.4 120V137.0" stroke="#111" stroke-width="1.3"></path>
+<path d="M545.0 118.7 L550.6 115.0 L556.2 111.0 L561.8 107.7 L567.4 106.0 L573.0 106.3 L578.6 108.6 L584.2 112.6 L589.8 117.8 L595.4 123.3 L601.0 128.4 L606.6 132.4 L612.2 134.8 L617.8 135.0 L623.4 133.2 L629.0 129.4 L634.6 124.1 L640.2 117.9 L645.8 111.5 L651.4 105.8 L657.0 101.2 L662.6 98.5 L668.2 98.0 L673.8 99.8 L679.4 103.7 L685.0 109.4 L690.6 116.3 L696.2 123.7 L701.8 130.8 L707.4 136.8" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="M512 172 C 530 160, 534 140, 548 128" fill="none" stroke="#0092B5" stroke-width="1.4" stroke-dasharray="4 3"></path>
+<path d="M550 125 l-8 1 l4 7 z" fill="#0092B5"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:600px;top:40px;font-size:15px">record</span>
+<span class="l g" style="left:52px;top:116px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l" style="left:228px;top:262px;font-size:15px">τ</span>
+<span class="l" style="left:396px;top:180.0px;font-size:15px">y</span>
+<span class="l g" style="left:396px;top:185.0px;font-size:15px">ŷ</span>
+<span class="l h" style="left:482px;top:218px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:440px;top:186px;font-size:15px">ψ<sub>a</sub> ←</span>
+<span class="l h" style="left:526px;top:144px">p</span>
+<span class="l" style="left:672px;top:94px">e<sub>τ</sub></span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M40.0 47.6 L47.5 44.7 L55.0 43.0 L62.5 42.3 L70.0 41.7 L77.5 43.0 L85.0 44.5 L92.5 46.8 L100.0 48.6 L107.5 51.5 L115.0 53.8 L122.5 55.8 L130.0 58.0 L137.5 57.9 L145.0 57.2 L152.5 56.7 L160.0 54.2 L167.5 52.4 L175.0 49.0 L182.5 47.2 L190.0 44.8 L197.5 42.9 L205.0 42.2 L212.5 42.2 L220.0 42.9 L227.5 45.0 L235.0 46.7 L242.5 48.9 L250.0 52.2 L257.5 54.7 L265.0 56.1 L272.5 57.2 L280.0 57.9 L287.5 58.0 L295.0 56.2 L302.5 54.0 L310.0 51.6 L317.5 49.6 L325.0 46.7 L332.5 44.0 L340.0 42.5 L347.5 42.1 L355.0 42.3 L362.5 43.1 L370.0 45.2 L377.5 46.6 L385.0 49.8 L392.5 52.4 L400.0 54.5 L407.5 56.4 L415.0 57.7" fill="none" stroke="#111" stroke-width="1.2"></path>
+<rect x="40" y="76" width="300" height="5" fill="#bdbdbd"></rect>
+<rect x="50" y="84" width="300" height="5" fill="none" stroke="#0092B5"></rect>
+<rect x="318" y="24" width="44" height="70" fill="none" stroke="#555"></rect>
+<path d="M318 94 L60 130 M362 94 L420 130" stroke="#c8c8c8"></path>
+<rect x="60" y="130" width="360" height="150" fill="none" stroke="#c8c8c8"></rect>
+<line x1="70" y1="240" x2="410" y2="240" stroke="#9e9e9e"></line>
+<path d="M80 240V209.4M160 240V203.9M240 240V200.9M320 240V200.2" stroke="#111" stroke-width="2"></path>
+<path d="M76 209.4a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M156 203.9a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M236 200.9a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M316 200.2a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" fill="#111"></path>
+<rect x="66" y="250" width="100" height="7" fill="#bdbdbd"></rect>
+<rect x="66" y="262" width="180" height="7" fill="none" stroke="#0092B5" stroke-width="1.4"></rect>
+<path d="M420 130 L470 60 M420 280 L470 290" stroke="#c8c8c8"></path>
+<rect x="470" y="60" width="250" height="230" fill="none" stroke="#c8c8c8"></rect>
+<rect x="490" y="150" width="20" height="20" fill="#9e9e9e" stroke="#555"></rect><rect x="490" y="170" width="20" height="20" fill="#9e9e9e" stroke="#555"></rect><rect x="490" y="190" width="20" height="20" fill="#9e9e9e" stroke="#555"></rect>
+<rect x="650" y="150" width="20" height="20" fill="#fff" stroke="#111"></rect><rect x="650" y="170" width="20" height="20" fill="#fff" stroke="#111"></rect><rect x="650" y="190" width="20" height="20" fill="#fff" stroke="#111"></rect>
+<rect x="680" y="152" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect><rect x="680" y="173" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect><rect x="680" y="188" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<path d="M512 160 C 560 100, 640 100, 684 148" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M686 151 l-2 -9 l-6 6 z" fill="#0092B5"></path>
+<line x1="650" y1="218" x2="700" y2="218" stroke="#111"></line>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:350px;top:72px;font-size:14px">χ<sub>τ</sub></span>
+<span class="l h" style="left:356px;top:86px;font-size:14px">χ<sub>τ+1</sub></span>
+<span class="l" style="left:148px;top:288px;font-size:15px">τ−1</span>
+<span class="l" style="left:236px;top:288px;font-size:15px">τ</span>
+<span class="l" style="left:308px;top:288px;font-size:15px">τ+1</span>
+<span class="l h" style="left:248px;top:200px;font-size:15px">u<sub>τ</sub></span>
+<span class="l g" style="left:478px;top:218px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:620px;top:226px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:520px;top:80px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>The whole record: y with the free-run ŷ drifting off (real data slots in here).</li>
+<li>Zoom box at one τ; level 2 opens: the split at τ, y, ŷ from y(τ), the shaded gap, the window χ<sub>τ</sub>.</li>
+<li>Zoom box at the split; level 3 opens: the state cells x̄<sub>τ|τ</sub> (highlight), fed by ψ<sub>a</sub>.</li>
+<li>Residual stems e<sub>τ</sub> in level 3; dashed p from the cells draws over them; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Level 1 is the window picture; bars χ<sub>τ</sub> and χ<sub>τ+1</sub>.</li>
+<li>Zoom box on their right ends; level 2: samples τ−1, τ, τ+1 as big stems, the bars end one stem apart.</li>
+<li>Level 3: cells x̄<sub>τ|τ</sub> (grey) and target ψ<sub>a</sub>(χ<sub>τ+1</sub>) (outline).</li>
+<li>g<sub>aug</sub> arc with u<sub>τ</sub> lands beside the target (highlight); S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: the one-sample shift (shown at a scale where it is wide) and where the residual comes from in the full record. Weakest: three nested frames use a lot of area; why x̄ must carry dynamics is not shown.</div>
+</div>
+
+
+</body>
+</html>

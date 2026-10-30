@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>11 Ring cycle</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">11</span><span class="idea">The core visual idea is S1 as a loop on a ring, sharing each turn with one step of V so the residual is always the current model's; S2 is a short straight line that ends where p is dropped and V takes over.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="M455 70 A 150 120 0 0 1 520 170" fill="none" stroke="#0092B5" stroke-width="1.8"></path><path d="M521 174 l-6 -8 l9 -2 z" fill="#0092B5"></path>
+<path d="M500 232 A 150 120 0 0 1 400 278" fill="none" stroke="#0092B5" stroke-width="1.8"></path><path d="M396 279 l8 -6 l1 9 z" fill="#0092B5"></path>
+<path d="M260 270 A 150 120 0 0 1 216 180" fill="none" stroke="#8a8a8a" stroke-width="1.8"></path><path d="M215 176 l6 8 l-9 2 z" fill="#8a8a8a"></path>
+<path d="M240 100 A 150 120 0 0 1 300 48" fill="none" stroke="#8a8a8a" stroke-width="1.8"></path><path d="M304 46 l-8 6 l-1 -9 z" fill="#8a8a8a"></path>
+<line x1="320" y1="70" x2="440" y2="70" stroke="#9e9e9e"></line>
+<path d="{{nG}}" fill="#dcdcdc"></path><path d="{{nY}}" fill="none" stroke="#111" stroke-width="1.3"></path><path d="{{nH}}" fill="none" stroke="#8a8a8a" stroke-width="1.3"></path>
+<path d="{{eChi}}" fill="none" stroke="#8a8a8a" stroke-width="1.1"></path>
+<path d="M548 196 h10v10h-10z M558 196 h10v10h-10z M568 196 h10v10h-10z" fill="#d9f0f6" stroke="#0092B5"></path>
+<line x1="590" y1="200" x2="710" y2="200" stroke="#c8c8c8"></line>
+<path d="{{eSt}}" stroke="#111" stroke-width="1.1"></path>
+<path d="{{ePr}}" fill="none" stroke="#0092B5" stroke-width="1.8" stroke-dasharray="4 3"></path>
+<path d="M330 262 h14v14h-14z M344 262 h14v14h-14z M358 262 h14v14h-14z" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="M392 262 h14v14h-14z" fill="#fff" stroke="#0092B5" stroke-dasharray="3 2"></path>
+<path d="{{wA}}" fill="none" stroke="#c8c8c8" stroke-width="1.3"></path>
+<path d="{{wB}}" fill="none" stroke="#8a8a8a" stroke-width="1.3"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:330px;top:24px;font-size:15px">simulate from x̂<sub>τ|τ</sub></span>
+<span class="l" style="left:446px;top:62px;font-size:15px">e<sub>τ</sub></span>
+<span class="l g" style="left:546px;top:132px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:546px;top:212px;font-size:15px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:640px;top:224px;font-size:15px">p(x̄<sub>τ|τ</sub>) vs e<sub>τ</sub></span>
+<span class="l h" style="left:300px;top:290px;font-size:15px">∇ θ<sup>a</sup><sub>enc</sub>, θ<sub>p</sub></span>
+<span class="l g" style="left:40px;top:180px;font-size:15px">one step of V</span>
+<span class="l g" style="left:56px;top:200px;font-size:15px">(ŷ changes)</span>
+<span class="l g" style="left:340px;top:148px;font-size:16px">i → i+1</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²&#160;&#160;<span class="g" style="font-size:16px">alternating with one step of V</span></div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<rect x="30" y="120" width="120" height="5" fill="#bdbdbd"></rect>
+<rect x="36" y="130" width="120" height="5" fill="none" stroke="#0092B5"></rect>
+<path d="M150 122 C 180 110, 190 100, 196 96 M156 132 C 190 160, 220 180, 236 186" fill="none" stroke="#8a8a8a"></path>
+<path d="M200 80 h14v14h-14z M200 94 h14v14h-14z M200 108 h14v14h-14z" fill="#9e9e9e" stroke="#555"></path>
+<path d="M240 170 h14v14h-14z M240 184 h14v14h-14z M240 198 h14v14h-14z" fill="#fff" stroke="#111"></path>
+<path d="M216 96 C 280 60, 330 70, 356 120" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M357 124 l-6 -8 l9 -2 z" fill="#0092B5"></path>
+<path d="M350 128 h14v14h-14z M350 142 h14v14h-14z M350 156 h14v14h-14z" fill="#d9f0f6" stroke="#0092B5"></path>
+<path d="M256 192 C 300 192, 330 170, 348 160" fill="none" stroke="#111" stroke-dasharray="2 2"></path>
+<path d="M440 120 h14v14h-14z M454 120 h14v14h-14z M468 120 h14v14h-14z" fill="#fff" stroke="#c8c8c8" stroke-dasharray="3 2"></path>
+<path d="M486 128 C 500 120, 510 110, 520 104" fill="none" stroke="#c8c8c8" stroke-dasharray="3 2"></path>
+<path d="M430 110 L530 160 M430 160 L530 110" stroke="#9e9e9e" stroke-width="1.2"></path>
+<path d="M560 140 H690" stroke="#8a8a8a" stroke-width="1.8"></path><path d="M696 140 l-9 -5 v10 z" fill="#8a8a8a"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:30px;top:96px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l h" style="left:40px;top:142px;font-size:15px">χ<sub>τ+1</sub></span>
+<span class="l g" style="left:160px;top:60px;font-size:15px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:200px;top:220px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:220px;top:46px;font-size:15px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l u" style="left:300px;top:196px;font-size:14px">‖ − ‖²</span>
+<span class="l g" style="left:450px;top:172px;font-size:15px">p dropped</span>
+<span class="l g" style="left:600px;top:112px;font-size:16px">V</span>
+<span class="l g" style="left:560px;top:154px;font-size:15px">from this start</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Top of the ring: simulate from x̂<sub>τ|τ</sub>; y, ŷ and the gap e<sub>τ</sub>.</li>
+<li>Right: χ<sub>τ</sub> encoded to x̄<sub>τ|τ</sub>; p draws over the stems of e<sub>τ</sub> (highlight).</li>
+<li>Bottom: update θ<sup>a</sup><sub>enc</sub>, θ<sub>p</sub> (highlight, p cell dashed: temporary); S1 minimisation appears.</li>
+<li>Left, grey: one step of V, ŷ moves; the arc closes the ring back to "simulate"; "alternating" appears in the equation.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Two windows one sample apart; encoded to x̄<sub>τ|τ</sub> (grey) and the target (outline).</li>
+<li>g<sub>aug</sub> arc with u<sub>τ</sub> to the prediction; ‖ − ‖² against the target; S2 minimisation appears.</li>
+<li>The decoder, faded and crossed: p dropped.</li>
+<li>Grey arrow V: normal training from this start.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: the alternation with V (why e is always the current model's residual) and the hand-over to normal training. Weakest: each vignette is small, so the gap and shift are icons; the why is not visible.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=k=>k<=0?0:(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4)+0.2*Math.sin(k/8);
+const res=k=>k<=0?0:resS(k)+0.12*nz(k);
+const osc=k=>0.8*Math.sin(Wr*k+1.1)+0.1*nz(k+50);
+const X=k=>380+2*k, yp=k=>60-4*Math.sin(k/14)-5*osc(k);
+const ny=[],nh=[],ng=[];for(let k=-30;k<=30;k++)ny.push([X(k),yp(k)]);for(let k=0;k<=30;k++)nh.push([X(k),yp(k)+6*res(k)]);
+for(let k=0;k<=30;k++)ng.push([X(k),yp(k)]);for(let k=30;k>=0;k--)ng.push([X(k),yp(k)+6*res(k)]);
+const ch=[];for(let k=-30;k<=-1;k++)ch.push([548+3.2*(k+30),170-8*osc(k)]);
+let st='';const pr=[];for(let k=0;k<30;k++){const x=592+4*k;st+='M'+f(x)+' 200V'+f(200-16*res(k));pr.push([x,200-16*0.87*resS(k+0.5)]);}
+const wa=[],wb=[];for(let k=0;k<=30;k++){wa.push([60+3*k,150-8*Math.sin(k/6)]);wb.push([60+3*k,150-8*Math.sin(k/6)-6*(1-Math.exp(-k/8))]);}
+return {nY:P(ny),nH:P(nh),nG:P(ng)+'Z',eChi:P(ch),eSt:st,ePr:P(pr),wA:P(wa),wB:P(wb)};
+}
+}
+</script>
+</body>
+</html>

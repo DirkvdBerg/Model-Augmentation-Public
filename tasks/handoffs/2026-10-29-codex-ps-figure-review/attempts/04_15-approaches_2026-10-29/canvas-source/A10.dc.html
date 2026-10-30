@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>10 Nested zoom</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+</helmet>
+<div class="ab">
+<div class="hd"><span class="no">10</span><span class="idea">The core visual idea is a nested zoom: from the whole record, into one split at τ, into the state at that split; S2 zooms one level deeper, to the single sample between τ and τ+1.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="{{L1y}}" fill="none" stroke="#111" stroke-width="1"></path>
+<path d="{{L1h}}" fill="none" stroke="#8a8a8a" stroke-width="1"></path>
+<rect x="{{zx0}}" y="30" width="{{zw}}" height="44" fill="none" stroke="#555"></rect>
+<path d="M{{zx0}} 74 L40 110 M{{zx1}} 74 L420 110" stroke="#c8c8c8"></path>
+<rect x="40" y="110" width="380" height="150" fill="none" stroke="#c8c8c8"></rect>
+<rect x="46" y="130" width="184" height="124" fill="#f0f0f0"></rect>
+<path d="{{L2g}}" fill="#dcdcdc"></path>
+<path d="{{L2y}}" fill="none" stroke="#111" stroke-width="1.5"></path>
+<path d="{{L2h}}" fill="none" stroke="#8a8a8a" stroke-width="1.5"></path>
+<line x1="232" y1="116" x2="232" y2="256" stroke="#111" stroke-dasharray="3 3"></line>
+<rect x="222" y="122" width="20" height="20" fill="none" stroke="#555"></rect>
+<path d="M242 122 L470 70 M242 142 L470 290" stroke="#c8c8c8"></path>
+<rect x="470" y="70" width="250" height="220" fill="none" stroke="#c8c8c8"></rect>
+<rect x="490" y="150" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="490" y="170" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<rect x="490" y="190" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<line x1="540" y1="120" x2="710" y2="120" stroke="#9e9e9e"></line>
+<path d="{{L3s}}" stroke="#111" stroke-width="1.3"></path>
+<path d="{{L3p}}" fill="none" stroke="#0092B5" stroke-width="2" stroke-dasharray="4 3"></path>
+<path d="M512 172 C 530 160, 534 140, 548 128" fill="none" stroke="#0092B5" stroke-width="1.4" stroke-dasharray="4 3"></path>
+<path d="M550 125 l-8 1 l4 7 z" fill="#0092B5"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l g" style="left:600px;top:40px;font-size:15px">record</span>
+<span class="l g" style="left:52px;top:116px;font-size:15px">χ<sub>τ</sub></span>
+<span class="l" style="left:228px;top:262px;font-size:15px">τ</span>
+<span class="l" style="left:396px;top:{{L2yLab}}px;font-size:15px">y</span>
+<span class="l g" style="left:396px;top:{{L2hLab}}px;font-size:15px">ŷ</span>
+<span class="l h" style="left:482px;top:218px">x̄<sub>τ|τ</sub></span>
+<span class="l h" style="left:440px;top:186px;font-size:15px">ψ<sub>a</sub> ←</span>
+<span class="l h" style="left:526px;top:144px">p</span>
+<span class="l" style="left:672px;top:94px">e<sub>τ</sub></span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<path d="{{M1y}}" fill="none" stroke="#111" stroke-width="1.2"></path>
+<rect x="40" y="76" width="300" height="5" fill="#bdbdbd"></rect>
+<rect x="50" y="84" width="300" height="5" fill="none" stroke="#0092B5"></rect>
+<rect x="318" y="24" width="44" height="70" fill="none" stroke="#555"></rect>
+<path d="M318 94 L60 130 M362 94 L420 130" stroke="#c8c8c8"></path>
+<rect x="60" y="130" width="360" height="150" fill="none" stroke="#c8c8c8"></rect>
+<line x1="70" y1="240" x2="410" y2="240" stroke="#9e9e9e"></line>
+<path d="{{M2s}}" stroke="#111" stroke-width="2"></path>
+<path d="{{M2d}}" fill="#111"></path>
+<rect x="66" y="250" width="{{w1}}" height="7" fill="#bdbdbd"></rect>
+<rect x="66" y="262" width="{{w2}}" height="7" fill="none" stroke="#0092B5" stroke-width="1.4"></rect>
+<path d="M420 130 L470 60 M420 280 L470 290" stroke="#c8c8c8"></path>
+<rect x="470" y="60" width="250" height="230" fill="none" stroke="#c8c8c8"></rect>
+<rect x="490" y="150" width="20" height="20" fill="#9e9e9e" stroke="#555"></rect><rect x="490" y="170" width="20" height="20" fill="#9e9e9e" stroke="#555"></rect><rect x="490" y="190" width="20" height="20" fill="#9e9e9e" stroke="#555"></rect>
+<rect x="650" y="150" width="20" height="20" fill="#fff" stroke="#111"></rect><rect x="650" y="170" width="20" height="20" fill="#fff" stroke="#111"></rect><rect x="650" y="190" width="20" height="20" fill="#fff" stroke="#111"></rect>
+<rect x="680" y="152" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect><rect x="680" y="173" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect><rect x="680" y="188" width="20" height="20" fill="#d9f0f6" stroke="#0092B5"></rect>
+<path d="M512 160 C 560 100, 640 100, 684 148" fill="none" stroke="#0092B5" stroke-width="2"></path><path d="M686 151 l-2 -9 l-6 6 z" fill="#0092B5"></path>
+<line x1="650" y1="218" x2="700" y2="218" stroke="#111"></line>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:350px;top:72px;font-size:14px">χ<sub>τ</sub></span>
+<span class="l h" style="left:356px;top:86px;font-size:14px">χ<sub>τ+1</sub></span>
+<span class="l" style="left:{{t0x}}px;top:288px;font-size:15px">τ−1</span>
+<span class="l" style="left:{{t1x}}px;top:288px;font-size:15px">τ</span>
+<span class="l" style="left:{{t2x}}px;top:288px;font-size:15px">τ+1</span>
+<span class="l h" style="left:{{ulx}}px;top:200px;font-size:15px">u<sub>τ</sub></span>
+<span class="l g" style="left:478px;top:218px">x̄<sub>τ|τ</sub></span>
+<span class="l" style="left:620px;top:226px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:520px;top:80px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>The whole record: y with the free-run ŷ drifting off (real data slots in here).</li>
+<li>Zoom box at one τ; level 2 opens: the split at τ, y, ŷ from y(τ), the shaded gap, the window χ<sub>τ</sub>.</li>
+<li>Zoom box at the split; level 3 opens: the state cells x̄<sub>τ|τ</sub> (highlight), fed by ψ<sub>a</sub>.</li>
+<li>Residual stems e<sub>τ</sub> in level 3; dashed p from the cells draws over them; S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Level 1 is the window picture; bars χ<sub>τ</sub> and χ<sub>τ+1</sub>.</li>
+<li>Zoom box on their right ends; level 2: samples τ−1, τ, τ+1 as big stems, the bars end one stem apart.</li>
+<li>Level 3: cells x̄<sub>τ|τ</sub> (grey) and target ψ<sub>a</sub>(χ<sub>τ+1</sub>) (outline).</li>
+<li>g<sub>aug</sub> arc with u<sub>τ</sub> lands beside the target (highlight); S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: the one-sample shift (shown at a scale where it is wide) and where the residual comes from in the full record. Weakest: three nested frames use a lot of area; why x̄ must carry dynamics is not shown.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+const Wr=2*Math.PI/18.9, f=v=>v.toFixed(1);
+const P=a=>a.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+const nz=k=>{const x=Math.sin(k*12.9898+78.233)*43758.5453;return x-Math.floor(x)-0.5;};
+const resS=k=>k<=0?0:(1-Math.exp(-k/5))*Math.sin(Wr*k+0.4)+0.2*Math.sin(k/8);
+const res=k=>k<=0?0:resS(k)+0.12*nz(k);
+const osc=k=>0.8*Math.sin(Wr*k+1.1)+0.1*nz(k+50);
+const a1=[],h1=[];for(let i=0;i<=340;i++){const t=i/340;const k=Math.round(-600+1200*t);const base=52-14*Math.tanh(4*Math.sin(t*6.28*1.5));a1.push([40+680*t,base-4*osc(k)]);h1.push([40+680*t,base+3*Math.sin(t*40)*Math.sin(t*3.14)]);}
+const zx0=340,zx1=360;
+const X=k=>232+6*k, yp=k=>200-16*Math.sin(k/14)-12*osc(k);
+const y2=[],h2=[],g2=[];for(let k=-31;k<=31;k++)y2.push([X(k),yp(k)]);for(let k=0;k<=31;k++)h2.push([X(k),yp(k)+12*res(k)]);
+for(let k=0;k<=31;k++)g2.push([X(k),yp(k)]);for(let k=31;k>=0;k--)g2.push([X(k),yp(k)+12*res(k)]);
+let s3='';const p3=[];for(let k=0;k<30;k++){const x=545+5.6*k;s3+='M'+f(x)+' 120V'+f(120-24*res(k));p3.push([x,120-24*0.87*resS(k+0.5)]);}
+const m1=[];for(let k=-40;k<=10;k++)m1.push([40+7.5*(k+40),50-10*osc(k)]);
+const Xs=k=>240+80*k;let s='',d='';[-2,-1,0,1].forEach(k=>{const v=240-40*(0.6+osc(k)*0.5);s+='M'+Xs(k)+' 240V'+f(v);d+='M'+(Xs(k)-4)+' '+f(v)+'a4 4 0 1 0 8 0a4 4 0 1 0 -8 0';});
+return {L1y:P(a1),L1h:P(h1),zx0,zx1,zw:zx1-zx0,L2y:P(y2),L2h:P(h2),L2g:P(g2)+'Z',L2yLab:f(yp(31)-16),L2hLab:f(yp(31)+12*res(31)+2),L3s:s3,L3p:P(p3),
+M1y:P(m1),M2s:s,M2d:d,w1:Xs(-1)+6-66,w2:Xs(0)+6-66,t0x:Xs(-1)-12,t1x:Xs(0)-4,t2x:Xs(1)-12,ulx:Xs(0)+8};
+}
+}
+</script>
+</body>
+</html>

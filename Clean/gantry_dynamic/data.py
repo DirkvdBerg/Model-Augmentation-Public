@@ -1,4 +1,8 @@
-"""Data loading (the manifest split of one data set), resampling to the training rate and normalisation."""
+"""Data loading (the manifest split of one data set), resampling to the training rate and normalisation.
+
+Conventions: samples are rows, so q = P^-T y is written y @ P^-T.T; superscript n = normalised; x_mean, std_x,
+u_mean, std_u, y0, ystd are mu_x, sigma_x, mu_u, sigma_u, mu_y, sigma_y.
+"""
 __project_origin__ = "added"
 
 import csv
@@ -82,25 +86,40 @@ def _load_u(d):
 
 
 def _resample_u(u, cfg: RunConfig):
-    """Average each block of cfg.d input samples to obtain the model-rate force."""
-    # THEORY: block averaging preserves the force integral over each model interval; using that mean as a held
-    # force approximates the fine-rate input
-    # a persistent bias in the resampled force can cause drift on the axes without stiffness to ground; block
-    # averaging also applies a boxcar low-pass response before decimation, but it is not a dedicated anti-alias
-    # filter
+    """Actuator force at the model rate.
+
+    u_act,k = mean of the D samples of u_act in [k T_s, (k + 1) T_s), D = fs_orig / fs_new: the force held over
+    each sample.
+
+    Args:
+        u: (N_sim, 3) u_act at f_sim, newtons.
+        cfg: run configuration; cfg.d = D.
+    Returns:
+        (N, 3) u_act at 1 / T_s, newtons.
+    """
+    # THEORY: the block mean preserves the force integral over each model interval
     D = cfg.d
     n = u.shape[0] // D
     return u[:n * D].astype(np.float64).reshape(n, D, u.shape[1]).mean(axis=1)
 
 
 def _decimate_y(d, cfg: RunConfig):
-    """y at FS_NEW: zero-phase anti-alias filtering of y - r on the lowpass data set, point sampling otherwise."""
+    """Measured positions at the model rate.
+
+    y_k = r(k T_s) + B(y - r)(k T_s), B = forward-backward Butterworth (order 8, 1.6 kHz), on the lowpass data set;
+    point sampling y_k = y(k T_s) otherwise. Only the servo error is filtered.
+
+    Args:
+        d: the record; cfg: run configuration.
+    Returns:
+        (N, 3) y at 1 / T_s, physical.
+    """
     D = cfg.d
     if cfg.noise != 'lowpass':
         return d['y'][::D]
     r = d['r_sim']
     sos = butter(AA_ORDER, AA_FC_HZ, fs=cfg.fs_orig, output='sos')
-    # only the servo error is filtered; the reference r is added back unfiltered
+    # Error-only filtering: y_k = r_k + [B(y - r)]_{k D}; r is unfiltered.
     return r[::D] + sosfiltfilt(sos, d['y'] - r, axis=0)[::D]
 
 
@@ -128,8 +147,18 @@ def _load_record(filename, cfg: RunConfig, folder=None):
 
 
 def servo_sigma(e_list, k0):
-    """Return servo-error population standard deviations over k0 .. N-1, shape (n_records, ny)."""
+    """Servo-error scale sigma_e.
+
+    sigma_e,j = population standard deviation of e_j = y_j - r_j over k = k0 .. N - 1; it normalises the loss
+    (W_r) and the validation NRMS_e.
+
+    Args:
+        e_list: per record (N, 3) servo errors, metres; k0: first scored sample (n + 1).
+    Returns:
+        (n_records, 3) sigma_e.
+    """
     # THEORY: the NRMS normalisation by a standard deviation (Beintema et al.), here that of the servo error
+    # sigma_e,j = (mean over k >= k0 of (e_j,k - mean e_j)^2)^(1/2).
     s = np.stack([np.std(np.asarray(e, np.float64)[k0:], axis=0) for e in e_list])
     if not (np.all(np.isfinite(s)) and np.all(s > 0)):
         raise ValueError('servo error standard deviation must be finite and positive, got %s; check the '
@@ -145,6 +174,7 @@ def load_datasets(cfg: RunConfig) -> DataBundle:
     train_files, val_files, test_files = record_files(cfg)
 
     def _split(files):
+        """(System_data, servo error) lists of the records of one split."""
         pairs = [_load_record(f, cfg) for f in files]
         return [p[0] for p in pairs], [p[1] for p in pairs]
 
@@ -167,22 +197,38 @@ def load_datasets(cfg: RunConfig) -> DataBundle:
 
 
 def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
-    """Normalisation constants of the six physical states, the inputs and the outputs, from the training records."""
+    """Normalisation of the augmented model.
+
+    mu_i, sigma_i of x_tilde = (q, qdot), u_act and y over the training records, and C^n = T_y P^T [I 0] T_x^-1; the
+    position means equal P^-T mu_y, so the output map has no offset.
+
+    Args:
+        cfg: run configuration.
+        data: the loaded records.
+    Returns:
+        Norm: mu_x, sigma_x (6, 1) of the physical q, qdot; mu_u, sigma_u (3, 1) of the actuator force, newtons;
+        mu_y, sigma_y (3,) of the measured positions, metres; C^n (3, 6) and D (3, 3), maps between normalised
+        coordinates.
+    """
+    # 1. Physical states of the training records.
     u_all = np.concatenate([t.u for t in data.train_list])
     y_all = np.concatenate([t.y for t in data.train_list])
 
     fs = 1.0 / data.train_list[0].dt
-    P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)
+    P_inv_T = np.linalg.inv(P.numpy().astype(cfg.dtype_np).T)
     x_logical_list = []
     for t in data.train_list:
-        # logical positions q = P^-T y, velocities by a first difference
+        # Positions: q = P^-T y (so the position means are P^-T mu_y).
         pos_logical = (P_inv_T @ t.y.T).T
+        # Velocities: qdot_k = (q_k - q_{k-1}) / T_s for k >= 1, qdot_0 = qdot_1.
         # THEORY: var of a first difference of white noise = 2*sigma_n^2, so sigma_v = sigma_n*sqrt(2)*fs
         vel_logical = np.diff(pos_logical, axis=0) * fs
         vel_logical = np.vstack([vel_logical[:1], vel_logical])
         x_logical_list.append(np.hstack([pos_logical, vel_logical]))
     x_all = np.concatenate(x_logical_list)
 
+    # 2. Statistics.
+    # mu_i = mean(i), sigma_i = (mean (i - mu_i)^2)^(1/2) + 1e-8 (keeps T_i finite), i in {x_tilde, u_act, y}.
     x_mean = x_all.mean(axis=0).reshape(cfg.nx_phys, 1)
     std_x  = x_all.std(axis=0).reshape(cfg.nx_phys, 1) + 1e-8
     std_u  = u_all.std(axis=0).reshape(cfg.nu, 1) + 1e-8
@@ -190,7 +236,7 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     ystd   = y_all.std(axis=0) + 1e-8
     y0     = y_all.mean(axis=0)
 
-    # C^n = diag(1 / sigma_y) C diag(sigma_x), so y^n = C^n x_tilde^n: the offsets cancel, since y0 = C x_mean
+    # 3. Output map: C^n = T_y P^T [I 0] T_x^-1, with no offset since P^T mu_q = mu_y.
     Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]
     Dd_np   = Dd.numpy()
 

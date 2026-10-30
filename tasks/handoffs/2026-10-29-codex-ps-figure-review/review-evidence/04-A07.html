@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>07 Gradient paths</title>
+
+</head>
+<body>
+
+
+
+<style>
+body{margin:0}
+.ab{width:1600px;height:920px;box-sizing:border-box;padding:30px 40px;background:#fff;color:#111;font-family:'STIX Two Text',Georgia,serif;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;gap:18px;align-items:baseline}
+.no{font-size:40px;color:#0092B5;font-weight:600}
+.idea{font-size:22px;line-height:1.3}
+.row{display:flex;gap:40px}
+.slide{position:relative;width:740px;height:416px;border:1px solid #9e9e9e;flex:none;overflow:hidden;background:#fff}
+.slide svg{position:absolute;left:0;top:0}
+.tag{position:absolute;left:14px;top:10px;font-size:15px;color:#555}
+.l{position:absolute;font-size:18px;font-style:italic;white-space:nowrap;line-height:1}
+.g{color:#595959}.h{color:#0092B5}
+.u{font-style:normal}
+sub,sup{font-size:.68em;line-height:0}
+.eq{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid #e0e0e0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:19px}
+.eq .s{font-size:16px}
+.mn{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;line-height:1}
+.lim{font-size:.62em;font-style:italic;margin-top:3px}
+.bl{display:flex;gap:40px;font-size:15px;line-height:1.45}
+.bl div{width:740px}
+.bl ol{margin:4px 0 0;padding-left:22px}
+.vd{font-size:15px;color:#333}
+</style>
+
+<div class="ab">
+<div class="hd"><span class="no">07</span><span class="idea">The core visual idea is the computation unrolled over samples, with the gradient drawn as a highlighted backward path: it is visible which arrows carry learning in each stage and which are cut.</span></div>
+<div class="row">
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="30" y1="262" x2="720" y2="262" stroke="#e0e0e0"></line>
+<path d="M80 243.6L190 96M108 236.0L190 96M136 229.6L190 96M164 228.3L190 96M192 232.8L190 96M220 240.5L190 96M248 246.7L190 96M276 247.6L190 96M304 242.8L190 96M332 235.0L190 96" stroke="#c8c8c8" stroke-width=".8"></path>
+<path d="M49.0 247.8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M77.0 243.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M105.0 236.0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M133.0 229.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M161.0 228.3a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M189.0 232.8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M217.0 240.5a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M245.0 246.7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M273.0 247.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M301.0 242.8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M329.0 235.0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M357.0 229.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M385.0 228.5a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M413.0 233.7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M441.0 241.4a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M469.0 247.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M497.0 247.3a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M525.0 241.9a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M553.0 234.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M581.0 228.7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M609.0 228.9a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M637.0 234.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" fill="#111"></path>
+<path d="M364 205.1L384 209.8M392 209.8L412 218.6M420 218.6L440 221.8M448 221.8L468 216.7M476 216.7L496 207.9M504 207.9L524 202.5M532 202.5L552 204.8M560 204.8L580 213.6M588 213.6L608 223.2M616 223.2L636 227.3" stroke="#9e9e9e" stroke-width="1.2" fill="none"></path>
+<path d="M356.0 205.1a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M384.0 209.8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M412.0 218.6a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M440.0 221.8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M468.0 216.7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M496.0 207.9a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M524.0 202.5a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M552.0 204.8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M580.0 213.6a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M608.0 223.2a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M636.0 227.3a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" fill="#fff" stroke="#8a8a8a" stroke-width="1.4"></path>
+<path d="M360 225.1L360 209.1M388 224.5L388 213.8M416 229.7L416 222.6M444 237.4L444 225.8M472 243.1L472 220.7M500 243.3L500 211.9M528 237.9L528 206.5M556 230.1L556 208.8M584 224.7L584 217.6M612 224.9L612 227.2M640 230.6L640 231.3" stroke="#111" stroke-width="2.2"></path>
+<path d="M360 201.1Q360 120 640 87M388 205.8Q388 120 640 87M416 214.6Q416 120 640 87M444 217.8Q444 120 640 87M472 212.7Q472 120 640 87M500 203.9Q500 120 640 87M528 198.5Q528 120 640 87M556 200.8Q556 120 640 87M584 209.6Q584 120 640 87M612 219.2Q612 120 640 87M640 223.3Q640 120 640 87" stroke="#c8c8c8" stroke-width=".8" fill="none"></path>
+<circle cx="190" cy="80" r="15" fill="#fff" stroke="#111"></circle>
+<circle cx="320" cy="80" r="15" fill="#d9f0f6" stroke="#0092B5" stroke-width="1.5"></circle>
+<circle cx="470" cy="70" r="15" fill="#fff" stroke="#0092B5" stroke-width="1.5" stroke-dasharray="3 2"></circle>
+<circle cx="640" cy="70" r="17" fill="#fff" stroke="#111"></circle>
+<path d="M205 80 H303 M335 78 L453 72 M485 70 H621" stroke="#111" stroke-width="1"></path>
+<path d="M190 96 C 220 150, 330 170, 352 188" stroke="#9e9e9e" fill="none"></path>
+<path d="M624 58 C 560 30, 520 30, 486 56 M454 62 C 420 40, 360 44, 334 66 M306 68 C 270 46, 230 46, 204 66" stroke="#0092B5" stroke-width="2.6" fill="none"></path>
+<path d="M204 66 l2 -9 l6 6 z M334 66 l2 -9 l6 6 z M486 56 l1 -9 l7 5 z" fill="#0092B5"></path>
+<path d="M392 152 l8 8 m0 -8 l-8 8 M346 112 l8 8 m0 -8 l-8 8" stroke="#111" stroke-width="1.6"></path>
+</svg>
+<span class="tag">S1</span>
+<span class="l" style="left:181px;top:72px">ψ</span>
+<span class="l h" style="left:310px;top:72px">x̄</span>
+<span class="l h" style="left:465px;top:62px">p</span>
+<span class="l u" style="left:626px;top:63px;font-size:14px">‖·‖²</span>
+<span class="l g" style="left:90px;top:272px">χ<sub>τ</sub></span>
+<span class="l" style="left:356px;top:272px">τ</span>
+<span class="l g" style="left:620px;top:272px;font-size:15px">τ+H−1</span>
+<span class="l g" style="left:690px;top:190px">ŷ<sub>k|τ</sub></span>
+<span class="l" style="left:690px;top:236px">y<sub>k</sub></span>
+<span class="l g" style="left:268px;top:150px;font-size:15px">x̂<sub>τ|τ</sub></span>
+<span class="l g" style="left:404px;top:150px;font-size:14px">fixed</span>
+<span class="l h" style="left:388px;top:22px;font-size:15px">∇ to θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>p</sub>, θ<sup>a</sup><sub>enc</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>p</i>(<i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)) − <i>e</i><sub>τ</sub>‖²</div>
+<div class="s"><i>e</i><sub>τ</sub> = [<i>y</i><sub>τ</sub> − <i>ŷ</i><sub>τ|τ</sub>, …, <i>y</i><sub>τ+H−1</sub> − <i>ŷ</i><sub>τ+H−1|τ</sub>],&#160;&#160;<i>x̄</i><sub>τ|τ</sub> = <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ</sub>)</div>
+</div>
+</div>
+<div class="slide">
+<svg width="740" height="316" viewBox="0 0 740 316" aria-hidden="true">
+<line x1="30" y1="262" x2="720" y2="262" stroke="#e0e0e0"></line>
+<path d="M120 234L230 165M146 234L230 165M172 234L230 165M198 234L230 165M224 234L230 165M250 234L230 165M276 234L230 165M302 234L230 165M328 234L230 165M354 234L230 165" stroke="#c8c8c8" stroke-width=".8"></path>
+<path d="M146 234L300 104M172 234L300 104M198 234L300 104M224 234L300 104M250 234L300 104M276 234L300 104M302 234L300 104M328 234L300 104M354 234L300 104M380 234L300 104" stroke="#9ed3e2" stroke-width=".8"></path>
+<path d="M65.0 246.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M91.0 247.8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M117.0 243.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M143.0 236.0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M169.0 229.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M195.0 228.3a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M221.0 232.8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M247.0 240.5a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M273.0 246.7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M299.0 247.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M325.0 242.8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M351.0 235.0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M377.0 229.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M403.0 228.5a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M429.0 233.7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M455.0 241.4a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M481.0 247.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M507.0 247.3a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M533.0 241.9a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M559.0 234.1a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M585.0 228.7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M611.0 228.9a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M637.0 234.6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M663.0 242.4a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M689.0 247.5a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" fill="#111"></path>
+<circle cx="230" cy="150" r="15" fill="#9e9e9e" stroke="#555"></circle>
+<circle cx="520" cy="80" r="15" fill="#fff" stroke="#111" stroke-width="1.5"></circle>
+<circle cx="520" cy="190" r="15" fill="#d9f0f6" stroke="#0092B5" stroke-width="1.5"></circle>
+<circle cx="650" cy="135" r="17" fill="#fff" stroke="#111"></circle>
+<path d="M245 152 C 330 170, 420 190, 503 190" stroke="#111" fill="none"></path>
+<path d="M380 232 C 380 210, 440 196, 503 194" stroke="#111" fill="none" stroke-dasharray="3 2"></path>
+<path d="M535 85 L634 128 M535 186 L634 142" stroke="#111"></path>
+<path d="M300 104 C 380 90, 440 82, 503 80" stroke="#111" fill="none"></path>
+<path d="M466 74 l8 8 m0 -8 l-8 8" stroke="#111" stroke-width="1.6"></path>
+<path d="M190 120 l8 8 m0 -8 l-8 8" stroke="#111" stroke-width="1.6"></path>
+<path d="M636 150 C 600 200, 560 214, 534 202 M500 196 C 440 214, 360 200, 300 178" stroke="#0092B5" stroke-width="2.6" fill="none"></path>
+<path d="M534 202 l8 -2 l-4 8 z M300 178 l9 -1 l-5 8 z" fill="#0092B5"></path>
+</svg>
+<span class="tag">S2</span>
+<span class="l g" style="left:200px;top:120px;font-size:15px">x̂<sub>τ|τ</sub></span>
+<span class="l" style="left:540px;top:60px;font-size:15px">ψ<sub>a</sub>(χ<sub>τ+1</sub>)</span>
+<span class="l h" style="left:540px;top:208px;font-size:15px">g<sub>aug</sub>(x̂<sub>τ|τ</sub>, u<sub>τ</sub>)</span>
+<span class="l u" style="left:636px;top:128px;font-size:14px">‖·‖²</span>
+<span class="l h" style="left:340px;top:212px;font-size:15px">∇ to θ<sub>aug</sub> only</span>
+<span class="l g" style="left:90px;top:272px">χ<sub>τ</sub></span>
+<span class="l h" style="left:200px;top:290px">χ<sub>τ+1</sub></span>
+<span class="l" style="left:376px;top:272px">τ</span>
+<span class="l" style="left:386px;top:222px;font-size:15px">u<sub>τ</sub></span>
+<div class="eq">
+<div><span class="mn"><span>min</span><span class="lim">θ<sub>aug</sub></span></span>&#160;Σ<sub><i>τ</i></sub>&#160;‖<i>g</i><sub>aug</sub>(<i>x̂</i><sub>τ|τ</sub>, <i>u</i><sub>τ</sub>) − <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>)‖²</div>
+<div class="s">target <i>ψ</i><sub>a</sub>(<i>χ</i><sub>τ+1</sub>) = <i>x̄</i><sub>τ+1|τ+1</sub> held fixed; only <i>θ</i><sub>aug</sub> trained</div>
+</div>
+</div>
+</div>
+<div class="bl">
+<div><b>S1 builds</b><ol>
+<li>Sample dots y<sub>k</sub> on a line; τ marked.</li>
+<li>Encoder node ψ fed by the past dots χ<sub>τ</sub>; the model is simulated from x̂<sub>τ|τ</sub> (grey chain of ŷ nodes).</li>
+<li>Black bars between y<sub>k</sub> and ŷ<sub>k|τ</sub> after τ: the residual; all feed the loss node.</li>
+<li>Node x̄ (highlight) and dashed node p (temporary) into the loss.</li>
+<li>Backward gradient (thick highlight) from the loss through p and x̄ into ψ; crosses on the simulation chain ("fixed"); S1 minimisation appears.</li>
+</ol></div>
+<div><b>S2 builds</b><ol>
+<li>Sample dots; grey fan χ<sub>τ</sub> into x̂<sub>τ|τ</sub>.</li>
+<li>Highlight fan χ<sub>τ+1</sub>, one dot later, into the open target node; a cross marks it fixed.</li>
+<li>Edge g<sub>aug</sub> from x̂<sub>τ|τ</sub> with u<sub>τ</sub> (dashed, from the dot at τ) into the prediction node.</li>
+<li>Both into the loss; backward gradient only along g<sub>aug</sub>; S2 minimisation appears.</li>
+</ol></div>
+</div>
+<div class="vd">Answers best: what is trained and what is fixed in each stage (and that ŷ is held fixed in S1). Weakest: it is still a wiring picture, close to the rejected block diagrams; the insight why it works is absent.</div>
+</div>
+
+
+</body>
+</html>

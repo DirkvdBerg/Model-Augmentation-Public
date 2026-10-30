@@ -1,0 +1,75 @@
+% Slide 14b-2: PS on one time axis (thesis Fig. ps2_windows and eq. ps2_s1, simplified), drawn 1:1 for the slide.
+% Curves are real data (ps_curves.py, record I1, Y): the recorded servo error, and the residual e_tau over H = 30 samples.
+% Pages: 1 encoder gives x-bar from random weights; 2 S1 predict e_tau from x-bar; 3 S2 g_aug steps x-bar; 4 hand-over.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{amsmath}
+\usetikzlibrary{arrows.meta,calc}
+\definecolor{hl}{HTML}{0092B5}
+\tikzset{>={Latex[length=2.8mm,width=2.1mm]}, line width=0.9pt,
+  blk/.style={draw, line width=1.1pt, rounded corners=2pt, fill=white, align=center}}
+\input{ps_curves.tex}
+% bracket from x=#1 to x=#2 at height #3, ticks pointing up (#4=1) or down (#4=-1)
+\newcommand{\brk}[4]{\draw (#1,{#3+0.14*#4}) -- (#1,#3) -- (#2,#3) -- (#2,{#3+0.14*#4});}
+
+\newcommand{\ps}[1]{%
+\ifnum#1=1 \colorlet{cx}{hl}\else\colorlet{cx}{black}\fi
+\ifnum#1=2 \colorlet{c2}{hl}\else\colorlet{c2}{black}\fi
+\ifnum#1=3 \colorlet{c3}{hl}\else\colorlet{c3}{black}\fi
+\ifnum#1>3 \colorlet{cp}{black!28}\else\colorlet{cp}{c2}\fi
+\ifnum#1>1 \colorlet{ct}{black!35}\else\colorlet{ct}{black}\fi
+\begin{tikzpicture}
+  \useasboundingbox (-0.3,-0.3) rectangle (21.2,8.75);
+  \fontsize{17}{20}\selectfont
+  % ---------- recorded data and the current sample tau ----------
+  \draw[black!45, line width=1.4pt] plot coordinates {\datacurve};
+  \node[anchor=south west, text=black!55] at (0.6,7.95) {\normalsize recorded $y,\ u$};
+  \draw[black!55, dash pattern=on 3pt off 2pt] (10,8.0) -- (10,0.9);
+  \node[anchor=south] at (10,7.95) {$\tau$};
+  \node[anchor=south, text=black!55] at (6.5,7.95) {\normalsize past};
+  \node[anchor=south, text=black!55] at (13.5,7.95) {\normalsize future};
+  % ---------- step 1: the encoder (known from 14a) ----------
+  \brk{3.0}{10.0}{6.75}{1}
+  \node[anchor=east] at (2.9,6.75) {$\chi_\tau$};
+  \node[blk, minimum width=1.8cm, minimum height=0.9cm] (psi) at (6.5,5.35) {$\psi$};
+  \draw[->] (6.5,6.75) -- (psi.north);
+  \draw[->, ct] (psi.east |- 0,5.6) -- (8.4,5.6) node[right, text=ct] {$\tilde x_\tau$};
+  \draw[->, cx, line width=1.2pt] (psi.east |- 0,5.1) -- (8.4,5.1) node[right, text=cx] {$\bar x_\tau$};
+  % ---------- step 2, S1: predict the coming residual from x-bar alone ----------
+  \ifnum#1>1
+    \draw[c2, line width=1.6pt] plot coordinates {\rescurve};
+    \begin{scope}[c2]\brk{10.0}{17.0}{4.95}{-1}\end{scope}
+    \node[anchor=south west, text=c2] at (10.2,5.0) {$e_\tau$: model error, next $H$ samples};
+    \node[blk, draw=cp, minimum width=1.2cm, minimum height=0.85cm] (p) at (9.0,3.2) {\color{cp}$p$};
+    \draw[->, cp, line width=1.2pt] (9.0,4.85) -- (p.north);
+    \draw[->, cp, line width=1.2pt] (p.east) -- (11.2,3.2) -- (11.2,3.55);
+    \node[anchor=north west, text=cp] at (9.9,2.95) {\normalsize predict the coming error from $\bar x_\tau$ alone};
+    \ifnum#1>3
+      \draw[black!45, line width=1.1pt] ($(p.south west)+(-0.15,-0.1)$) -- ($(p.north east)+(0.15,0.1)$);
+    \fi
+  \fi
+  % ---------- step 3, S2: g_aug learns how x-bar evolves ----------
+  \ifnum#1>2
+  \begin{scope}[c3]
+    \draw[dash pattern=on 4pt off 2pt] (3.233,6.47) -- (3.233,6.33) -- (10.233,6.33) -- (10.233,6.47);
+    \node[anchor=west, text=c3] at (10.35,6.33) {\normalsize $\chi_{\tau+1}$: one sample later};
+    \draw[->] (5.7,4.9) -- (5.7,1.45) -- (11.4,1.45);
+    \node[anchor=south, text=c3] at (8.0,1.45) {$\hat x_\tau,\ u_\tau$};
+    \node[blk, draw=c3, minimum width=1.8cm, minimum height=0.9cm] (g) at (12.3,1.45) {\color{c3}$g_{\mathrm{aug}}$};
+    \draw[->] (g.east) -- (14.3,1.45) node[right, text=c3] {$\bar x_{\tau+1}$ to match $\psi_a(\chi_{\tau+1})$};
+  \end{scope}
+  \fi
+  % ---------- one line per step ----------
+  \ifcase#1\or
+    \node[anchor=west, text=hl] at (0.0,0.3) {the encoder also gives the added states $\bar x_\tau$, from random weights};
+  \or
+    \node[anchor=west, text=hl] at (0.0,0.3) {S1: $\bar x$ must hold what predicts the model's error, the missing dynamics};
+  \or
+    \node[anchor=west, text=hl] at (0.0,0.3) {S2: $g_{\mathrm{aug}}$ learns how $\bar x$ evolves};
+  \or
+    \node[anchor=west, text=hl] at (0.0,0.3) {$p$ is dropped; training of $V$ continues from this start, with the same cost};
+  \fi
+\end{tikzpicture}}
+
+\begin{document}
+\ps{1}\ps{2}\ps{3}\ps{4}
+\end{document}

@@ -1,0 +1,82 @@
+% Slide 14b-2, option 2 "block": the step diagram of slide 12 reused (same blocks and coordinates), with the
+% encoder psi on its left and the PS parts attached; the stage cost under it (Jan's diagram-plus-equation pattern).
+% Equations simplified from thesis eqs. ps2_s1 and ps2_s2 (no minibatch, no normalisation).
+% e_tau curve: real residual of the baseline, record I1, axis Y, H = 30 samples (curves.py).
+% r3: stage costs name what each stage trains; PS-only parts grey after hand-over.
+% Pages: 1 the step at tau, x-bar from psi; 2 S1; 3 S2; 4 hand-over.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{amsmath}
+\usetikzlibrary{arrows.meta,calc}
+\definecolor{hl}{HTML}{0092B5}
+\tikzset{>={Latex[length=2.8mm,width=2.1mm]}, line width=0.9pt,
+  blk/.style={draw, line width=1.1pt, rounded corners=2pt, fill=white, align=center, minimum width=5.0cm},
+  sblk/.style={draw, line width=1.1pt, rounded corners=2pt, fill=white, align=center},
+  sum/.style={draw, circle, line width=1.1pt, inner sep=0pt, minimum size=5.5mm, fill=white},
+  dot/.style={circle, fill, inner sep=0pt, minimum size=5pt}}
+\input{curves.tex}
+\newcommand{\opt}[1]{%
+\ifnum#1=2 \colorlet{c2}{hl}\else\colorlet{c2}{black}\fi
+\ifnum#1=3 \colorlet{c3}{hl}\else\colorlet{c3}{black}\fi
+\ifnum#1>3 \colorlet{cp}{black!45}\else\colorlet{cp}{c2}\fi
+\begin{tikzpicture}
+  \useasboundingbox (-4.6,-2.4) rectangle (16.9,6.6);
+  \fontsize{17}{20}\selectfont
+  % ---------- encoder ----------
+  \node[sblk, minimum width=1.5cm, minimum height=3.5cm] (psi) at (-2.75,3.65) {$\psi$};
+  \draw[->] (-4.55,3.65) node[above right=-1pt] {$\chi_\tau$} -- (psi.west);
+  % ---------- the step of slide 12, at k = tau ----------
+  \node[blk, minimum height=1.7cm] (fb) at (8.0,1.8) {$f_{\mathrm{base}}$\\[-2pt] {\large physics model, one step}};
+  \node[blk, minimum height=2.1cm] (ann) at (8.0,4.45) {$\phi_{\mathrm{aug}}$\\[-2pt] {\large neural network}};
+  \node[sum] (s) at (12.6,1.8) {};
+  \draw ($(s)+(-1.6mm,0)$) -- ($(s)+(1.6mm,0)$) ($(s)+(0,-1.6mm)$) -- ($(s)+(0,1.6mm)$);
+  \draw (psi.east |- 0,2.2) -- (4.12,2.2); \draw[->] (4.48,2.2) -- (fb.west |- 0,2.2);
+  \node[anchor=south] at (-1.0,2.2) {$\tilde x_\tau$};
+  \draw[->] (-1.4,1.35) node[left] {$u_{\mathrm{act},\tau}$} -- (fb.west |- 0,1.35);
+  \draw[->] (fb.east) -- (s.west);
+  \draw[->] (s.east) -- (15.0,1.8) node[right] {$\tilde x_{\tau+1}$};
+  \draw (3.0,2.2) -- (3.0,4.45); \draw[->] (3.0,4.45) -- (ann.west |- 0,4.45); \node[dot] at (3.0,2.2) {};
+  \draw (4.3,1.35) -- (4.3,3.85); \draw[->] (4.3,3.85) -- (ann.west |- 0,3.85); \node[dot] at (4.3,1.35) {};
+  \draw[->] (ann.east |- 0,3.85) -| (s.north);
+  \node[anchor=west] at (12.7,3.1) {$f_{\mathrm{aug}}$};
+  \ifnum#1=1
+    \draw[->, hl, line width=1.3pt] (psi.east |- 0,5.1) -- (ann.west |- 0,5.1);
+    \node[anchor=south, text=hl] at (-0.6,5.1) {$\bar x_\tau$};
+  \else
+    \draw[->, line width=1.3pt] (psi.east |- 0,5.1) -- (ann.west |- 0,5.1);
+    \node[anchor=south] at (-0.6,5.1) {$\bar x_\tau$};
+  \fi
+  \draw[->, c3, line width=1.3pt] (ann.east |- 0,5.1) -- (15.0,5.1) node[right, text=c3] {$\bar x_{\tau+1}$};
+  \node[anchor=south, text=c3] at (12.0,5.1) {$g_{\mathrm{aug}}$};
+  % ---------- S1: a temporary decoder on x-bar_tau ----------
+  \ifnum#1>1
+    \node[dot, cp] at (0.6,5.1) {};
+    \draw[->, cp, line width=1.3pt] (0.6,5.1) |- (1.75,6.05);
+    \node[sblk, draw=cp, minimum width=1.0cm, minimum height=0.8cm] (p) at (2.3,6.05) {\color{cp}$p$};
+    \draw[->, cp, line width=1.3pt] (p.east) -- (3.6,6.05);
+    \begin{scope}[shift={(3.9,6.1)}, xscale=6.4, yscale=0.4]
+      \draw[cp, line width=1.6pt] plot coordinates {\rescurve};
+    \end{scope}
+    \node[anchor=west, text=cp] at (10.5,6.0) {$e_\tau$};
+  \fi
+  \ifnum#1>2
+    \ifnum#1>3 \colorlet{ct}{black!45}\else\colorlet{ct}{c3}\fi
+    \node[anchor=north east, text=ct] at (16.9,4.85) {\large target $\psi_a(\chi_{\tau+1})$};
+  \fi
+  % ---------- the stage cost, under the diagram ----------
+  \ifcase#1\or
+    \node[anchor=west, text=hl] at (-4.4,-0.8) {$\bar x_\tau=\psi_a(\chi_\tau)$ starts from random weights;};
+    \node[anchor=west, text=hl] at (-4.4,-1.8) {$V$ scores only the output};
+  \or
+    \node[anchor=west, text=hl] at (-4.4,-0.8) {S1:\quad $\min_{p,\,\psi_a}\ \sum_\tau \big\|\,p(\bar x_\tau)-e_\tau\big\|^2$};
+    \node[anchor=west, text=hl] at (-4.4,-1.8) {$\bar x_\tau$ must predict $e_\tau$, the model's error over the next $H$ samples};
+  \or
+    \node[anchor=west, text=black!55] at (-4.4,-0.8) {S1:\quad $\min_{p,\,\psi_a}\ \sum_\tau \big\|\,p(\bar x_\tau)-e_\tau\big\|^2$};
+    \node[anchor=west, text=hl] at (-4.4,-1.8) {S2:\quad $\min_{g_{\mathrm{aug}}}\ \sum_\tau \big\|\,g_{\mathrm{aug}}(\hat x_\tau,u_{\mathrm{act},\tau})-\psi_a(\chi_{\tau+1})\big\|^2$};
+  \or
+    \node[anchor=west, text=hl] at (-4.4,-0.8) {then $p$ is dropped and $V$ is minimised as before,};
+    \node[anchor=west, text=hl] at (-4.4,-1.8) {from this start};
+  \fi
+\end{tikzpicture}}
+\begin{document}
+\opt{1}\opt{2}\opt{3}\opt{4}
+\end{document}
