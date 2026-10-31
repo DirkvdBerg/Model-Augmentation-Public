@@ -190,7 +190,7 @@ def interconnect():
 
 @case('A_physical')
 def test_A_physical():
-    ic,b,ann,C=interconnect();x=rand(4,8)*.02;u=rand(4,3);y,xp=ic(x,u)
+    ic,b,ann,C=interconnect();x=rand(4,8)*.02;u=rand(4,3);y,xp=ic(x,u,pass_mats=b.pass_mats())  # K14: mats passed
     f=ann.net(torch.cat((x,u),1));expected=torch.cat((rk(b,x[:,:6,None],u[:,:,None]).squeeze(-1),torch.zeros(4,2,dtype=DT)),1)+f
     close(xp,expected);close(y,x[:,:6]@C.T)
 
@@ -396,7 +396,7 @@ def test_O_correction():
     corr.set_frozen(theta,v);x=rand(4,8,1)*.02;u=rand(4,3,1)
     f=rk(b,x[:,:6],u,v);J=torch.func.jacfwd(lambda t:rk(b,x[:,:6],u,t))(v)
     expected=torch.cat((torch.einsum('bikp,p->bik',J,theta[:-1])+theta[-1]*f,torch.zeros(4,2,1,dtype=DT)),1)
-    close(corr(x,u),expected)
+    close(corr(x,u,corr.tangent_pair(corr.theta_frozen)),expected)  # K14: obc_pass passed
 
 @case('O_field')
 def test_O_field():
@@ -432,7 +432,7 @@ def test_O_physical_step():
     removed=torch.einsum('bikp,p->bi',J,theta[:-1])+theta[-1]*f.squeeze(-1)
     raw=ann.net(torch.cat((x,u),1))
     expected=rk(b,x[:,:6,None],u[:,:,None]).squeeze(-1)+raw[:,:6]-removed
-    y,xp=ic(x,u)
+    y,xp=ic(x,u,corr.tangent_pair(corr.theta_frozen),b.pass_mats())  # K14: matrices passed
     close(xp[:,:6],expected);close(xp[:,6:],raw[:,6:])
 
 @case('L_blocks')

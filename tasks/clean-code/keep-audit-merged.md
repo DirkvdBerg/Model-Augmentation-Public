@@ -369,3 +369,20 @@ reading` (K41 to K45); `disagreement` (section 3).
 | `Clean/model_augmentation/utils/utils.py:13` | `to_tensor [callable]` | keep | keep | - | keep (both) |
 | `Clean/model_augmentation/utils/utils.py:19` | `expansion_matrix [callable]` | keep | keep | - | keep (both) |
 | `Clean/model_augmentation/utils/utils.py:33` | `selection_matrix [callable]` | keep | keep | - | keep (both) |
+
+## 6. Codex diff review of the K and E items (`keep-audit-diff-review-codex.md`, 2026-10-31)
+All 7 findings agreed and applied:
+1. `clean-up-verification/loader_check.py`: the start-time assertion compares the printed `'%.6f'` string, no 1e-9.
+2. `perf_diag.py`: `nc=sim.bank.nc` restored on its own line (the K23 comment had swallowed it).
+3. `capture_l12.py`: mainline keeps `ref.n`; the shape count only on the clean side (K15).
+4. `l4_loader.py` `frozen_y`: the mainline statements restored as they were; locals and the patched derivative only
+   on the clean side (K13).
+5. `l4_loader.py` l4b: mainline reads `ref.record_ix`, `ref.record_names`, `ref.x_phys_next_rec`, `ref.n` as before;
+   `ref_extras` and the shape count only on the clean side (K15).
+6. `Clean/gantry_dynamic/evaluation.py`: Args and shaped Returns for `_split_scores`, `_true_combinations`,
+   `_true_free` (E1).
+7. `scoreboard.py`: coverage case `smoke-R1-lowpass` (R1 smoke run with `evaluate()`, through
+   `clean-up-verification/smoke.py`) added to `CASES`; the 16 training cases keep `evaluate_run=False` (E1).
+Found by Claude while checking the fixes: 8 `equation_tests.py` rows (A_physical, O_correction, O_physical_step and
+their five aliases) called the model without the objective's matrices, relying on the per-step fallback K14 removed;
+they now pass `pass_mats()` and `tangent_pair(theta_frozen)`, the matrices the fallback built (K14). 72 of 72 pass.

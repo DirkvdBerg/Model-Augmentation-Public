@@ -108,7 +108,7 @@ if ref is not None:
         c1.add('obcref/' + f, getattr(ref, f))
     if MAIN:
         c1.info['obcref/record_names'] = list(ref.record_names)
-    c1.info['obcref/n'] = int(ref.Z_step.shape[0])
+    c1.info['obcref/n'] = ref.n if MAIN else int(ref.Z_step.shape[0])     # K15: no n property on the clean side
 
 # the encoder pre-fit, with its least-squares windows captured (harness-side wrapper)
 _ls = GDM.least_squares_start

@@ -216,7 +216,7 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     y_all = np.concatenate([t.y for t in data.train_list])
 
     fs = 1.0 / data.train_list[0].dt
-    P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)
+    P_inv_T = np.linalg.inv(P.numpy().astype(cfg.dtype_np).T)
     x_generalised_list = []
     for t in data.train_list:
         # Positions: q = P^-T y (so the position means are P^-T mu_y).

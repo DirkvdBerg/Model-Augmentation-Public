@@ -16,7 +16,6 @@ import json
 import os
 import sys
 
-import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)

@@ -43,7 +43,7 @@ with open(CSV, newline='') as fh:
 t_csv = np.array([float(r['t_s']) for r in rows])
 r_csv = np.array([float(r['r_Y']) for r in rows])
 y_csv = np.array([float(r['y_Y']) for r in rows])
-assert abs(t_csv[0] - K0 / 4000.0) < 1e-9, 'the trace must start at k0 = %d' % K0
+assert rows[0]['t_s'] == '%.6f' % (K0 / RunConfig.fs_new), 'the trace must start at k0 = %d' % K0
 
 cfg = RunConfig(**PRESETS['R1'], noise='lowpass', device='cpu', compile_mode=None)
 sd, e = _load_record(RECORD, cfg)

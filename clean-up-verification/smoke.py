@@ -28,12 +28,12 @@ def use_short_ps2():
     training.PS2Spec = functools.partial(training.PS2Spec, **SHORT_PS2)
 
 
-def main(preset=PRESET, noise=NOISE):
-    """Train the short run, evaluate it, and return its run folder."""
+def main(preset=PRESET, noise=NOISE, **fields):
+    """Train the short run, evaluate it, and return its run folder; fields override RunConfig fields (out_root)."""
     import gantry_interconnect_dynamic as entry
     from gantry_dynamic.config import RunConfig, PRESETS, save_dir
     use_short_ps2()
-    cfg = RunConfig(**PRESETS[preset], noise=noise, **SHORT_RUN)
+    cfg = RunConfig(**PRESETS[preset], noise=noise, **dict(SHORT_RUN, **fields))
     run_id = 'smoke-%s-%s-%s' % (preset, noise, datetime.now().strftime('%Y%m%d_%H%M%S'))
     entry.main(cfg, run_id=run_id, evaluate_run=True)
     run_dir = os.path.join(save_dir(cfg), run_id)

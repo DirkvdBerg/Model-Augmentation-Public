@@ -61,12 +61,28 @@ def _without_learned(fit_sys, free=None):
 
 
 def _true_combinations(phy):
-    """theta_base(theta^0), the identifiable combinations of the data-generating parameters."""
+    """Identifiable combinations of the data-generating parameters.
+
+    theta_base(theta^0), the combinations of the raw parameters theta^0 the data were generated with.
+
+    Args:
+        phy: the identifiable baseline block.
+    Returns:
+        (10,) theta_base, physical, in COMBO_NAMES order and the dtype of beta.
+    """
     return type(phy).combos_of(phy.params_init.double(), float(phy.Lb)).to(phy.free_params.dtype)
 
 
 def _true_free(phy):
-    """Training coordinate beta_star = beta(theta_base(theta^0)), at which the baseline holds the true combinations."""
+    """Training coordinate of the true parameters.
+
+    beta_star = beta(theta_base(theta^0)), the coordinate at which the baseline holds the true combinations.
+
+    Args:
+        phy: the identifiable baseline block.
+    Returns:
+        (10,) beta_star.
+    """
     return phy.free_from_combinations(_true_combinations(phy))
 
 
@@ -80,11 +96,23 @@ def _noise_free_twins(cfg: RunConfig):
 
 
 def _split_scores(models, sdl, e_list, e_nf_list, bank, rows, k0):
-    """One closed-loop free run per record and model; both frames are scored from those predictions.
+    """Scores of one split in both frames.
 
+    One closed-loop free run per record and model gives y_hat; per frame and axis j, with T the frame map
+    (identity or P^-T): RMS_j = (mean over k >= k0 of (T(y_hat - y))_j,k^2)^(1/2), NRMS_e,j = RMS_j / sigma_e,j,
+    sigma_e = servo_sigma of T e, and the floor = RMS of T(e - e_nf) over sigma_e.
+
+    Args:
+        models: model key -> model (augmented, trained and true baseline).
+        sdl: R records (physical, at 1 / T_s).
+        e_list, e_nf_list: R arrays (N_r, 3), the servo error e = y - r of each record and of its noise-free twin,
+            metres.
+        bank, rows: controller bank and one bank row per record.
+        k0: first scored sample.
     Returns:
-        preds {model: R arrays (N_r - k0, 3) of y_hat}, and per frame dict(residual={model: R arrays
-        (e_hat - e) / sigma_e}, rms={model: (R, 3)}, nrms={model: (R, 3)}, sigma (R, 3), floor (R, 3) in NRMS_e).
+        preds {model: R arrays (N_r - k0, 3) of y_hat, metres}, and per frame dict(residual={model: R arrays
+        (N_r - k0, 3) of T(e_hat - e) / sigma_e}, rms={model: (R, 3)} in metres (rad for Theta), nrms={model: (R, 3)},
+        sigma (R, 3), floor (R, 3) in NRMS_e).
     """
     runs = {key: closed_loop_free_run_rms_batch(m, sdl, bank, rows, return_pred=True) for key, m in models.items()}
     y = [np.asarray(sd.y)[k0:] for sd in sdl]
