@@ -23,6 +23,8 @@ from .config import (RunConfig, AA_ORDER, AA_FC_HZ,
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
 # manifest block -> split
 _THESIS_SPLIT = {'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
+# the anti-aliasing filter B of _decimate_y, designed once
+SOS = butter(AA_ORDER, AA_FC_HZ, fs=RunConfig.fs_orig, output='sos')
 
 
 def record_files(cfg: RunConfig):
@@ -118,9 +120,8 @@ def _decimate_y(d, cfg: RunConfig):
     if cfg.noise != 'lowpass':
         return d['y'][::D]
     r = d['r_sim']
-    sos = butter(AA_ORDER, AA_FC_HZ, fs=cfg.fs_orig, output='sos')
     # Error-only filtering: y_k = r_k + [B(y - r)]_{k D}; r is unfiltered.
-    return r[::D] + sosfiltfilt(sos, d['y'] - r, axis=0)[::D]
+    return r[::D] + sosfiltfilt(SOS, d['y'] - r, axis=0)[::D]
 
 
 def _record_at_fs_new(d, cfg: RunConfig, fields=()):
@@ -168,7 +169,7 @@ def servo_sigma(e_list, k0):
 
 def load_datasets(cfg: RunConfig) -> DataBundle:
     """Load the train, val and test records of the manifest split."""
-    print(f'Data dir ({cfg.mode}): {traj_dir(cfg)}')
+    print(f'Data dir ({cfg.noise}): {traj_dir(cfg)}')
     print(f'y decimation: {y_decimation(cfg)}; {record_trim(cfg)} samples dropped at both '
           f'record ends (u, y and every field)')
     train_files, val_files, test_files = record_files(cfg)
@@ -214,21 +215,20 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     u_all = np.concatenate([t.u for t in data.train_list])
     y_all = np.concatenate([t.y for t in data.train_list])
 
-    fs = 1.0 / data.train_list[0].dt
     P_inv_T = np.linalg.inv(P.numpy().astype(cfg.dtype_np).T)
-    x_logical_list = []
+    x_generalised_list = []
     for t in data.train_list:
         # Positions: q = P^-T y (so the position means are P^-T mu_y).
-        pos_logical = (P_inv_T @ t.y.T).T
+        pos_generalised = (P_inv_T @ t.y.T).T
         # Velocities: qdot_k = (q_k - q_{k-1}) / T_s for k >= 1, qdot_0 = qdot_1.
-        # THEORY: var of a first difference of white noise = 2*sigma_n^2, so sigma_v = sigma_n*sqrt(2)*fs
-        vel_logical = np.diff(pos_logical, axis=0) * fs
-        vel_logical = np.vstack([vel_logical[:1], vel_logical])
-        x_logical_list.append(np.hstack([pos_logical, vel_logical]))
-    x_all = np.concatenate(x_logical_list)
+        vel_generalised = np.diff(pos_generalised, axis=0) * cfg.fs_new
+        vel_generalised = np.vstack([vel_generalised[:1], vel_generalised])
+        x_generalised_list.append(np.hstack([pos_generalised, vel_generalised]))
+    x_all = np.concatenate(x_generalised_list)
 
     # 2. Statistics.
-    # mu_i = mean(i), sigma_i = (mean (i - mu_i)^2)^(1/2) + 1e-8 (keeps T_i finite), i in {x_tilde, u_act, y}.
+    # mu_i = mean(i), sigma_i = (mean (i - mu_i)^2)^(1/2) + 1e-8, i in {x_tilde, u_act, y}.
+    # HEURISTIC: + 1e-8 keeps T_i = 1 / sigma_i finite for a constant channel
     x_mean = x_all.mean(axis=0).reshape(cfg.nx_phys, 1)
     std_x  = x_all.std(axis=0).reshape(cfg.nx_phys, 1) + 1e-8
     std_u  = u_all.std(axis=0).reshape(cfg.nu, 1) + 1e-8

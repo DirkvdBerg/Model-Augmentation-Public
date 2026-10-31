@@ -192,19 +192,23 @@ def _record_figure(path, title, names, t, residual, ref, nrms, floor):
     fig.savefig(path, dpi=110)
 
 
-def _loss_figure(path, title, loss):
-    """Training loss and validation NRMS_e against the update, with the selected checkpoint and the L-BFGS result."""
+def _loss_figure(path, title, loss, hist):
+    """Training loss (loss.npz) and validation NRMS_e (the Adam rows of val_hist.npz) against the update, with the
+    selected checkpoint and the L-BFGS result."""
     fig = Figure(figsize=(8, 5.5))
     axs = fig.subplots(2, 1, sharex=True)
-    upd, val = loss['update'], loss['val_score']
-    axs[0].semilogy(upd, loss['train_loss'], color=MODELS[0][2])
+    axs[0].semilogy(loss['update'], loss['train_loss'], color=MODELS[0][2])
     axs[0].set_ylabel('training loss\n(windowed MSE, n$_f$ steps)')
+    event = hist['val_hist_event']
+    upd, val = hist['val_hist_update'][event == 'adam'], hist['val_hist_score'][event == 'adam']
     axs[1].semilogy(upd, val, color='#2ca02c', label='validation, Adam')
-    selected = upd == loss['selected_update']
+    selected = np.isin(upd, hist['val_hist_update'][event == 'selected'])
     axs[1].scatter(upd[selected], val[selected], s=50, color='r', zorder=5, label='selected checkpoint')
-    if loss['polish_score'].size:
-        axs[1].scatter(upd[-1:] if upd.size else [0], loss['polish_score'][-1:], s=70, marker='*', color='purple', zorder=5,
-                       label='after L-BFGS polish (%s)' % ('accepted' if loss['polish_accepted'][-1] else 'rejected'))
+    polish = event == 'polish_candidate'
+    if polish.any():
+        axs[1].scatter(upd[-1:] if upd.size else [0], hist['val_hist_score'][polish][-1:], s=70, marker='*',
+                       color='purple', zorder=5, label='after L-BFGS polish (%s)'
+                       % ('accepted' if hist['val_hist_accepted'][polish][-1] else 'rejected'))
     axs[1].set_ylabel('validation NRMS$_e$\n(free run, mean of records, axes)')
     axs[1].set_xlabel('Adam update')
     axs[1].legend()
@@ -238,7 +242,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
     norm = compute_normalization(cfg, data)
     fit_sys = build_model(cfg.hp, cfg, data, norm)
     ckpt = os.path.join(run_dir, 'gantry_ckpt_%s' % run_id)
-    polish = json.loads(str(load_checkpoint(fit_sys, ckpt, cfg.joint_estimation, start_phase='lbfgs')
+    polish = json.loads(str(load_checkpoint(fit_sys, ckpt, start_phase='lbfgs')
                             .get('lbfgs_outcome', '{}')))
     phy = next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'free_params'))
     models = {'augmented': fit_sys, 'trained': _without_learned(fit_sys),
@@ -253,7 +257,8 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         '=' * 100, '[evaluate] run %s  (%s)' % (run_id, run_dir),
         '[evaluate] checkpoint %s.pt (%s)  device cpu  %s'
         % (os.path.basename(ckpt), 'after L-BFGS polish, accepted' if polish.get('accepted') else
-           'L-BFGS polish rejected' if polish.get('ran') else 'no L-BFGS polish', str(cfg.dtype_pt)[6:]),
+           'L-BFGS polish rejected' if polish.get('ran') else 'no L-BFGS polish',
+           str(cfg.dtype_pt).replace('torch.', '')),
         '[evaluate] models: augmented | baseline, trained params (learned part removed) | baseline, true params',
         '[evaluate] NRMS_e = RMS(e_hat - e) / sigma_e per record and axis, from k0 = %d, free-run closed loop' % k0,
         '=' * 100]), flush=True)
@@ -297,7 +302,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
 
     # 3. Physical parameters: true, start and learned identifiable combinations.
     with torch.no_grad():
-        names, start, learned, _ = phy.estimation_parameters()
+        names, start, learned = phy.estimation_parameters()
         true = _true_combinations(phy)
     params = [(n, float(a), float(b), float(c)) for n, a, b, c in zip(names, true, start, learned)]
     print('\n'.join(['', 'PHYSICAL PARAMETERS  (identifiable combinations; true = data-generating value)',
@@ -305,7 +310,8 @@ def evaluate(run_dir, data_root=DATA_ROOT):
                     + ['%-9s | %12.5g | %12.5g | %12.5g | %+8.1f%%' % (n, a, b, c, 100 * (c - a) / a)
                        for n, a, b, c in params]), flush=True)
 
-    # 4. Data files, floats with 17 significant digits so they read back exactly, and the loss curves.
+    # 4. Data files and the loss curves.
+    # THEORY: 17 significant digits round-trip an IEEE 754 binary64 value, so the floats read back exactly
     with open(os.path.join(out_dir, 'scores.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)
         w.writerow(('split', 'record', 'frame', 'model', 'axis', 'rms', 'nrms_e', 'sigma_e', 'floor_nrms_e'))
@@ -317,10 +323,11 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         w.writerows((n,) + tuple('%.17g' % v for v in p) for n, *p in params)
     with open(os.path.join(out_dir, 'evaluation.json'), 'w') as fh:
         json.dump(dict(checkpoint=os.path.basename(ckpt) + '.pt', run_id=run_id, git=git_provenance()), fh, indent=2)
-    loss_file = os.path.join(run_dir, 'loss.npz')
-    if os.path.exists(loss_file):
-        with np.load(loss_file) as loss:
-            _loss_figure(os.path.join(out_dir, 'loss.png'), 'run %s: loss curves' % run_id, dict(loss))
+    loss_file, hist_file = os.path.join(run_dir, 'loss.npz'), os.path.join(run_dir, 'val_hist.npz')
+    curves = os.path.exists(loss_file) and os.path.exists(hist_file)
+    if curves:
+        with np.load(loss_file) as loss, np.load(hist_file) as hist:
+            _loss_figure(os.path.join(out_dir, 'loss.png'), 'run %s: loss curves' % run_id, dict(loss), dict(hist))
     print('\n'.join([
         '', 'saved %s' % out_dir,
         '  scores.csv          %d rows (split, record, frame, model, axis: rms, NRMS_e, sigma_e, floor)'
@@ -328,8 +335,8 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         '  predictions.npz     per record: t, r, e, e of the noise-free twin, e_hat per model; k0, P^-T',
         '  params.csv          true, start and learned physical combinations',
         '  evaluation.json     checkpoint, run id, git commit',
-        '  loss.png            ' + ('training loss and validation NRMS_e, from loss.npz' if os.path.exists(loss_file)
-                                    else 'not drawn: the run folder has no loss.npz'),
+        '  loss.png            ' + ('training loss and validation NRMS_e, from loss.npz and val_hist.npz' if curves
+                                    else 'not drawn: the run folder has no loss.npz or no val_hist.npz'),
         '  train/ val/ test/   nrms_stage.png, nrms_generalised.png, records/<record>_{stage,generalised}.png '
         '(%d + %d + %d records)' % tuple(len(fs) for fs in files),
         '[evaluate] done in %.0f s' % (time.time() - t_start)]), flush=True)

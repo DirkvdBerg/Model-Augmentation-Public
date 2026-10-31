@@ -30,7 +30,7 @@ def _restore(fit_sys, params, snap):
     unconstrained arm."""
     with torch.no_grad():
         for p, saved in zip(params, snap):
-            p.data.copy_(saved)
+            p.copy_(saved)
     fit_sys._sync_obc_coefficient(refresh_basis=False)
 
 
@@ -147,7 +147,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         dict with the outcome (accepted, iterations, losses, validation before and after).
     """
     t0 = time.time()
-    out = dict(ran=False, accepted=False, reason='', n_iter=0, max_iter=spec.max_iter,
+    out = dict(ran=False, accepted=False, reason='', n_iter=0,
                n_closure=0, func_evals=0, wall_s=0.0,
                loss_first=float('nan'), loss_last=float('nan'),
                val_before=float('nan'), val_after=float('nan'),
@@ -168,7 +168,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         fit_sys.eval()
         try:
             fit_sys._sync_obc_coefficient(refresh_basis=False)
-            return float(fit_sys.cal_validation_error(val_sys_data, validation_measure))
+            return float(fit_sys.cal_validation_error(val_sys_data))
         finally:
             if was_training:
                 fit_sys.train()
@@ -243,6 +243,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                               False, 'unchanged')
 
             out['loss_first'] = first
+            # HEURISTIC: 1e-300 guards the printed ratio tol_change / |V| against V = 0
             print('  [lbfgs] %d parameters in one group, m=%d, strong-Wolfe, '
                   'tol_grad=%.1e tol_change=%.1e (%.1e relative to the opening loss), '
                   'max %d iterations, %s rollout'

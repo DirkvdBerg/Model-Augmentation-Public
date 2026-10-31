@@ -46,6 +46,12 @@ D278_PAIR = ('43bbf868595d4f67985fd8141700baf9a6b84c5b7b6cf74ed1eb6ebce627325a',
 DROPPED_IN_CLEAN = {'bank/ystd': 'B41', 'bank/stdu': 'B41', 'info:sim/val_labels': 'B51',
                     'obcref/record_ix': 'K15', 'obcref/sample_ix': 'K15', 'obcref/x_phys_next_rec': 'K15',
                     'info:obcref/record_names': 'K15'}
+#: D-284 amendment 10: R3, the hfn buffers of the baseline block the clean code no longer registers, in every
+#: captured hfn state_dict (the info lists of its keys and shapes are compared without them); R12, the deepSI
+#: sim-RMS the clean simulator no longer computes.
+for _prefix in ('build/hfn', 'prefit/hfn'):
+    DROPPED_IN_CLEAN.update({'%s/connected_blocks.0.%s' % (_prefix, _k): 'R3' for _k in H.dropped_state_keys()})
+DROPPED_IN_CLEAN['fwd/last_sim_rms'] = 'R12'
 
 
 def d278_kept(gmeta):
@@ -102,13 +108,28 @@ def diff_arrays(a, b):
     return 'values: %d of %d entries differ' % (int((a != b).sum()), a.size)
 
 
+def _without_dropped_state(ginfo, cinfo, dropped):
+    """The golden info with the dropped state keys (R3) left out of each '<prefix>:keys' list and the matching
+    entries of its '<prefix>:shapes' list."""
+    out = dict(ginfo)
+    for k, names in ginfo.items():
+        prefix, _, part = k.rpartition(':')
+        if part != 'keys' or prefix + ':shapes' not in ginfo:
+            continue
+        keep = ['%s/%s' % (prefix, n) not in dropped or n in cinfo.get(k, ()) for n in names]
+        out[k] = [n for n, ok in zip(names, keep) if ok]
+        out[prefix + ':shapes'] = [s for s, ok in zip(ginfo[prefix + ':shapes'], keep) if ok]
+    return out
+
+
 def compare_npz(gdir, cdir, stem):
     out = {'mismatch': {}, 'missing_clean': [], 'extra_clean': [], 'n_compared': 0}
     g, c = np.load(os.path.join(gdir, stem + '.npz')), np.load(os.path.join(cdir, stem + '.npz'))
     gj = json.load(open(os.path.join(gdir, stem + '.json')))
     cj = json.load(open(os.path.join(cdir, stem + '.json')))
     gk, ck = set(g.files), set(c.files)
-    out['dropped'] = sorted(((gk - ck) | {'info:' + k for k in set(gj['info']) - set(cj['info'])})
+    gh, ch = set(gj['hashed']), set(cj['hashed'])
+    out['dropped'] = sorted(((gk - ck) | (gh - ch) | {'info:' + k for k in set(gj['info']) - set(cj['info'])})
                             & set(DROPPED_IN_CLEAN))
     gk -= set(out['dropped'])
     out['missing_clean'] = sorted(gk - ck)
@@ -118,17 +139,18 @@ def compare_npz(gdir, cdir, stem):
         out['n_compared'] += 1
         if d:
             out['mismatch'][k] = d
-    for k in sorted(set(gj['hashed']) | set(cj['hashed'])):
+    for k in sorted((gh - set(out['dropped'])) | ch):
         out['n_compared'] += 1
         if gj['hashed'].get(k, {}).get('sha256') != cj['hashed'].get(k, {}).get('sha256') \
                 or gj['hashed'].get(k, {}).get('shape') != cj['hashed'].get(k, {}).get('shape'):
             out['mismatch'][k] = 'hash differs (golden %s, clean %s)' % (gj['hashed'].get(k), cj['hashed'].get(k))
-    for k in sorted(set(gj['info']) | set(cj['info'])):
+    ginfo = _without_dropped_state(gj['info'], cj['info'], out['dropped'])
+    for k in sorted(set(ginfo) | set(cj['info'])):
         if 'info:' + k in out['dropped']:
             continue
         out['n_compared'] += 1
-        if gj['info'].get(k) != cj['info'].get(k):
-            out['mismatch']['info:' + k] = 'golden %s | clean %s' % (str(gj['info'].get(k))[:200],
+        if ginfo.get(k) != cj['info'].get(k):
+            out['mismatch']['info:' + k] = 'golden %s | clean %s' % (str(ginfo.get(k))[:200],
                                                                     str(cj['info'].get(k))[:200])
     return out
 

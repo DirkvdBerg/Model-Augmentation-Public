@@ -3,8 +3,8 @@
 Conventions: superscript n = normalised; the network input is (x_tilde^n, xbar, u^n), its outputs are routed to
 the states in order (6 physical rows, then n_xbar added rows).
 """
-# CHANGED: restricted to the thesis training path; full implementation in
-# model_augmentation/utils/torch_nets.py at the repository root
+# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
+# commit 8200923 (model_augmentation/__init__.py)
 from torch import nn
 import torch
 

@@ -17,6 +17,7 @@ from gantry_dynamic.model import build_model, prefit_physical_encoder
 from gantry_dynamic.controller import build_closed_loop
 from gantry_dynamic.training import train, load_checkpoint
 from gantry_dynamic.evaluation import evaluate
+from model_augmentation.fit_systems.closed_loop import SCORE_NAME
 
 # Evaluation
 EVALUATE = True        # evaluate the run after training
@@ -92,7 +93,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
             cfg = replace(cfg, start_phase='lbfgs')
     print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s'
           % (cfg.arm, cfg.noise, cfg.start, cfg.n_a, cfg.seed, cfg.nf_seconds, cfg.combo_init_detune)
-          + ' g_aug=mlp/live' + ('  PS2' if cfg.ps2 else '  plain')
+          + ('  PS2' if cfg.ps2 else '  plain')
           + ('  %s from %s' % (rerun[0], rerun[1]) if rerun else ''), flush=True)
 
     # 2. Data and normalisation.
@@ -105,7 +106,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
         os.makedirs(sdir)
         with open(os.path.join(sdir, 'config.json'), 'w') as fh:
             json.dump({**config_json_dict(cfg, git=git_provenance()),
-                       'hp': hp, 'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
+                       'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
 
     # 3. Model and closed loop.
     # seed the model's initial draws
@@ -115,8 +116,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
 
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg,
-        train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data,
-        e_train=data.e_train, e_val=data.e_val)
+        train_files=data.train_files, val_files=data.val_files, e_train=data.e_train, e_val=data.e_val)
     print('\nLoss rollout: closed loop (the known controller around the model)')
 
     # 4. Encoder start, or the restored checkpoint.
@@ -126,12 +126,12 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
         prefit_physical_encoder(fit_sys, cfg, data, norm)
     else:
         # the run folder is archived only once data, device and the whole checkpoint have loaded
-        meta = load_checkpoint(fit_sys, src, cfg.joint_estimation, start_phase=cfg.start_phase)
+        meta = load_checkpoint(fit_sys, src, start_phase=cfg.start_phase)
         resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
 
     # 5. Training.
     bestfit = train(fit_sys, hp, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
-    print(f"\nTraining complete. Best validation {cfg.validation_measure}: {bestfit:.6g}")
+    print(f"\nTraining complete. Best validation {SCORE_NAME}: {bestfit:.6g}")
 
     # 6. Evaluation of the final checkpoint.
     if evaluate_run:

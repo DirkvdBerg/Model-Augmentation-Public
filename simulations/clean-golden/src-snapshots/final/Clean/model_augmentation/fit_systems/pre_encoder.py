@@ -3,8 +3,8 @@
 Conventions: superscript n = normalised; chi = (y history, u history), samples as rows; psi_tilde reads the fixed
 permutation (u history, y history). Code names: Wb_psi_* = W^b, Wa_psi_* = W^a, net = psi_tilde, nx_aug = n_xbar.
 """
-# CHANGED: restricted to the thesis training path; full implementation in
-# model_augmentation/fit_systems/pre_encoder.py at the repository root
+# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
+# commit 8200923 (model_augmentation/__init__.py)
 from torch import nn
 import torch
 import numpy as np

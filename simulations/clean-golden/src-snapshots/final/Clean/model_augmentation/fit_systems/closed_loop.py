@@ -13,6 +13,10 @@ from contextlib import contextmanager
 import numpy as np
 import torch
 
+# the name of ClosedLoopSimulator.validation_error's score in the prints: NRMS_e of the closed-loop free run, the
+# mean over the validation records and axes
+SCORE_NAME = 'sim-NRMSe'
+
 
 class ControllerBank(torch.nn.Module):
     """The distinct controllers K_fb of a data set seen from the normalised model, gathered per window by design
@@ -47,11 +51,6 @@ class ControllerBank(torch.nn.Module):
         # one step is one product: (u_fb^n, xc_next) = [C^n; A] xc + [D^n; B^n] e^n
         self.register_buffer('M_state', torch.cat([Cn, A], dim=1))
         self.register_buffer('M_error', torch.cat([Dn, Bn], dim=1))
-
-    @property
-    def n_controllers(self):
-        """Number of distinct controllers in the bank."""
-        return self.M_state.shape[0]
 
     def step(self, xc, e_norm, ctrl):
         """Controller step in residual form.
@@ -101,7 +100,7 @@ def closed_loop_step(hfn, bank):
     return step
 
 
-def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, obc_pass=None, pass_mats=None):
+def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, *, pass_mats, obc_pass=None):
     """Closed-loop simulation of a window.
 
     y_hat^n_{k|tau} for k = tau .. tau + n_f - 1 from x_hat^n_{tau|tau} = x0 and x^c_tau = 0, driven by the recorded
@@ -113,7 +112,7 @@ def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, obc_pass=None, 
         x0: (B, 6 + n_xbar) x_hat^n_{tau|tau}.
         bank: the ControllerBank.
         ctrl_ix: (B,) controller row of each window.
-        obc_pass, pass_mats: matrices of this objective.
+        pass_mats, obc_pass: matrices of this objective (obc_pass None on the unconstrained arm).
     Returns:
         y_hat^n (B, n_f, 3); x final (B, 6 + n_xbar), x_tilde^n normalised and xbar; x^c final (B, nc), controller
         units.
@@ -171,7 +170,7 @@ class ClosedLoopSimulator:
         finally:
             self._compiled = saved
 
-    def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix, obc_pass=None, pass_mats=None, **kw):
+    def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix, *, pass_mats, obc_pass=None, **kw):
         """Closed-loop rollout of a batch of windows (the simulator of V).
 
         (y_hat^n_{k|tau}, x final) from x_hat^n_{tau|tau} = x; gradient-enabled CUDA rollouts use the compiled step.
@@ -180,7 +179,8 @@ class ClosedLoopSimulator:
             fit_sys: the augmented model.
             x: (B, 6 + n_xbar) encoder states.
             ufuture, yfuture: (B, n_f, 3) recorded u^n, y^n.
-            ctrl_ix: (B,) controller rows; obc_pass, pass_mats: matrices of this objective.
+            ctrl_ix: (B,) controller rows; pass_mats, obc_pass: matrices of this objective.
+            kw: the window keywords loss() passes on with them (nf, stride); the rollout does not use them.
         Returns:
             y_hat^n (B, n_f, 3) and the final state.
         """
@@ -246,13 +246,8 @@ class ClosedLoopSimulator:
             The validation error (dimensionless).
         """
         sdl = val_sys_data.sdl
-        per_channel, per_record = closed_loop_free_run_rms_batch(fit_sys, sdl, self.bank, self.val_rows)
+        per_channel, _ = closed_loop_free_run_rms_batch(fit_sys, sdl, self.bank, self.val_rows)
         self.last_per_channel = np.asarray(per_channel)          # (n_val, ny), metres
-        # THEORY: deepSI's multi-record sim-RMS, the mean of the per-record RMS weighted by the full record
-        # length (System_data_list.RMS)
-        # sim_RMS = sum_r N_r RMS_r / sum_r N_r.
-        self.last_sim_rms = float(np.average(np.asarray(per_record),
-                                             weights=[len(sd.u) for sd in sdl]))
         return float(np.mean(self.last_per_channel / self.val_sigma_e))
 
 

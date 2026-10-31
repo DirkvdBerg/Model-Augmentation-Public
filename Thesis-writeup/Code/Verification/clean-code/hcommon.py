@@ -23,7 +23,11 @@ from dataclasses import replace
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..', '..', '..'))
 CLEAN = os.path.join(REPO, 'Clean')
-GOLDEN = os.path.join(REPO, 'simulations', 'clean-golden')
+# HARNESS_GOLDEN: the root of the layer 1 to 3c goldens and clean outputs (server_suite.sbatch captures both sides
+# afresh in its own root, since the comparators refuse goldens of another data folder or library set); unset: the
+# repository's goldens. The snapshots stay under simulations/clean-golden/src-snapshots either way (SNAPSHOTS).
+GOLDEN = os.environ.get('HARNESS_GOLDEN') or os.path.join(REPO, 'simulations', 'clean-golden')
+SNAPSHOTS = os.path.join(REPO, 'simulations', 'clean-golden', 'src-snapshots')
 CLEAN_OUT = os.path.join(GOLDEN, '_clean')
 
 # runs.tsv rows 221 to 230 (no 228): preset, arm, start, n_a, ps2 (design section 3, Presets)
@@ -127,6 +131,26 @@ def make_cfg(row, noise, run_id, budget=None, **extra):
     short_ps2()
     import gantry_interconnect_dynamic as EP
     return cfg, EP
+
+
+def dropped_state_keys():
+    """R3 (D-284 amendment 10): last name components of the hfn state_dict keys of the baseline block
+    (connected_blocks.0) that mainline registers and the clean code does not; their one source is
+    clean-up-verification/convert_run.py, which drops them from converted checkpoints."""
+    if os.path.join(REPO, 'clean-up-verification') not in sys.path:
+        sys.path.append(os.path.join(REPO, 'clean-up-verification'))
+    from convert_run import DROPPED_STATE_KEYS
+    return DROPPED_STATE_KEYS
+
+
+def is_dropped_state_key(key):
+    """True for an hfn state_dict key that R3 dropped from the clean baseline block."""
+    return key.startswith('connected_blocks.0.') and key.rsplit('.', 1)[1] in dropped_state_keys()
+
+
+def drop_state(sd):
+    """An hfn state_dict without the keys R3 dropped, so the clean model loads a mainline state."""
+    return {k: v for k, v in sd.items() if not is_dropped_state_key(k)}
 
 
 def short_ps2():

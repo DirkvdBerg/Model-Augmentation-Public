@@ -79,7 +79,7 @@ if args.polish_from is None:
         import dataclasses
         cfg = dataclasses.replace(cfg, out_root=OUT)
         EP.main(cfg, run_id=run_id, evaluate_run=False)          # E1
-        run_dir = os.path.join(OUT, '%s_data_lsq' % cfg.mode, run_id)
+        run_dir = os.path.join(OUT, cfg.noise, run_id)          # R2: the run family is named after the data set
     from torch._dynamo.utils import counters
     res['unique_graphs'] = int(counters['stats']['unique_graphs'])
     res['adam_losses'] = _losses[:4]

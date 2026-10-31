@@ -25,7 +25,7 @@ kb1, kb2, Lb, d = 1987.5, 1987.5, 0.725, 0.1
 FBW = 100.0             # THEORY: gtd_config.m, design bandwidth [Hz]
 W = 2 * np.pi * FBW
 
-# THEORY: stage-to-logical transform P and the damping and stiffness matrices (getss.m)
+# THEORY: stage-to-generalised transform P and the damping and stiffness matrices (getss.m)
 P = np.array([[1., 1., 0.], [Lb / 2, -Lb / 2, 0.], [0., 0., 1.]])
 C_DAMP = np.array([[cg1 + cg2, (cg1 - cg2) * Lb / 2, 0.],
                    [(cg1 - cg2) * Lb / 2, cb1 + cb2 + (cg1 + cg2) * Lb ** 2 / 4, 0.],
@@ -143,34 +143,26 @@ _CONTROLLER_METADATA = {}
 
 def register_stored_controller(name, ctrl_name, design_y, gain, fbw_hz):
     """Register a record's stored controller: (design Y, gain) if the bank can build it, else its description."""
+    # HEURISTIC: 1e-9 Hz here and 1e-12 in controller_design: equality of values stored as MATLAB doubles
     _CONTROLLER_METADATA[_stem(name)] = ((design_y, float(gain)) if abs(fbw_hz - FBW) < 1e-9
                                          else '%s (gain %g, %g Hz)' % (ctrl_name, gain, fbw_hz))
 
 
-def y_op_for(name, use_gain=False):
-    """Controller design position Y of a record, by file name with or without .mat."""
+def controller_design(name, use_gain=False):
+    """(design Y, gain) of a record's stored controller, by file name with or without .mat."""
     stem = _stem(name)
     entry = _CONTROLLER_METADATA.get(stem)
-    if isinstance(entry, tuple):
-        gain_for(stem, use_gain)
-        return entry[0]
-    if entry is not None:
+    if entry is None:
+        raise KeyError('no controller registered for record %r; load the record through gantry_dynamic.data, '
+                       'which registers its stored controller' % stem)
+    if not isinstance(entry, tuple):
         raise KeyError('record %r uses controller %s, which the bank cannot build (it builds the %g Hz '
                        'ruleOfThumb design at a design Y); leave the record out of training and validation'
                        % (stem, entry, FBW))
-    raise KeyError('no controller registered for record %r; load the record through gantry_dynamic.data, '
-                   'which registers its stored controller' % stem)
-
-
-def gain_for(name, use_gain=False):
-    """Stored gain of a record's controller, 1.0 unless stored otherwise."""
-    stem = _stem(name)
-    entry = _CONTROLLER_METADATA.get(stem)
-    g = entry[1] if isinstance(entry, tuple) else 1.0
-    if abs(g - 1.0) > 1e-12 and not use_gain:
+    if abs(entry[1] - 1.0) > 1e-12 and not use_gain:
         raise KeyError('record %r was generated with %g x K1; use a caller that explicitly passes use_gain=True '
-                       'to build_controller_bank, or restrict this run to unit-gain records' % (stem, g))
-    return g
+                       'to build_controller_bank, or restrict this run to unit-gain records' % (stem, entry[1]))
+    return entry
 
 
 def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, use_gain=False):
@@ -188,7 +180,7 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
     Returns:
         bank, rows (list of n_records ints), and the distinct design keys.
     """
-    keys = [(y_op_for(n, use_gain), gain_for(n, use_gain)) for n in record_names]
+    keys = [controller_design(n, use_gain) for n in record_names]
     uniq = sorted(set(keys))
     rows = [uniq.index(k) for k in keys]
     mats = [controller_ss(Y_op, float(ts), g) for Y_op, g in uniq]
@@ -197,7 +189,7 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
     return bank, rows, (uniq if use_gain else [y for y, _ in uniq])
 
 
-def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, e_train, e_val, verbose=True):
+def build_closed_loop(fs, norm, cfg, *, train_files, val_files, e_train, e_val, verbose=True):
     """Closed-loop simulator of training and validation.
 
     The bank of K_fb, W_r = diag(sigma_y / sigma_e,r) per training record and sigma_e per validation record, with
@@ -208,7 +200,6 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, e_trai
         norm: normalisation.
         cfg: run configuration.
         train_files, val_files: record file names.
-        val_data: unused, kept for callers.
         e_train, e_val: lists of (N_r, 3) servo errors y - r, metres.
         verbose: print the bank and compile settings.
     Returns:
@@ -227,7 +218,7 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, e_trai
 
     if verbose:
         print('[closed loop] one bank over %d records, %d distinct controllers, Y_op %s'
-              % (len(names), bank.n_controllers, y_ops))
+              % (len(names), bank.M_state.shape[0], y_ops))
         print('[closed loop] stepped at ts = %g s (%d Hz), nc = %d states'
               % (cfg.ts_new, round(1 / cfg.ts_new), bank.nc))
     # 2. Compiled step.

@@ -104,10 +104,10 @@ import hcommon as H
 
 # SHA256 of each snapshot's MANIFEST.sha256 (snapshot.json manifest_sha256), so a stale copy on the server is refused
 MANIFEST_SHA256 = {'pre-round': '45bdf761403f8a7f6c507018e871423f3764d635069c5721b089706d05c3fe52',
-                   'final': '98d23ae244c2fa4cd0774f7fc2a6b48e1e8997129d473fa76f541e26ceae1f99'}
+                   'final': '0a4a863639556e397d2b3efc53637827970c29f5fd00e9ea829744cc9bda5bff'}
 SNAP = None
 if args.arm != 'mainline':
-    SNAP = os.path.join(H.GOLDEN, 'src-snapshots', args.arm)
+    SNAP = os.path.join(H.SNAPSHOTS, args.arm)
     if H.sha256_file(os.path.join(SNAP, 'MANIFEST.sha256')) != MANIFEST_SHA256[args.arm]:
         sys.exit('the %s snapshot is not the one this driver times (MANIFEST.sha256 hash differs)' % args.arm)
     H.CLEAN = os.path.join(SNAP, 'Clean')       # the snapshot is the clean root: sys.path, H2 hashes, assert_roots

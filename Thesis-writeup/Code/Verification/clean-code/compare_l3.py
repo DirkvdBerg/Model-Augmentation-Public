@@ -17,6 +17,13 @@ from compare import check_fingerprint, d278_kept, diff_arrays, output_problems
 L3_CASES = ['221-lowpass', '229-noisefree', '224-noisefree', '226-lowpass', '227-lowpass']
 NPZ_SKIP = {'elapsed', 'orig_run_id', 'resumed_from'}
 CFG_SKIP = {'GIT', 'run_id', 'data_dir', 'NF_PROBE_PRINT'}
+#: D-284 amendment 10: golden fields the clean outputs no longer have, with the item that dropped them; skipped only
+#: when absent on the clean side. The pair: R4 (hp, bestfit_selected, start_phase; elapsed, orig_run_id and
+#: resumed_from are in NPZ_SKIP already) and R10; val_hist.npz: R12; ps2_summary's spec: the clean-only field
+#: s2_window (R17), the S2 plateau window, 5 on both sides.
+NPZ_DROPPED = {'hp': 'R4', 'bestfit_selected': 'R4', 'start_phase': 'R4', 'optimizer_state_dropped': 'R10'}
+VAL_HIST_DROPPED = {'val_hist_sim_rms': 'R12'}
+PS2_SPEC_CLEAN_ONLY = {'s2_window': 'R17'}
 
 
 def _cmp_tensors(prefix, a, b, out):
@@ -39,6 +46,12 @@ def _cmp_tensors(prefix, a, b, out):
         out[prefix] = 'golden %r | clean %r' % (a, b)
 
 
+def without_dropped_state(g, c):
+    """The golden dict g without the hfn keys R3 dropped from the clean baseline block (D-284 amendment 10), where the
+    clean dict c lacks them; the keys may carry a prefix (state.pt's 'enc.' entries are never R3 keys)."""
+    return {k: v for k, v in g.items() if not (H.is_dropped_state_key(k) and k not in c)}
+
+
 def compare_pair(gbase, cbase, out, name):
     """A checkpoint pair <base>.pt/.npz on both sides."""
     for side, base in (('golden', gbase), ('clean', cbase)):
@@ -49,15 +62,23 @@ def compare_pair(gbase, cbase, out, name):
     if set(g) != set(c):
         out[name + '.pt:keys'] = 'golden %s | clean %s' % (sorted(g), sorted(c))
     for k in ('hfn', 'encoder'):
-        _cmp_tensors('%s.pt/%s' % (name, k), dict(g[k]), dict(c[k]), out)
+        _cmp_tensors('%s.pt/%s' % (name, k), without_dropped_state(dict(g[k]), c[k]), dict(c[k]), out)
     if 'optimizer' in g and 'optimizer' in c:
         _cmp_tensors('%s.pt/optimizer' % name, g['optimizer'], c['optimizer'], out)
     gz, cz = np.load(gbase + '.npz', allow_pickle=True), np.load(cbase + '.npz', allow_pickle=True)
     for k in sorted(set(gz.files) | set(cz.files)):
-        if k in NPZ_SKIP:
+        if k in NPZ_SKIP or (k in NPZ_DROPPED and k not in cz.files):
             continue
         if k not in gz.files or k not in cz.files:
             out['%s.npz:%s' % (name, k)] = 'only in %s' % ('golden' if k in gz.files else 'clean')
+            continue
+        if k == 'ps2_summary' and str(gz[k]) and str(cz[k]):
+            go, co = json.loads(str(gz[k])), json.loads(str(cz[k]))
+            for f in PS2_SPEC_CLEAN_ONLY:
+                if f not in go['spec']:
+                    co['spec'].pop(f, None)
+            if go != co:
+                out['%s.npz:ps2_summary' % name] = 'golden %s | clean %s' % (str(go)[:200], str(co)[:200])
             continue
         if k == 'lbfgs_outcome':
             go, co = json.loads(str(gz[k])), json.loads(str(cz[k]))
@@ -85,9 +106,10 @@ def compare_runs(grun, crun, out, rid_g, rid_c):
         out['val_hist'] = 'golden %s | clean %s' % (os.path.exists(gh), os.path.exists(ch))
     elif os.path.exists(gh):
         gv, cv = np.load(gh), np.load(ch)
-        if set(gv.files) != set(cv.files):
-            out['val_hist:keys'] = 'golden %s | clean %s' % (sorted(gv.files), sorted(cv.files))
-        for k in sorted(set(gv.files) & set(cv.files)):
+        gkeys = {k for k in gv.files if not (k in VAL_HIST_DROPPED and k not in cv.files)}
+        if gkeys != set(cv.files):
+            out['val_hist:keys'] = 'golden %s | clean %s' % (sorted(gkeys), sorted(cv.files))
+        for k in sorted(gkeys & set(cv.files)):
             d = diff_arrays(gv[k], cv[k])
             if d:
                 out['val_hist:' + k] = d

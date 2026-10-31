@@ -80,7 +80,7 @@ class OBCBasis:
 
 
 def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], vbar: Tensor, Z: Tensor,
-                              row_ix: Sequence[int], chunk: int = 16384,
+                              row_ix: Sequence[int], chunk: int,
                               device=None, append_value: bool = False) -> Tensor:
     """Stacked baseline sensitivity Phi.
 
@@ -92,7 +92,7 @@ def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], vbar: Te
         vbar: (10,) beta_lin, float64.
         Z: (N, 9, 1) tuples (x_tilde^n_i, u^n_i).
         row_ix: protected rows.
-        chunk: tuples per jacfwd call.
+        chunk: tuples per jacfwd call (RunConfig.obc_ref_chunk), memory only.
         device: device of the build, else that of vbar.
         append_value: add step(beta_lin, z_i) as a last column (the f_base^n column of J).
     Returns:
@@ -126,6 +126,7 @@ def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], vbar: Te
 class OBCProjection:
     """The basis J at beta_lin with its rank policy and per-epoch refresh, and theta_aux of the network."""
 
+    # HEURISTIC: a rank-deficient refresh keeps the last basis; two in a row abort the run
     max_consecutive_rank_loss = 2
 
     def __init__(self, reference_field: Callable, basis_builder: Callable):

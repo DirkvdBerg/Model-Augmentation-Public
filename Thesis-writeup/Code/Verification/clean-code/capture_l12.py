@@ -56,7 +56,8 @@ torch.manual_seed(cfg.seed)
 t = time.time()
 fit_sys = GDM.build_model(hp, cfg, data, norm)
 tim['build_model'] = time.time() - t
-c1.info['hp'] = hp
+# R17 (D-284 amendment 10): the clean hp names the added-state count n_a; recorded under the mainline key NX_ANN
+c1.info['hp'] = hp if args.side == 'mainline' else {('NX_ANN' if k == 'n_a' else k): v for k, v in hp.items()}
 c1.info['dims'] = [fit_sys.na, fit_sys.nb, getattr(fit_sys, 'na_right', 0), getattr(fit_sys, 'nb_right', 0)]
 c1.add_state('build/hfn', fit_sys.hfn.state_dict())
 c1.add_state('build/encoder', fit_sys.encoder.state_dict())
@@ -77,7 +78,8 @@ for f in ('u0', 'ustd', 'y0', 'ystd'):
 t = time.time()
 fit_sys.simulator = build_closed_loop(
     fit_sys, norm, cfg, train_files=data.train_files, val_files=data.val_files,
-    val_data=data.val_ckpt_data, e_train=data.e_train, e_val=data.e_val)
+    e_train=data.e_train, e_val=data.e_val,
+    **({'val_data': data.val_ckpt_data} if args.side == 'mainline' else {}))     # R6: no val_data in Clean
 tim['build_closed_loop'] = time.time() - t
 sim = fit_sys.simulator
 # D-281 (O8): the clean simulator no longer has bank.ystd, bank.stdu (B41) or the validation record
@@ -99,7 +101,7 @@ if MAIN:
 elif fit_sys.obc is not None:
     # K15: the clean model keeps no reference set; the tuples are rebuilt here as attach_obc builds them
     from gantry_dynamic.obc_gantry import build_reference_set
-    ref = build_reference_set(cfg, norm, nx_ann=fit_sys.hfn.nx - cfg.nx_phys, files=data.train_files,
+    ref = build_reference_set(cfg, norm, n_a=fit_sys.hfn.nx - cfg.nx_phys, files=data.train_files,
                               verbose=False)
 else:
     ref = None
@@ -152,7 +154,8 @@ if args.side == 'mainline':
 
 # with the GOLDEN post-pre-fit state loaded
 st = torch.load(golden_state, map_location='cpu')
-fit_sys.hfn.load_state_dict(st['hfn'])
+# R3 (D-284 amendment 10): the clean baseline block has no nominal-matrix or Lambda_combo buffers
+fit_sys.hfn.load_state_dict(st['hfn'] if MAIN else H.drop_state(st['hfn']))
 fit_sys.encoder.load_state_dict(st['encoder'])
 t = time.time()
 dtype = next(fit_sys.hfn.parameters()).dtype
@@ -188,10 +191,12 @@ with torch.no_grad():
     y_pred, x_fin = fit_sys.simulate(x0, uf_b, yf_b, ctrl_ix=kw['ctrl_ix'], **mats)
     c1.add('fwd/y_pred', y_pred)
     c1.add('fwd/x_final', x_fin)
-val = fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure)
+# R5, R13: the clean cal_validation_error takes no measure name
+val = fit_sys.cal_validation_error(data.val_ckpt_data, *((cfg.validation_measure,) if MAIN else ()))
 c1.add('fwd/val_score', np.asarray(val))
 c1.add('fwd/last_per_channel', sim.last_per_channel)
-c1.add('fwd/last_sim_rms', np.asarray(sim.last_sim_rms))
+if MAIN:                                     # R12 (D-284 amendment 10): the clean simulator has no sim-RMS
+    c1.add('fwd/last_sim_rms', np.asarray(sim.last_sim_rms))
 tim['forward'] = time.time() - t
 
 # layer 2: loss and gradients on the same batch and state

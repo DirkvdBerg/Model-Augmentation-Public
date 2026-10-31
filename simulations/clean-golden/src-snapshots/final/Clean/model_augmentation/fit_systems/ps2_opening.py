@@ -29,14 +29,15 @@ class PS2Spec:
     s1_window: int = 4
     # HEURISTIC: screen_at checks the current calibration fraction at this update, which must be on the evaluation grid
     screen_at: int = 150
-    screen_max: float = 0.90
-    n_cal: int = 128
-    n_snap: int = 8192
-    n_snap_cal: int = 2048
-    s2_batch: int = 512
-    s2_check: int = 100            # HEURISTIC: S2 plateau = the best of the last 5 checks improved by less than s2_tol (relative)
-    s2_min: int = 500
-    s2_cap: int = 8000
+    screen_max: float = 0.90       # HEURISTIC: S2 runs only if the decoder explains at least 10 % of the residual
+    n_cal: int = 128               # HEURISTIC: left-out windows of the S1 check
+    n_snap: int = 8192             # HEURISTIC: S2 fit pairs
+    n_snap_cal: int = 2048         # HEURISTIC: S2 left-out pairs
+    s2_batch: int = 512            # HEURISTIC: S2 minibatch
+    s2_check: int = 100            # HEURISTIC: S2 plateau = the best of the last s2_window checks improved by less than s2_tol (relative)
+    s2_window: int = 5
+    s2_min: int = 500              # HEURISTIC: no S2 stop before this many steps
+    s2_cap: int = 8000             # HEURISTIC: S2 ends here at the latest
     s2_tol: float = 0.01
     seed: int = 0
 
@@ -58,8 +59,8 @@ def calibration_split(names):
         (fit indices, left-out indices).
     """
     # a class is the record name without its trailing number, 'TR-S5' -> 'TR-S'
-    # HEURISTIC: the calibration set covers every such class, since the predictive state of one excitation class
-    # need not transfer to another
+    # HEURISTIC: the calibration set covers every such class with at least three records (the fit keeps two), since
+    # the predictive state of one excitation class need not transfer to another
     cls = [n.rstrip('0123456789') for n in names]
     cal = sorted(max(i for i, c in enumerate(cls) if c == k) for k in set(cls) if cls.count(k) >= 3)
     return [i for i in range(len(names)) if i not in cal], cal
@@ -69,12 +70,10 @@ class PS2Opening:
     """The opening after every Adam update until it ends: S1 fits a decoder of the residual on the added states,
     S2 the network's added-state transition."""
 
-    def __init__(self, fit_sys, data, n_xb, n_a, width, spec, route_ix):
-        """Prepare normalised training records and the decoder specification (n_xb physical, n_a added states;
-        route_ix, the model state each network output is routed to)."""
-        # the network outputs of the added states, in state order
-        routes = list(route_ix)
-        self._added_cols = [routes.index(n_xb + k) for k in range(n_a)]
+    def __init__(self, fit_sys, data, n_xb, n_a, width, spec):
+        """Prepare normalised training records and the decoder specification (n_xb physical, n_a added states)."""
+        # the network outputs of the added states: one output per state, in state order
+        self._added_cols = list(range(n_xb, n_xb + n_a))
         self.records = []
         for sd in data.train_list:
             sdn = fit_sys.norm.transform(sd)
@@ -161,6 +160,7 @@ class PS2Opening:
         aux = [enc.Wa_psi_u, enc.Wa_psi_y, enc.net[-1].weight, enc.net[-1].bias]
         self._aux = list(self._decoder.parameters()) + aux
         self._opt = torch.optim.Adam(self._aux, lr=self.spec.lr)
+        # HEURISTIC: seed offsets 321 here and 1000 in S2, so these draws are independent of the S1 stream
         self._cal = self._sample(fs, self.cal_ix, self.spec.n_cal, np.random.default_rng(self.spec.seed + 321))
         print('[ps2] opening started: M %d, calibration records %s, spec %s' % (
             self._M, [self.names[i] for i in self.cal_ix], json.dumps(asdict(self.spec))), flush=True)
@@ -317,7 +317,7 @@ class PS2Opening:
             checks.append(rc)
             if rc < best:
                 best, state = rc, [p.detach().clone() for p in params]
-            if s >= sp.s2_min and _plateaued(checks, 5, sp.s2_tol):
+            if s >= sp.s2_min and _plateaued(checks, sp.s2_window, sp.s2_tol):
                 break
         with torch.no_grad():
             # 3. Restore the best parameters.

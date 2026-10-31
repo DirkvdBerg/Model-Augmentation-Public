@@ -7,6 +7,7 @@ import torch
 
 _D = torch.float32
 
+# THEORY: theta^0, Garcia-Herreros et al. Table I (kamtin-fp-model/03 Simulink gantry/main.m)
 mb  = torch.tensor(22.8,   dtype=_D)
 mh  = torch.tensor(10.1,   dtype=_D)
 m1  = torch.tensor(10.2,   dtype=_D)
@@ -28,32 +29,8 @@ kb2 = torch.tensor(1987.5, dtype=_D)
 Lb  = torch.tensor(0.725,  dtype=_D)
 d   = torch.tensor(0.1,    dtype=_D)
 
-_z = torch.zeros(3, 3, dtype=_D)
-
-# M(Y) = M0 + Y M1 + Y^2 M2
-M1 = _z.clone()
-# M_1 = -m_h (e1 e2^T + e2 e1^T), M_2 = m_h e2 e2^T
-M1[0, 1] = -mh
-M1[1, 0] = -mh
-
-M2 = _z.clone()
-M2[1, 1] = mh
-
-# damping C and stiffness K of the generalised coordinates q
-C = _z.clone()
-# C = [[c_g1 + c_g2, (L_b/2)(c_g1 - c_g2), 0], [., c_b1 + c_b2 + (L_b^2/4)(c_g1 + c_g2), 0], [0, 0, c_y]]
-C[0, 0] = cg1 + cg2
-C[0, 1] = (cg1 - cg2) * Lb / 2
-C[1, 0] = (cg1 - cg2) * Lb / 2
-C[1, 1] = cb1 + cb2 + (cg1 + cg2) * Lb**2 / 4
-C[2, 2] = cy
-
-K = _z.clone()
-# K = diag(0, k_b1 + k_b2, 0)
-K[1, 1] = kb1 + kb2
-
 # coordinate and force transformation: q = P^-T q_act, u = P u_act
-P = _z.clone()
+P = torch.zeros(3, 3, dtype=_D)
 P[0, 0] = 1.0
 P[0, 1] = 1.0
 P[1, 0] = Lb / 2

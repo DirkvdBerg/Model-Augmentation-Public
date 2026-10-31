@@ -90,9 +90,19 @@ if args.layer == '3b':
     fit_sys = build_model(hp, cfg, data, norm)
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg, train_files=data.train_files, val_files=data.val_files,
-        val_data=data.val_ckpt_data, e_train=data.e_train, e_val=data.e_val)
-    load_checkpoint(fit_sys, os.path.join(l3_golden, 'run', 'gantry_ckpt_%s_pre_lbfgs' % rid_l3),
-                    cfg.joint_estimation, start_phase='lbfgs')
+        e_train=data.e_train, e_val=data.e_val,
+        **({'val_data': data.val_ckpt_data} if args.side == 'mainline' else {}))     # R6: no val_data in Clean
+    if args.side == 'mainline':
+        load_checkpoint(fit_sys, os.path.join(l3_golden, 'run', 'gantry_ckpt_%s_pre_lbfgs' % rid_l3),
+                        cfg.joint_estimation, start_phase='lbfgs')
+    else:
+        # R1, R3 (D-284 amendment 10): the mainline golden folder is read through the converter; K7: no
+        # joint_estimation argument
+        sys.path.append(os.path.join(H.REPO, 'clean-up-verification'))
+        from convert_run import convert_run
+        convert_run(os.path.join(l3_golden, 'run'), os.path.join(lad, 'converted'))
+        load_checkpoint(fit_sys, os.path.join(lad, 'converted', 'gantry_ckpt_%s_pre_lbfgs' % rid_l3),
+                        start_phase='lbfgs')
     start = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())
              + [('enc.' + k, v) for k, v in fit_sys.encoder.state_dict().items()]}
     if args.side == 'mainline':            # the spec and meters exactly as mainline run_lbfgs_polish
@@ -113,7 +123,7 @@ if args.layer == '3b':
         kw = {}
     res = lbfgs_polish(fit_sys, data.train_data, loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
                        spec=spec, val_sys_data=data.val_ckpt_data, val_before=0.0,
-                       validation_measure=cfg.validation_measure, **kw)
+                       validation_measure=cfg.validation_measure if args.side == 'mainline' else 'sim-NRMSe', **kw)
     after = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())
              + [('enc.' + k, v) for k, v in fit_sys.encoder.state_dict().items()]}
     params_restored = all(torch.equal(start[k], after[k]) for k in start

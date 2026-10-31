@@ -10,6 +10,7 @@ import torch
 
 from .config import RunConfig
 from .model import on_device
+from model_augmentation.fit_systems.closed_loop import SCORE_NAME
 from model_augmentation.fit_systems.lbfgs_polish import PolishSpec, lbfgs_polish
 from model_augmentation.fit_systems.ps2_opening import PS2Opening, PS2Spec
 
@@ -44,8 +45,8 @@ def resolve_checkpoint(base_path):
     pair_pt, pair_npz = base_path + '.pt', base_path + '.npz'
     if os.path.exists(pair_pt) and os.path.exists(pair_npz):
         ckpt = torch.load(pair_pt, map_location='cpu')
-        # read and closed: a rerun moves this file right after loading it
-        with np.load(pair_npz, allow_pickle=True) as z:
+        # read and closed: a rerun moves this file right after loading it; plain arrays only (save_checkpoint_pair)
+        with np.load(pair_npz, allow_pickle=False) as z:
             meta = {k: z[k] for k in z.files}
         return ckpt['hfn'], ckpt['encoder'], ckpt.get('optimizer'), meta, 'pair'
 
@@ -57,14 +58,12 @@ def resolve_checkpoint(base_path):
     # the epoch count is cumulative over chained continuations (epochs_before is the count the dump's job
     # started from); ps2_opening = (phase, updates) of the opening at these weights
     meta = {
-        'done_epochs': np.array(int(round(float(d.get('epochs_before', 0))
-                                          + float(d.get('epoch_counter', 0))))),
+        'done_epochs': np.array(round(float(d.get('epochs_before', 0)) + float(d.get('epoch_counter', 0)))),
         'bestfit': np.array(float(d.get('bestfit', float('inf')))),
         'ps2_opening': d.get('ps2_opening'),
     }
-    optimizer = d.get('optimizer') or d.get('_optimizer')
-    optimizer_state = (optimizer.state_dict() if optimizer is not None and hasattr(optimizer, 'state_dict')
-                       else None)
+    optimizer = d.get('optimizer')
+    optimizer_state = None if optimizer is None else optimizer.state_dict()
     return d['hfn'].state_dict(), d['encoder'].state_dict(), optimizer_state, meta, 'whole'
 
 
@@ -113,11 +112,10 @@ def _assert_same_dtype(fit_sys, hfn_sd):
                 if torch.is_tensor(v) and v.is_floating_point()), None)
     if got is not None and got != want:
         raise RuntimeError(
-            'checkpoint dtype %s does not match this run\'s %s; use a matching float64 checkpoint or the mainline '
-            'implementation configured for the checkpoint precision' % (got, want))
+            'checkpoint dtype %s does not match this run\'s %s; use a float64 checkpoint' % (got, want))
 
 
-def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
+def load_checkpoint(fit_sys, base_path, start_phase='adam'):
     """Restore the weights, and on an 'adam' start the Adam moments, from either format; returns the meta."""
     hfn_sd, enc_sd, optim_sd, meta, fmt = resolve_checkpoint(base_path)
     opening = meta.get('ps2_opening')
@@ -137,11 +135,9 @@ def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
         print("  Adam moment estimates restored; lr/eps/betas come from this run's config.")
     print(f'  Checkpoint format: {fmt}')
     if start_phase == 'adam' and optim_sd is None:
-        optimizer_state_dropped = bool(meta.get('optimizer_state_dropped', False))
         print('  This checkpoint has no Adam state'
-              + (' (dropped on purpose: optimizer_state_dropped=True)' if optimizer_state_dropped
-                 else ' (whole-system format: deepSI stores a live optimizer, not a state dict)'
-                 if fmt == 'whole' else '')
+              + (' (saved without it: polished weights or a polish-only job)' if fmt == 'pair'
+                 else ' (the dump holds no optimizer)')
               + '; Adam starts from fresh moment estimates at these weights, which suits polished weights'
                 ' but does not continue the earlier Adam trajectory. To continue it, resume'
                 ' gantry_ckpt_<run_id>_pre_lbfgs, which keeps the matching state.')
@@ -165,8 +161,7 @@ class ValidationHistory:
         copy of an earlier row passed as row (selected, final)."""
         if row is None:
             sim = fit_sys.simulator
-            row = dict(per_channel=np.array(sim.last_per_channel, dtype=float),
-                       sim_rms=float(sim.last_sim_rms), score=float(score),
+            row = dict(per_channel=np.array(sim.last_per_channel, dtype=float), score=float(score),
                        update=int(getattr(fit_sys, 'batch_counter', -1)),
                        epoch=float(getattr(fit_sys, 'epoch_counter', float('nan'))))
         self.val_hist.append(dict(row, event=event, **extra))
@@ -180,7 +175,6 @@ class ValidationHistory:
             val_hist_update=np.array([r['update'] for r in h]),
             val_hist_epoch=np.array([r['epoch'] for r in h]),
             val_hist_score=np.array([r['score'] for r in h]),
-            val_hist_sim_rms=np.array([r['sim_rms'] for r in h]),
             val_hist_rms=np.stack([r['per_channel'] for r in h]),
             val_hist_accepted=np.array([r.get('accepted', np.nan) for r in h], dtype=float),
             val_sigma_e=np.asarray(self.fit_sys.simulator.val_sigma_e))
@@ -208,11 +202,11 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_r
         if not adam_ran and not cfg.obc:
             # without Adam in this job, one eager validation completes the lazy initialisation before the
             # compiled probe of the polish
-            fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure)
+            fit_sys.cal_validation_error(data.val_ckpt_data)
         if cfg.obc:
-            val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
+            val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data))
             print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
-                  % (cfg.validation_measure, val_rebuilt, bestfit))
+                  % (SCORE_NAME, val_rebuilt, bestfit))
             history.record('rebuilt', fit_sys, val_rebuilt)
             if val_before is None:
                 val_before = val_rebuilt
@@ -221,7 +215,7 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_r
             loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride}, spec=spec,
             val_sys_data=data.val_ckpt_data,
             val_before=val_before,
-            validation_measure=cfg.validation_measure)
+            validation_measure=SCORE_NAME)
         if out.get('ran') and np.isfinite(out.get('val_after', np.nan)):
             history.record('polish_candidate', fit_sys, out['val_after'],
                            accepted=float(bool(out.get('accepted'))))
@@ -240,11 +234,9 @@ def _adam_phase(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, meta, done_ep
     ps2_state = None if meta is None else meta.get('ps2_opening')
     if cfg.ps2 and not polish_only and (
             done_epochs == 0 if ps2_state is None else ps2_state[0] != 'S3'):
-        spec = PS2Spec(seed=cfg.seed, **(dict(
-            eval_every=2, s1_min=0, s1_cap=4, screen_at=-1, screen_max=float('inf'), n_cal=32,
-            n_snap=256, n_snap_cal=64, s2_batch=64, s2_check=50, s2_min=50, s2_cap=100) if cfg.ps2_smoke else {}))
-        opening = PS2Opening(fit_sys, data, n_xb=cfg.nx_phys, n_a=cfg.nx_ann,
-                             width=hp['n_nodes_per_layer'], spec=spec, route_ix=cfg.ann_route_ix)
+        spec = PS2Spec(seed=cfg.seed)
+        opening = PS2Opening(fit_sys, data, n_xb=cfg.nx_phys, n_a=cfg.n_a,
+                             width=hp['n_nodes_per_layer'], spec=spec)
         fit_sys.training_phase = opening
     prev = fit_sys.validation_probes
     history = ValidationHistory(fit_sys, os.path.join(checkpoint_dir, 'val_hist.npz'))
@@ -264,7 +256,7 @@ def _adam_phase(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, meta, done_ep
                     its_per_val=(cfg.n_its if cfg.n_its else cfg.its_per_val),
                     loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
                     cuda=(cfg.device == 'cuda'),
-                    validation_measure=cfg.validation_measure,
+                    validation_measure=SCORE_NAME,
                 )
     finally:
         fit_sys.validation_probes = prev
@@ -296,8 +288,7 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
         fit_sys.epochs_before = done_epochs
 
     epochs_remaining = hp['epochs'] - done_epochs
-    print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val={cfg.validation_measure}  '
-          f'NX_ANN={hp["NX_ANN"]}')
+    print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val={SCORE_NAME}  n_a={hp["n_a"]}')
     if done_epochs > 0:
         print(f'  Resuming: {done_epochs} done, {epochs_remaining} remaining')
 
@@ -312,8 +303,7 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
 
     # 3. Pre-polish checkpoint and the selected row.
     pre_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_pre_lbfgs')
-    save_checkpoint_pair(fit_sys, pre_base, done_epochs=done_epochs, bestfit=bestfit,
-                         hp=json.dumps(hp), orig_run_id=run_id)
+    save_checkpoint_pair(fit_sys, pre_base, done_epochs=done_epochs, bestfit=bestfit)
     print(f'  Pre-polish checkpoint: {pre_base}.pt')
     adam_rows = [r for r in history.val_hist if r['event'] == 'adam']
     # on equal validation scores, select the latest row, as fit keeps the latest best
@@ -327,7 +317,6 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
     # final row: the accepted polish, otherwise the rebuilt OBC model, otherwise the selected Adam row
     final = (last_by_event.get('polish_candidate') if lbfgs_outcome.get('accepted')
              else last_by_event.get('rebuilt') or selected)
-    bestfit_selected = bestfit
     if final is not None:
         history.record('final', fit_sys, final['score'], row=final)
         bestfit = final['score']
@@ -340,16 +329,22 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
     ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
     save_checkpoint_pair(
         fit_sys, ckpt_base, include_optimizer=not drop_optimizer_state,
-        done_epochs=done_epochs, bestfit=bestfit, bestfit_selected=bestfit_selected, elapsed=elapsed,
-        hp=json.dumps(hp), orig_run_id=run_id, lbfgs_outcome=json.dumps(_json_safe(lbfgs_outcome)),
-        optimizer_state_dropped=drop_optimizer_state, start_phase=cfg.start_phase,
-        resumed_from='' if resume_ckpt is None else str(resume_ckpt), resumed_at_epoch=resumed_at_epoch,
-        ps2_summary='' if opening is None else opening.summary_json())
+        done_epochs=done_epochs, bestfit=bestfit, lbfgs_outcome=json.dumps(_json_safe(lbfgs_outcome)),
+        resumed_at_epoch=resumed_at_epoch, ps2_summary='' if opening is None else opening.summary_json())
     drop_reason = ('weights were polished' if polish_accepted else
                    'no Adam phase ran in this job' if polish_only else '')
     print(f'  Checkpoint weights: {ckpt_base}.pt'
           + (f'  (Adam state omitted: {drop_reason})' if drop_optimizer_state else ''))
     print(f'  Checkpoint meta: {ckpt_base}.npz')
+
+    # 6. Training loss: fit's mean loss per validation interval with its update, epoch and time (empty without an
+    # Adam phase in this job); the validation rows are in val_hist.npz.
+    fit_history = getattr(fit_sys, 'fit_history', {}) if adam_ran else {}
+    np.savez(os.path.join(checkpoint_dir, 'loss.npz'),
+             update=np.asarray(fit_history.get('batch_id', []), dtype=np.int64),
+             epoch=np.asarray(fit_history.get('epoch_id', []), dtype=float),
+             time=np.asarray(fit_history.get('time', []), dtype=float),
+             train_loss=np.asarray(fit_history.get('Loss_train', []), dtype=float))
 
     fit_sys.eval()
     print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | bestfit={bestfit:.5f}')

@@ -1,6 +1,6 @@
 """Small helpers: the @added marker, tensor conversion and the selection and expansion matrices."""
-# CHANGED: restricted to the thesis training path; full implementation in
-# model_augmentation/utils/utils.py at the repository root
+# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
+# commit 8200923 (model_augmentation/__init__.py)
 import torch
 import numpy as np
 

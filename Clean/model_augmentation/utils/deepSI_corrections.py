@@ -3,8 +3,8 @@
 Conventions: superscript n = normalised; u0, ustd, y0, ystd are mu_u, sigma_u, mu_y, sigma_y.
 """
 # CHANGED: Jan's fixed_System_data and fixed_System_data_norm, renamed WindowedSystemData and SystemDataNormalizer;
-# restricted to the thesis training path; full implementation in model_augmentation/utils/deepSI_corrections.py at
-# the repository root
+# restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
+# commit 8200923 (model_augmentation/__init__.py)
 
 from deepSI.system_data.system_data import System_data, System_data_list
 import numpy as np

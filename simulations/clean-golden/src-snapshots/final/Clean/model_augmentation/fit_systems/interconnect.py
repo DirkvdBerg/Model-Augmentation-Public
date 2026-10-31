@@ -1,6 +1,6 @@
 """Jan's interconnect of blocks and his encoder fit system, with the augmented model of the thesis."""
-# CHANGED: restricted to the thesis training path; full implementation in
-# model_augmentation/fit_systems/interconnect.py at the repository root
+# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
+# commit 8200923 (model_augmentation/__init__.py)
 from deepSI.fit_systems.encoders import SS_encoder_general
 
 from torch import nn, Tensor
@@ -52,7 +52,7 @@ class Interconnect(nn.Module):
             self.array_connection_matrices = [[fn(t) for t in row] for row in acm]
         return out
 
-    def forward(self, x: Tensor, u: Tensor, obc_pass=None, pass_mats=None):
+    def forward(self, x: Tensor, u: Tensor, obc_pass, pass_mats):
         """Augmented-model transition.
 
         x_tilde^n_{k+1} = f_base^n + f_aug^n (- f_obc^n on the OBC arm), xbar_{k+1} = g_aug^n,
@@ -60,12 +60,12 @@ class Interconnect(nn.Module):
 
         Args:
             x: (B, nx) x_hat^n_k; u: (B, nu) u_hat^n_k, normalised.
-            obc_pass, pass_mats: matrices of this objective.
+            obc_pass, pass_mats: matrices of this objective (obc_pass None on the unconstrained arm).
         Returns:
             y_hat^n_k (B, ny) and x_hat^n_{k+1} (B, nx).
         """
-        # CHANGED: obc_pass and pass_mats, built once per objective, are arguments, so torch.compile sees them
-        # as graph inputs
+        # CHANGED: obc_pass and pass_mats, built once per objective, are required arguments, so torch.compile sees
+        # them as graph inputs
         x = x.view(x.size(0), self.nx, 1)
         u = u.view(u.size(0), self.nu, 1)
 
@@ -174,8 +174,6 @@ class Interconnect(nn.Module):
         needed, stack = set(), [target_output_ix]
         while stack:
             k = stack.pop()
-            if k in needed:
-                continue
             needed.add(k)
             for j in self.output_ix_sorted_input_ix_dependencies[k]:
                 if j >= 2 and j not in needed:
@@ -309,6 +307,7 @@ class Signal_Connection():
 def _replace_with_retry(src, dst, tries=20):
     """os.replace, retried while another process (a sync client, a virus scanner) briefly holds dst open, which
     Windows reports as PermissionError."""
+    # HEURISTIC: 20 tries 0.25 s apart, about 5 s for a sync client or scanner to release the file
     for i in range(tries):
         try:
             return os.replace(src, dst)
@@ -374,7 +373,7 @@ class SSE_Interconnect(SS_encoder_general):
         return self.simulator.augment_training_data(data, sys_data, self, **Loss_kwargs)
 
     @added
-    def cal_validation_error(self, val_sys_data, validation_measure='sim-NRMS'):
+    def cal_validation_error(self, val_sys_data):
         """The simulator's validation score, then the validation probes (side effects only)."""
         value = self.simulator.validation_error(self, val_sys_data)
         for probe in self.validation_probes:
@@ -404,10 +403,11 @@ class SSE_Interconnect(SS_encoder_general):
 
         def validation(train_loss=None, time_elapsed_total=None):
             """Validate, save the best and the last dump, and return the validation error."""
-            # CHANGED: validation on the training device (no CPU round trip), theta_aux synced first on the OBC arm
+            # CHANGED: validation on the training device (no CPU round trip), theta_aux synced first on the OBC arm;
+            # the score is the simulator's, so no measure is passed
             self.eval()
             self._sync_obc_coefficient(refresh_basis=False)
-            Loss_val = self.cal_validation_error(val_sys_data, validation_measure=validation_measure)
+            Loss_val = self.cal_validation_error(val_sys_data)
             self.Loss_val.append(Loss_val)
 
             self.Loss_train.append(train_loss)
@@ -523,10 +523,11 @@ class AugmentedModel(SSE_Interconnect):
     """The augmented model of the thesis: the W_r-weighted closed-loop objective, the OBC coefficient per
     objective, and dumps without the training-time state."""
 
-    _optimizer = None
     obc = None
     # training-time state: left out of every dump, kept across a dump load
-    _UNPICKLABLE = ('obc', 'obc_reference', 'training_phase')
+    _UNPICKLABLE = ('obc', 'training_phase', 'fit_history')
+    # fit's loss history, which a dump holds as it stood when the dump was written
+    _FIT_HISTORY = ('batch_id', 'epoch_id', 'time', 'Loss_train')
 
     def __init__(self, *args, **kwargs):
         """Locate the network block and the block that takes pass_mats."""
@@ -540,8 +541,8 @@ class AugmentedModel(SSE_Interconnect):
 
     def _epoch_index(self):
         """The integer epoch the OBC refresh counts in."""
-        # + 1e-6: the epoch counter sums 1 / N per update and can end just below an integer
-        return int(math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6))
+        # HEURISTIC: + 1e-6, since the epoch counter sums 1 / N per update and can end just below an integer
+        return math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6)
 
     def _sync_obc_coefficient(self, refresh_basis=False):
         """Coefficient of the OBC correction for prediction.
@@ -627,7 +628,9 @@ class AugmentedModel(SSE_Interconnect):
         _replace_with_retry(file + '.tmp', file)
 
     def checkpoint_load_system(self, *args, **kwargs):
-        """deepSI's dump load, keeping the training-time state of this process."""
+        """deepSI's dump load, keeping the training-time state of this process; fit_history keeps fit's whole loss
+        history, since the best dump fit reloads at its end holds it only up to the best validation."""
+        self.fit_history = {k: self.__dict__[k] for k in self._FIT_HISTORY if k in self.__dict__}
         stash = {k: self.__dict__.get(k) for k in self._UNPICKLABLE}
         out = super().checkpoint_load_system(*args, **kwargs)
         for k, v in stash.items():
@@ -638,14 +641,3 @@ class AugmentedModel(SSE_Interconnect):
     def __getstate__(self):
         """The state without the training-time keys, as every dump holds it."""
         return {k: v for k, v in self.__dict__.items() if k not in self._UNPICKLABLE}
-
-    # deepSI stores the optimizer as _optimizer in the dumps; the property keeps that attribute
-    @property
-    def optimizer(self):
-        """The optimizer, stored as _optimizer (the attribute deepSI dumps)."""
-        return self._optimizer
-
-    @optimizer.setter
-    def optimizer(self, opt):
-        """Store the optimizer as _optimizer."""
-        self._optimizer = opt

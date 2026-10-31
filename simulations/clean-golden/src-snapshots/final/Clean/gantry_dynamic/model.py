@@ -36,9 +36,8 @@ def build_model(hp, cfg: RunConfig, data, norm):
     Returns:
         The AugmentedModel with its Adam optimizer.
     """
-    n_a = hp['NX_ANN']
+    n_a = hp['n_a']
     nx = cfg.nx_phys + n_a
-    route_ix = np.asarray(cfg.ann_route_ix)
 
     # THEORY: na = nb history samples precede the window start; the current sample is excluded
     na = nb = hp['na_nb']
@@ -54,16 +53,16 @@ def build_model(hp, cfg: RunConfig, data, norm):
     if cfg.combo_init_detune is not None:
         initial_combinations = initial_combinations * initial_combinations.new_tensor(cfg.combo_init_detune)
     phy_block = IdentifiableGantryStateBlock(
-        params_init=raw_nominal, combo_init=initial_combinations, Y_op=None, std_x=norm.std_x, std_u=norm.std_u,
+        params_init=raw_nominal, combo_init=initial_combinations, std_x=norm.std_x, std_u=norm.std_u,
         x_mean=norm.x_mean, u_mean=norm.u_mean, Ts=cfg.ts_new, up_sample=hp['up_sample'],
-        RMSE_baseline=cfg.param_rmse_baseline, closed_form=cfg.baseline_form == 'closed').to(cfg.dtype_pt)
+        closed_form=cfg.baseline_form == 'closed').to(cfg.dtype_pt)
     out_phys = Linear_Output_Block(C=norm.Cd_norm, D=norm.Dd_np)
     ic.add_block(phy_block)
     ic.add_block(out_phys)
 
     # 2. Network block phi_aug.
     ann_block = Static_ANN_Block(
-        nz=nx + cfg.nu, nw=len(route_ix),
+        nz=nx + cfg.nu, nw=nx,
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=AugmentationNetwork,
@@ -77,7 +76,8 @@ def build_model(hp, cfg: RunConfig, data, norm):
     #   x_tilde^n_{k+1} = f_base^n(x_tilde^n_k, u^n_k) + f_aug^n(x_hat^n_k, u^n_k)   (- f_obc^n on the OBC arm)
     #   x_bar_{k+1} = g_aug^n(x_hat^n_k, u^n_k),   y_hat^n_k = C^n x_tilde^n_k   (D = 0)
     ic.connect_block_signals(ann_block, ["x", "u"], [])
-    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(route_ix, nx))
+    # one network output per state, in state order
+    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(np.arange(nx), nx))
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHYSICAL_STATE_IX, nx))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHYSICAL_STATE_IX, nx))
@@ -161,16 +161,18 @@ def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
         # 1. Simulate the start model in closed loop, record by record (equal lengths batched).
         sdl = data.train_data.sdl
         x_mean, std_x = as_vector(norm.x_mean), as_vector(norm.std_x)
+        u0, ustd = as_vector(fit_sys.norm.u0), as_vector(fit_sys.norm.ustd)
+        y0, ystd = as_vector(fit_sys.norm.y0), as_vector(fit_sys.norm.ystd)
         input_windows, output_windows, state_targets = [], [], []
         groups = {}
         for i, sd in enumerate(sdl):
             groups.setdefault(len(sd.u), []).append(i)
         for ixs in groups.values():
-            un = np.stack([(sdl[i].u - as_vector(fit_sys.norm.u0)) / as_vector(fit_sys.norm.ustd) for i in ixs])
-            yn = np.stack([(sdl[i].y - as_vector(fit_sys.norm.y0)) / as_vector(fit_sys.norm.ystd) for i in ixs])
+            un = np.stack([(sdl[i].u - u0) / ustd for i in ixs])
+            yn = np.stack([(sdl[i].y - y0) / ystd for i in ixs])
             # Start state: q_0 = P^-T y_0, qdot_0 = 0, normalised; xbar_0 = 0 (x^c_0 = 0 in the rollout). The whole
             # start model is simulated: f_aug^n = 0 and f_obc^n = 0 on the physical rows, so x_tilde^n is f_base^n's.
-            x0 = np.zeros((len(ixs), nx + cfg.nx_ann))
+            x0 = np.zeros((len(ixs), nx + cfg.n_a))
             q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ P_INV_T64.T for i in ixs])
             x0[:, :nx] = (np.hstack([q0, np.zeros_like(q0)]) - x_mean) / std_x
             xs, us = [], []
@@ -261,6 +263,7 @@ def least_squares_start(enc, nx, uh, yh, xt):
     print('[encoder start] least squares: %d regressors, rank %d, condition %.3e; unexplained per state %s'
           % (Phi.shape[1], int(sol.rank), float(sol.singular_values[0] / sol.singular_values[-1]),
              ' '.join('%.2e' % v for v in unexplained)), flush=True)
+    # HEURISTIC: the encoder reproduces the fit to 1e-6 of the smallest state scale (float64 rounding is far below)
     if not torch.allclose(got, pred, rtol=0.0, atol=1e-6 * float(X.std(0, unbiased=False).min())):
         raise RuntimeError('the encoder does not reproduce the least-squares map (max deviation %.3e); check '
                            'that psi_tilde has the expected output layer' % float((got - pred).abs().max()))

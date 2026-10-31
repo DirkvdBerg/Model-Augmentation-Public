@@ -153,7 +153,7 @@ def test_A_normalization():
     u=rand(40,3).numpy();y=rand(40,3).numpy();sd=WindowedSystemData(u=u,y=y,dt=.00025)
     n=SystemDataNormalizer(u0=np.array([.1,.2,.3]),ustd=np.array([2.,3.,4.]),y0=np.array([.3,.2,.1]),ystd=np.array([4.,3.,2.]))
     got=n.transform(sd);close(got.u,(u-n.u0)/n.ustd);close(got.y,(y-n.y0)/n.ystd)
-    cfg=NS(dtype_np=np.float64,nx_phys=6,nu=3)
+    cfg=NS(dtype_np=np.float64,nx_phys=6,nu=3,fs_new=4000)  # R17: the velocity scale is cfg.fs_new (dt = 1 / 4000)
     norm=compute_normalization(cfg,NS(train_list=[sd]))
     P=gs.P.double().numpy(); q=y@np.linalg.inv(P); v=np.diff(q,axis=0)/sd.dt;v=np.vstack((v[:1],v))
     X=np.hstack((q,v));close(norm.x_mean.ravel(),X.mean(0));close(norm.std_x.ravel(),X.std(0)+1e-8)
@@ -166,7 +166,7 @@ def test_A_norm_transition(): test_A_rk4()
 @case('A_norm_output')
 def test_A_norm_output():
     u=rand(40,3).numpy();y=rand(40,3).numpy();sd=WindowedSystemData(u=u,y=y,dt=.00025)
-    norm=compute_normalization(NS(dtype_np=np.float64,nx_phys=6,nu=3),NS(train_list=[sd]))
+    norm=compute_normalization(NS(dtype_np=np.float64,nx_phys=6,nu=3,fs_new=4000),NS(train_list=[sd]))
     C=np.hstack((gs.P.double().numpy().T,np.zeros((3,3))))
     close(norm.Cd_norm,C*norm.std_x.ravel()/norm.ystd[:,None])
     x=rand(4,6);yp=x@torch.as_tensor(norm.Cd_norm).T
@@ -190,7 +190,7 @@ def interconnect():
 
 @case('A_physical')
 def test_A_physical():
-    ic,b,ann,C=interconnect();x=rand(4,8)*.02;u=rand(4,3);y,xp=ic(x,u,pass_mats=b.pass_mats())  # K14: mats passed
+    ic,b,ann,C=interconnect();x=rand(4,8)*.02;u=rand(4,3);y,xp=ic(x,u,None,b.pass_mats())  # K14: mats passed; R5: obc_pass and pass_mats required
     f=ann.net(torch.cat((x,u),1));expected=torch.cat((rk(b,x[:,:6,None],u[:,:,None]).squeeze(-1),torch.zeros(4,2,dtype=DT)),1)+f
     close(xp,expected);close(y,x[:,:6]@C.T)
 
@@ -235,7 +235,7 @@ def test_A_cl_step():
     def observe(x,xc,u,y,ctrl,*args):
         seen.append(xc.clone())
         return x,x,xc+1
-    closed_loop_rollout(observe,rand(4,2,3),rand(4,2,3),x,bank,ix)
+    closed_loop_rollout(observe,rand(4,2,3),rand(4,2,3),x,bank,ix,pass_mats=None)  # R5: pass_mats required
     close(seen[0],torch.zeros(4,2,dtype=DT));close(seen[1],torch.ones(4,2,dtype=DT))
 
 @case('A_loss')
@@ -286,7 +286,7 @@ def test_A_encoder_sim():
             return x[:,:3],torch.cat((x[:,:6]@A.T+u@B.T,torch.zeros(len(x),2,dtype=DT)),1)
     bank=ControllerBank(np.zeros((1,1,1)),np.zeros((1,1,3)),np.zeros((1,3,1)),np.zeros((1,3,3)),np.ones(3),np.ones(3),DT)
     fs=NS(encoder=enc,hfn=H(),na=3,nb=3,norm=NS(u0=np.zeros(3),ustd=np.ones(3),y0=np.zeros(3),ystd=np.ones(3)),
-          simulator=NS(bank=bank,train_ctrl_rows=[0]),_sync_obc_coefficient=lambda:None,objective_matrices=lambda:{})
+          simulator=NS(bank=bank,train_ctrl_rows=[0]),_sync_obc_coefficient=lambda:None,objective_matrices=lambda:{'pass_mats':None})
     sd=WindowedSystemData(u=rand(40,3).numpy(),y=rand(40,3).numpy())
     captured=[]
     def inspect_fit(e,nx,u,y,target):
@@ -368,7 +368,7 @@ def test_P_s2_cost():
 @case('O_sensitivity')
 def test_O_sensitivity():
     b=block();v=rand(10)*.01;z=rand(4,9,1)*.03
-    actual=build_stacked_sensitivity(b.transition_from_free,v,z,range(6),append_value=True)
+    actual=build_stacked_sensitivity(b.transition_from_free,v,z,range(6),chunk=16384,append_value=True)  # R8: chunk required
     direct=torch.func.jacfwd(lambda f:rk(b,z[:,:6],z[:,6:],f))(v)[:,:,0,:].reshape(-1,10)
     close(actual[:,:10],direct);close(actual[:,10],rk(b,z[:,:6],z[:,6:],v).flatten())
 
@@ -392,7 +392,7 @@ def test_O_coefficient():
 
 @case('O_correction')
 def test_O_correction():
-    b=block();corr=GantryOBCCorrection(b,8,6,range(8),DT);v=rand(10)*.01;theta=rand(11)*.01
+    b=block();corr=GantryOBCCorrection(b,8,6,DT);v=rand(10)*.01;theta=rand(11)*.01
     corr.set_frozen(theta,v);x=rand(4,8,1)*.02;u=rand(4,3,1)
     f=rk(b,x[:,:6],u,v);J=torch.func.jacfwd(lambda t:rk(b,x[:,:6],u,t))(v)
     expected=torch.cat((torch.einsum('bikp,p->bik',J,theta[:-1])+theta[-1]*f,torch.zeros(4,2,1,dtype=DT)),1)
@@ -424,7 +424,7 @@ def test_O_tuple_position():
 
 @case('O_physical_step')
 def test_O_physical_step():
-    ic,b,ann,C=interconnect();corr=GantryOBCCorrection(b,8,6,range(8),DT)
+    ic,b,ann,C=interconnect();corr=GantryOBCCorrection(b,8,6,DT)
     v=rand(10)*.01;theta=rand(11)*.01;corr.set_frozen(theta,v);ic.obc_correction=corr
     x=rand(4,8)*.02;u=rand(4,3)
     f=rk(b,x[:,:6,None],u[:,:,None],v)
@@ -470,7 +470,7 @@ def test_S_metric():
         def forward(self,x,u,*args):return self.output_only(x),x
     bank=ControllerBank(np.zeros((1,1,1)),np.zeros((1,1,3)),np.zeros((1,3,1)),np.zeros((1,3,3)),np.ones(3),np.ones(3),DT)
     y=rand(12,3).numpy();sd=WindowedSystemData(u=rand(12,3).numpy(),y=y)
-    fs=NS(norm=NS(u0=np.zeros(3),ustd=np.ones(3),y0=np.zeros(3),ystd=np.ones(3)),na=3,nb=3,hfn=H(),encoder=lambda u,y:torch.zeros(len(u),6,dtype=DT),objective_matrices=lambda:{})
+    fs=NS(norm=NS(u0=np.zeros(3),ustd=np.ones(3),y0=np.zeros(3),ystd=np.ones(3)),na=3,nb=3,hfn=H(),encoder=lambda u,y:torch.zeros(len(u),6,dtype=DT),objective_matrices=lambda:{'pass_mats':None})
     got,agg=closed_loop_free_run_rms_batch(fs,[sd],bank,[0])
     close(got[0],np.sqrt((y[3:]**2).sum(0)/9));close(servo_sigma([y],3)[0],np.std(y[3:],axis=0))
     sigma=np.std(y[3:],axis=0)

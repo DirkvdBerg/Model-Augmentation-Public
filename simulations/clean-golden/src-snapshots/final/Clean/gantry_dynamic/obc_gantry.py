@@ -12,7 +12,7 @@ import copy
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Sequence
 
 import numpy as np
 import torch
@@ -35,15 +35,6 @@ class GantryReferenceSet:
     """The fixed reference tuples (x_tilde^n_i, x_bar_i = 0, u^n_i) over all training records."""
     Z_step: Tensor
     Z_field: Tensor
-    record_ix: Tensor
-    sample_ix: Tensor
-    record_names: list
-    x_phys_next_rec: Optional[Tensor] = None
-
-    @property
-    def n(self) -> int:
-        """Number of tuples N."""
-        return int(self.Z_step.shape[0])
 
 
 def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
@@ -61,23 +52,21 @@ def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
     return (-q[4:] + 8.0 * q[3:-1] - 8.0 * q[1:-3] + q[:-4]) / (12.0 * ts)
 
 
-def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str],
+def build_reference_set(cfg: RunConfig, norm, n_a: int, files: Sequence[str],
                         verbose: bool = True) -> GantryReferenceSet:
     """OBC tuples of the training records.
 
-    (x_tilde^n_i, xbar_i = 0, u^n_i), x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at every sample where qdot exists at
-    i and i + 1; built once, before training, as the points of the orthogonality.
+    (x_tilde^n_i, xbar_i = 0, u^n_i), x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at the samples i = 2 .. N - 4;
+    built once, before training, as the points of the orthogonality.
 
     Args:
         cfg: run configuration.
         norm: normalisation.
-        nx_ann: n_xbar.
+        n_a: n_xbar.
         files: training record file names.
         verbose: print the tuple count.
     Returns:
-        GantryReferenceSet: Z_step (N, 9, 1) and Z_field (N, 9 + n_xbar, 1), normalised; record_ix (N,) indexes
-        files in their supplied order; sample_ix (N,) indexes the record as resampled for training
-        (_record_at_fs_new); x_phys_next_rec (N, 6) is the physical state at sample_ix + 1.
+        GantryReferenceSet: Z_step (N, 9, 1) and Z_field (N, 9 + n_xbar, 1), normalised.
     """
     ts = cfg.ts_new
     x_mean = np.asarray(norm.x_mean, dtype=np.float64).reshape(1, 6)
@@ -86,21 +75,18 @@ def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str],
     std_u = np.asarray(norm.std_u, dtype=np.float64).reshape(1, 3)
 
     # 1. Tuples per record, in physical units.
-    xs, us, rec, samp, xnr = [], [], [], [], []
-    for r, f in enumerate(files):
+    xs, us = [], []
+    for f in files:
         # one training record in float64, resampled as for training
         d = loadmat(os.path.join(traj_dir(cfg), f), squeeze_me=True)
         u, y = (np.asarray(a, dtype=np.float64) for a in _record_at_fs_new(d, cfg))
-        # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at every sample where qdot exists at i and i+1
+        # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at i = 2 .. N - 4: the stencil gives qdot at 2 .. N - 3, and
+        # the last of these is left out to keep the tuple set of the thesis runs
         q = y @ P_INV_T64.T
         qd = fourth_order_central_difference(q, ts)
         k = np.arange(2, len(u) - 3)
-        x_ref = np.hstack([q[k], qd[k - 2]])
-        xnr.append(np.hstack([q[k + 1], qd[k - 1]]))
-        xs.append(x_ref); us.append(u[k])
-        rec.append(np.full(len(k), r)); samp.append(k)
+        xs.append(np.hstack([q[k], qd[k - 2]])); us.append(u[k])
     x_phys = np.concatenate(xs); u_stage = np.concatenate(us)
-    record_ix = np.concatenate(rec); sample_ix = np.concatenate(samp)
 
     # 2. Normalise and stack: x_tilde^n = T_x (x_tilde - mu_x), u^n = T_u (u - mu_u).
     x_n = (x_phys - x_mean) / std_x
@@ -109,12 +95,8 @@ def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str],
     dt = cfg.dtype_pt
     Z_step = torch.from_numpy(np.hstack([x_n, u_n])).to(dt).unsqueeze(-1)
     Z_field = torch.from_numpy(
-        np.hstack([x_n, np.zeros((N, nx_ann)), u_n])).to(dt).unsqueeze(-1)
-    reference = GantryReferenceSet(
-        Z_step=Z_step, Z_field=Z_field,
-        record_ix=torch.from_numpy(record_ix).long(), sample_ix=torch.from_numpy(sample_ix).long(),
-        record_names=[os.path.basename(f) for f in files],
-        x_phys_next_rec=torch.from_numpy(np.concatenate(xnr)))
+        np.hstack([x_n, np.zeros((N, n_a)), u_n])).to(dt).unsqueeze(-1)
+    reference = GantryReferenceSet(Z_step=Z_step, Z_field=Z_field)
     if verbose:
         print('[obc] reference set: %d tuples from %d records' % (N, len(files)))
     return reference
@@ -124,8 +106,7 @@ class GantryOBCCorrection(nn.Module):
     """f_obc^n = E (varphi(beta_lin) a + c f_base^n(beta_lin)) at the current (x_tilde^n, u_hat^n),
     theta_aux = (a, c)."""
 
-    def __init__(self, phy_block: IdentifiableGantryStateBlock, nx: int, nx_phys: int,
-                 route_ix: Sequence[int], dtype: torch.dtype):
+    def __init__(self, phy_block: IdentifiableGantryStateBlock, nx: int, nx_phys: int, dtype: torch.dtype):
         """OBC correction on the protected physical rows.
 
         Routes f_obc^n to the physical rows the network corrects through E; beta_lin and theta_aux start at zero.
@@ -134,16 +115,15 @@ class GantryOBCCorrection(nn.Module):
             phy_block: the identifiable baseline block (beta, f_base^n).
             nx: model state size 6 + n_xbar.
             nx_phys: 6.
-            route_ix: state index of each network output.
             dtype: model dtype.
         Buffers: E (nx, nx_phys) with E_ii = 1 on the protected rows; vbar (10,) beta_lin; theta_frozen (11,) theta_aux.
         """
         super().__init__()
         self._phy = [phy_block]
         self.nx, self.nx_phys = int(nx), int(nx_phys)
-        route_ix = [int(i) for i in route_ix]
-        self.row_ix = tuple(i for i in route_ix if i < self.nx_phys)
-        self.field_cols = tuple(route_ix.index(i) for i in self.row_ix)
+        # every physical row is protected; the network output of state i is column i (one output per state, in order)
+        self.row_ix = tuple(range(self.nx_phys))
+        self.field_cols = self.row_ix
         p = int(phy_block.free_params.numel())
         # E: E_ii = 1 on the protected physical rows, 0 elsewhere
         E = torch.zeros(self.nx, self.nx_phys, dtype=dtype)
@@ -178,7 +158,7 @@ class GantryOBCCorrection(nn.Module):
         alpha = theta[-1]
         return mats, dmats, alpha
 
-    def forward(self, x: Tensor, u: Tensor, obc_pass=None) -> Tensor:
+    def forward(self, x: Tensor, u: Tensor, obc_pass) -> Tensor:
         """OBC correction f_obc^n.
 
         f_obc^n = E (varphi a + c f_base^n(beta_lin)), evaluated at the current physical state and input. Subtracting
@@ -186,13 +166,11 @@ class GantryOBCCorrection(nn.Module):
 
         Args:
             x: (B, nx, 1) x_hat^n_k; u: (B, 3, 1) u_hat^n_k, normalised.
-            obc_pass: this objective's tangent_pair, or None for theta_frozen.
+            obc_pass: this objective's tangent_pair.
         Returns:
             (B, nx, 1) correction, zero on the added rows.
         """
         xb, ub = x[:, : self.nx_phys, :], u
-        if obc_pass is None:
-            obc_pass = self.tangent_pair(self.theta_frozen)
         mats, dmats = obc_pass[:2]
         # f_base^n(beta_lin) and varphi(beta_lin) a, as the tangent of RK4 along beta direction a (zero state tangent).
         fbar, jv = self._phy[0]._rk4_with_tangent(
@@ -267,9 +245,8 @@ def attach_obc(fit_sys, cfg: RunConfig, data, norm):
     """Attach the tuples (built once, before training), the correction f_obc^n and the projection to a model."""
     phy = fit_sys.hfn.connected_blocks[0]
     nx = fit_sys.hfn.nx
-    reference = build_reference_set(cfg, norm, nx_ann=nx - cfg.nx_phys, files=data.train_files)
-    correction = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, route_ix=cfg.ann_route_ix,
-                                     dtype=cfg.dtype_pt)
+    reference = build_reference_set(cfg, norm, n_a=nx - cfg.nx_phys, files=data.train_files)
+    correction = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, dtype=cfg.dtype_pt)
     correction = correction.to(next(phy.parameters()).device)
     baseline64 = make_float64_block(phy)
     projection = OBCProjection(
@@ -277,8 +254,6 @@ def attach_obc(fit_sys, cfg: RunConfig, data, norm):
         basis_builder=make_basis_builder(baseline64, reference, correction.row_ix, chunk=cfg.obc_ref_chunk))
     fit_sys.hfn.obc_correction = correction
     fit_sys.obc = projection
-    fit_sys.obc_reference = reference
     print('[obc] attached: protected rows %s (ANN cols %s), %d reference tuples, '
-          'space=%s, refresh=%s, solve float64, rollout %s'
-          % (correction.row_ix, correction.field_cols, reference.n, cfg.obc_space, cfg.obc_refresh,
-             cfg.dtype_pt))
+          'space=affine, refresh=epoch, solve float64, rollout %s'
+          % (correction.row_ix, correction.field_cols, int(reference.Z_step.shape[0]), cfg.dtype_pt))

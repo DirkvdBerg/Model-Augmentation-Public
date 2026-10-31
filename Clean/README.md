@@ -81,8 +81,9 @@ plain MATLAB. Needs Jasper's unchanged functions in `Thesis-writeup/Code/Data/ve
 | `gtd_save_record.m`, `tdg_seed.m` | record file; deterministic seeds from text keys | Records |
 
 ## Requirements
-Python with PyTorch 2.5.1 (`environment.server-train.yml` in the repository root) and deepSI 0.3.29, installed
-separately; CUDA for full grey-box runs. MATLAB with Simulink R2025a for data generation.
+`environment.yml` pins the environment the thesis results were produced with (Python 3.11.14, PyTorch 2.5.1 with
+CUDA 12.1, deepSI 0.3.29 from its GitHub legacy branch): `conda env create -f environment.yml`. CUDA for full
+grey-box runs. MATLAB with Simulink R2025a for data generation.
 
 ## Attribution
 `model_augmentation/` is adapted from Model-Augmentation-Public by Jan H. Hoekstra (commit 8200923, BSD 3-Clause,

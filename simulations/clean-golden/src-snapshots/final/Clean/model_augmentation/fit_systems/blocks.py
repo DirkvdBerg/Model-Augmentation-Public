@@ -9,8 +9,8 @@ Units: theta and theta_base carry physical units in their declared order; beta a
 dimensionless. Matrix tuple mats = (K, C, A_combined, m_h, alpha, beta, gamma_, N0, N1, N2): K, C, N0, N1, N2
 are (3, 3), A_combined is (6, 15), the rest physical scalars; dmats has the same layout.
 """
-# CHANGED: restricted to the thesis training path; full implementation in
-# model_augmentation/fit_systems/blocks.py at the repository root
+# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
+# commit 8200923 (model_augmentation/__init__.py)
 import torch
 from torch import Tensor, nn
 
@@ -116,8 +116,8 @@ class Linear_Output_Block(Block):
 
 class Discrete_Nonlinear_Function_Block(Block):
     """w = nonlinear_function(z), defined by the subclass."""
-    def forward(self, z: Tensor, mats=None):
-        """Evaluate the subclass's nonlinear map with optional per-objective matrices."""
+    def forward(self, z: Tensor, mats):
+        """Evaluate the subclass's nonlinear map with the matrices of this objective."""
         # CHANGED: mats, the matrices built once per objective, are passed on to nonlinear_function
         return self.nonlinear_function(z, mats)
 
@@ -127,14 +127,13 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
     """Baseline transition f_base^n: one RK4 step over T_s of xdot = F(x, u), with M(Y)^-1 in rational form, in
     normalised coordinates."""
 
-    def __init__(self, Y_op, std_x, std_u, x_mean, u_mean, Ts, up_sample, *args, closed_form=False,
-                 **kwargs) -> None:
-        """Baseline transition f_base^n at the nominal parameters.
+    def __init__(self, std_x, std_u, x_mean, u_mean, Ts, up_sample, *args, closed_form=False, **kwargs) -> None:
+        """Baseline transition f_base^n.
 
-        Stores the nominal matrices at theta^0 and the normalisation, so the block maps normalised states and inputs.
+        Stores the force transform P and the normalisation, so the block maps normalised states and inputs; the
+        trainable subclass builds the matrices of every objective.
 
         Args:
-            Y_op: frozen payload position (evaluation), or None for the scheduled M(Y).
             std_x, x_mean: (6, 1) sigma_x, mu_x.
             std_u, u_mean: (3, 1) sigma_u, mu_u.
             Ts: T_s, seconds.
@@ -146,36 +145,10 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         self.Ts   = Ts
         self.up_sample = up_sample
         self.nx   = 6
-        self.Y_op = Y_op
         # True: xdot = (qdot, a) directly; False: through the LFR output equation (see _deriv_with)
         self.closed_form = closed_form
 
-        # 1. Nominal matrices at theta^0; the trainable subclasses rebuild them at every objective.
-        # d0 = det M(0) = m_h (alpha gamma - beta^2).
-        _alpha, _beta, _gamma, _N0, _N1, _N2 = gantry_ss.build_poly_constants(
-            gantry_ss.m1, gantry_ss.m2, gantry_ss.mb, gantry_ss.mh,
-            gantry_ss.Jb, gantry_ss.Jh, gantry_ss.Lb, gantry_ss.d
-        )
-        _d0 = gantry_ss.mh * (_alpha * _gamma - _beta ** 2)
-
-        _Ax, _Bw, _Bu, _A_combined = gantry_ss.build_G_matrix_entries(
-            _N0, _d0, gantry_ss.M1, gantry_ss.M2, gantry_ss.K, gantry_ss.C)
-
-        self.register_buffer("mh",     gantry_ss.mh.clone())
-        self.register_buffer("alpha",  _alpha.clone())
-        self.register_buffer("beta",   _beta.clone())
-        self.register_buffer("gamma_", _gamma.clone())
-        self.register_buffer("N0",     _N0.clone())
-        self.register_buffer("N1",     _N1.clone())
-        self.register_buffer("N2",     _N2.clone())
-
-        self.register_buffer("Ax",         _Ax.clone())
-        self.register_buffer("Bw",         _Bw.clone())
-        self.register_buffer("Bu",         _Bu.clone())
-        self.register_buffer("A_combined", _A_combined.clone())
-
-        self.register_buffer("K_mat", gantry_ss.K.clone())
-        self.register_buffer("C_mat", gantry_ss.C.clone())
+        # 1. Force transform u = P u_act.
         self.register_buffer("P_mat", gantry_ss.P.clone())
 
         # 2. Normalisation buffers.
@@ -240,24 +213,18 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
                 - (x2[:, 3:] @ C_mat.T)
                 + u_log)
 
-        # 3. Acceleration a = M(Y)^-1 fnet.
-        if self.Y_op is not None:
-            # Frozen scheduling (set by the evaluation): a = M(Y_op)^-1 fnet = N_op fnet / d_op.
-            Y_val = self.Y_op
-            a = (self.N_op @ fnet.T).T / self.d_op
-        else:
-            # Acceleration: a = M(Y)^-1 fnet = (N0 + Y N1 + Y^2 N2) fnet / d(Y),
-            # d(Y) = det M(Y) = m_h (alpha gamma - beta^2 + 2 beta m_h Y + m_h (alpha - m_h) Y^2).
-            Y   = x2[:, 2]
-            dY  = mh * (alpha * gamma_ - beta ** 2
-                        + 2 * beta * mh * Y
-                        + mh * (alpha - mh) * Y ** 2)
-            Y_r = Y.unsqueeze(0)
-            n0f = N0 @ fnet.T
-            n1f = N1 @ fnet.T
-            n2f = N2 @ fnet.T
-            a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]
-            Y_val = Y[:, None]
+        # 3. Acceleration a = M(Y)^-1 fnet = (N0 + Y N1 + Y^2 N2) fnet / d(Y),
+        # d(Y) = det M(Y) = m_h (alpha gamma - beta^2 + 2 beta m_h Y + m_h (alpha - m_h) Y^2).
+        Y   = x2[:, 2]
+        dY  = mh * (alpha * gamma_ - beta ** 2
+                    + 2 * beta * mh * Y
+                    + mh * (alpha - mh) * Y ** 2)
+        Y_r = Y.unsqueeze(0)
+        n0f = N0 @ fnet.T
+        n1f = N1 @ fnet.T
+        n2f = N2 @ fnet.T
+        a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]
+        Y_val = Y[:, None]
 
         # 4. State derivative.
         if self.closed_form:
@@ -294,11 +261,6 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
         (dK, dC, dA_combined,
          dmh, dalpha, dbeta, dgamma_, dN0, dN1, dN2) = dmats
-
-        if self.Y_op is not None:
-            raise NotImplementedError(
-                'the tangent covers the scheduled branch (Y_op=None) only; clear Y_op before using the OBC '
-                'correction')
 
         # every s_* below is the directional derivative of * along (sx, dmats)
         # 1. Denormalise: x = x^n sigma_x + mu_x, s_x = sx sigma_x; u = u^n sigma_u + mu_u, u = P u_act.
@@ -400,18 +362,16 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
 class _TrainableGantryStateBlock(GantryStateBlock):
     """The baseline block whose matrices M_0, M_1, M_2, C, K are rebuilt from a raw fourteen-vector theta."""
 
-    PARAM_NAMES = ["kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
-                   "mh", "m1", "m2", "mb", "Jb", "Jh", "d"]
+    PARAM_NAMES = ("kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
+                   "mh", "m1", "m2", "mb", "Jb", "Jh", "d")
 
-    def __init__(self, RMSE_baseline: float = 1.0, params_init=None, *args, **kwargs) -> None:
+    def __init__(self, *args, params_init, **kwargs) -> None:
         """theta^0 = params_init, and L_b fixed at its nominal value."""
         super().__init__(*args, **kwargs)
 
         params_init = to_tensor(params_init).reshape(14).clone()
 
         self.register_buffer("params_init", params_init)
-        # the scale of the subclass's Lambda_combo buffer
-        self._RMSE_baseline = float(RMSE_baseline)
 
         # L_b fixed at its nominal value, so q is parameter-independent
         self.register_buffer("Lb", gantry_ss.Lb.clone())
@@ -428,7 +388,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
             K and C, each (3, 3), physical units.
         """
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
-         mh, m1, m2, mb, Jb, Jh, d) = p
+         _, _, _, _, _, _, _) = p
         z = p.new_zeros(())
         Lb = self.Lb
         kb_sum, cb_sum = kb1 + kb2, cb1 + cb2
@@ -483,7 +443,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         Returns:
             The tuple above (alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma_ = J_eff), physical units.
         """
-        (kb1, kb2, cg1, cg2, cy, cb1, cb2,
+        (_, _, _, _, _, _, _,
          mh, m1, m2, mb, Jb, Jh, d) = p
         alpha, beta, gamma_, N0, N1, N2 = gantry_ss.build_poly_constants(
             m1, m2, mb, mh, Jb, Jh, self.Lb, d)
@@ -494,19 +454,17 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         _, _, _, A_combined = gantry_ss.build_G_matrix_entries(N0, d0, M1, M2, K, C)
         return (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
 
-    def nonlinear_function(self, z: Tensor, mats=None):
+    def nonlinear_function(self, z: Tensor, mats):
         """Baseline transition f_base^n as a block.
 
         x_tilde^n_{k+1} = f_base^n(theta_base, x_tilde^n_k, u^n_k); the interconnect adds f_aug^n to its output.
 
         Args:
             z: (B, 9, 1) (x_tilde^n_k, u^n_k), normalised.
-            mats: matrices of this objective, or None to rebuild them at the current beta.
+            mats: matrices of this objective (pass_mats).
         Returns:
             (B, 6, 1) x_tilde^n_{k+1}.
         """
-        if mats is None:
-            mats = self._mats_at(self.free_params)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
     def pass_mats(self):
@@ -519,43 +477,44 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
     """The baseline block trained in theta_base = (k_b,Sigma, c_g1, c_g2, c_y, c_b,Sigma, m_h, m_Sigma, m_Delta,
     J_eff, d) through training coordinates beta (free_params), beta = 0 at theta^0_base."""
 
-    COMBO_NAMES = ["kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
-                   "m_total", "m_diff", "J_eff", "d"]
+    COMBO_NAMES = ("kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
+                   "m_total", "m_diff", "J_eff", "d")
     M_TOTAL_IX = 6
     M_DIFF_IX = 7
     J_EFF_IX = 8
+    # raw parameters the gauge section keeps from theta^0
+    MB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('mb')
+    JB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jb')
+    JH_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jh')
     # HEURISTIC: margin gamma = 0.99, m_diff stays within 0.99 of its admissible bound, see _m_diff_bound
     M_DIFF_RHO = 0.99
     COORDINATE_VERSION = 2
 
-    def __init__(self, combo_init=None, *args, **kwargs) -> None:
+    def __init__(self, *args, combo_init, **kwargs) -> None:
         """Baseline block in the training coordinates beta.
 
         beta = 0 at theta^0_base = combo_init, and eta_0, s of the m_Delta map, so every beta is an admissible baseline.
 
         Args:
             combo_init: (10,) theta^0_base, physical.
-            *args, **kwargs: those of _TrainableGantryStateBlock (params_init, RMSE_baseline, normalisation, Ts).
+            *args, **kwargs: those of _TrainableGantryStateBlock (params_init, normalisation, Ts).
         """
         super().__init__(*args, **kwargs)
 
-        # 1. beta = 0 and the scale buffers.
+        # 1. beta = 0 at theta^0_base.
         raw_init = self.params_init
         combo_init = to_tensor(combo_init).reshape(10).to(raw_init.dtype).clone()
 
         self.free_params = nn.Parameter(torch.zeros(10, dtype=raw_init.dtype))
         self.register_buffer("combo_init", combo_init)
-        self.register_buffer(
-            # Lambda_combo,j = RMSE_baseline / |theta^0_base,j| (read by no loss).
-            "Lambda_combo",
-            torch.as_tensor(self._RMSE_baseline, dtype=raw_init.dtype) / combo_init.abs())
 
         # 2. Calibrate the signed coordinate.
         # Start of the m_Delta map: r_0 = m_Delta,0 / b_0, eta_0 = atanh(r_0), s = m_Delta,0 / (b_0 (1 - r_0^2)),
         # so beta = 0 gives m_Delta,0 with slope m_Delta,0, as the nine log coordinates.
-        r0 = combo_init[self.M_DIFF_IX] / self._m_diff_bound(combo_init)
+        bound = self._m_diff_bound(combo_init)
+        r0 = combo_init[self.M_DIFF_IX] / bound
         eta0 = torch.atanh(r0)
-        scale = combo_init[self.M_DIFF_IX] / (self._m_diff_bound(combo_init) * (1 - r0 ** 2))
+        scale = combo_init[self.M_DIFF_IX] / (bound * (1 - r0 ** 2))
         self.register_buffer("coordinate_version", torch.as_tensor(
             self.COORDINATE_VERSION, dtype=torch.int64, device=combo_init.device))
         self.register_buffer("m_diff_eta0", eta0)
@@ -582,8 +541,8 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
             Jb + Jh + (m1 + m2) * Lb ** 2 / 4, d,
         ])
 
-    @staticmethod
-    def gauge_section(combo: Tensor, raw_init: Tensor, Lb) -> Tensor:
+    @classmethod
+    def gauge_section(cls, combo: Tensor, raw_init: Tensor, Lb) -> Tensor:
         """A raw parameter vector with given combinations.
 
         theta with theta_base(theta) = combo: equal splits of the sums, m_b and the ratio J_b : J_h from raw_init. A
@@ -598,8 +557,8 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         """
         kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d = combo
         Lb = torch.as_tensor(Lb, dtype=combo.dtype, device=combo.device)
-        mb = raw_init[10]
-        Jb0, Jh0 = raw_init[11], raw_init[12]
+        mb = raw_init[cls.MB_IX]
+        Jb0, Jh0 = raw_init[cls.JB_IX], raw_init[cls.JH_IX]
         # m_1 + m_2 = m_Sigma - m_b, J_b + J_h = J_eff - (L_b^2/4)(m_1 + m_2), r = J_b0 / (J_b0 + J_h0).
         m_sum = m_total - mb
         J_sum = J_eff - m_sum * Lb ** 2 / 4
@@ -717,5 +676,4 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
 
     def estimation_parameters(self):
         """Names, start values and current values of the identifiable combinations."""
-        return (tuple(self.COMBO_NAMES), self.combo_init.detach(),
-                self.recover_combinations().detach(), "identifiable combinations")
+        return self.COMBO_NAMES, self.combo_init.detach(), self.recover_combinations().detach()

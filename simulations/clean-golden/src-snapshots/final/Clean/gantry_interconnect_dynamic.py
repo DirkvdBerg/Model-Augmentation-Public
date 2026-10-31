@@ -1,4 +1,4 @@
-"""Launch a fresh thesis run, resume, or polish-only rerun; defaults to R1 lowpass on CUDA."""
+"""Launch a fresh thesis run, resume, or polish-only rerun, then evaluate it; defaults to R1 lowpass on CUDA."""
 import argparse
 import json
 import os
@@ -16,6 +16,12 @@ from gantry_dynamic.data import load_datasets, compute_normalization, traj_dir
 from gantry_dynamic.model import build_model, prefit_physical_encoder
 from gantry_dynamic.controller import build_closed_loop
 from gantry_dynamic.training import train, load_checkpoint
+from gantry_dynamic.evaluation import evaluate
+from model_augmentation.fit_systems.closed_loop import SCORE_NAME
+
+# Evaluation
+EVALUATE = True        # evaluate the run after training
+EVAL_RUN_DIR = None    # a run folder: evaluate only that run, no training
 
 
 def _dumps(run_id):
@@ -66,8 +72,9 @@ def _archive_rerun(kind, run_dir, cj, run_id, src):
     return resume_ckpt
 
 
-def main(cfg, run_id=None, rerun=None):
-    """Build and train a fresh run or the requested resume/polish-only rerun; return its final validation score."""
+def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
+    """Build and train a fresh run or the requested resume/polish-only rerun, evaluate it when evaluate_run; return
+    its final validation score."""
     # 1. Run folder.
     # rerun = ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None); None for a fresh run
     # run folder: a fresh run never writes into an existing one
@@ -84,15 +91,12 @@ def main(cfg, run_id=None, rerun=None):
         cj, run_id, src = _rerun_source(kind, sdir, source)
         if kind == 'polish-only':
             cfg = replace(cfg, start_phase='lbfgs')
-    print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s%s'
-          % (cfg.arm, cfg.noise, cfg.start, cfg.n_a, cfg.seed, cfg.nf_seconds, cfg.combo_init_detune,
-             '  SMOKE' if cfg.ps2_smoke else '')
-          + ' g_aug=mlp/live' + ('  PS2' if cfg.ps2 else '  plain')
+    print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s'
+          % (cfg.arm, cfg.noise, cfg.start, cfg.n_a, cfg.seed, cfg.nf_seconds, cfg.combo_init_detune)
+          + ('  PS2' if cfg.ps2 else '  plain')
           + ('  %s from %s' % (rerun[0], rerun[1]) if rerun else ''), flush=True)
 
     # 2. Data and normalisation.
-    np.random.seed(cfg.seed)
-    torch.manual_seed(cfg.seed)
     data = load_datasets(cfg)
     norm = compute_normalization(cfg, data)
 
@@ -102,18 +106,17 @@ def main(cfg, run_id=None, rerun=None):
         os.makedirs(sdir)
         with open(os.path.join(sdir, 'config.json'), 'w') as fh:
             json.dump({**config_json_dict(cfg, git=git_provenance()),
-                       'hp': hp, 'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
+                       'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
 
     # 3. Model and closed loop.
-    # reseed before construction, so loading the data cannot alter the model's initial draws
+    # seed the model's initial draws
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     fit_sys = build_model(hp, cfg, data, norm)
 
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg,
-        train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data,
-        e_train=data.e_train, e_val=data.e_val)
+        train_files=data.train_files, val_files=data.val_files, e_train=data.e_train, e_val=data.e_val)
     print('\nLoss rollout: closed loop (the known controller around the model)')
 
     # 4. Encoder start, or the restored checkpoint.
@@ -123,12 +126,16 @@ def main(cfg, run_id=None, rerun=None):
         prefit_physical_encoder(fit_sys, cfg, data, norm)
     else:
         # the run folder is archived only once data, device and the whole checkpoint have loaded
-        meta = load_checkpoint(fit_sys, src, cfg.joint_estimation, start_phase=cfg.start_phase)
+        meta = load_checkpoint(fit_sys, src, start_phase=cfg.start_phase)
         resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
 
     # 5. Training.
     bestfit = train(fit_sys, hp, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
-    print(f"\nTraining complete. Best validation {cfg.validation_measure}: {bestfit:.6g}")
+    print(f"\nTraining complete. Best validation {SCORE_NAME}: {bestfit:.6g}")
+
+    # 6. Evaluation of the final checkpoint.
+    if evaluate_run:
+        evaluate(sdir, data_root=cfg.data_root)
     return bestfit
 
 
@@ -139,10 +146,12 @@ def cli():
     ap.add_argument('preset', nargs='?', default=None, choices=sorted(PRESETS))
     ap.add_argument('noise', nargs='?', default=None, choices=('lowpass', 'noisefree'))
     ap.add_argument('--cpu', action='store_true', help='device cpu, eager')
-    ap.add_argument('--smoke', action='store_true', help='launch test: 2 s records, 4 updates, 2-iteration polish')
     grp = ap.add_mutually_exclusive_group()
     grp.add_argument('--resume', metavar='RUN_DIR', help='continue the Adam phase of this run folder')
     grp.add_argument('--polish-only', metavar='RUN_DIR', help='polish the pre_lbfgs pair of this run folder')
+    grp.add_argument('--evaluate', metavar='RUN_DIR', default=EVAL_RUN_DIR,
+                     help='evaluate the final checkpoint of this run folder, no training')
+    ap.add_argument('--no-evaluate', action='store_true', help='no evaluation after training')
     ap.add_argument('--from', dest='source', choices=('best', 'last'), default=None,
                     help='deepSI dump a --resume starts from (default best)')
     ap.add_argument('--closed-form', action='store_true',
@@ -151,6 +160,11 @@ def cli():
     ap.add_argument('--data-root', default=DATA_ROOT)
     ap.add_argument('--out-root', default=OUT_ROOT)
     a = ap.parse_args()
+    if a.evaluate is not None:
+        if a.preset is not None or a.noise is not None:
+            ap.error('a run folder fixes the configuration; give no preset or noise with --evaluate')
+        evaluate(a.evaluate, data_root=a.data_root)
+        return
     if a.source is not None and not a.resume:
         ap.error('--from applies to --resume only')
     run_dir = a.resume or a.polish_only
@@ -167,10 +181,7 @@ def cli():
         rerun = ('resume', run_dir, a.source or 'best') if a.resume else ('polish-only', run_dir, None)
     if a.cpu:
         cfg = replace(cfg, device='cpu', compile_mode=None)
-    if a.smoke:
-        cfg = replace(cfg, truncate_s=2.0, compile_mode=None, n_its=4, its_per_val=4,
-                      lbfgs_inner_iter=1, lbfgs_max_iter=2, lbfgs_windows=256, ps2_smoke=True)
-    main(cfg, rerun=rerun)
+    main(cfg, rerun=rerun, evaluate_run=EVALUATE and not a.no_evaluate)
 
 
 if __name__ == '__main__':

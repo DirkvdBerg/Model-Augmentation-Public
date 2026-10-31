@@ -10,10 +10,14 @@ Clean/gantry_dynamic/data.py reverted (the check) and once restored (the measure
     python -u clean-up-verification/r1_check.py RUN_DIR       (MM16 reverted: writes r1_check-reverted.json)
     python -u clean-up-verification/r1_check.py RUN_DIR       (MM16 restored: writes r1_check-final.json and
                                                                reports its largest difference to the reverted run)
+
+RUN_DIR is the thesis folder; it is only read: convert_run.py converts it into r1_check-<state>-run/ (D-284
+amendment 10, R1), which evaluate() reads and writes its evaluation/ into.
 """
 import csv
 import json
 import os
+import shutil
 import sys
 
 
@@ -22,6 +26,7 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(REPO, 'Clean'))
 
 from gantry_dynamic.evaluation import evaluate                   # noqa: E402
+from convert_run import convert_run                               # noqa: E402
 
 CSV = os.path.join(REPO, 'Thesis-writeup', 'Results', '24-10-2026', 'CSV', 'res_errors.csv')
 DATA_PY = os.path.join(REPO, 'Clean', 'gantry_dynamic', 'data.py')
@@ -33,7 +38,10 @@ run_dir = sys.argv[1]
 with open(DATA_PY, encoding='utf-8') as fh:
     state = ('reverted' if 'P_inv_T = np.linalg.inv(P.numpy().T).astype(cfg.dtype_np)' in fh.read() else 'final')
 print('[r1_check] MM16 line: %s' % state, flush=True)
-res = evaluate(run_dir)
+converted = os.path.join(HERE, 'r1_check-%s-run' % state)
+shutil.rmtree(converted, ignore_errors=True)
+print('[r1_check] converted: %s' % json.dumps(convert_run(run_dir, converted)['pairs']), flush=True)
+res = evaluate(converted)
 
 with open(CSV, newline='') as fh:
     ref = {(r['split'], r['run'], r['model'], r['record']): r for r in csv.DictReader(fh)}

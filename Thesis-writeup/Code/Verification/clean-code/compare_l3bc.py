@@ -3,7 +3,9 @@
 3b: outcome fields common to both sides except wall_s (reason included), the parameters after the
 rejected polish (must equal the start state on each side, asserted in the run) and the full state
 after it, bitwise. 3c: both pairs' state_dicts and optimizer entries, .npz except elapsed,
-orig_run_id (the clean rerun keeps the folder's id) and resumed_from (compared by file name),
+orig_run_id (the clean rerun keeps the folder's id) and resumed_from (compared by file name while
+both pairs hold it; the clean pair has none since D-284 amendment 10 R4, its config.json RESUMES
+entry, checked by clean_asserts, records the source),
 lbfgs_outcome as layer 3, val_hist arrays; plus the clean-only assertions written by the run and,
 for ii and iv, the D-278 checks of both sides. The clean-only cases v, vi, vii (step 4c) have no
 golden: their assertions are checked on a clean output made from the current clean tree.
@@ -16,7 +18,7 @@ import torch
 
 import hcommon as H
 from compare import check_fingerprint, d278_kept, output_problems
-from compare_l3 import _cmp_tensors, compare_runs
+from compare_l3 import _cmp_tensors, compare_runs, without_dropped_state
 
 L3B_CASES = ['221-lowpass', '226-lowpass']
 L3C_CASES = ['226-lowpass-i', '226-lowpass-ii', '226-lowpass-iii', '226-lowpass-iv', '221-lowpass-i',
@@ -51,6 +53,7 @@ def run_l3b(cases):
             if o['outcome']['accepted']:
                 out[side + ':accepted'] = 'the forced reject path was not taken'
         gs, cs = torch.load(os.path.join(gdir, 'state.pt')), torch.load(os.path.join(cdir, 'state.pt'))
+        gs = {k: without_dropped_state(v, cs.get(k, {})) for k, v in gs.items()}      # R3
         _cmp_tensors('state', gs, cs, out)
         ok = not out
         ok_all &= ok

@@ -54,7 +54,7 @@ else:
     import dataclasses
     cfg = dataclasses.replace(cfg, out_root=os.path.join(base, 'out'))
     EP.main(cfg, run_id=run_id, evaluate_run=False)          # E1: no evaluation in the harness layers
-    src = os.path.join(base, 'out', '%s_data_lsq' % cfg.mode, run_id)
+    src = os.path.join(base, 'out', cfg.noise, run_id)      # R2: the run family is named after the data set
     shutil.move(src, os.path.join(base, 'run'))
     shutil.rmtree(os.path.join(base, 'out'), ignore_errors=True)   # OneDrive may lock the emptied folder
 H.assert_roots()

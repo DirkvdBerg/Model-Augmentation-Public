@@ -1,0 +1,116 @@
+kind	site	function	detail
+pass-through	Clean/gantry_dynamic/config.py:55	record_trim	calls 3, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py']
+never called (referenced 12 x)	Clean/gantry_dynamic/config.py:158	RunConfig.obc	calls 0, refs 12, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py', 'Thesis-writeup/Code/Evaluation/eval_negation.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py', 'Thesis-writeup/Code/Evaluation/make_results.py']
+never called (referenced 3 x)	Clean/gantry_dynamic/config.py:163	RunConfig.combo_init_detune	calls 0, refs 3, outside -
+pass-through, never called (referenced 24 x)	Clean/gantry_dynamic/config.py:179	RunConfig.hp	calls 0, refs 24, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py']
+pass-through, called once	Clean/gantry_dynamic/config.py:194	save_dir	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_common.py']
+pass-through	Clean/gantry_dynamic/config.py:202	git_provenance._git	calls 3, refs 0, outside -
+pass-through	Clean/gantry_dynamic/config.py:227	config_json_dict	calls 2, refs 0, outside -
+pass-through, called once	Clean/gantry_dynamic/controller.py:36	mass_matrix_at	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:54	stage_frequency_response	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:74	normalized_controller_coefficients	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:89	build_cfb_at	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:116	controller_ss	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:144	register_stored_controller	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:151	controller_design	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/controller.py:192	build_closed_loop	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py']
+called once	Clean/gantry_dynamic/data.py:30	record_files	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py']
+called once	Clean/gantry_dynamic/data.py:42	_register_controller	calls 1, refs 0, outside -
+pass-through	Clean/gantry_dynamic/data.py:80	traj_dir	calls 6, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py']
+called once	Clean/gantry_dynamic/data.py:85	_load_u	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py']
+called once	Clean/gantry_dynamic/data.py:90	_resample_u	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py']
+called once	Clean/gantry_dynamic/data.py:108	_decimate_y	calls 1, refs 0, outside -
+pass-through	Clean/gantry_dynamic/evaluation.py:63	_true_combinations	calls 2, refs 0, outside -
+pass-through, called once	Clean/gantry_dynamic/evaluation.py:76	_true_free	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/gantry_dynamic/evaluation.py:89	_noise_free_twins	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/evaluation.py:98	_split_scores	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/evaluation.py:134	_table	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/evaluation.py:149	_bar_figure	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/evaluation.py:169	_record_figure	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/evaluation.py:195	_loss_figure	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/model.py:137	prefit_physical_encoder	calls 1, refs 0, outside -
+never called (referenced 2 x)	Clean/gantry_dynamic/model.py:180	prefit_physical_encoder.recorder	calls 0, refs 2, outside -
+called once	Clean/gantry_dynamic/model.py:210	least_squares_start	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/obc_gantry.py:40	fourth_order_central_difference	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/obc_gantry.py:55	build_reference_set	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_negation.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/gantry_dynamic/obc_gantry.py:147	GantryOBCCorrection.tangent_pair	calls 1, refs 0, outside -
+pass-through, called once	Clean/gantry_dynamic/obc_gantry.py:182	make_float64_block	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_negation.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/gantry_dynamic/obc_gantry.py:187	make_basis_builder	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_overlap.py']
+never called (referenced 1 x)	Clean/gantry_dynamic/obc_gantry.py:203	make_basis_builder.build	calls 0, refs 1, outside ['Thesis-writeup/Code/Evaluation/eval_frf.py', 'Thesis-writeup/Code/Evaluation/eval_greybox.py', 'Thesis-writeup/Code/Evaluation/eval_negation.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/gantry_dynamic/obc_gantry.py:217	make_reference_field	calls 1, refs 0, outside -
+never called (referenced 2 x)	Clean/gantry_dynamic/obc_gantry.py:231	make_reference_field.field	calls 0, refs 2, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/gantry_dynamic/obc_gantry.py:244	attach_obc	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/training.py:43	resolve_checkpoint	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/training.py:70	load_optimizer_moments	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/training.py:108	_assert_same_dtype	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/training.py:170	ValidationHistory.hist_arrays	calls 1, refs 0, outside -
+pass-through	Clean/gantry_dynamic/training.py:182	ValidationHistory.__call__	calls 0, refs 0, outside -
+called once	Clean/gantry_dynamic/training.py:187	run_lbfgs_polish	calls 1, refs 0, outside -
+called once	Clean/gantry_dynamic/training.py:225	_adam_phase	calls 1, refs 0, outside -
+called once	Clean/gantry_interconnect_dynamic.py:33	_rerun_source	calls 1, refs 0, outside -
+called once	Clean/gantry_interconnect_dynamic.py:52	_archive_rerun	calls 1, refs 0, outside -
+called once	Clean/gantry_interconnect_dynamic.py:75	main	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py', 'Thesis-writeup/Code/Evaluation/eval_frf.py', 'Thesis-writeup/Code/Evaluation/make_results.py']
+called once	Clean/gantry_interconnect_dynamic.py:142	cli	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/blocks.py:119	Discrete_Nonlinear_Function_Block.forward	calls 2, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/blocks.py:331	GantryStateBlock._rk4_with_tangent	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/blocks.py:379	_TrainableGantryStateBlock._build_KC	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/blocks.py:410	_TrainableGantryStateBlock._build_M1M2	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/blocks.py:435	_TrainableGantryStateBlock._mats_from_raw	calls 1, refs 0, outside -
+pass-through, called once	Clean/model_augmentation/fit_systems/blocks.py:457	_TrainableGantryStateBlock.nonlinear_function	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/blocks.py:470	_TrainableGantryStateBlock.pass_mats	calls 1, refs 5, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py']
+called once	Clean/model_augmentation/fit_systems/blocks.py:545	IdentifiableGantryStateBlock.gauge_section	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/blocks.py:607	IdentifiableGantryStateBlock.free_from_combinations	calls 1, refs 0, outside -
+pass-through, called once	Clean/model_augmentation/fit_systems/blocks.py:635	IdentifiableGantryStateBlock.recover_combinations	calls 1, refs 0, outside -
+never called (referenced 1 x)	Clean/model_augmentation/fit_systems/blocks.py:645	IdentifiableGantryStateBlock.transition_from_free	calls 0, refs 1, outside ['Thesis-writeup/Code/Evaluation/eval_negation.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+pass-through, called once	Clean/model_augmentation/fit_systems/blocks.py:659	IdentifiableGantryStateBlock.mats_and_tangent_from_free	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/blocks.py:672	IdentifiableGantryStateBlock._mats_at	calls 2, refs 1, outside -
+called once	Clean/model_augmentation/fit_systems/blocks.py:677	IdentifiableGantryStateBlock.estimation_parameters	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py']
+called once	Clean/model_augmentation/fit_systems/closed_loop.py:165	ClosedLoopSimulator.eager	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/closed_loop.py:202	ClosedLoopSimulator.augment_training_data	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/closed_loop.py:221	ClosedLoopSimulator.verify_by_content	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/closed_loop.py:236	ClosedLoopSimulator.validation_error	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:47	Interconnect._apply	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:172	Interconnect._signal_cone	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:205	Interconnect.init_connection_matrices	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:283	Interconnect.convert_signal_name_to_ix	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:290	Interconnect.parse_connection_function_method	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:307	_replace_with_retry	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:326	DtypeDataLoader.__init__._conv	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:357	SSE_Interconnect.init_model	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/interconnect.py:365	SSE_Interconnect.simulate	calls 2, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/interconnect.py:385	SSE_Interconnect.fit	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/interconnect.py:542	AugmentedModel._epoch_index	calls 2, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/lbfgs_polish.py:66	FixedWindowBatch.__init__._to_tensor	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/lbfgs_polish.py:125	_acceptance	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/lbfgs_polish.py:136	lbfgs_polish	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/lbfgs_polish.py:204	lbfgs_polish._new_opt	calls 2, refs 0, outside -
+never called (referenced 52 x)	Clean/model_augmentation/fit_systems/obc.py:77	OBCBasis.device	calls 0, refs 52, outside ['Thesis-writeup/Code/Evaluation/eval_greybox.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/model_augmentation/fit_systems/obc.py:82	build_stacked_sensitivity	calls 1, refs 0, outside ['Thesis-writeup/Code/Evaluation/eval_negation.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py']
+called once	Clean/model_augmentation/fit_systems/obc.py:175	OBCProjection.maybe_refresh	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/ps2_opening.py:50	calibration_split	calls 1, refs 0, outside -
+never called (referenced 5 x)	Clean/model_augmentation/fit_systems/ps2_opening.py:94	PS2Opening.done	calls 0, refs 5, outside ['Thesis-writeup/Code/Evaluation/eval_blackbox.py', 'Thesis-writeup/Code/Evaluation/eval_greybox.py']
+called once	Clean/model_augmentation/fit_systems/ps2_opening.py:98	PS2Opening.after_step	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/fit_systems/ps2_opening.py:141	PS2Opening.summary_json	calls 2, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/ps2_opening.py:148	PS2Opening._start	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/ps2_opening.py:223	PS2Opening._s1_step	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/ps2_opening.py:251	PS2Opening._cal_unexplained	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/fit_systems/ps2_opening.py:266	PS2Opening._fit_added_state_transition	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/systems/gantry_ss.py:46	build_poly_constants	calls 1, refs 0, outside -
+called once	Clean/model_augmentation/systems/gantry_ss.py:86	build_G_matrix_entries	calls 1, refs 0, outside -
+pass-through	Clean/model_augmentation/utils/deepSI_corrections.py:14	WindowedSystemData.__init__	calls 14, refs 0, outside -
+never called	Clean/model_augmentation/utils/deepSI_corrections.py:18	WindowedSystemData.to_hist_future_data	calls 0, refs 0, outside -
+pass-through	Clean/model_augmentation/utils/torch_nets.py:64	AugmentationNetwork.forward	calls 2, refs 0, outside -
+never called (referenced 16 x)	Clean/model_augmentation/utils/utils.py:8	added	calls 0, refs 16, outside ['Thesis-writeup/Code/Evaluation/eval_common.py', 'Thesis-writeup/Code/Evaluation/eval_frf.py', 'Thesis-writeup/Code/Evaluation/eval_greybox.py', 'Thesis-writeup/Code/Evaluation/eval_overlap.py', 'Thesis-writeup/Code/Evaluation/make_results.py']
+grade E	Clean/gantry_dynamic/evaluation.py:222	evaluate	CC 34, 122 lines
+grade E	Clean/model_augmentation/fit_systems/lbfgs_polish.py:136	lbfgs_polish	CC 31, 172 lines
+grade D	Clean/gantry_dynamic/training.py:269	train	CC 21, 83 lines
+grade C	Clean/gantry_interconnect_dynamic.py:142	cli	CC 18, 43 lines
+grade C	Clean/gantry_dynamic/evaluation.py:98	_split_scores	CC 15, 34 lines
+grade C	Clean/model_augmentation/fit_systems/closed_loop.py:254	closed_loop_free_run_rms_batch	CC 15, 68 lines
+grade C	Clean/model_augmentation/fit_systems/interconnect.py:385	SSE_Interconnect.fit	CC 15, 134 lines
+grade C	Clean/gantry_dynamic/model.py:210	least_squares_start	CC 14, 69 lines
+grade C	Clean/model_augmentation/fit_systems/interconnect.py:120	Interconnect.init_forward	CC 14, 50 lines
+grade C	Clean/model_augmentation/fit_systems/ps2_opening.py:98	PS2Opening.after_step	CC 14, 42 lines
+grade C	Clean/gantry_dynamic/training.py:85	_assert_same_architecture	CC 11, 21 lines
+grade C	Clean/gantry_interconnect_dynamic.py:75	main	CC 11, 65 lines
+grade C	Clean/model_augmentation/fit_systems/interconnect.py:205	Interconnect.init_connection_matrices	CC 11, 41 lines
