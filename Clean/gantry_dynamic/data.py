@@ -1,7 +1,8 @@
 """Data loading (the manifest split of one data set), resampling to the training rate and normalisation.
 
 Conventions: samples are rows, so q = P^-T y is written y @ P^-T.T; superscript n = normalised; x_mean, std_x,
-u_mean, std_u, y0, ystd are mu_x, sigma_x, mu_u, sigma_u, mu_y, sigma_y.
+u_mean, std_u, y0, ystd are mu_x, sigma_x, mu_u, sigma_u, mu_y, sigma_y. y = (X1, X2, Y) the measured stage positions
+[m], q = (X, Theta, Y) the generalised positions [m, rad, m] (beam centre, beam rotation, head position).
 """
 __project_origin__ = "added"
 
@@ -19,28 +20,32 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 from .config import (RunConfig, AA_ORDER, AA_FC_HZ,
                      record_trim, y_decimation)
 
-# the thesis data sets below cfg.data_root, one folder per noise setting
+# the thesis data sets below cfg.data_root, one folder per noise setting; the data-generating system adds tanh Coulomb
+# friction and a hidden mass-spring-damper absorber (MSD) to the baseline, what the augmentation has to learn
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
-# manifest block -> split
+# test-I and test-E: the interpolation and extrapolation test records, one test split scored per record
 _THESIS_SPLIT = {'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
 # the anti-aliasing filter B of _decimate_y, designed once
 SOS = butter(AA_ORDER, AA_FC_HZ, fs=RunConfig.fs_orig, output='sos')
 
 
 def record_files(cfg: RunConfig):
-    """(train, val, test) file names relative to traj_dir(cfg), in manifest order."""
+    """(train, val, test) file names relative to traj_dir(cfg), in manifest order; MANIFEST.csv columns read: block,
+    controller, folder, file (and pair_file in the evaluation)."""
     out = {'train': [], 'val': [], 'test': []}
     with open(os.path.join(traj_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
         for row in csv.DictReader(fh):
             split = _THESIS_SPLIT.get(row['block'])
-            # K1 records only: every thesis record is generated with the controller K1
+            # K1 records only: the bank builds K1 (gain 1); the manifest's other controller, K2-g+ (K1 gains x 1.2), is
+            # left out
             if split is not None and row['controller'] == 'K1':
                 out[split].append('%s/%s.mat' % (row['folder'], row['file']))
     return out['train'], out['val'], out['test']
 
 
 def _register_controller(d, filename):
-    """Register the record's stored controller (meta.controller) for the closed-loop bank."""
+    """Register the record's stored controller (meta.controller with name, design_Y [m], gain, fbw_Hz) for the
+    closed-loop bank."""
     from .controller import register_stored_controller
     ctl = d['meta']['controller'].item()
     get = lambda k: ctl[k].item() if hasattr(ctl[k], 'item') else ctl[k]
@@ -50,7 +55,11 @@ def _register_controller(d, filename):
 
 @dataclass
 class DataBundle:
-    """The records of the three splits: System_data at FS_NEW, file names and servo errors e = y - r."""
+    """The records of the three splits: System_data at FS_NEW, file names and servo errors e = y - r.
+
+    train_data and val_ckpt_data hold the train and val lists as one deepSI System_data_list each, for fit and the
+    validation of checkpoint selection; the per-record code uses the lists.
+    """
     train_list: list
     val_list: list
     test_list: list
@@ -66,7 +75,8 @@ class DataBundle:
 
 @dataclass
 class Norm:
-    """Normalisation constants of the physical states, inputs and outputs, and the output map C^n."""
+    """Normalisation constants of the physical states, inputs and outputs, and the output map C^n (x_tilde^n to
+    y^n); Dd_np is D = 0: the output has no feedthrough, which the closed loop needs (output_only)."""
     x_mean: object
     std_x: object
     std_u: object
@@ -91,7 +101,7 @@ def _resample_u(u, cfg: RunConfig):
     """Actuator force at the model rate.
 
     u_act,k = mean of the D samples of u_act in [k T_s, (k + 1) T_s), D = fs_orig / fs_new: the force held over
-    each sample.
+    each sample, while y_k is the position at k T_s, as the model step x_{k+1} = f(x_k, u_k) assumes.
 
     Args:
         u: (N_sim, 3) u_act at f_sim, newtons.
@@ -109,7 +119,8 @@ def _decimate_y(d, cfg: RunConfig):
     """Measured positions at the model rate.
 
     y_k = r(k T_s) + B(y - r)(k T_s), B = forward-backward Butterworth (order 8, 1.6 kHz), on the lowpass data set;
-    point sampling y_k = y(k T_s) otherwise. Only the servo error is filtered.
+    point sampling y_k = y(k T_s) otherwise, since without encoder noise y holds no content near fs_new / 2 to alias.
+    Only the servo error is filtered: r is known and noise-free, so it is kept exactly.
 
     Args:
         d: the record; cfg: run configuration.
@@ -138,7 +149,8 @@ def _record_at_fs_new(d, cfg: RunConfig, fields=()):
 
 
 def _load_record(filename, cfg: RunConfig, folder=None):
-    """Load a record once and return (System_data, servo error), using folder when supplied."""
+    """Load a record once and return (System_data, servo error), using folder when supplied; the .mat record holds
+    u_total, y, r_sim at fs_orig and meta.controller."""
     d = loadmat(os.path.join(folder or traj_dir(cfg), filename), squeeze_me=True)
     _register_controller(d, filename)
     u, y, r = _record_at_fs_new(d, cfg, ('r_sim',))
@@ -154,7 +166,8 @@ def servo_sigma(e_list, k0):
     (W_r) and the validation NRMS_e.
 
     Args:
-        e_list: per record (N, 3) servo errors, metres; k0: first scored sample (n + 1).
+        e_list: per record (N, 3) servo errors, metres; k0: first scored sample n + 1, the first with a full encoder
+            window.
     Returns:
         (n_records, 3) sigma_e.
     """
@@ -220,7 +233,8 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     for t in data.train_list:
         # Positions: q = P^-T y (so the position means are P^-T mu_y).
         pos_generalised = (P_inv_T @ t.y.T).T
-        # Velocities: qdot_k = (q_k - q_{k-1}) / T_s for k >= 1, qdot_0 = qdot_1.
+        # Velocities: qdot_k = (q_k - q_{k-1}) / T_s for k >= 1, qdot_0 = qdot_1; they only set mu_x, sigma_x, and the
+        # noise of the lowpass set can enlarge the velocity sigma.
         vel_generalised = np.diff(pos_generalised, axis=0) * cfg.fs_new
         vel_generalised = np.vstack([vel_generalised[:1], vel_generalised])
         x_generalised_list.append(np.hstack([pos_generalised, vel_generalised]))

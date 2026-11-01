@@ -40,7 +40,9 @@ TEX = {'Theta': r'$\Theta$'}
 def _without_learned(fit_sys, free=None):
     """Baseline-only copy of a model.
 
-    The network gate and theta_aux set to zero, optionally at another beta, so the copy simulates the baseline alone.
+    The network gate and theta_aux (the OBC coefficient, so f_obc^n, which the gate does not reach) set to zero,
+    optionally at another beta, so the copy simulates the baseline alone. It keeps the trained encoder for its initial
+    state; with the gate at zero the added states no longer act.
 
     Args:
         fit_sys: the augmented model; free: (10,) beta, or None to keep the current one.
@@ -63,7 +65,8 @@ def _without_learned(fit_sys, free=None):
 def _true_combinations(phy):
     """Identifiable combinations of the data-generating parameters.
 
-    theta_base(theta^0), the combinations of the raw parameters theta^0 the data were generated with.
+    theta_base(theta^0), the combinations of the raw parameters theta^0 the data were generated with: params_init,
+    the gantry_ss nominal values on every arm (float32-rounded), so editing gantry_ss changes them.
 
     Args:
         phy: the identifiable baseline block.
@@ -100,7 +103,8 @@ def _split_scores(models, sdl, e_list, e_nf_list, bank, rows, k0):
 
     One closed-loop free run per record and model gives y_hat; per frame and axis j, with T the frame map
     (identity or P^-T): RMS_j = (mean over k >= k0 of (T(y_hat - y))_j,k^2)^(1/2), NRMS_e,j = RMS_j / sigma_e,j,
-    sigma_e = servo_sigma of T e, and the floor = RMS of T(e - e_nf) over sigma_e.
+    sigma_e = servo_sigma of T e, and the floor = RMS of T(e - e_nf) over sigma_e, the score of a model that
+    predicts the noise-free servo error exactly.
 
     Args:
         models: model key -> model (augmented, trained and true baseline).
@@ -178,6 +182,7 @@ def _record_figure(path, title, names, t, residual, ref, nrms, floor):
         axs[i].text(1.008, 0.5, 'NRMS$_e$\nbaseline %.3f\naugmented %.3f\nfloor %.4f'
                     % (nrms['trained'][i], nrms['augmented'][i], floor[i]),
                     transform=axs[i].transAxes, va='center', fontsize=7.5)
+    # the X and Y motion of the record: references of axes 2 and 0
     axs[3].plot(t, ref[:, 2], color='k', lw=1, label=names[2])
     axs[3].plot(t, ref[:, 0], color='0.55', lw=1, label=names[0])
     axs[3].set_ylabel('reference (m)')
@@ -242,6 +247,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
     norm = compute_normalization(cfg, data)
     fit_sys = build_model(cfg.hp, cfg, data, norm)
     ckpt = os.path.join(run_dir, 'gantry_ckpt_%s' % run_id)
+    # start_phase 'lbfgs': the weights only, no Adam moments
     polish = json.loads(str(load_checkpoint(fit_sys, ckpt, start_phase='lbfgs')
                             .get('lbfgs_outcome', '{}')))
     phy = next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'free_params'))
@@ -268,6 +274,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
     offset = 0
     for split, split_files in zip(SPLITS, files):
         sdl, e_list = getattr(data, split + '_list'), getattr(data, 'e_' + split)
+        # the twin is resampled and trimmed as its record, so e - e_nf compares the same samples
         e_nf = (e_list if twins is None else
                 [_load_record(twins[f], cfg, folder=cfg.data_root)[1] for f in split_files])
         preds, res = _split_scores(models, sdl, e_list, e_nf, bank, rows[offset:offset + len(sdl)], k0)
@@ -275,6 +282,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         records = [os.path.basename(f).split('_')[0] for f in split_files]
         results[split] = dict(res, records=records)
         refs = [np.asarray(sd.y) - e for sd, e in zip(sdl, e_list)]
+        # t = 0 at the first sample kept after the edge trim
         t = [np.arange(len(r)) * cfg.ts_new for r in refs]
         os.makedirs(os.path.join(out_dir, split, 'records'), exist_ok=True)
         for i, rec in enumerate(records):
@@ -300,7 +308,8 @@ def evaluate(run_dir, data_root=DATA_ROOT):
             del s['residual']
     print('\n'.join(tables['stage'] + ['', 'GENERALISED FRAME (X, Theta, Y)'] + tables['generalised']), flush=True)
 
-    # 3. Physical parameters: true, start and learned identifiable combinations.
+    # 3. Physical parameters: true, start and learned identifiable combinations, in COMBO_NAMES order and the physical
+    # units of theta_base.
     with torch.no_grad():
         names, start, learned = phy.estimation_parameters()
         true = _true_combinations(phy)

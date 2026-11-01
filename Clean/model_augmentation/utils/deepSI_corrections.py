@@ -12,7 +12,8 @@ import numpy as np
 class WindowedSystemData(System_data):
     """System_data whose training windows keep the data's dtype: deepSI's stride-1 path casts them to float32."""
     def __init__(self, u=None, y=None, x=None, cheat_n=0, normed=False, dt=None):
-        """deepSI's System_data."""
+        """deepSI's System_data; x (a state record) is accepted and dropped, cheat_n is deepSI's first simulated
+        sample in its evaluation (0), normed marks normalised data, dt = T_s [s]."""
         super().__init__(u=u, y=y, cheat_n=cheat_n, normed=normed, dt=dt)
 
     def to_hist_future_data(self, na=10, nb=10, nf=5, na_right = 0, nb_right = 0, stride=1, \
@@ -20,10 +21,12 @@ class WindowedSystemData(System_data):
         """Training windows of a record.
 
         chi_tau = (y[tau - na:tau], u[tau - nb:tau]) and the futures [tau:tau + nf], for window ends tau + nf at the
-        stride (deepSI's loop, for every stride).
+        stride.
 
         Args:
-            na, nb: history lengths (n + 1); nf: n_f; stride: window stride; other arguments as deepSI's.
+            na, nb: history lengths (n + 1); nf: n_f; stride: window stride; na_right, nb_right: samples from tau on
+                added to the histories (0 here); force_multi_u, force_multi_y, online_construct: deepSI's
+                signature, unused.
         Returns:
             uhist, yhist, ufuture, yfuture, each (n_windows, length, 3).
         """
