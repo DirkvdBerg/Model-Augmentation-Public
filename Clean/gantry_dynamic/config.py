@@ -13,19 +13,18 @@ import torch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO_ROOT = os.path.dirname(ROOT)
-DATA_ROOT = os.path.join(REPO_ROOT, 'Thesis-writeup', 'Data')
-OUT_ROOT = os.path.join(REPO_ROOT, 'simulations', 'gantry_clean')
+# default folders; --data-root and --out-root override them
+DATA_ROOT = os.path.join(REPO_ROOT, 'Thesis-writeup', 'Data')      # the data sets made by Clean/data_generation/
+OUT_ROOT = os.path.join(REPO_ROOT, 'simulations', 'gantry_clean')  # run folders <out_root>/<noise>/<run_id>
 
-# HEURISTIC: order 8, fc = 0.8 of the 2 kHz Nyquist frequency of the 4 kHz training rate
-# THEORY: zero-phase Butterworth magnitude 1 / (1 + x^16), x = tan(pi f / fs) / tan(pi fc / fs) (the order-8
-#   response squared by the forward-backward pass): DC gain 1, error 1.7e-12 at 300 Hz and 4.4e-4 at 1 kHz
+# anti-aliasing filter of the lowpass data set: zero-phase Butterworth on y - r, before decimation to fs_new
+# HEURISTIC: fc = 0.8 x the 2 kHz Nyquist frequency of fs_new = 4 kHz; change AA_FC_HZ when fs_new changes
+# THEORY: forward-backward pass squares the order-8 magnitude, |H| = 1 / (1 + x^16), x = tan(pi f/fs) / tan(pi fc/fs)
 AA_ORDER, AA_FC_HZ = 8, 1600.0
-# HEURISTIC: the filter's edge transient stays above 0.01 of the in-band noise for at most 4.6 ms on the 36
-# records; rounded up to whole ms
-AA_TRIM_S = 0.005
+# HEURISTIC: the filter's edge transient exceeds 0.01 of the in-band noise for at most 4.6 ms on the 36 records
+AA_TRIM_S = 0.005  # [s] cut from both ends of every record, on both data sets, to drop the edge transients
 
-# the thesis runs: OBC or unconstrained arm, correct or detuned start, n_a = n_{bar x} added states, PS2 opening
-# or plain
+# the thesis rows; any other combination of the allowed values also runs
 PRESETS = {
     'R1': dict(arm='obc', start='detuned', n_a=2, ps2=True),
     'R2': dict(arm='obc', start='correct', n_a=2, ps2=True),
@@ -38,13 +37,11 @@ PRESETS = {
     'R14': dict(arm='u', start='detuned', n_a=0, ps2=False),
 }
 
-# config.json keys of the run environment fields, read back by from_config_json
+# config.json key of each run-environment field
 _ENV_KEYS = dict(device='DEVICE', compile_mode='COMPILE_MODE', truncate_s='TRUNCATE_S',
                  epochs='EPOCHS', n_its='N_ITS', its_per_val='ITS_PER_VAL',
                  lbfgs_max_iter='LBFGS_MAX_ITER', lbfgs_inner_iter='LBFGS_INNER_ITER',
-                 lbfgs_windows='LBFGS_WINDOWS', ps2_smoke='PS2_SMOKE')
-# config.json keys only the clean code writes
-_CLEAN_KEYS = ('ARM', 'START', 'N_A', 'NOISE', 'PS2_SMOKE', 'DATA_ROOT', 'OUT_ROOT', 'LAST_SAVE', 'CODE')
+                 lbfgs_windows='LBFGS_WINDOWS', baseline_form='BASELINE_FORM')
 
 
 def y_decimation(cfg) -> str:
@@ -56,81 +53,71 @@ def y_decimation(cfg) -> str:
 
 def record_trim(cfg) -> int:
     """Return samples trimmed at each FS_NEW record end; sample i maps to FS_ORIG index (i + trim) D."""
-    return int(round(AA_TRIM_S * cfg.fs_new))
+    return round(AA_TRIM_S * cfg.fs_new)
 
 
 @dataclass(frozen=True)
 class RunConfig:
-    """One thesis run: the five axes, the run environment and the fixed settings."""
-    arm: str
-    start: str
-    n_a: int
-    ps2: bool
-    noise: str
-    # run environment: production defaults, changed only by the CLI flags, main (start_phase) and the harness
-    device: str = 'cuda'
-    compile_mode: Optional[str] = 'reduce-overhead'
-    truncate_s: Optional[float] = None
-    epochs: int = 200
-    n_its: Optional[int] = None
-    its_per_val: int = 1300
-    lbfgs_max_iter: int = 100
-    lbfgs_inner_iter: int = 20
-    lbfgs_windows: int = 16384
-    ps2_smoke: bool = False
-    start_phase: str = 'adam'
-    # roots: recorded in config.json, never read back from it
+    """One run: the five axes, the run environment and the fixed settings."""
+    # the five axes (the thesis rows are in PRESETS)
+    arm: str    # 'obc': the network cannot mimic a change of the baseline parameters; 'u': unconstrained
+    start: str  # baseline parameters at the start: 'correct' (nominal) or 'detuned' (each of the ten +-10 %)
+    n_a: int    # number of added states; 0: the network only corrects the physical states
+    ps2: bool   # True: the PS2 opening (ps2_opening.py) first fits the added states; meant for n_a > 0
+    noise: str  # data set: 'lowpass' (with measurement noise) or 'noisefree'
+
+    # run environment, set by the CLI flags (HEURISTIC: thesis budgets)
+    device: str = 'cuda'                             # 'cuda' or 'cpu'
+    compile_mode: Optional[str] = 'reduce-overhead'  # CUDA graphs for the training rollouts, faster; None on the CPU
+    truncate_s: Optional[float] = None               # [s] use only the start of each record, for trial runs
+    epochs: int = 200                                # Adam budget in epochs (passes over the training windows)
+    n_its: Optional[int] = None                      # Adam budget in updates instead; validates at start and end only
+    its_per_val: int = 1300                          # Adam updates between validations (checkpoint selection)
+    lbfgs_max_iter: int = 100                        # L-BFGS polish: total iterations
+    lbfgs_inner_iter: int = 20                       # L-BFGS polish: iterations per step() call
+    lbfgs_windows: int = 16384                       # L-BFGS polish: windows in its fixed batch; lower if out of memory
+    start_phase: str = 'adam'                        # 'adam': Adam, then the polish; 'lbfgs': the polish only
+    baseline_form: str = 'lfr'                       # baseline derivative via the LFR or 'closed' form; same result
     data_root: str = DATA_ROOT
     out_root: str = OUT_ROOT
 
-    # fixed settings of the thesis runs under the mainline names; config_json_dict writes them and the
-    # evaluation reads several
-    seed: ClassVar[int] = 1
-    nx_phys: ClassVar[int] = 6
-    nu: ClassVar[int] = 3
-    ny: ClassVar[int] = 3
-    fs_orig: ClassVar[int] = 20000
-    fs_new: ClassVar[int] = 4000
-    stride: ClassVar[int] = 10
-    nf_seconds: ClassVar[float] = 0.100
-    na_nb: ClassVar[int] = 30
-    n_nodes_per_layer: ClassVar[int] = 16
-    n_hidden_layers: ClassVar[int] = 2
-    up_sample: ClassVar[int] = 1
-    batch_size: ClassVar[int] = 512
-    lr: ClassVar[float] = 1e-5
-    adam_eps: ClassVar[float] = 1e-16
-    param_prior: ClassVar[bool] = False
-    # HEURISTIC: the measured initial square root loss; only the Lambda_combo buffer uses it, and no loss reads it
-    param_rmse_baseline: ClassVar[float] = 0.01
-    use_f64: ClassVar[bool] = True
-    joint_estimation: ClassVar[bool] = True
-    lbfgs: ClassVar[bool] = True
-    encoder_init: ClassVar[str] = 'data_lsq'
-    validation_measure: ClassVar[str] = 'sim-NRMSe'
-    controller_gain: ClassVar[bool] = False
-    lbfgs_history: ClassVar[int] = 50
-    # HEURISTIC: fixed gradient and loss-change tolerances for the servo-weighted objective
-    lbfgs_tol_grad: ClassVar[float] = 2.6e-5
-    lbfgs_tol_change: ClassVar[float] = 2.6e-7
-    obc_space: ClassVar[str] = 'affine'
-    obc_refresh: ClassVar[str] = 'epoch'
-    obc_rank_rtol: ClassVar[Optional[float]] = None
-    obc_ref_successor: ClassVar[bool] = True
-    obc_ref_chunk: ClassVar[int] = 16384
-    # derived; nf = steps per training window (n_f), also the length of the gradient path
-    d: ClassVar[int] = fs_orig // fs_new
-    ts_new: ClassVar[float] = 1.0 / fs_new
-    nf: ClassVar[int] = max(1, int(nf_seconds / ts_new))
+    # system and sampling
+    seed: ClassVar[int] = 1              # initial weights, detune signs, polish batch, PS2 (Adam batch order: seed 0)
+    nx_phys: ClassVar[int] = 6           # physical states: positions X, Theta, Y [m, rad, m] and their velocities
+    nu: ClassVar[int] = 3                # inputs: actuator forces F_X1, F_X2, F_Y [N]
+    ny: ClassVar[int] = 3                # outputs: measured positions X1, X2, Y [m]
+    fs_orig: ClassVar[int] = 20000       # [Hz] sample rate of the data sets (THEORY: data_generation/tdg_config.m)
+    fs_new: ClassVar[int] = 4000         # [Hz] training rate; fs_orig / fs_new must be an integer (HEURISTIC)
+    # training windows (HEURISTIC: thesis values)
+    stride: ClassVar[int] = 10           # samples between window starts; 1 gives 10x more windows per epoch
+    nf_seconds: ClassVar[float] = 0.100  # [s] simulated length of each window
+    na_nb: ClassVar[int] = 30            # past samples of y and u the encoder sees
+    # networks: augmentation phi_aug and encoder psi_tilde (HEURISTIC: thesis values)
+    n_nodes_per_layer: ClassVar[int] = 16  # width of each hidden tanh layer
+    n_hidden_layers: ClassVar[int] = 2     # number of hidden layers
+    up_sample: ClassVar[int] = 1           # RK4 steps per sample; more is more accurate and slower
+    # Adam (HEURISTIC: thesis values)
+    batch_size: ClassVar[int] = 512      # windows per update
+    lr: ClassVar[float] = 1e-5           # learning rate, all parameters
+    adam_eps: ClassVar[float] = 1e-16    # below the 1e-8 default, for float64
+    # L-BFGS polish (HEURISTIC: thesis values)
+    lbfgs_history: ClassVar[int] = 50            # curvature pairs kept
+    lbfgs_tol_grad: ClassVar[float] = 2.6e-5     # stop when the largest loss gradient is below this
+    lbfgs_tol_change: ClassVar[float] = 2.6e-7   # stop when the loss or the step changes less than this
+    obc_ref_chunk: ClassVar[int] = 16384         # OBC basis build: points per batch; memory only, same result
+    # derived
+    d: ClassVar[int] = fs_orig // fs_new                  # decimation factor
+    ts_new: ClassVar[float] = 1.0 / fs_new                # [s] training sample time
+    nf: ClassVar[int] = max(1, int(nf_seconds / ts_new))  # simulation steps per window
     dtype_np: ClassVar[type] = np.float64
     dtype_pt: ClassVar[torch.dtype] = torch.float64
 
     def __post_init__(self):
-        """Check the axis and environment values, which arrive from the CLI, a config.json or the harness."""
+        """Check the axis and environment values, which arrive from the CLI or a config.json."""
         allowed = dict(arm=('obc', 'u'), start=('detuned', 'correct'), n_a=(0, 2, 8), ps2=(False, True),
                        noise=('lowpass', 'noisefree'), device=('cpu', 'cuda'),
-                       compile_mode=(None, 'default', 'reduce-overhead', 'max-autotune'),
-                       start_phase=('adam', 'lbfgs'))
+                       compile_mode=(None, 'reduce-overhead'),
+                       start_phase=('adam', 'lbfgs'), baseline_form=('lfr', 'closed'))
         for name, values in allowed.items():
             if getattr(self, name) not in values:
                 raise ValueError('%s must be one of %s, got %r' % (name, values, getattr(self, name)))
@@ -140,56 +127,51 @@ class RunConfig:
 
     @classmethod
     def from_config_json(cls, meta, **overrides):
-        """Read a supported run configuration, taking roots and start_phase from defaults or overrides."""
-        if meta.get('CODE') == 'clean':
-            axes = dict(arm=meta['ARM'], start=meta['START'], n_a=int(meta['N_A']), ps2=bool(meta['PS2']),
-                        noise=meta['NOISE'])
-        else:
-            axes = dict(arm='obc' if meta['OBC'] else 'u',
-                        start='correct' if meta['COMBO_INIT_DETUNE'] is None else 'detuned',
-                        n_a=int(meta['NX_ANN']), ps2=bool(meta.get('PS2', False)),
-                        noise={'thesis_taf_lowpass_noise': 'lowpass',
-                               'thesis_taf_noisefree': 'noisefree'}[meta['MODE']])
-        cfg = cls(**axes, **{f: meta[k] for f, k in _ENV_KEYS.items() if k in meta})
+        """Read the configuration of a run folder written by this code; overrides set roots, device and
+        start_phase. Every recorded setting must equal this code's, so a folder written with other settings is
+        refused."""
+        # CODE = 'clean' marks a config.json written by config_json_dict; other folders need converting first
+        if meta.get('CODE') != 'clean':
+            raise ValueError('config.json was not written by this code (CODE %r); convert the run folder with '
+                             'clean-up-verification/convert_run.py' % meta.get('CODE'))
+        cfg = cls(arm=meta['ARM'], start=meta['START'], n_a=int(meta['N_A']), ps2=bool(meta['PS2']),
+                  noise=meta['NOISE'], **{f: meta[k] for f, k in _ENV_KEYS.items() if k in meta})
         want = json.loads(json.dumps(config_json_dict(cfg)))
-        skip = set(_ENV_KEYS.values()) | set(_CLEAN_KEYS) | {'GIT', 'NF_PROBE_PRINT', 'START_PHASE'}
-        bad = {k: (want[k], meta.get(k, '<missing>')) for k in want
-               if k not in skip and meta.get(k, '<missing>') != want[k]}
+        bad = {k: (v, meta.get(k, '<missing>')) for k, v in want.items()
+               if k != 'GIT' and meta.get(k, '<missing>') != v}
         if bad:
-            raise ValueError('config.json has settings outside the thesis runs (key: (expected, file)): %s; '
-                             'run this folder with the mainline code' % bad)
+            raise ValueError('config.json was written with other settings (key: (this code, file)): %s; use the '
+                             'code of its GIT entry' % bad)
         return replace(cfg, **overrides)
 
     @property
     def obc(self) -> bool:
+        """True on the OBC arm."""
         return self.arm == 'obc'
 
     @property
-    def nx_ann(self) -> int:
-        return self.n_a
-
-    @property
-    def ann_route_ix(self) -> tuple:
-        return tuple(range(6 + self.n_a))
-
-    @property
-    def mode(self) -> str:
-        return {'lowpass': 'thesis_taf_lowpass_noise', 'noisefree': 'thesis_taf_noisefree'}[self.noise]
-
-    @property
     def combo_init_detune(self):
+        """Detuned start of the baseline parameters.
+
+        theta^0_base,j = theta_base,j(theta^0) (1 + 0.1 s_j), s_j = +-1 drawn from the seed; build_model applies the
+        multipliers, so a seed fixes the direction and its noisy and noise-free runs share it.
+
+        Returns:
+            list of 10 dimensionless multipliers 1 + 0.1 s_j, in the order of
+            IdentifiableGantryStateBlock.COMBO_NAMES (k_b,Sigma, c_g1, c_g2, c_y, c_b,Sigma, m_h, m_Sigma, m_Delta,
+            J_eff, d), or None on the correct arm.
+        """
         if self.start == 'correct':
             return None
-        # HEURISTIC: 10 % per combination, the sign of each drawn from the seed, so a seed fixes the direction
-        # and its noisy and noise-free runs share it
+        # HEURISTIC: 10 % detuning
         signs = np.random.default_rng(self.seed).choice([-1.0, 1.0], size=10)
         return [float(1.0 + 0.10 * s) for s in signs]
 
     @property
     def hp(self) -> dict:
-        """The hyperparameter dict; its keys and order are those of the checkpoint .npz field hp."""
+        """The hyperparameter dict that build_model and train read."""
         return dict(
-            NX_ANN=self.nx_ann,
+            n_a=self.n_a,
             n_nodes_per_layer=self.n_nodes_per_layer,
             n_hidden_layers=self.n_hidden_layers,
             up_sample=self.up_sample,
@@ -202,14 +184,15 @@ class RunConfig:
 
 
 def save_dir(cfg: RunConfig) -> str:
-    """Output folder of the run family; the caller creates the run folder below it."""
-    return os.path.join(cfg.out_root, f'{cfg.mode}_{cfg.encoder_init}')
+    """Output folder of the run family, one per data set; the caller creates the run folder below it."""
+    return os.path.join(cfg.out_root, cfg.noise)
 
 
 @functools.lru_cache(maxsize=1)
 def git_provenance() -> str:
     """The code that produced this run, e.g. '0bded3d Augmentation dirty:302 diff:3b437e0c'."""
     def _git(*args):
+        """stdout of one git command in the repository."""
         return subprocess.run(('git',) + args, cwd=REPO_ROOT, capture_output=True,
                               text=True, check=True).stdout.strip()
     try:
@@ -234,83 +217,28 @@ def git_provenance() -> str:
 
 
 def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
-    """Return mainline configuration keys in their original order, then Clean keys and GIT."""
+    """The run's settings as config.json records them, read back by RunConfig.from_config_json: the five axes, the
+    run environment, the fixed settings the code computes with, CODE (this code wrote the folder) and GIT."""
     return dict(
-        MODE=cfg.mode, ENCODER_INIT=cfg.encoder_init,
-        ANN_ACTIVATION='tanh',
-        ANN_ARCH='mlp',
-        G_INIT='live',
-        LIVE_G_WEIGHT_INIT='kaiming_uniform_a_sqrt5',
-        WA_ENCODER_INIT='xavier_uniform_gain1',
-        FS_NEW=cfg.fs_new, D=cfg.d,
-        FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=None,
-        JOINT_ESTIMATION=cfg.joint_estimation,
-        PHYSICS_PARAMETERIZATION='reduced',
-        PARAM_RMSE_BASELINE=cfg.param_rmse_baseline,
-        PARAM_INIT_DETUNE=None,
-        COMBO_INIT_DETUNE=cfg.combo_init_detune,
-        ORTH_BETA=4.66e-4,
-        ORTH_POINT_STRIDE=100,
-        ORTH_RANK_TOL=1e-12,
-        CLOSED_LOOP=True,
-        ADAM_EPS=cfg.adam_eps,
-        ORTH=False,
-        ANN_ROUTE_IX=list(cfg.ann_route_ix),
+        ARM=cfg.arm, START=cfg.start, N_A=cfg.n_a, PS2=cfg.ps2, NOISE=cfg.noise,
+        **{key: getattr(cfg, field) for field, key in _ENV_KEYS.items()},
+        FS_ORIG=cfg.fs_orig,
+        FS_NEW=cfg.fs_new,
+        Y_DECIMATION=y_decimation(cfg),
+        RECORD_TRIM=record_trim(cfg),
+        SEED=cfg.seed,
         STRIDE=cfg.stride,
-        N_ITS=cfg.n_its,
-        ITS_PER_VAL=cfg.its_per_val,
         NF_SECONDS=cfg.nf_seconds,
-        USE_F64=cfg.use_f64,
-        SAVE_FLAG=True,
-        NF_PROBE_PRINT=False,
-        NX_ANN=cfg.nx_ann,
+        NA_NB=cfg.na_nb,
         N_NODES_PER_LAYER=cfg.n_nodes_per_layer,
         N_HIDDEN_LAYERS=cfg.n_hidden_layers,
         UP_SAMPLE=cfg.up_sample,
         BATCH_SIZE=cfg.batch_size,
         LR=cfg.lr,
-        EPOCHS=cfg.epochs,
-        NF=cfg.nf,
-        NA_NB=cfg.na_nb,
-        DEVICE=cfg.device,
-        CHECKPOINT_CHUNK=0,
-        COMPILE_MODE=cfg.compile_mode,
-        LBFGS=cfg.lbfgs,
-        LBFGS_MAX_ITER=cfg.lbfgs_max_iter,
-        LBFGS_INNER_ITER=cfg.lbfgs_inner_iter,
+        ADAM_EPS=cfg.adam_eps,
         LBFGS_HISTORY=cfg.lbfgs_history,
-        LBFGS_WINDOWS=cfg.lbfgs_windows,
-        LBFGS_CHUNK=None,
         LBFGS_TOL_GRAD=cfg.lbfgs_tol_grad,
         LBFGS_TOL_CHANGE=cfg.lbfgs_tol_change,
-        LBFGS_FREEZE=[],
-        LBFGS_TIME_BUDGET_S=None,
-        LBFGS_METER_REL_TOL=0.001,
-        START_PHASE=cfg.start_phase,
-        PARAM_PRIOR=cfg.param_prior,
-        STATIC_PASS_BUFFERS=False,
-        OBC=cfg.obc,
-        OBC_SPACE=cfg.obc_space,
-        OBC_REFRESH=cfg.obc_refresh,
-        OBC_REF_CHUNK=cfg.obc_ref_chunk,
-        OBC_RANK_RTOL=cfg.obc_rank_rtol,
-        TRUNCATE_S=cfg.truncate_s,
-        CONTROLLER_GAIN=cfg.controller_gain,
-        PS2=cfg.ps2,
-        Y_DECIMATION=y_decimation(cfg),
-        RECORD_TRIM=record_trim(cfg),
-        LOSS_WEIGHTING='servo',
-        VALIDATION_MEASURE=cfg.validation_measure,
-        LBFGS_METERS_GATE=False,
-        OBC_REF_SUCCESSOR=cfg.obc_ref_successor,
-        ARM=cfg.arm,
-        START=cfg.start,
-        N_A=cfg.n_a,
-        NOISE=cfg.noise,
-        PS2_SMOKE=cfg.ps2_smoke,
-        DATA_ROOT=cfg.data_root,
-        OUT_ROOT=cfg.out_root,
-        LAST_SAVE='every validation',
         CODE='clean',
         GIT=git,
     )
