@@ -15,8 +15,9 @@ from datetime import datetime
 AXES = dict(arm='u', start='correct', n_a=0, ps2=False)   # the model axes (the thesis model M_U at n_a = 0)
 NOISE = 'lowpass'      # 'lowpass' or 'noisefree'
 # the short run, as RunConfig fields
-SHORT_RUN = dict(device='cpu', compile_mode=None, truncate_s=2.0, n_its=4, its_per_val=4, lbfgs_inner_iter=1,
-                 lbfgs_max_iter=2, lbfgs_windows=256)
+SHORT_RUN = dict(device='cpu', compile_mode=None, truncate_s=2.0, n_its=4, its_per_val=4, lbfgs_max_iter=2,
+                 lbfgs_windows=256)
+SHORT_INNER_ITER = 1   # the polish's iterations per call, the constant lbfgs_polish.INNER_ITER (D-292)
 # the short PS opening, as ps2_opening fields (the former ps2_smoke settings of training.py)
 SHORT_PS2 = dict(eval_every=2, s1_min=0, s1_cap=4, screen_at=-1, screen_max=float('inf'), n_cal=32, n_snap=256,
                  n_snap_cal=64, s2_batch=64, s2_check=50, s2_min=50, s2_cap=100)
@@ -31,6 +32,8 @@ def main(axes=AXES, noise=NOISE, **fields):
     """Train the short run, evaluate it, and return its run folder; fields override RunConfig fields (out_root)."""
     import gantry_interconnect_dynamic as entry
     from gantry_dynamic.config import RunConfig, save_dir
+    from model_augmentation.fit_systems import lbfgs_polish
+    lbfgs_polish.INNER_ITER = SHORT_INNER_ITER
     cfg = RunConfig(**dict(entry.SETTINGS, **axes, noise=noise, ps2_opening=short_ps2_opening(entry.SETTINGS),
                            **dict(SHORT_RUN, **fields)))
     run_id = 'smoke-%s-%s-%d-%s-%s-%s' % (cfg.arm, cfg.start, cfg.n_a, 'ps' if cfg.ps2 else 'plain', noise,

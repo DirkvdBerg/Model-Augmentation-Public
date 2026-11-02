@@ -127,8 +127,18 @@ def make_cfg(row, noise, run_id, budget=None, **extra):
     kw = dict(device='cpu', compile_mode=None, ps2_opening=short_ps2_opening(EP.SETTINGS))
     kw.update(budget)
     kw.update(extra)
+    clean_inner_iter(kw)
     cfg = RunConfig(**dict(EP.SETTINGS, arm=arm, start=start, n_a=na, ps2=bool(ps2), noise=noise, **kw))
     return cfg, EP
+
+
+def clean_inner_iter(kw):
+    """D-292: the clean polish's iterations per call is the constant lbfgs_polish.INNER_ITER, not a RunConfig field;
+    a budget's lbfgs_inner_iter leaves kw and sets that constant, as the mainline field does on its side."""
+    if 'lbfgs_inner_iter' in kw:
+        from model_augmentation.fit_systems import lbfgs_polish as LP
+        LP.INNER_ITER = kw.pop('lbfgs_inner_iter')
+    return kw
 
 
 # the nine keys of mainline's cfg.hp, which the clean code no longer has (D-292); recorded for the L1 comparison

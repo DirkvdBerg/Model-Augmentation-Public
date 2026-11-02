@@ -12,15 +12,20 @@ import torch
 from model_augmentation.fit_systems.closed_loop import window_counts
 
 
+# L-BFGS settings of the polish
+HISTORY_SIZE = 50    # past gradient changes kept to approximate the curvature; memory 50, as Hoekstra et al. (2026)
+INNER_ITER = 20      # iterations per optimizer call, PyTorch's default; the polish ends when a call stops early
+# HEURISTIC: stop tolerances 1e-12 and 1e-14 scaled by 2.6e7, the measured ratio of the weighted to the unweighted
+# loss, so they act at the same relative level
+TOL_GRAD = 2.6e-5    # stop when the largest gradient entry is below this
+TOL_CHANGE = 2.6e-7  # stop when the loss or the parameter step changes less than this
+
+
 @dataclass(frozen=True)
 class PolishSpec:
-    """Settings of the polish; values come from the run config (lbfgs_*)."""
+    """Settings of the polish that a run sets; values come from the run config (lbfgs_*)."""
     n_windows: int       # windows in the fixed batch; fewer lowers memory use
     max_iter: int        # L-BFGS iterations in total
-    inner_iter: int      # iterations per step() call; a call that stops early ends the polish
-    history_size: int    # curvature pairs kept by L-BFGS
-    tol_grad: float      # stop when the largest loss gradient is below this
-    tol_change: float    # stop when the loss or the step changes less than this
     seed: int            # seed of the random window subset
 
 
@@ -216,8 +221,8 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         def _new_opt():
             """A fresh L-BFGS optimizer with the spec's settings, strong-Wolfe line search."""
             return torch.optim.LBFGS(
-                params, lr=1.0, max_iter=spec.inner_iter, history_size=spec.history_size,
-                tolerance_grad=spec.tol_grad, tolerance_change=spec.tol_change,
+                params, lr=1.0, max_iter=INNER_ITER, history_size=HISTORY_SIZE,
+                tolerance_grad=TOL_GRAD, tolerance_change=TOL_CHANGE,
                 line_search_fn='strong_wolfe')
 
         # 2. Determinism check: the strong-Wolfe line search compares the loss at several points, so evaluating it
@@ -259,26 +264,26 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
             print('  [lbfgs] %d parameters in one group, m=%d, strong-Wolfe, '
                   'tol_grad=%.1e tol_change=%.1e (%.1e relative to the opening loss), '
                   'max %d iterations, %s rollout'
-                  % (out['params_polished'], spec.history_size, spec.tol_grad,
-                     spec.tol_change, spec.tol_change / max(abs(first), 1e-300),
+                  % (out['params_polished'], HISTORY_SIZE, TOL_GRAD,
+                     TOL_CHANGE, TOL_CHANGE / max(abs(first), 1e-300),
                      spec.max_iter, 'compiled' if out['used_compiled'] else 'eager'))
 
             # 3. L-BFGS in blocks of inner_iter iterations, logged after each block, up to max_iter in total;
             #    a block that stops early has met tol_grad or tol_change and ends the polish.
             # number of blocks: ceil(max_iter / inner_iter)
-            n_outer = max(1, -(-spec.max_iter // max(1, spec.inner_iter)))
+            n_outer = max(1, -(-spec.max_iter // max(1, INNER_ITER)))
             for _ in range(n_outer):
                 it_before, _ = _lbfgs_counts(opt, params)
                 opt.step(closure)
                 _record_counts()
                 done = out['n_iter'] - it_before
                 print('  [lbfgs] iter %4d (+%d of %d)  (%d closures, %.0f s)'
-                      % (out['n_iter'], done, spec.inner_iter, n_closure[0],
+                      % (out['n_iter'], done, INNER_ITER, n_closure[0],
                          time.time() - t0))
-                if done < spec.inner_iter:
+                if done < INNER_ITER:
                     out['reason'] = ('converged: L-BFGS stopped internally after %d of %d '
                                      'iterations in this block (tol_grad=%.1e, tol_change=%.1e)'
-                                     % (done, spec.inner_iter, spec.tol_grad, spec.tol_change))
+                                     % (done, INNER_ITER, TOL_GRAD, TOL_CHANGE))
                     break
             else:
                 out['reason'] = 'iteration cap %d reached' % spec.max_iter

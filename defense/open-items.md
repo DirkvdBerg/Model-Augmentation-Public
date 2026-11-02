@@ -145,3 +145,8 @@ Questions I cannot answer or justify yet, and their resolution. Maintained by `d
 Question (Shakib, chain on Q-026): what shows the network captures friction, given E-066 and E-067?
 Missing: no friction-only run, no learned force vs velocity plot; only the thesis's possible explanations.
 Possible sources: final checkpoints (network output vs velocity on tuples), `06_results.tex:290-316`, committee-read item 3 (friction-only and absorber-only datasets).
+
+### O-09 [open] LFR-based controller synthesis with the augmented model
+Question (Toth, Q-031): how would the LFR be used for controller design, and what changes with the nonlinear augmentation on top?
+Missing: user not familiar with LPV/LFR synthesis; no local source on synthesis with a learned nonlinear block.
+Possible sources: toth2010modeling p.119 (LMI synthesis, full-block multipliers, E-149); hoekstra2026lfr (well-posedness and stability of the augmented LFR); a robust-control text on IQC or sector-bounded nonlinearities, to download.

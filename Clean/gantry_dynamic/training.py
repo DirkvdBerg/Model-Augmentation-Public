@@ -244,11 +244,7 @@ def run_lbfgs_polish(fit_sys, cfg: RunConfig, data, bestfit, history, adam_ran=T
     """
     print('\n[lbfgs] polish phase: Adam is done, L-BFGS from here')
     # 1. Polish settings from the config.
-    spec = PolishSpec(
-        n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter,
-        inner_iter=cfg.lbfgs_inner_iter, history_size=cfg.lbfgs_history,
-        tol_grad=cfg.lbfgs_tol_grad, tol_change=cfg.lbfgs_tol_change,
-        seed=cfg.seed)
+    spec = PolishSpec(n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter, seed=cfg.seed)
     with on_device(fit_sys, cfg):
         if cfg.device == 'cuda':
             torch.cuda.empty_cache()

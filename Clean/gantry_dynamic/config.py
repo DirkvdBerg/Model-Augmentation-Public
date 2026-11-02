@@ -64,13 +64,9 @@ class RunConfig:
     epochs: int
     n_its: Optional[int]
     its_per_val: int
-    # L-BFGS polish
+    # L-BFGS polish; its optimizer constants are in lbfgs_polish.py
     lbfgs_max_iter: int
-    lbfgs_inner_iter: int
     lbfgs_windows: int
-    lbfgs_history: int
-    lbfgs_tol_grad: float
-    lbfgs_tol_change: float
     # PS opening: the fields of PS2Spec except its seed, which is seed
     ps2_opening: dict
     # environment
@@ -93,13 +89,15 @@ class RunConfig:
 
     def __post_init__(self):
         """Check the values, which arrive from the settings, the CLI or a config.json."""
-        allowed = dict(arm=('obc', 'u'), start=('detuned', 'correct'), n_a=(0, 2, 8), ps2=(False, True),
+        allowed = dict(arm=('obc', 'u'), start=('detuned', 'correct'), ps2=(False, True),
                        noise=('lowpass', 'noisefree'), device=('cpu', 'cuda'),
                        compile_mode=(None, 'reduce-overhead'),
                        start_phase=('adam', 'lbfgs'), baseline_form=('lfr', 'closed'))
         for name, values in allowed.items():
             if getattr(self, name) not in values:
                 raise ValueError('%s must be one of %s, got %r' % (name, values, getattr(self, name)))
+        if not isinstance(self.n_a, int) or self.n_a < 0:
+            raise ValueError('n_a must be an integer >= 0, got %r' % (self.n_a,))
         if self.compile_mode is not None and self.device != 'cuda':
             raise ValueError('compile_mode=%r needs device="cuda", got %r; set compile_mode=None on the CPU '
                              '(the --cpu flag does)' % (self.compile_mode, self.device))

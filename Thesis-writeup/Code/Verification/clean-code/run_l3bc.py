@@ -114,11 +114,8 @@ if args.layer == '3b':
             meters_gate=cfg.lbfgs_meters_gate)
         kw = dict(meters_fn=GDT._gantry_meters, verbose=True)
     else:                                  # C3 (D-281): the clean polish has no `verbose`, it always prints
-        spec = PolishSpec(
-            n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter,
-            inner_iter=cfg.lbfgs_inner_iter, history_size=cfg.lbfgs_history,
-            tol_grad=cfg.lbfgs_tol_grad, tol_change=cfg.lbfgs_tol_change,
-            seed=cfg.seed)
+        # D-292: inner iterations, history and tolerances are lbfgs_polish constants (H.make_cfg set INNER_ITER)
+        spec = PolishSpec(n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter, seed=cfg.seed)
         kw = {}
     res = lbfgs_polish(fit_sys, data.train_data, loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride},
                        spec=spec, val_sys_data=data.val_ckpt_data, val_before=0.0,

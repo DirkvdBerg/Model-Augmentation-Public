@@ -1,5 +1,7 @@
-"""Train the augmented gantry model with the settings below, or continue, polish or evaluate a run folder; the default
-is the thesis model M_OBC (OBC arm, detuned start, two added states, PS opening, lowpass data) on CUDA."""
+"""Train the augmented gantry model with the settings below; or, on an existing run folder, continue its Adam
+training from a saved checkpoint up to the epoch budget, rerun its L-BFGS polish, or only evaluate its final
+checkpoint. The default is the thesis model M_OBC (OBC arm, detuned start, two added states, PS opening, lowpass
+data) on CUDA."""
 import argparse
 import json
 import os
@@ -20,95 +22,94 @@ from gantry_dynamic.evaluation import evaluate
 from model_augmentation.fit_systems.closed_loop import SCORE_NAME
 
 # What to run; --resume, --polish-only and --evaluate RUN_DIR override MODE and RUN_DIR
-MODE = 'fresh'         # 'fresh': train a new run with SETTINGS; 'resume': continue the Adam phase of RUN_DIR;
+MODE = 'fresh'         # 'fresh': train a new run with SETTINGS; 'resume': continue the Adam training of RUN_DIR;
                        # 'polish-only': polish the pre-polish checkpoint of RUN_DIR again; 'evaluate': evaluate RUN_DIR
 RUN_DIR = None         # run folder of resume, polish-only and evaluate; its config.json fixes the settings
-RESUME_FROM = 'best'   # resume: the deepSI dump at the lowest validation score ('best') or the latest ('last')
+RESUME_FROM = 'best'   # resume: the deepSI checkpoint at the lowest validation score ('best') or the latest ('last')
 EVALUATE = True        # evaluate the final checkpoint after training
 
-# Run settings of a fresh run, recorded in its config.json; the values are those of the thesis runs
+# Run settings of a fresh run, recorded in its config.json; with the values of the thesis run M_OBC
 SETTINGS = dict(
-    # model: the five axes; the command-line flags of the same name override them
-    arm='obc',          # 'obc': the network cannot mimic a change of the baseline parameters; 'u': unconstrained
-    start='detuned',    # baseline parameters at the start: 'correct' (nominal) or 'detuned' (each of the ten +- detune)
-    n_a=2,              # number of added states, 0, 2 or 8; 0: the network only corrects the physical states
-    ps2=True,           # True: the PS opening (ps2_opening.py) first fits the added states; meant for n_a > 0
-    noise='lowpass',    # data set: 'lowpass' (with measurement noise) or 'noisefree'
+    # model
+    arm='obc',          # 'obc': OBC projection of the network; 'u': unconstrained
+    start='detuned',    # baseline parameters at the start: 'correct' (nominal) or 'detuned' (tests their recovery)
+    n_a=2,              # number of added states; the thesis runs 0, 2 and 8. The baseline has 2 missing states.
+    ps2=True,           # PS initialization of the added states (S1, then S2)
+    noise='lowpass',    # data set: 'lowpass' (measurement noise) or 'noisefree'
     # sampling and windows
-    fs_new=4000,        # [Hz] training rate; must divide the 20 kHz of the data sets (HEURISTIC: thesis value)
-    aa_order=8,         # order of the zero-phase anti-aliasing Butterworth on y - r of the lowpass data, before decimation
-    # [Hz] its cutoff; change it with fs_new (HEURISTIC: 0.8 x the 2 kHz Nyquist frequency of fs_new = 4 kHz)
-    # THEORY: forward-backward pass squares the order-8 magnitude, |H| = 1 / (1 + x^16), x = tan(pi f/fs) / tan(pi fc/fs)
-    aa_fc_hz=1600.0,
-    # [s] cut from both ends of every record, on both data sets, to drop the filter's edge transients
-    # HEURISTIC: the filter's edge transient exceeds 0.01 of the in-band noise for at most 4.6 ms on the 36 records
-    aa_trim_s=0.005,
-    nf_seconds=0.100,   # [s] simulated length of each training window (HEURISTIC: thesis value)
-    stride=10,          # samples between window starts; 1 gives 10x more windows per epoch (HEURISTIC: thesis value)
-    na_nb=30,           # past samples of y and u the encoder sees (HEURISTIC: thesis value)
-    seed=1,             # initial weights, detune signs, polish batch, PS opening (Adam batch order: seed 0)
-    detune=0.10,        # relative detuning of each baseline parameter on the detuned start (HEURISTIC: 10 %)
-    # networks: augmentation phi_aug and encoder psi_tilde (HEURISTIC: thesis values)
-    n_nodes_per_layer=16,  # width of each hidden tanh layer
-    n_hidden_layers=2,     # number of hidden layers
-    up_sample=1,           # RK4 steps per sample; more is more accurate and slower
-    # Adam (HEURISTIC: thesis values)
+    fs_new=4000,        # [Hz] training rate; fast enough for the controller, 5x cheaper than the 20 kHz data
+    # zero-phase anti-aliasing before decimation to fs_new, so y stays aligned with r and u
+    aa_order=8,         # order of the Butterworth low-pass on y - r
+    aa_fc_hz=1600.0,    # [Hz] its cutoff
+    aa_trim_s=0.005,    # [s] cut from both record ends: the filter has no samples beyond a record's ends, so its
+                        # output is wrong in the first and last 4.6 ms
+    nf_seconds=0.100,   # [s] training window; twice the 50 ms settling time of the closed loop
+    stride=10,          # samples between window starts
+    na_nb=30,           # past samples of y and u in the encoder input; Hoekstra's 2 n_x + 1 for n_a = 8, plus one
+                        # because the window ends at tau - 1; Kept at 30 for n_a = 2.
+    seed=1,             # seed of weights, detune signs, polish batch, PS opening
+    detune=0.10,        # relative detuning of each baseline parameter
+    # networks: 2 hidden layers of 16 nodes, as Hoekstra et al. (2026)
+    n_nodes_per_layer=16,  # hidden layer width
+    n_hidden_layers=2,     # hidden tanh layers
+    up_sample=1,           # RK4 steps per sample
+    # Adam
     batch_size=512,     # windows per update
-    lr=1e-5,            # learning rate, all parameters
-    adam_eps=1e-16,     # below the 1e-8 default, for float64
-    epochs=200,         # budget in epochs (passes over the training windows)
-    n_its=None,         # budget in updates instead; validates at start and end only
-    its_per_val=1300,   # updates between validations (checkpoint selection)
-    # L-BFGS polish (HEURISTIC: thesis values)
-    lbfgs_max_iter=100,       # iterations in total
-    lbfgs_inner_iter=20,      # iterations per step() call; a call that stops early ends the polish
-    lbfgs_windows=16384,      # windows in its fixed batch; lower if out of memory
-    lbfgs_history=50,         # curvature pairs kept
-    lbfgs_tol_grad=2.6e-5,    # stop when the largest loss gradient is below this
-    lbfgs_tol_change=2.6e-7,  # stop when the loss or the step changes less than this
-    # PS opening; counts in Adam updates (eval_every, s1_*, screen_at), S2 steps (s2_*) or windows and pairs (n_*)
+    lr=1e-5,            # learning rate; compared different orders of magnitude
+    adam_eps=1e-16,     # Adam epsilon; with the 1e-8 default the hidden layers do not train, gradient issue
+    epochs=200,         # epochs; limited by compute
+    n_its=None,         # budget in updates instead of epochs; None: epochs
+    its_per_val=1300,   # updates between validations; full record evaluated keep val minimal
+    # L-BFGS polish
+    lbfgs_max_iter=100,   # iterations in total
+    lbfgs_windows=16384,  # training windows the polish fits, drawn once; lower it if the polish runs out of memory
+    # PS initialization: 
+    # S1 trains the encoder so the added states predict the model's output error, scored by nu, the share
+    # of that error left unexplained on held-out records
+    # S2 then fits the network's added-state update to those states, scored by its cost on held-out pairs
     ps2_opening=dict(
-        aux_batch=64,       # windows per S1 step, separate from the training batch (HEURISTIC)
-        lr=1e-3,            # learning rate of the opening's own Adam (THEORY: the Adam default, Kingma and Ba)
-        # S1: decoder fit (HEURISTIC: thesis values)
-        eval_every=25,      # updates between calibration checks
-        s1_min=100,         # no S1 end before this many updates
-        s1_cap=350,         # S1 ends here at the latest
-        s1_tol=0.02,        # plateau: the best of the last s1_window checks improved by less than this, relative
-        s1_window=4,        # checks in the plateau window
-        screen_at=150,      # update of the early screen; a multiple of eval_every
-        screen_max=0.90,    # S2 runs only if the decoder explains at least 10 % of the residual
-        n_cal=128,          # left-out windows of the S1 check
-        # S2: added-state transition fit (HEURISTIC: thesis values)
-        n_snap=8192,        # fit pairs
-        n_snap_cal=2048,    # left-out pairs
-        s2_batch=512,       # pairs per step
-        s2_check=100,       # steps between checks
-        s2_window=5,        # checks in the plateau window
-        s2_min=500,         # no S2 end before this many steps
-        s2_cap=8000,        # S2 ends here at the latest
-        s2_tol=0.01,        # plateau tolerance, as s1_tol
+        aux_batch=64, lr=1e-3,                        # S1: training windows per step, learning rate of its own Adam
+        eval_every=25, s1_min=100, s1_cap=350,        # S1: updates between nu values, earliest stop, latest stop
+        s1_tol=0.02, s1_window=4,                     # S1 stops when none of its last s1_window nu improves the prior
+                                                      # best by at least s1_tol (relative)
+        screen_at=150, screen_max=0.90, n_cal=128,    # S2 is skipped if nu > screen_max at update screen_at or at the
+                                                      # end of S1; held-out windows nu is computed on
+        n_snap=8192, n_snap_cal=2048, s2_batch=512,   # S2: pairs (state at k, added states at k + 1) fitted, held out,
+                                                      # per step
+        s2_check=100, s2_min=500, s2_cap=8000,        # S2: steps between held-out costs, earliest stop, latest stop
+        s2_tol=0.01, s2_window=5,                     # S2 stops when none of its last s2_window costs improves the
+                                                      # prior best by at least s2_tol (relative)
     ),
     # environment
-    device='cuda',                   # 'cuda' or 'cpu' (the --cpu flag also sets compile_mode None)
-    compile_mode='reduce-overhead',  # CUDA graphs for the training rollouts, faster; None on the CPU
-    truncate_s=None,                 # [s] use only the start of each record, for trial runs; None: whole records
-    baseline_form='lfr',             # baseline derivative through the LFR output equation, or 'closed' (--closed-form):
-                                     # (qdot, a) directly, which differs from the thesis runs by rounding
-    obc_ref_chunk=16384,             # OBC basis build: points per batch; memory only, same result
-    data_root=DATA_ROOT,             # folder of the data sets (--data-root)
-    out_root=OUT_ROOT,               # folder of the run folders <out_root>/<noise>/<run_id> (--out-root)
+    device='cuda',                   # 'cuda' or 'cpu'
+    compile_mode='reduce-overhead',  # torch.compile mode on CUDA; None: eager; 6 to 7x faster than eager
+    truncate_s=None,                 # [s] keep only the start of each record; None: whole records
+    baseline_form='lfr',             # baseline derivative: 'lfr' evaluates the LFR output equation through its latent
+                                     # signals, as in the thesis runs; 'closed' returns (qdot, a) directly, same up to
+                                     # rounding and 3 to 8 % faster
+    obc_ref_chunk=16384,             # reference tuples per Jacobian call in the OBC basis build; lower it if that
+                                     # build runs out of memory, the basis stays the same
+    data_root=DATA_ROOT,             # data set folder
+    out_root=OUT_ROOT,               # run folder root
 )
 
 
-def _dumps(run_id):
-    """Paths of the deepSI dumps _best.pth and _last.pth of a run, in deepSI's checkpoints folder."""
+def _deepsi_checkpoint_paths(run_id):
+    """Paths of the checkpoints deepSI saves during Adam, _best.pth and _last.pth, in deepSI's checkpoints folder."""
     return [os.path.join(get_work_dirs()['checkpoints'], 'AugmentedModel_%s%s.pth' % (run_id, s))
             for s in ('_best', '_last')]
 
 
-def _rerun_source(kind, run_dir, source):
-    """(config.json, run id, source checkpoint) of a rerun in an existing run folder."""
+def _rerun_checkpoint(kind, run_dir, source):
+    """Find the checkpoint a resume or polish-only run starts from and check that its files exist.
+
+    Args:
+        kind: 'resume' (a deepSI checkpoint saved during Adam) or 'polish-only' (the pre-polish pair).
+        run_dir: the existing run folder.
+        source: 'best' or 'last' deepSI checkpoint for a resume; unused for polish-only.
+    Returns:
+        (config.json contents, run id, checkpoint path).
+    """
     with open(os.path.join(run_dir, 'config.json')) as fh:
         cj = json.load(fh)
     run_id = str(cj['run_id'])
@@ -117,27 +118,42 @@ def _rerun_source(kind, run_dir, source):
         src = os.path.join(run_dir, 'gantry_ckpt_%s_pre_lbfgs' % run_id)
         need = [src + '.pt', src + '.npz']
     else:
-        src = _dumps(run_id)[0 if source == 'best' else 1]
+        # the deepSI checkpoint at the lowest validation score ('best') or the latest one ('last')
+        src = _deepsi_checkpoint_paths(run_id)[0 if source == 'best' else 1]
         need = [src]
     for f in need:
         if not os.path.exists(f):
-            raise FileNotFoundError('rerun source %s not found; check RUN_DIR, or choose the other dump of a '
-                                    '--resume with --from' % f)
+            raise FileNotFoundError('checkpoint %s not found; check RUN_DIR, or resume from the other deepSI '
+                                    'checkpoint with --from' % f)
     return cj, run_id, src
 
 
-def _archive_rerun(kind, run_dir, cj, run_id, src):
-    """Move the previous outcome to previous/<rerun_id>/, log the rerun in config.json, return the source's new path."""
+def _archive_previous_outcome(kind, run_dir, cj, run_id, src):
+    """Move a run folder's previous outcome to previous/<rerun id>/ before a rerun and log the rerun in config.json.
+
+    Args:
+        kind: 'resume' or 'polish-only'.
+        run_dir: the run folder.
+        cj: its config.json contents; the rerun is appended to RESUMES.
+        run_id: run id in the checkpoint names.
+        src: the checkpoint the rerun starts from (from _rerun_checkpoint).
+    Returns:
+        the path of that checkpoint after the move.
+    """
+    # 1. Archive folder, named after the SLURM job id or the time.
     rerun_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
     prev = os.path.join(run_dir, 'previous', rerun_id)
     os.makedirs(prev)
+    # 2. Move every output except config.json, so the rerun writes into an empty folder.
     for f in sorted(os.listdir(run_dir)):
         if f not in ('config.json', 'previous'):
             shutil.move(os.path.join(run_dir, f), os.path.join(prev, f))
+    # 3. A resume also writes new deepSI checkpoints, so the old ones move as well.
     if kind == 'resume':
-        for f in _dumps(run_id):
+        for f in _deepsi_checkpoint_paths(run_id):
             if os.path.exists(f):
                 shutil.move(f, os.path.join(prev, os.path.basename(f)))
+    # 4. Log the rerun in config.json: time, kind, start checkpoint, rerun id and the git commit it ran with.
     resume_ckpt = os.path.join(prev, os.path.basename(src))
     cj.setdefault('RESUMES', []).append(dict(
         time=datetime.now().isoformat(timespec='seconds'), type=kind,
@@ -170,7 +186,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
         src = None
     else:
         kind, sdir, source = rerun
-        cj, run_id, src = _rerun_source(kind, sdir, source)
+        cj, run_id, src = _rerun_checkpoint(kind, sdir, source)
         if kind == 'polish-only':
             cfg = replace(cfg, start_phase='lbfgs')
     print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s'
@@ -196,17 +212,18 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg,
         train_files=data.train_files, val_files=data.val_files, e_train=data.e_train, e_val=data.e_val)
-    print('\nLoss rollout: closed loop (the known controller around the model)')
+    print('\nTraining loss: each window simulated in closed loop with the known controller')
 
     # 4. Encoder start, or the restored checkpoint.
-    # the encoder prefit simulates the baseline in closed loop, so it needs the controllers built above
-    resume = None
+    # after build_closed_loop: the encoder start simulates the start model in closed loop through its simulator
     if src is None:
         prefit_physical_encoder(fit_sys, cfg, data, norm)
+        resume = None               # fresh run: train starts from the encoder start above
     else:
-        # archive the run folder only after the checkpoint has loaded
+        # load first: if the checkpoint does not fit, load_checkpoint raises an error 
+        # and the outputs are never moved to previous/
         meta = load_checkpoint(fit_sys, src, start_phase=cfg.start_phase)
-        resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
+        resume = (_archive_previous_outcome(rerun[0], sdir, cj, run_id, src), meta)
 
     # 5. Training.
     bestfit = train(fit_sys, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
@@ -220,25 +237,29 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
 
 def cli():
     """Read MODE, RUN_DIR and SETTINGS with the command-line overrides into a RunConfig and a rerun, then start main."""
-    ap = argparse.ArgumentParser(description='no arguments = MODE and SETTINGS at the top of this file (the thesis '
-                                             'model M_OBC on CUDA); without CUDA use --cpu')
-    # model axes of a fresh run; a run folder fixes them
+    ap = argparse.ArgumentParser(description='without flags: MODE, RUN_DIR and SETTINGS at the top of this file (the '
+                                             'thesis model M_OBC on CUDA); without CUDA add --cpu')
+    # model choices of a fresh run; a rerun reads them from the run folder's config.json
     ap.add_argument('--arm', choices=('obc', 'u'))
     ap.add_argument('--start', choices=('detuned', 'correct'))
-    ap.add_argument('--n-a', type=int, choices=(0, 2, 8))
-    ap.add_argument('--ps2', action=argparse.BooleanOptionalAction, help='PS opening of the added states')
+    ap.add_argument('--n-a', type=int)
+    ap.add_argument('--ps2', action=argparse.BooleanOptionalAction,
+                    help='PS opening of the added states during the first Adam updates; --no-ps2 runs without')
     ap.add_argument('--noise', choices=('lowpass', 'noisefree'))
-    ap.add_argument('--closed-form', action='store_true', help="baseline_form 'closed'")
-    ap.add_argument('--cpu', action='store_true', help='device cpu, eager')
+    ap.add_argument('--closed-form', action='store_true',
+                    help='baseline derivative in closed form: same up to rounding, 3 to 8 %% faster')
+    ap.add_argument('--cpu', action='store_true', help='run on the CPU, without torch.compile')
     grp = ap.add_mutually_exclusive_group()
-    grp.add_argument('--resume', metavar='RUN_DIR', help='MODE resume: continue the Adam phase of this run folder')
-    grp.add_argument('--polish-only', metavar='RUN_DIR', help='MODE polish-only: polish the pre_lbfgs pair again')
+    grp.add_argument('--resume', metavar='RUN_DIR', help='MODE resume: continue the Adam training of this run folder')
+    grp.add_argument('--polish-only', metavar='RUN_DIR',
+                     help='MODE polish-only: rerun the L-BFGS polish of this run folder from its saved '
+                          'pre-L-BFGS weights')
     grp.add_argument('--evaluate', metavar='RUN_DIR', help='MODE evaluate: evaluate the final checkpoint only')
     ap.add_argument('--from', dest='source', choices=('best', 'last'),
-                    help='deepSI dump a resume starts from (default RESUME_FROM)')
-    ap.add_argument('--no-evaluate', action='store_true', help='no evaluation after training')
-    ap.add_argument('--data-root', default=SETTINGS['data_root'])
-    ap.add_argument('--out-root', default=SETTINGS['out_root'])
+                    help='deepSI checkpoint a resume starts from (default RESUME_FROM)')
+    ap.add_argument('--no-evaluate', action='store_true', help='skip the evaluation after training')
+    ap.add_argument('--data-root', default=SETTINGS['data_root'], help='data set folder')
+    ap.add_argument('--out-root', default=SETTINGS['out_root'], help='root of the run folders')
     a = ap.parse_args()
 
     # 1. Mode and run folder: a mode flag overrides MODE and RUN_DIR.
@@ -259,7 +280,7 @@ def cli():
     if a.closed_form:
         axes['baseline_form'] = 'closed'
     if axes and mode != 'fresh':
-        ap.error('a run folder fixes the configuration; give no %s with it' % ', '.join(sorted(axes)))
+        ap.error("a rerun reads its settings from the run folder's config.json; drop %s" % ', '.join(sorted(axes)))
 
     # 2. Configuration: SETTINGS for a fresh run, the folder's config.json otherwise.
     if mode == 'evaluate':

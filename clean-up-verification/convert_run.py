@@ -33,7 +33,7 @@ DROPPED_STATE_KEYS = ('mh', 'alpha', 'beta', 'gamma_', 'N0', 'N1', 'N2', 'Ax', '
 PAIR_NPZ_KEYS = ('done_epochs', 'bestfit', 'lbfgs_outcome', 'resumed_at_epoch', 'ps2_summary')
 # RunConfig fields a thesis folder records as its own run environment (the former config._ENV_KEYS)
 _ENV_FIELDS = ('device', 'compile_mode', 'truncate_s', 'epochs', 'n_its', 'its_per_val', 'lbfgs_max_iter',
-               'lbfgs_inner_iter', 'lbfgs_windows', 'baseline_form')
+               'lbfgs_windows', 'baseline_form')
 # config.json keys of the run environment and other per-run values, not compared
 _NOT_COMPARED = ('DEVICE', 'COMPILE_MODE', 'TRUNCATE_S', 'EPOCHS', 'N_ITS', 'ITS_PER_VAL', 'LBFGS_MAX_ITER',
                  'LBFGS_INNER_ITER', 'LBFGS_WINDOWS', 'BASELINE_FORM', 'GIT', 'NF_PROBE_PRINT', 'START_PHASE')
@@ -43,6 +43,7 @@ def thesis_settings(cfg):
     """The mainline config.json keys of a thesis run with the axes of cfg, as Clean/ computes with them (the keys and
     values RunConfig.config_json_dict wrote before amendment 10)."""
     from gantry_dynamic.config import y_decimation, record_trim
+    from model_augmentation.fit_systems import lbfgs_polish as LP
     return json.loads(json.dumps(dict(
         MODE={'lowpass': 'thesis_taf_lowpass_noise', 'noisefree': 'thesis_taf_noisefree'}[cfg.noise],
         ENCODER_INIT='data_lsq', ANN_ACTIVATION='tanh', ANN_ARCH='mlp', G_INIT='live',
@@ -54,8 +55,8 @@ def thesis_settings(cfg):
         STRIDE=cfg.stride, NF_SECONDS=cfg.nf_seconds, USE_F64=True, SAVE_FLAG=True, NX_ANN=cfg.n_a,
         N_NODES_PER_LAYER=cfg.n_nodes_per_layer, N_HIDDEN_LAYERS=cfg.n_hidden_layers, UP_SAMPLE=cfg.up_sample,
         BATCH_SIZE=cfg.batch_size, LR=cfg.lr, NF=cfg.nf, NA_NB=cfg.na_nb, CHECKPOINT_CHUNK=0, LBFGS=True,
-        LBFGS_HISTORY=cfg.lbfgs_history, LBFGS_CHUNK=None, LBFGS_TOL_GRAD=cfg.lbfgs_tol_grad,
-        LBFGS_TOL_CHANGE=cfg.lbfgs_tol_change, LBFGS_FREEZE=[], LBFGS_TIME_BUDGET_S=None, LBFGS_METER_REL_TOL=0.001,
+        LBFGS_HISTORY=LP.HISTORY_SIZE, LBFGS_CHUNK=None, LBFGS_TOL_GRAD=LP.TOL_GRAD,
+        LBFGS_TOL_CHANGE=LP.TOL_CHANGE, LBFGS_FREEZE=[], LBFGS_TIME_BUDGET_S=None, LBFGS_METER_REL_TOL=0.001,
         PARAM_PRIOR=False, STATIC_PASS_BUFFERS=False, OBC=cfg.obc, OBC_SPACE='affine', OBC_REFRESH='epoch',
         OBC_REF_CHUNK=16384, OBC_RANK_RTOL=None, CONTROLLER_GAIN=False, PS2=cfg.ps2,
         Y_DECIMATION=y_decimation(cfg), RECORD_TRIM=record_trim(cfg), LOSS_WEIGHTING='servo',
