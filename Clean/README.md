@@ -12,22 +12,25 @@ Section names below refer to the thesis.
    the black box with `blackbox/eval_bb.py`.
 
 ## Grey box: augmented model and OBC
-Entry point `gantry_interconnect_dynamic.py`: a fresh run, `--resume RUN_DIR` (continue Adam) or
-`--polish-only RUN_DIR` (polish from the pre-polish checkpoint), each followed by the evaluation of the final
-checkpoint into `RUN_DIR/evaluation/`; `--evaluate RUN_DIR` evaluates a finished run only. The parameters `EVALUATE`
-and `EVAL_RUN_DIR` at the top of the script set the same. Rows R1 to R7, R13, R14 are presets in
-`gantry_dynamic/config.py` (`PRESETS`: arm, baseline start, number of added states, PS initialisation).
+Entry point `gantry_interconnect_dynamic.py`. Every setting is at its top, with the thesis values: `MODE` and
+`RUN_DIR` (a fresh run; `resume`, continue Adam; `polish-only`, polish from the pre-polish checkpoint; `evaluate`, a
+finished run only), `EVALUATE`, and `SETTINGS` (the five axes arm, baseline start, number of added states, PS
+opening and data set; sampling and windows; networks; Adam; L-BFGS; PS opening; environment). The default is the
+thesis model M_OBC; the other thesis models change the axes. A run's `config.json` records its settings, and a
+resume or polish-only run reads them from there. Training ends with the evaluation of the final checkpoint into
+`RUN_DIR/evaluation/`.
 ```
-python -u Clean/gantry_interconnect_dynamic.py R1 lowpass                 # full run, CUDA and torch.compile
-python -u Clean/gantry_interconnect_dynamic.py --evaluate RUN_DIR         # evaluation of a finished run, CPU
+python -u Clean/gantry_interconnect_dynamic.py                                   # SETTINGS: M_OBC, CUDA, torch.compile
+python -u Clean/gantry_interconnect_dynamic.py --arm u --start correct --n-a 0 --no-ps2   # another model
+python -u Clean/gantry_interconnect_dynamic.py --evaluate RUN_DIR               # evaluation of a finished run, CPU
 ```
 Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/gantry_clean/` (`--data-root`,
 `--out-root`).
 
 | File | Role | Thesis |
 |-|-|-|
-| `gantry_interconnect_dynamic.py` | command line: fresh run, resume, polish-only rerun | |
-| `gantry_dynamic/config.py` | run configuration: the row axes, run environment, fixed settings, detuned start | Models; Hyperparameters |
+| `gantry_interconnect_dynamic.py` | all settings; fresh run, resume, polish-only rerun, evaluation | Models; Hyperparameters |
+| `gantry_dynamic/config.py` | run configuration: the record of the settings, their checks, config.json, detuned start | |
 | `gantry_dynamic/data.py` | records of one data set, split, resampling to the training rate, normalisation | Records; Processing and checks |
 | `gantry_dynamic/controller.py` | the known controller K_fb per stage axis, Tustin-discretised | Closed loop and excitation |
 | `gantry_dynamic/model.py` | builds the augmented model and its encoder; least-squares start of the encoder | Augmented model; Initialisation |
@@ -46,13 +49,14 @@ Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/
 | `model_augmentation/utils/deepSI_corrections.py` | deepSI data classes that keep the data dtype | |
 | `model_augmentation/utils/utils.py` | `@added` marker, tensor conversion, selection matrices | |
 
-## Black box (R8)
-SUBNET on the servo error e = y - r (deepSI 0.3.29). `run_black_box.sh` trains the 11 grid configurations on the server
-(`sbatch --array=9` for the selected one only).
+## Black box
+SUBNET on the servo error e = y - r (deepSI 0.3.29), on the grey box's samples and windows (its `SETTINGS`, lowpass
+data set). `run_black_box.sh` trains the 11 grid configurations on the server (`sbatch --array=9` for the selected
+one only).
 
 | File | Role | Thesis |
 |-|-|-|
-| `blackbox/bb.py` | shared parts: model M_BB, data via `gantry_dynamic`, sigma_e | Black-box model |
+| `blackbox/bb.py` | shared parts: model M_BB, the grey box's data settings and loader | Black-box model |
 | `blackbox/jan_model.py` | encoder psi and state map f_bb (names fixed by the saved checkpoints) | Black-box model |
 | `blackbox/train_bb.py` | trains one configuration, weighted loss, selection by validation NRMS_e | Black-box model |
 | `blackbox/select_bb.py` | selects the configuration with the lowest validation NRMS_e | Black-box model |

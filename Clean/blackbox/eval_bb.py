@@ -14,8 +14,8 @@ import torch
 import deepSI
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
-from bb import data_cfg, load_records
-from gantry_dynamic.config import RunConfig, DATA_ROOT
+from bb import GREY_BOX, data_cfg, load_records
+from gantry_dynamic.config import DATA_ROOT
 from gantry_dynamic.data import DATASETS, record_files, servo_sigma
 
 RUN_DIR = None     # run folder with result.json; the first command-line argument overrides it
@@ -35,7 +35,7 @@ def predict(model, recs):
     """
     with np.errstate(all='ignore'):
         return [r + np.asarray(model.apply_experiment(deepSI.System_data(
-                    u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=RunConfig.ts_new)).y, float)
+                    u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=GREY_BOX.ts_new)).y, float)
                 for u, r, y in recs]
 
 

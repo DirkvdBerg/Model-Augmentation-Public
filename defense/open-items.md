@@ -140,3 +140,8 @@ Questions I cannot answer or justify yet, and their resolution. Maintained by `d
 - **Found so far:** LTI block plus static nonlinearity in a feedback loop (Schoukens and Tiels, E-088). Hoekstra 2026 cites Shakib et al. 2022 on Lur'e-type identification with stability guarantees as an LFR for nonlinear models (E-086, E-087): Shakib's own work.
 - **Missing:** Shakib 2022 is not in `literature/`; what his method does cannot be stated until it is opened locally.
 - **Possible sources:** Shakib et al., Automatica 136:110012 (2022), to download by the user.
+
+### O-08 [open] Evidence that the augmentation captures Coulomb friction
+Question (Shakib, chain on Q-026): what shows the network captures friction, given E-066 and E-067?
+Missing: no friction-only run, no learned force vs velocity plot; only the thesis's possible explanations.
+Possible sources: final checkpoints (network output vs velocity on tuples), `06_results.tex:290-316`, committee-read item 3 (friction-only and absorber-only datasets).

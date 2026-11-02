@@ -31,6 +31,9 @@ DROPPED_STATE_KEYS = ('mh', 'alpha', 'beta', 'gamma_', 'N0', 'N1', 'N2', 'Ax', '
                       'C_mat', 'Lambda_combo')
 # the keys of Clean/'s checkpoint pair .npz (training.save_checkpoint_pair)
 PAIR_NPZ_KEYS = ('done_epochs', 'bestfit', 'lbfgs_outcome', 'resumed_at_epoch', 'ps2_summary')
+# RunConfig fields a thesis folder records as its own run environment (the former config._ENV_KEYS)
+_ENV_FIELDS = ('device', 'compile_mode', 'truncate_s', 'epochs', 'n_its', 'its_per_val', 'lbfgs_max_iter',
+               'lbfgs_inner_iter', 'lbfgs_windows', 'baseline_form')
 # config.json keys of the run environment and other per-run values, not compared
 _NOT_COMPARED = ('DEVICE', 'COMPILE_MODE', 'TRUNCATE_S', 'EPOCHS', 'N_ITS', 'ITS_PER_VAL', 'LBFGS_MAX_ITER',
                  'LBFGS_INNER_ITER', 'LBFGS_WINDOWS', 'BASELINE_FORM', 'GIT', 'NF_PROBE_PRINT', 'START_PHASE')
@@ -61,14 +64,19 @@ def thesis_settings(cfg):
 
 def config_of(meta):
     """RunConfig of a source config.json: Clean/'s reader for a Clean folder, else the thesis axes checked against
-    THESIS_SETTINGS."""
-    from gantry_dynamic.config import RunConfig, _ENV_KEYS
+    THESIS_SETTINGS. Settings a folder does not record (an earlier Clean/ or the thesis code held them fixed) take
+    the thesis values of the entry script's SETTINGS (D-292)."""
+    from gantry_interconnect_dynamic import SETTINGS
+    from gantry_dynamic.config import RunConfig, config_json_dict
     if meta.get('CODE') == 'clean':
-        return RunConfig.from_config_json(meta)
+        thesis = config_json_dict(RunConfig(**SETTINGS))
+        return RunConfig.from_config_json({**{k: v for k, v in thesis.items() if k not in meta}, **meta})
     axes = dict(arm='obc' if meta['OBC'] else 'u', start='correct' if meta['COMBO_INIT_DETUNE'] is None else 'detuned',
                 n_a=int(meta['NX_ANN']), ps2=bool(meta.get('PS2', False)),
                 noise={'thesis_taf_lowpass_noise': 'lowpass', 'thesis_taf_noisefree': 'noisefree'}[meta['MODE']])
-    cfg = RunConfig(**axes, **{f: meta[k] for f, k in _ENV_KEYS.items() if k in meta})
+    # the run environment of the thesis folder; every other setting is checked against THESIS_SETTINGS below
+    env = {f: meta[f.upper()] for f in _ENV_FIELDS if f.upper() in meta}
+    cfg = RunConfig(**dict(SETTINGS, **axes, **env))
     want = thesis_settings(cfg)
     bad = {k: (v, meta.get(k, '<missing>')) for k, v in want.items()
            if k not in _NOT_COMPARED and meta.get(k, '<missing>') != v}

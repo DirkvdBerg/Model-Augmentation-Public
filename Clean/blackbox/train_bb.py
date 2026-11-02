@@ -13,11 +13,11 @@ import torch
 import deepSI
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
-from bb import data_cfg, load_records, model_kwargs
-from gantry_dynamic.config import RunConfig, OUT_ROOT
+from bb import GREY_BOX, data_cfg, load_records, model_kwargs
+from gantry_dynamic.config import OUT_ROOT
 from gantry_dynamic.data import record_files, servo_sigma
 
-# one configuration of the grid; the defaults are the selected R8 (grid index 9 of run_black_box.sh)
+# one configuration of the grid; the defaults are the selected configuration (grid index 9 of run_black_box.sh)
 NX = 16              # state dimension n_x
 FH_WIDTH = 16        # hidden width of f_bb and h_bb
 E_WIDTH = 32         # hidden width of the encoder psi
@@ -44,7 +44,7 @@ def per_record_rms(model, sys_data, ry):
     Returns:
         (n_records, 3) RMS_j, physical.
     """
-    k0 = RunConfig.na_nb
+    k0 = GREY_BOX.na_nb
     # a diverging configuration gives inf or NaN; it is scored as such and the selection skips it
     with np.errstate(all='ignore'):
         e_hat = [np.asarray(model.apply_experiment(sd).y, float) for sd in sys_data]
@@ -155,11 +155,11 @@ def main(args):
     torch.manual_seed(SEED)
 
     # 1. Data: input u = (r, u^ms) and target e = y - r per record; sigma_e from k0 = n + 1.
-    k0 = RunConfig.na_nb
+    k0 = GREY_BOX.na_nb
     cfg = data_cfg(args.truncate_s)
     train_files, val_files, _ = record_files(cfg)
     train, val = load_records(train_files, cfg), load_records(val_files, cfg)
-    sys_data = [[deepSI.System_data(u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=RunConfig.ts_new)
+    sys_data = [[deepSI.System_data(u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=cfg.ts_new)
                  for u, r, y in recs] for recs in (train, val)]
     val_ry = [(r, y) for _, r, y in val]
     val_sigma_e = servo_sigma([y - r for r, y in val_ry], k0)
@@ -172,7 +172,7 @@ def main(args):
                         os.path.join(out, 'val_hist.json'))
     # 3. Fit: Adam on L over windows of nf steps, NRMS_e on the validation records every its_per_val updates.
     model.fit(deepSI.System_data_list(sys_data[0]), val_sys_data=deepSI.System_data_list(sys_data[1]),
-              n_its=args.n_its, batch_size=BATCH_SIZE, loss_kwargs=dict(nf=RunConfig.nf, stride=STRIDE),
+              n_its=args.n_its, batch_size=BATCH_SIZE, loss_kwargs=dict(nf=cfg.nf, stride=STRIDE),
               validation_measure='sim-NRMSe', optimizer_kwargs=dict(lr=args.lr), its_per_val=args.its_per_val)
 
     # 4. Result of the best checkpoint, which deepSI has reloaded; the loss curves stay in its _last.pth.

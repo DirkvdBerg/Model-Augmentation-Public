@@ -50,11 +50,11 @@ np.random.seed(cfg.seed)
 torch.manual_seed(cfg.seed)
 data = GDD.load_datasets(cfg)
 norm = GDD.compute_normalization(cfg, data)
-hp = cfg.hp
+hp = H.hp_of(cfg)
 np.random.seed(cfg.seed)
 torch.manual_seed(cfg.seed)
 t = time.time()
-fit_sys = GDM.build_model(hp, cfg, data, norm)
+fit_sys = H.build_model(GDM, cfg, data, norm)
 tim['build_model'] = time.time() - t
 # R17 (D-284 amendment 10): the clean hp names the added-state count n_a; recorded under the mainline key NX_ANN
 c1.info['hp'] = hp if args.side == 'mainline' else {('NX_ANN' if k == 'n_a' else k): v for k, v in hp.items()}

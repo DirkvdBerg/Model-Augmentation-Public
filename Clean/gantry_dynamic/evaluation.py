@@ -240,7 +240,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
     cfg = RunConfig.from_config_json(meta, device='cpu', compile_mode=None, data_root=data_root)
     data = load_datasets(cfg)
     norm = compute_normalization(cfg, data)
-    fit_sys = build_model(cfg.hp, cfg, data, norm)
+    fit_sys = build_model(cfg, data, norm)
     ckpt = os.path.join(run_dir, 'gantry_ckpt_%s' % run_id)
     # start_phase 'lbfgs': weights only, no Adam moments
     polish = json.loads(str(load_checkpoint(fit_sys, ckpt, start_phase='lbfgs')

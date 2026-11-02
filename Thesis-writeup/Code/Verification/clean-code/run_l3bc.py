@@ -74,7 +74,6 @@ if args.layer == '3b':
     os.makedirs(lad)
     cfg, EP = H.make_cfg(args.row, args.noise, run_id='L3b-' + case)
     import gantry_dynamic.data as GDD
-    from gantry_dynamic.model import build_model
     from gantry_dynamic.controller import build_closed_loop
     from gantry_dynamic.training import load_checkpoint
     import gantry_dynamic.training as GDT
@@ -84,10 +83,10 @@ if args.layer == '3b':
     torch.manual_seed(cfg.seed)
     data = GDD.load_datasets(cfg)
     norm = GDD.compute_normalization(cfg, data)
-    hp = cfg.hp
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
-    fit_sys = build_model(hp, cfg, data, norm)
+    import gantry_dynamic.model as GDM
+    fit_sys = H.build_model(GDM, cfg, data, norm)
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg, train_files=data.train_files, val_files=data.val_files,
         e_train=data.e_train, e_val=data.e_val,
@@ -121,7 +120,7 @@ if args.layer == '3b':
             tol_grad=cfg.lbfgs_tol_grad, tol_change=cfg.lbfgs_tol_change,
             seed=cfg.seed)
         kw = {}
-    res = lbfgs_polish(fit_sys, data.train_data, loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
+    res = lbfgs_polish(fit_sys, data.train_data, loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride},
                        spec=spec, val_sys_data=data.val_ckpt_data, val_before=0.0,
                        validation_measure=cfg.validation_measure if args.side == 'mainline' else 'sim-NRMSe', **kw)
     after = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())

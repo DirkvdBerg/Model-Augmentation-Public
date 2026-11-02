@@ -22,14 +22,13 @@ from .obc_gantry import attach_obc, P_INV_T64
 PHYSICAL_STATE_IX = np.arange(6)
 
 
-def build_model(hp, cfg: RunConfig, data, norm):
+def build_model(cfg: RunConfig, data, norm):
     """The untrained augmented model, which starts as the baseline (beta = 0, f_aug^n = 0).
 
     x_tilde^n_{k+1} = f_base^n + f_aug^n (- f_obc^n on the OBC arm), xbar_{k+1} = g_aug^n, y_hat^n = C^n x_tilde^n,
     one step per T_s in normalised coordinates.
 
     Args:
-        hp: cfg.hp, the model and Adam settings.
         cfg: run configuration.
         data: the records.
         norm: normalisation.
@@ -37,11 +36,11 @@ def build_model(hp, cfg: RunConfig, data, norm):
         the AugmentedModel with its Adam optimizer.
     """
     # model state size: physical states plus n_a added states
-    n_a = hp['n_a']
+    n_a = cfg.n_a
     nx = cfg.nx_phys + n_a
 
     # THEORY: na = nb past samples before the window start, the current sample excluded
-    na = nb = hp['na_nb']
+    na = nb = cfg.na_nb
 
     # 1. Baseline block (physics, f_base^n) and output map C^n.
     ic = Interconnect(nx, cfg.nu, cfg.ny)
@@ -55,7 +54,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
         initial_combinations = initial_combinations * initial_combinations.new_tensor(cfg.combo_init_detune)
     phy_block = IdentifiableGantryStateBlock(
         params_init=raw_nominal, combo_init=initial_combinations, std_x=norm.std_x, std_u=norm.std_u,
-        x_mean=norm.x_mean, u_mean=norm.u_mean, Ts=cfg.ts_new, up_sample=hp['up_sample'],
+        x_mean=norm.x_mean, u_mean=norm.u_mean, Ts=cfg.ts_new, up_sample=cfg.up_sample,
         closed_form=cfg.baseline_form == 'closed').to(cfg.dtype_pt)
     out_phys = Linear_Output_Block(C=norm.Cd_norm, D=norm.Dd_np)
     ic.add_block(phy_block)
@@ -64,8 +63,8 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # 2. Network block phi_aug: (state, input) -> one correction per state, tanh hidden layers.
     ann_block = Static_ANN_Block(
         nz=nx + cfg.nu, nw=nx,
-        n_nodes_per_layer=hp['n_nodes_per_layer'],
-        n_hidden_layers=hp['n_hidden_layers'],
+        n_nodes_per_layer=cfg.n_nodes_per_layer,
+        n_hidden_layers=cfg.n_hidden_layers,
         net=AugmentationNetwork,
         net_kwargs={'nx_phys': cfg.nx_phys},
         activation=torch.nn.Tanh,
@@ -99,8 +98,8 @@ def build_model(hp, cfg: RunConfig, data, norm):
     fit_sys.encoder = AugmentedEncoder(
         nx=cfg.nx_phys, nu=cfg.nu, ny=cfg.ny, na=na - 1, nb=nb - 1,
         nx_aug=n_a,
-        n_nodes_per_layer=hp['n_nodes_per_layer'],
-        n_hidden_layers=hp['n_hidden_layers'],
+        n_nodes_per_layer=cfg.n_nodes_per_layer,
+        n_hidden_layers=cfg.n_hidden_layers,
         dtype=cfg.dtype_pt,
     ).to(cfg.dtype_pt)
 
@@ -110,8 +109,8 @@ def build_model(hp, cfg: RunConfig, data, norm):
         raise RuntimeError(
             'device="cuda" was requested but CUDA is not available; check the GPU allocation '
             '(--gres=gpu:1) or run with --cpu.')
-    # Adam over every parameter (encoder and hfn), learning rate hp['lr']; the normaliser keeps the values set above
-    fit_sys.init_model(sys_data=data.train_data, optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
+    # Adam over every parameter (encoder and hfn), learning rate cfg.lr; the normaliser keeps the values set above
+    fit_sys.init_model(sys_data=data.train_data, optimizer_kwargs={'lr': cfg.lr, 'eps': cfg.adam_eps})
     eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
     if eps_values != {float(cfg.adam_eps)}:
         raise RuntimeError(

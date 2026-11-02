@@ -1,4 +1,4 @@
-"""Model selection over the R8 grid: the configuration with the lowest validation NRMS_e of its best checkpoint; writes
+"""Model selection over the black-box grid: the configuration with the lowest validation NRMS_e of its best checkpoint; writes
 the search table with the parameter count of each configuration."""
 __project_origin__ = "added"
 

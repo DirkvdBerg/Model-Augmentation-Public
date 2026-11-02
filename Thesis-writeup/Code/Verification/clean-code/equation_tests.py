@@ -30,6 +30,10 @@ from gantry_dynamic.obc_gantry import fourth_order_central_difference, GantryOBC
 from gantry_dynamic.data import compute_normalization, servo_sigma
 from gantry_dynamic.model import least_squares_start
 from gantry_dynamic import controller as ctl
+from gantry_interconnect_dynamic import SETTINGS
+
+# D-292: PS2Spec has no defaults; the thesis opening of the entry script, seed 0 (the former default)
+PS2_THESIS = dict(SETTINGS['ps2_opening'], seed=0)
 
 torch.set_num_threads(1)
 DT = torch.float64
@@ -330,7 +334,7 @@ def test_P_s1_loss():
     fs=NS(encoder=lambda *a:x);p._cal={'uh':rand(4,3,3),'yh':rand(4,3,3)}
     close(p._cal_unexplained(fs),torch.sum((p._decoder(x[:,6:])-target)**2)/torch.sum(target**2))
     # Capture the gradients of the actual S1 loss, without an optimizer update.
-    p.fit_ix=[0];p.spec=PS2Spec();p._rng=np.random.default_rng(284)
+    p.fit_ix=[0];p.spec=PS2Spec(**PS2_THESIS);p._rng=np.random.default_rng(284)
     p._sample=lambda *args,**kwargs:p._cal
     p._aux=list(p._decoder.parameters())
     expected=torch.autograd.grad(((p._decoder(x[:,6:])-target)**2).sum()/target.numel(),p._aux)
@@ -351,7 +355,7 @@ def test_P_pairs():
 @case('P_s2_cost')
 def test_P_s2_cost():
     # Zero update budget: evaluates the real nested state_map_loss, without any training.
-    p=object.__new__(PS2Opening);p.spec=PS2Spec(s2_cap=0,n_snap=8,n_snap_cal=4);p.fit_ix=[0];p.cal_ix=[1]
+    p=object.__new__(PS2Opening);p.spec=PS2Spec(**dict(PS2_THESIS,s2_cap=0,n_snap=8,n_snap_cal=4));p.fit_ix=[0];p.cal_ix=[1]
     p.n_xb=6;p.n_a=2;p._added_cols=[6,7]
     ann=nn.Linear(11,8).double()
     class ANN(nn.Module):

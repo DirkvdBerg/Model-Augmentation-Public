@@ -231,11 +231,11 @@ class ValidationHistory:
         self.record('adam', fit_sys, value)
 
 
-def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_ran=True):
+def run_lbfgs_polish(fit_sys, cfg: RunConfig, data, bestfit, history, adam_ran=True):
     """The L-BFGS polish of the selected model, kept only if the validation score drops.
 
     Args:
-        fit_sys, hp, cfg, data: model, settings and records.
+        fit_sys, cfg, data: model, settings and records.
         bestfit: score of the Adam-selected model, the score to beat (inf if unknown).
         history: the ValidationHistory that receives the 'rebuilt' and 'polish_candidate' rows.
         adam_ran: False when this job ran no Adam update (polish only, or Adam budget already done).
@@ -269,7 +269,7 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_r
         # 3. Polish on the training windows; rolled back inside unless the validation score drops.
         out = lbfgs_polish(
             fit_sys, data.train_data,
-            loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride}, spec=spec,
+            loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride}, spec=spec,
             val_sys_data=data.val_ckpt_data,
             val_before=val_before,
             validation_measure=SCORE_NAME)
@@ -280,12 +280,11 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit, history, adam_r
         return out
 
 
-def _adam_phase(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, meta, done_epochs, epochs_remaining,
-                polish_only):
+def _adam_phase(fit_sys, cfg: RunConfig, data, checkpoint_dir, meta, done_epochs, epochs_remaining, polish_only):
     """Adam phase of one job.
 
     Args:
-        fit_sys, hp, cfg, data: model, settings and records.
+        fit_sys, cfg, data: model, settings and records.
         checkpoint_dir: run folder, receives val_hist.npz.
         meta: meta of the resumed checkpoint, None for a fresh run.
         done_epochs: Adam epochs already done before this job.
@@ -303,9 +302,9 @@ def _adam_phase(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, meta, done_ep
     if cfg.ps2 and not polish_only and (
             done_epochs == 0 if ps2_state is None else ps2_state[0] != 'S3'):
         # it runs after every Adam update: S1 steps, then the S2 fit, then phase S3 (ended)
-        spec = PS2Spec(seed=cfg.seed)
+        spec = PS2Spec(**cfg.ps2_opening, seed=cfg.seed)
         opening = PS2Opening(fit_sys, data, n_xb=cfg.nx_phys, n_a=cfg.n_a,
-                             width=hp['n_nodes_per_layer'], spec=spec)
+                             width=cfg.n_nodes_per_layer, spec=spec)
         fit_sys.training_phase = opening
     # 3. Validation history: called by fit after every validation, removed again afterwards.
     prev = fit_sys.validation_probes
@@ -316,15 +315,15 @@ def _adam_phase(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, meta, done_ep
         if polish_only:
             print('  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly')
         elif epochs_remaining <= 0:
-            print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, hp['epochs']))
+            print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, cfg.epochs))
         else:
             with on_device(fit_sys, cfg):
                 fit_sys.fit(
                     train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
-                    batch_size=hp['batch_size'], epochs=epochs_remaining,
+                    batch_size=cfg.batch_size, epochs=epochs_remaining,
                     n_its=cfg.n_its,
                     its_per_val=(cfg.n_its if cfg.n_its else cfg.its_per_val),
-                    loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride},
+                    loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride},
                     cuda=(cfg.device == 'cuda'),
                     validation_measure=SCORE_NAME,
                 )
@@ -336,11 +335,11 @@ def _adam_phase(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, meta, done_ep
     return opening, history, time.time() - t0
 
 
-def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
+def train(fit_sys, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
     """Run the remaining Adam budget, then polish and save the selected model.
 
     Args:
-        fit_sys, hp, cfg, data: model, settings and records; hp['epochs'] is the total Adam budget over all
+        fit_sys, cfg, data: model, settings and records; cfg.epochs is the total Adam budget over all
             continuations, so a resume runs only what its checkpoint has not done.
         checkpoint_dir: the run folder.
         run_id: run id in the checkpoint names.
@@ -366,20 +365,20 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
         # deepSI dumps of this job count epochs on from here
         fit_sys.epochs_before = done_epochs
 
-    epochs_remaining = hp['epochs'] - done_epochs
-    print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val={SCORE_NAME}  n_a={hp["n_a"]}')
+    epochs_remaining = cfg.epochs - done_epochs
+    print(f'\nTraining: nf={cfg.nf}  epochs={cfg.epochs}  val={SCORE_NAME}  n_a={cfg.n_a}')
     if done_epochs > 0:
         print(f'  Resuming: {done_epochs} done, {epochs_remaining} remaining')
 
     # 2. Adam with the PS2 opening; fit leaves the best validated weights loaded.
     adam_ran = not polish_only and epochs_remaining > 0
-    opening, history, elapsed = _adam_phase(fit_sys, hp, cfg, data, checkpoint_dir, meta, done_epochs,
+    opening, history, elapsed = _adam_phase(fit_sys, cfg, data, checkpoint_dir, meta, done_epochs,
                                             epochs_remaining, polish_only)
     if adam_ran:
         bestfit = fit_sys.bestfit
     # the pairs record the whole budget as done, also after an n_its cap or an early stop
     if not polish_only:
-        done_epochs = hp['epochs']
+        done_epochs = cfg.epochs
 
     # 3. Pre-polish checkpoint: the selected weights with their Adam moments, so Adam can be continued from here.
     pre_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_pre_lbfgs')
@@ -392,7 +391,7 @@ def train(fit_sys, hp, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None
         history.record('selected', fit_sys, selected['score'], row=selected)
 
     # 4. Polish, then the final model: the polished weights if accepted, else the (rescored) Adam selection.
-    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit, history, adam_ran=adam_ran)
+    lbfgs_outcome = run_lbfgs_polish(fit_sys, cfg, data, bestfit, history, adam_ran=adam_ran)
     last_by_event = {r['event']: r for r in history.val_hist}
     final = (last_by_event.get('polish_candidate') if lbfgs_outcome.get('accepted')
              else last_by_event.get('rebuilt') or selected)

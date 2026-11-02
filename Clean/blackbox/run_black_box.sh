@@ -7,9 +7,9 @@
 #SBATCH --mem=16gb
 #SBATCH -t 24:00:00
 #SBATCH --array=0-10
-#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/clean/bb_r8_%A_%a.out
+#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/clean/bb_grid_%A_%a.out
 
-# Black-box grid R8: one array index trains one configuration of GRID on the CPU, since deepSI's eager loop is
+# Black-box grid: one array index trains one configuration of GRID on the CPU, since deepSI's eager loop is
 # dispatch-bound (about 1.1 h per 20000 updates); then Clean/blackbox/select_bb.py on the job's run folders.
 #   sbatch Clean/blackbox/run_black_box.sh                      # all 11
 #   sbatch --array=9 Clean/blackbox/run_black_box.sh            # the selected configuration only

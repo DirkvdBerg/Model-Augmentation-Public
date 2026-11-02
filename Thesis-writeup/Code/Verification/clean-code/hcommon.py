@@ -121,16 +121,28 @@ def make_cfg(row, noise, run_id, budget=None, **extra):
         cfg = replace(EP.CFG, **budget, **extra)
         EP.CFG = cfg
         return cfg, EP
-    from gantry_dynamic.config import RunConfig, PRESETS
-    p = PRESETS[preset]
-    assert (p['arm'], p['start'], p['n_a'], int(p['ps2'])) == (arm, start, na, ps2), (preset, p)
-    kw = dict(device='cpu', compile_mode=None)
+    # D-292: no presets in Clean/; the row's axes over the entry script's SETTINGS, with the short PS opening
+    from gantry_dynamic.config import RunConfig
+    import gantry_interconnect_dynamic as EP
+    kw = dict(device='cpu', compile_mode=None, ps2_opening=short_ps2_opening(EP.SETTINGS))
     kw.update(budget)
     kw.update(extra)
-    cfg = RunConfig(**p, noise=noise, **kw)
-    short_ps2()
-    import gantry_interconnect_dynamic as EP
+    cfg = RunConfig(**dict(EP.SETTINGS, arm=arm, start=start, n_a=na, ps2=bool(ps2), noise=noise, **kw))
     return cfg, EP
+
+
+# the nine keys of mainline's cfg.hp, which the clean code no longer has (D-292); recorded for the L1 comparison
+HP_KEYS = ('n_a', 'n_nodes_per_layer', 'n_hidden_layers', 'up_sample', 'nf', 'na_nb', 'batch_size', 'lr', 'epochs')
+
+
+def hp_of(cfg):
+    """The hp dict of cfg: mainline's own, or the same nine values read from the clean RunConfig."""
+    return cfg.hp if SIDE == 'mainline' else {k: getattr(cfg, k) for k in HP_KEYS}
+
+
+def build_model(GDM, cfg, data, norm):
+    """GDM.build_model of the selected side: mainline takes hp first, the clean one reads cfg only (D-292)."""
+    return GDM.build_model(cfg.hp, cfg, data, norm) if SIDE == 'mainline' else GDM.build_model(cfg, data, norm)
 
 
 def dropped_state_keys():
@@ -153,13 +165,13 @@ def drop_state(sd):
     return {k: v for k, v in sd.items() if not is_dropped_state_key(k)}
 
 
-def short_ps2():
-    """E2: the clean side's short PS2 opening (formerly RunConfig.ps2_smoke), patched in from outside Clean/ by
-    clean-up-verification/smoke.py."""
+def short_ps2_opening(settings):
+    """E2: the clean side's short PS2 opening (formerly RunConfig.ps2_smoke), as the ps2_opening setting
+    (D-292); its one source is clean-up-verification/smoke.py."""
     if os.path.join(REPO, 'clean-up-verification') not in sys.path:
         sys.path.append(os.path.join(REPO, 'clean-up-verification'))
-    from smoke import use_short_ps2
-    use_short_ps2()
+    from smoke import short_ps2_opening as _short
+    return _short(settings)
 
 
 def sha256_file(path):

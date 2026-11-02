@@ -1,10 +1,10 @@
 """Shared parts of the black box M_BB, Jan Hoekstra's SUBNET on the servo error e = y - r (deepSI 0.3.29): the net
-constructor, the loader settings and the record loader of the grey box."""
+constructor, the grey box's data settings and its record loader."""
 __project_origin__ = "added"
 
 import os
 import sys
-from types import SimpleNamespace
+from dataclasses import replace
 
 import numpy as np
 from scipy.io import loadmat
@@ -14,10 +14,14 @@ from jan_model import JanEncoder, JanStateNet
 
 # the scripts run as python Clean/blackbox/<script>.py, so Clean/ is put on the path for gantry_dynamic
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from gantry_dynamic.config import RunConfig, DATA_ROOT                             # noqa: E402
+from gantry_interconnect_dynamic import SETTINGS                                   # noqa: E402
+from gantry_dynamic.config import RunConfig                                        # noqa: E402
 from gantry_dynamic.data import traj_dir, _record_at_fs_new                        # noqa: E402
 
 N_HIDDEN_LAYERS = 2  # hidden tanh layers of psi, f_bb and h_bb (HEURISTIC: thesis value, Jan's default)
+# the grey box's settings on the lowpass data set: both models see the same samples (fs_new, anti-aliasing, trim),
+# the same encoder window (na_nb) and the same training window length (nf)
+GREY_BOX = RunConfig(**dict(SETTINGS, noise='lowpass'))
 
 
 def model_kwargs(nx, fh_width, e_width):
@@ -33,20 +37,19 @@ def model_kwargs(nx, fh_width, e_width):
     """
     fh_kwargs = dict(n_hidden_layers=N_HIDDEN_LAYERS, n_nodes_per_layer=fh_width)
     # encoder window: the grey box's n + 1 past samples of u and e
-    return dict(nx=nx, na=RunConfig.na_nb, nb=RunConfig.na_nb, e_net=JanEncoder,
+    return dict(nx=nx, na=GREY_BOX.na_nb, nb=GREY_BOX.na_nb, e_net=JanEncoder,
                 e_net_kwargs=dict(n_hidden_layers=N_HIDDEN_LAYERS, n_nodes_per_layer=e_width),
                 hf_net_kwargs=dict(f_net=JanStateNet, f_net_kwargs=dict(fh_kwargs), h_net=default_output_net,
                                    h_net_kwargs=dict(fh_kwargs)))
 
 
 def data_cfg(truncate_s=None):
-    """Loader settings: the lowpass data set at the training rate, the RunConfig fields the grey-box loader reads.
+    """Loader settings: GREY_BOX, optionally with shortened records.
 
     Args:
         truncate_s: [s] use only the start of each record; None for whole records.
     """
-    return SimpleNamespace(noise='lowpass', data_root=DATA_ROOT, d=RunConfig.d, fs_orig=RunConfig.fs_orig,
-                           fs_new=RunConfig.fs_new, truncate_s=truncate_s)
+    return replace(GREY_BOX, truncate_s=truncate_s)
 
 
 def load_records(files, cfg, folder=None):

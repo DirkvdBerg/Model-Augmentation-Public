@@ -21,7 +21,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(REPO, 'Clean'))
 
-from gantry_dynamic.config import RunConfig, PRESETS             # noqa: E402
+from gantry_interconnect_dynamic import SETTINGS                  # noqa: E402
+from gantry_dynamic.config import RunConfig                       # noqa: E402
 from gantry_dynamic.data import _load_record                      # noqa: E402
 
 CSV = os.path.join(REPO, 'Thesis-writeup', 'Results', '24-10-2026', 'CSV', 'res_time_trace.csv')
@@ -43,9 +44,8 @@ with open(CSV, newline='') as fh:
 t_csv = np.array([float(r['t_s']) for r in rows])
 r_csv = np.array([float(r['r_Y']) for r in rows])
 y_csv = np.array([float(r['y_Y']) for r in rows])
-assert rows[0]['t_s'] == '%.6f' % (K0 / RunConfig.fs_new), 'the trace must start at k0 = %d' % K0
-
-cfg = RunConfig(**PRESETS['R1'], noise='lowpass', device='cpu', compile_mode=None)
+cfg = RunConfig(**dict(SETTINGS, noise='lowpass', device='cpu', compile_mode=None))
+assert rows[0]['t_s'] == '%.6f' % (K0 / cfg.fs_new), 'the trace must start at k0 = %d' % K0
 sd, e = _load_record(RECORD, cfg)
 y = np.asarray(sd.y)[:, 2]
 e = e[:, 2]

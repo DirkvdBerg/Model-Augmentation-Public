@@ -7,6 +7,7 @@ y = (X1, X2, Y): measured stage positions [m]; q = (X, Theta, Y): beam centre, b
 __project_origin__ = "added"
 
 import csv
+import functools
 import os
 from dataclasses import dataclass
 
@@ -17,15 +18,18 @@ from scipy.signal import butter, sosfiltfilt
 
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
 
-from .config import (RunConfig, AA_ORDER, AA_FC_HZ,
-                     record_trim, y_decimation)
+from .config import RunConfig, record_trim, y_decimation
 
 # data set folder per noise setting; the true system is the baseline plus tanh Coulomb friction and a hidden absorber
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
 # manifest block to split; test-I and test-E (interpolation, extrapolation) both go to test
 _THESIS_SPLIT = {'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
-# anti-aliasing filter B of _decimate_y
-SOS = butter(AA_ORDER, AA_FC_HZ, fs=RunConfig.fs_orig, output='sos')
+
+
+@functools.lru_cache(maxsize=None)
+def _aa_sos(order, fc_hz, fs_hz):
+    """Second-order sections of the anti-aliasing filter B of _decimate_y, built once per setting."""
+    return butter(order, fc_hz, fs=fs_hz, output='sos')
 
 
 def record_files(cfg: RunConfig):
@@ -112,7 +116,7 @@ def _resample_u(u, cfg: RunConfig):
 def _decimate_y(d, cfg: RunConfig):
     """Measured positions at the model rate.
 
-    y_k = r(k T_s) + B(y - r)(k T_s) on the lowpass data set, B = zero-phase Butterworth (order 8, 1.6 kHz);
+    y_k = r(k T_s) + B(y - r)(k T_s) on the lowpass data set, B = zero-phase Butterworth (cfg.aa_order, cfg.aa_fc_hz);
     y_k = y(k T_s) on the noise-free data set. Only the servo error is filtered; r is noise-free.
 
     Args:
@@ -126,7 +130,8 @@ def _decimate_y(d, cfg: RunConfig):
         return d['y'][::D]
     r = d['r_sim']
     # filter the servo error only: y_k = r_k + [B(y - r)]_{k D}
-    return r[::D] + sosfiltfilt(SOS, d['y'] - r, axis=0)[::D]
+    sos = _aa_sos(cfg.aa_order, cfg.aa_fc_hz, cfg.fs_orig)
+    return r[::D] + sosfiltfilt(sos, d['y'] - r, axis=0)[::D]
 
 
 def _record_at_fs_new(d, cfg: RunConfig, fields=()):

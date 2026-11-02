@@ -13,30 +13,30 @@ from torch import nn
 
 @dataclass(frozen=True)
 class PS2Spec:
-    """Settings of the opening. Counts are in Adam updates (eval_every, s1_*, screen_at), S2 steps (s2_*) or windows
-    and pairs (n_*)."""
+    """Settings of the opening; values from the run config (ps2_opening, seed). Counts are in Adam updates
+    (eval_every, s1_*, screen_at), S2 steps (s2_*) or windows and pairs (n_*)."""
     # the opening's own Adam
-    aux_batch: int = 64            # windows per S1 step, separate from the training batch (HEURISTIC)
-    lr: float = 1e-3               # learning rate (THEORY: the Adam default, Kingma and Ba)
-    # S1: decoder fit (HEURISTIC: thesis values)
-    eval_every: int = 25           # updates between calibration checks
-    s1_min: int = 100              # no S1 end before this many updates
-    s1_cap: int = 350              # S1 ends here at the latest
-    s1_tol: float = 0.02           # plateau: the best of the last s1_window checks improved by less than this, relative
-    s1_window: int = 4             # checks in the plateau window
-    screen_at: int = 150           # update of the early screen; a multiple of eval_every
-    screen_max: float = 0.90       # S2 runs only if the decoder explains at least 10 % of the residual
-    n_cal: int = 128               # left-out windows of the S1 check
-    # S2: added-state transition fit (HEURISTIC: thesis values)
-    n_snap: int = 8192             # fit pairs
-    n_snap_cal: int = 2048         # left-out pairs
-    s2_batch: int = 512            # pairs per step
-    s2_check: int = 100            # steps between checks
-    s2_window: int = 5             # checks in the plateau window
-    s2_min: int = 500              # no S2 end before this many steps
-    s2_cap: int = 8000             # S2 ends here at the latest
-    s2_tol: float = 0.01           # plateau tolerance, as s1_tol
-    seed: int = 0                  # seed of the opening's random window draws
+    aux_batch: int       # windows per S1 step, separate from the training batch
+    lr: float            # learning rate
+    # S1: decoder fit
+    eval_every: int      # updates between calibration checks
+    s1_min: int          # no S1 end before this many updates
+    s1_cap: int          # S1 ends here at the latest
+    s1_tol: float        # plateau: the best of the last s1_window checks improved by less than this, relative
+    s1_window: int       # checks in the plateau window
+    screen_at: int       # update of the early screen; a multiple of eval_every
+    screen_max: float    # S2 runs only if the decoder leaves at most this fraction of the residual unexplained
+    n_cal: int           # left-out windows of the S1 check
+    # S2: added-state transition fit
+    n_snap: int          # fit pairs
+    n_snap_cal: int      # left-out pairs
+    s2_batch: int        # pairs per step
+    s2_check: int        # steps between checks
+    s2_window: int       # checks in the plateau window
+    s2_min: int          # no S2 end before this many steps
+    s2_cap: int          # S2 ends here at the latest
+    s2_tol: float        # plateau tolerance, as s1_tol
+    seed: int            # seed of the opening's random window draws
 
 
 def _plateaued(values, window, tol):
