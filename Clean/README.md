@@ -47,7 +47,7 @@ Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/
 | `model_augmentation/utils/utils.py` | `@added` marker, tensor conversion, selection matrices | |
 
 ## Black box (R8)
-SUBNET on the servo error e = y - r (deepSI 0.3.29). `run_r8.sh` trains the 11 grid configurations on the server
+SUBNET on the servo error e = y - r (deepSI 0.3.29). `run_black_box.sh` trains the 11 grid configurations on the server
 (`sbatch --array=9` for the selected one only).
 
 | File | Role | Thesis |
@@ -57,7 +57,7 @@ SUBNET on the servo error e = y - r (deepSI 0.3.29). `run_r8.sh` trains the 11 g
 | `blackbox/train_bb.py` | trains one configuration, weighted loss, selection by validation NRMS_e | Black-box model |
 | `blackbox/select_bb.py` | selects the configuration with the lowest validation NRMS_e | Black-box model |
 | `blackbox/eval_bb.py` | predictions on every split: `python -u Clean/blackbox/eval_bb.py <run folder> <output folder>` | Metrics |
-| `blackbox/run_r8.sh` | SLURM array over the grid | |
+| `blackbox/run_black_box.sh` | SLURM array over the grid | |
 
 ## Data generation (MATLAB)
 `generate_thesis_data()` writes all 48 records (18 training, 6 validation, 12 test, 12 FRF), each noisy and

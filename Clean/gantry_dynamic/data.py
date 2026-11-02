@@ -1,8 +1,8 @@
-"""Data loading (the manifest split of one data set), resampling to the training rate and normalisation.
+"""Data loading, resampling to the training rate and normalisation.
 
 Conventions: samples are rows, so q = P^-T y is written y @ P^-T.T; superscript n = normalised; x_mean, std_x,
-u_mean, std_u, y0, ystd are mu_x, sigma_x, mu_u, sigma_u, mu_y, sigma_y. y = (X1, X2, Y) the measured stage positions
-[m], q = (X, Theta, Y) the generalised positions [m, rad, m] (beam centre, beam rotation, head position).
+u_mean, std_u, y0, ystd are mu_x, sigma_x, mu_u, sigma_u, mu_y, sigma_y.
+y = (X1, X2, Y): measured stage positions [m]; q = (X, Theta, Y): beam centre, beam rotation, head position [m, rad, m].
 """
 __project_origin__ = "added"
 
@@ -20,32 +20,28 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 from .config import (RunConfig, AA_ORDER, AA_FC_HZ,
                      record_trim, y_decimation)
 
-# the thesis data sets below cfg.data_root, one folder per noise setting; the data-generating system adds tanh Coulomb
-# friction and a hidden mass-spring-damper absorber (MSD) to the baseline, what the augmentation has to learn
+# data set folder per noise setting; the true system is the baseline plus tanh Coulomb friction and a hidden absorber
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
-# test-I and test-E: the interpolation and extrapolation test records, one test split scored per record
+# manifest block to split; test-I and test-E (interpolation, extrapolation) both go to test
 _THESIS_SPLIT = {'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
-# the anti-aliasing filter B of _decimate_y, designed once
+# anti-aliasing filter B of _decimate_y
 SOS = butter(AA_ORDER, AA_FC_HZ, fs=RunConfig.fs_orig, output='sos')
 
 
 def record_files(cfg: RunConfig):
-    """(train, val, test) file names relative to traj_dir(cfg), in manifest order; MANIFEST.csv columns read: block,
-    controller, folder, file (and pair_file in the evaluation)."""
+    """(train, val, test) record file names relative to traj_dir(cfg), in manifest order."""
     out = {'train': [], 'val': [], 'test': []}
     with open(os.path.join(traj_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
         for row in csv.DictReader(fh):
             split = _THESIS_SPLIT.get(row['block'])
-            # K1 records only: the bank builds K1 (gain 1); the manifest's other controller, K2-g+ (K1 gains x 1.2), is
-            # left out
+            # K1 records only, the controller the closed-loop bank builds
             if split is not None and row['controller'] == 'K1':
                 out[split].append('%s/%s.mat' % (row['folder'], row['file']))
     return out['train'], out['val'], out['test']
 
 
 def _register_controller(d, filename):
-    """Register the record's stored controller (meta.controller with name, design_Y [m], gain, fbw_Hz) for the
-    closed-loop bank."""
+    """Register the record's stored controller (meta.controller) for the closed-loop bank."""
     from .controller import register_stored_controller
     ctl = d['meta']['controller'].item()
     get = lambda k: ctl[k].item() if hasattr(ctl[k], 'item') else ctl[k]
@@ -55,10 +51,9 @@ def _register_controller(d, filename):
 
 @dataclass
 class DataBundle:
-    """The records of the three splits: System_data at FS_NEW, file names and servo errors e = y - r.
+    """The records of the three splits at FS_NEW: System_data, file names and servo errors e = y - r.
 
-    train_data and val_ckpt_data hold the train and val lists as one deepSI System_data_list each, for fit and the
-    validation of checkpoint selection; the per-record code uses the lists.
+    train_data and val_ckpt_data join the train and val records for deepSI fit and checkpoint selection.
     """
     train_list: list
     val_list: list
@@ -75,8 +70,7 @@ class DataBundle:
 
 @dataclass
 class Norm:
-    """Normalisation constants of the physical states, inputs and outputs, and the output map C^n (x_tilde^n to
-    y^n); Dd_np is D = 0: the output has no feedthrough, which the closed loop needs (output_only)."""
+    """Normalisation constants of states, inputs and outputs, and the output map C^n from x_tilde^n to y^n (D = 0)."""
     x_mean: object
     std_x: object
     std_u: object
@@ -100,16 +94,16 @@ def _load_u(d):
 def _resample_u(u, cfg: RunConfig):
     """Actuator force at the model rate.
 
-    u_act,k = mean of the D samples of u_act in [k T_s, (k + 1) T_s), D = fs_orig / fs_new: the force held over
-    each sample, while y_k is the position at k T_s, as the model step x_{k+1} = f(x_k, u_k) assumes.
+    u_act,k = mean of the D samples of u_act in [k T_s, (k + 1) T_s), D = fs_orig / fs_new.
+    The force held over each sample, as the model step x_{k+1} = f(x_k, u_k) assumes.
 
     Args:
-        u: (N_sim, 3) u_act at f_sim, newtons.
+        u: (N_sim, 3) u_act at fs_orig [N].
         cfg: run configuration; cfg.d = D.
     Returns:
-        (N, 3) u_act at 1 / T_s, newtons.
+        (N, 3) u_act at fs_new [N].
     """
-    # THEORY: the block mean preserves the force integral over each model interval
+    # THEORY: the block mean keeps the force integral over each model interval
     D = cfg.d
     n = u.shape[0] // D
     return u[:n * D].astype(np.float64).reshape(n, D, u.shape[1]).mean(axis=1)
@@ -118,20 +112,20 @@ def _resample_u(u, cfg: RunConfig):
 def _decimate_y(d, cfg: RunConfig):
     """Measured positions at the model rate.
 
-    y_k = r(k T_s) + B(y - r)(k T_s), B = forward-backward Butterworth (order 8, 1.6 kHz), on the lowpass data set;
-    point sampling y_k = y(k T_s) otherwise, since without encoder noise y holds no content near fs_new / 2 to alias.
-    Only the servo error is filtered: r is known and noise-free, so it is kept exactly.
+    y_k = r(k T_s) + B(y - r)(k T_s) on the lowpass data set, B = zero-phase Butterworth (order 8, 1.6 kHz);
+    y_k = y(k T_s) on the noise-free data set. Only the servo error is filtered; r is noise-free.
 
     Args:
-        d: the record; cfg: run configuration.
+        d: the .mat record.
+        cfg: run configuration.
     Returns:
-        (N, 3) y at 1 / T_s, physical.
+        (N, 3) y at fs_new [m].
     """
     D = cfg.d
     if cfg.noise != 'lowpass':
         return d['y'][::D]
     r = d['r_sim']
-    # Error-only filtering: y_k = r_k + [B(y - r)]_{k D}; r is unfiltered.
+    # filter the servo error only: y_k = r_k + [B(y - r)]_{k D}
     return r[::D] + sosfiltfilt(SOS, d['y'] - r, axis=0)[::D]
 
 
@@ -149,8 +143,7 @@ def _record_at_fs_new(d, cfg: RunConfig, fields=()):
 
 
 def _load_record(filename, cfg: RunConfig, folder=None):
-    """Load a record once and return (System_data, servo error), using folder when supplied; the .mat record holds
-    u_total, y, r_sim at fs_orig and meta.controller."""
+    """Load one record: (System_data at FS_NEW, servo error e = y - r)."""
     d = loadmat(os.path.join(folder or traj_dir(cfg), filename), squeeze_me=True)
     _register_controller(d, filename)
     u, y, r = _record_at_fs_new(d, cfg, ('r_sim',))
@@ -162,17 +155,15 @@ def _load_record(filename, cfg: RunConfig, folder=None):
 def servo_sigma(e_list, k0):
     """Servo-error scale sigma_e.
 
-    sigma_e,j = population standard deviation of e_j = y_j - r_j over k = k0 .. N - 1; it normalises the loss
-    (W_r) and the validation NRMS_e.
+    sigma_e,j = standard deviation of e_j = y_j - r_j over k >= k0; it normalises the loss and the validation NRMS_e.
 
     Args:
-        e_list: per record (N, 3) servo errors, metres; k0: first scored sample n + 1, the first with a full encoder
-            window.
+        e_list: per record (N, 3) servo errors [m].
+        k0: first scored sample, the first with a full encoder window.
     Returns:
-        (n_records, 3) sigma_e.
+        (n_records, 3) sigma_e [m].
     """
-    # THEORY: the NRMS normalisation by a standard deviation (Beintema et al.), here that of the servo error
-    # sigma_e,j = (mean over k >= k0 of (e_j,k - mean e_j)^2)^(1/2).
+    # THEORY: NRMS normalised by a standard deviation (Beintema et al.)
     s = np.stack([np.std(np.asarray(e, np.float64)[k0:], axis=0) for e in e_list])
     if not (np.all(np.isfinite(s)) and np.all(s > 0)):
         raise ValueError('servo error standard deviation must be finite and positive, got %s; check the '
@@ -220,9 +211,7 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
         cfg: run configuration.
         data: the loaded records.
     Returns:
-        Norm: mu_x, sigma_x (6, 1) of the physical q, qdot; mu_u, sigma_u (3, 1) of the actuator force, newtons;
-        mu_y, sigma_y (3,) of the measured positions, metres; C^n (3, 6) and D (3, 3), maps between normalised
-        coordinates.
+        Norm: mu_x, sigma_x (6, 1) of q, qdot; mu_u, sigma_u (3, 1) [N]; mu_y, sigma_y (3,) [m]; C^n (3, 6); D (3, 3).
     """
     # 1. Physical states of the training records.
     u_all = np.concatenate([t.u for t in data.train_list])
@@ -231,18 +220,17 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     P_inv_T = np.linalg.inv(P.numpy().astype(cfg.dtype_np).T)
     x_generalised_list = []
     for t in data.train_list:
-        # Positions: q = P^-T y (so the position means are P^-T mu_y).
+        # positions: q = P^-T y
         pos_generalised = (P_inv_T @ t.y.T).T
-        # Velocities: qdot_k = (q_k - q_{k-1}) / T_s for k >= 1, qdot_0 = qdot_1; they only set mu_x, sigma_x, and the
-        # noise of the lowpass set can enlarge the velocity sigma.
+        # velocities: qdot_k = (q_k - q_{k-1}) / T_s, qdot_0 = qdot_1; used only for mu_x, sigma_x
         vel_generalised = np.diff(pos_generalised, axis=0) * cfg.fs_new
         vel_generalised = np.vstack([vel_generalised[:1], vel_generalised])
         x_generalised_list.append(np.hstack([pos_generalised, vel_generalised]))
     x_all = np.concatenate(x_generalised_list)
 
     # 2. Statistics.
-    # mu_i = mean(i), sigma_i = (mean (i - mu_i)^2)^(1/2) + 1e-8, i in {x_tilde, u_act, y}.
-    # HEURISTIC: + 1e-8 keeps T_i = 1 / sigma_i finite for a constant channel
+    # mu_i = mean(i), sigma_i = (mean (i - mu_i)^2)^(1/2) + 1e-8, i in {x_tilde, u_act, y}
+    # HEURISTIC: + 1e-8 keeps 1 / sigma_i finite for a constant channel
     x_mean = x_all.mean(axis=0).reshape(cfg.nx_phys, 1)
     std_x  = x_all.std(axis=0).reshape(cfg.nx_phys, 1) + 1e-8
     std_u  = u_all.std(axis=0).reshape(cfg.nu, 1) + 1e-8

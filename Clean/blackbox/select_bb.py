@@ -1,10 +1,5 @@
-"""Model selection over the R8 grid: selected = argmin over configurations of the validation NRMS_e (mean over
-records and axes, best checkpoint, result.json `nrms_e_per_record`). Writes the search table with the parameter
-count of each configuration.
-
-Usage: python -u Clean/blackbox/select_bb.py <grid folder> <output csv>
-       (grid folder: the run folders <index>_<name>_n<its>_<job> of one run_r8.sh job)
-"""
+"""Model selection over the R8 grid: the configuration with the lowest validation NRMS_e of its best checkpoint; writes
+the search table with the parameter count of each configuration."""
 __project_origin__ = "added"
 
 import json
@@ -15,15 +10,17 @@ import numpy as np
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
 from bb import model_kwargs
+from gantry_dynamic.config import RunConfig
 
-# u = (r, u^ms) and e = y - r, three stage axes each
-NU, NY = 6, 3
+# folder of one run_black_box.sh job, with run folders <index>_<name>_n<updates>_<job>; the first argument overrides it
+GRID_DIR = None
+OUT_CSV = None     # search table; None: <GRID_DIR>/selection.csv; the second argument overrides it
+NU = RunConfig.ny + RunConfig.nu   # black-box inputs u = (r, u^ms)
+NY = RunConfig.ny                  # black-box outputs e = y - r
 
 
 def n_params(nx, fh_width, e_width):
-    """Number of trainable parameters of psi, f_bb and h_bb for one configuration.
-
-    Built from the configuration, so the count needs no checkpoint.
+    """Trainable parameters of psi, f_bb and h_bb for one configuration, from nets built for it (no checkpoint).
 
     Args:
         nx: state dimension n_x.
@@ -33,24 +30,31 @@ def n_params(nx, fh_width, e_width):
         Parameter count (int).
     """
     model = SS_encoder_general_hf(**model_kwargs(nx, fh_width, e_width))
+    # deepSI needs the input and output sizes before it builds the nets
     model.nu, model.ny = NU, NY
     model.init_nets(NU, NY)
     return sum(p.numel() for net in (model.encoder, model.hfn) for p in net.parameters())
 
 
-def main():
-    """Writes the search table of one grid folder."""
-    grid, out = Path(sys.argv[1]), Path(sys.argv[2])
+def main(grid, out):
+    """Writes the search table of one grid folder.
+
+    Args:
+        grid: folder of the run folders.
+        out: search table (csv).
+    """
     # 1. Read each run: its validation NRMS_e, parameter count, best update and status.
     rows = []
-    for d in sorted(grid.glob('*_n*_*'), key=lambda p: int(p.name.split('_')[0])):
-        res = json.load(open(d / 'result.json'))
-        a = res['args']
-        rows.append(dict(index=int(d.name.split('_')[0]), name='_'.join(d.name.split('_')[1:-2]), nx=a['nx'],
-                         width=a['fh_width'], lr=a['lr'], score=float(np.mean(res['nrms_e_per_record'])),
-                         n_par=n_params(a['nx'], a['fh_width'], a['e_width']), best_update=res['best_update'],
-                         status=res['status']))
-    # 2. Select: argmin NRMS_e over the runs with a finite score.
+    for run_dir in sorted(grid.glob('*_n*_*'), key=lambda p: int(p.name.split('_')[0])):
+        with open(run_dir / 'result.json') as fh:
+            res = json.load(fh)
+        args = res['args']
+        rows.append(dict(index=int(run_dir.name.split('_')[0]), name='_'.join(run_dir.name.split('_')[1:-2]),
+                         nx=args['nx'], width=args['fh_width'], lr=args['lr'],
+                         score=float(np.mean(res['nrms_e_per_record'])),
+                         n_par=n_params(args['nx'], args['fh_width'], args['e_width']),
+                         best_update=res['best_update'], status=res['status']))
+    # 2. Select the lowest NRMS_e; a failed run's score is not finite and is skipped.
     sel = min((r for r in rows if np.isfinite(r['score'])), key=lambda r: r['score'])
     # 3. Write the search table.
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -67,4 +71,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    grid_dir = Path(sys.argv[1] if len(sys.argv) > 1 else GRID_DIR)
+    out_csv = sys.argv[2] if len(sys.argv) > 2 else OUT_CSV
+    main(grid_dir, Path(out_csv) if out_csv else grid_dir / 'selection.csv')

@@ -12,8 +12,7 @@ import numpy as np
 class WindowedSystemData(System_data):
     """System_data whose training windows keep the data's dtype: deepSI's stride-1 path casts them to float32."""
     def __init__(self, u=None, y=None, x=None, cheat_n=0, normed=False, dt=None):
-        """deepSI's System_data; x (a state record) is accepted and dropped, cheat_n is deepSI's first simulated
-        sample in its evaluation (0), normed marks normalised data, dt = T_s [s]."""
+        """deepSI's System_data; x is accepted and dropped, normed marks normalised data, dt = T_s [s]."""
         super().__init__(u=u, y=y, cheat_n=cheat_n, normed=normed, dt=dt)
 
     def to_hist_future_data(self, na=10, nb=10, nf=5, na_right = 0, nb_right = 0, stride=1, \
@@ -24,9 +23,11 @@ class WindowedSystemData(System_data):
         stride.
 
         Args:
-            na, nb: history lengths (n + 1); nf: n_f; stride: window stride; na_right, nb_right: samples from tau on
-                added to the histories (0 here); force_multi_u, force_multi_y, online_construct: deepSI's
-                signature, unused.
+            na, nb: history lengths (n + 1).
+            nf: window length n_f.
+            stride: samples between window starts.
+            na_right, nb_right: samples from tau on added to the histories (0 here).
+            force_multi_u, force_multi_y, online_construct: unused, kept for deepSI's signature.
         Returns:
             uhist, yhist, ufuture, yfuture, each (n_windows, length, 3).
         """
@@ -75,7 +76,7 @@ class SystemDataNormalizer(object):
                                       f'or a System_data_list')
 
         assert sys_data.normed==False, 'System_data is already normalized; pass the original unnormalised data'
-        # Normalise: u^n = (u - u0) / ustd, y^n = (y - y0) / ystd.
+        # u^n = (u - u0) / ustd, y^n = (y - y0) / ystd
         u_transformed = (sys_data.u-self.u0)/self.ustd if sys_data.u is not None else None
         y_transformed = (sys_data.y-self.y0)/self.ystd if sys_data.y is not None else None
         return WindowedSystemData(u=u_transformed,x=sys_data.x,y=y_transformed, \

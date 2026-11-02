@@ -22,7 +22,8 @@ def expansion_matrix(ix, n):
     E (n, len(ix)) with E[ix[j], j] = 1: puts a len(ix) signal on the rows ix of an n signal.
 
     Args:
-        ix: target rows; n: size of the target signal.
+        ix: target rows.
+        n: size of the target signal.
     Returns:
         (n, len(ix)) E.
     """
@@ -36,7 +37,8 @@ def selection_matrix(ix, n):
     S (len(ix), n) with S[j, ix[j]] = 1: selects the rows ix of an n signal.
 
     Args:
-        ix: selected rows; n: size of the source signal.
+        ix: selected rows.
+        n: size of the source signal.
     Returns:
         (len(ix), n) S.
     """

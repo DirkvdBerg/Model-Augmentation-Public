@@ -40,14 +40,14 @@ TEX = {'Theta': r'$\Theta$'}
 def _without_learned(fit_sys, free=None):
     """Baseline-only copy of a model.
 
-    The network gate and theta_aux (the OBC coefficient, so f_obc^n, which the gate does not reach) set to zero,
-    optionally at another beta, so the copy simulates the baseline alone. It keeps the trained encoder for its initial
-    state; with the gate at zero the added states no longer act.
+    Sets the network gate and the OBC coefficient theta_aux to zero, optionally at another beta, so the copy
+    simulates the baseline alone. It keeps the trained encoder for its initial state.
 
     Args:
-        fit_sys: the augmented model; free: (10,) beta, or None to keep the current one.
+        fit_sys: the augmented model.
+        free: (10,) beta, or None to keep the current one.
     Returns:
-        The modified copy.
+        the modified copy.
     """
     m = copy.deepcopy(fit_sys)
     blocks = m.hfn.connected_blocks
@@ -65,13 +65,12 @@ def _without_learned(fit_sys, free=None):
 def _true_combinations(phy):
     """Identifiable combinations of the data-generating parameters.
 
-    theta_base(theta^0), the combinations of the raw parameters theta^0 the data were generated with: params_init,
-    the gantry_ss nominal values on every arm (float32-rounded), so editing gantry_ss changes them.
+    theta_base(theta^0) of the raw parameters theta^0 the data were generated with, the gantry_ss nominal values.
 
     Args:
         phy: the identifiable baseline block.
     Returns:
-        (10,) theta_base, physical, in COMBO_NAMES order and the dtype of beta.
+        (10,) theta_base, physical, in COMBO_NAMES order.
     """
     return type(phy).combos_of(phy.params_init.double(), float(phy.Lb)).to(phy.free_params.dtype)
 
@@ -90,8 +89,7 @@ def _true_free(phy):
 
 
 def _noise_free_twins(cfg: RunConfig):
-    """Record file -> its noise-free twin (MANIFEST.csv column pair_file, relative to the data root); None on the
-    noise-free data set, whose records are their own twins."""
+    """Record file -> its noise-free twin (MANIFEST.csv pair_file); None on the noise-free data set."""
     if cfg.noise == 'noisefree':
         return None
     with open(os.path.join(traj_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
@@ -101,22 +99,19 @@ def _noise_free_twins(cfg: RunConfig):
 def _split_scores(models, sdl, e_list, e_nf_list, bank, rows, k0):
     """Scores of one split in both frames.
 
-    One closed-loop free run per record and model gives y_hat; per frame and axis j, with T the frame map
-    (identity or P^-T): RMS_j = (mean over k >= k0 of (T(y_hat - y))_j,k^2)^(1/2), NRMS_e,j = RMS_j / sigma_e,j,
-    sigma_e = servo_sigma of T e, and the floor = RMS of T(e - e_nf) over sigma_e, the score of a model that
-    predicts the noise-free servo error exactly.
+    One closed-loop free run per record and model gives y_hat; per frame map T (identity or P^-T) and axis j:
+    NRMS_e,j = RMS over k >= k0 of (T(y_hat - y))_j / sigma_e,j, sigma_e = servo_sigma of T e.
+    The noise floor is the same score of T(e - e_nf): a model that predicts the noise-free servo error exactly.
 
     Args:
         models: model key -> model (augmented, trained and true baseline).
-        sdl: R records (physical, at 1 / T_s).
-        e_list, e_nf_list: R arrays (N_r, 3), the servo error e = y - r of each record and of its noise-free twin,
-            metres.
+        sdl: R records (physical, at fs_new).
+        e_list, e_nf_list: R arrays (N_r, 3), the servo error of each record and of its noise-free twin [m].
         bank, rows: controller bank and one bank row per record.
         k0: first scored sample.
     Returns:
-        preds {model: R arrays (N_r - k0, 3) of y_hat, metres}, and per frame dict(residual={model: R arrays
-        (N_r - k0, 3) of T(e_hat - e) / sigma_e}, rms={model: (R, 3)} in metres (rad for Theta), nrms={model: (R, 3)},
-        sigma (R, 3), floor (R, 3) in NRMS_e).
+        preds {model: R arrays (N_r - k0, 3) of y_hat [m]}, and per frame dict(residual: T(e_hat - e) / sigma_e per
+        model, rms: (R, 3) per model [m, rad for Theta], nrms: (R, 3) per model, sigma (R, 3), floor (R, 3)).
     """
     runs = {key: closed_loop_free_run_rms_batch(m, sdl, bank, rows, return_pred=True) for key, m in models.items()}
     y = [np.asarray(sd.y)[k0:] for sd in sdl]
@@ -124,7 +119,7 @@ def _split_scores(models, sdl, e_list, e_nf_list, bank, rows, k0):
     for frame, (_, to_frame) in FRAMES.items():
         sigma = servo_sigma([to_frame(e) for e in e_list], k0)
         error = {key: [to_frame(p - yr) for p, yr in zip(run[2], y)] for key, run in runs.items()}
-        # stage: the scorer's RMS, the numerator of the validation score; generalised: from the same predictions
+        # stage: the RMS of the validation scorer; generalised: computed from the same predictions
         rms = {key: (np.asarray(run[0]) if frame == 'stage'
                      else np.stack([np.sqrt(np.mean(d ** 2, axis=0)) for d in error[key]]))
                for key, run in runs.items()}
@@ -227,9 +222,9 @@ def _loss_figure(path, title, loss, hist):
 def evaluate(run_dir, data_root=DATA_ROOT):
     """Evaluate the final checkpoint of a run folder on every split.
 
-    NRMS_e = RMS(e_hat - e) / sigma_e per record and axis, from k0, in closed-loop free run, of the augmented model,
-    the baseline with the trained parameters (learned part removed) and the baseline with the true parameters; prints
-    the tables and writes the figures and their data under <run_dir>/evaluation/.
+    NRMS_e = RMS(e_hat - e) / sigma_e per record and axis, from k0, in closed-loop free run, for the augmented model,
+    the baseline with the trained parameters and the baseline with the true parameters. Prints the tables and writes
+    the figures and their data to <run_dir>/evaluation/.
 
     Args:
         run_dir: run folder with config.json and the final checkpoint pair gantry_ckpt_<run_id>.
@@ -238,7 +233,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         dict split -> records, and per frame rms and nrms per model, sigma and floor.
     """
     t_start = time.time()
-    # 1. The run on the CPU: configuration, records and the final checkpoint.
+    # 1. The run on the CPU: configuration, records, final checkpoint.
     with open(os.path.join(run_dir, 'config.json')) as fh:
         meta = json.load(fh)
     run_id = str(meta['run_id'])
@@ -247,7 +242,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
     norm = compute_normalization(cfg, data)
     fit_sys = build_model(cfg.hp, cfg, data, norm)
     ckpt = os.path.join(run_dir, 'gantry_ckpt_%s' % run_id)
-    # start_phase 'lbfgs': the weights only, no Adam moments
+    # start_phase 'lbfgs': weights only, no Adam moments
     polish = json.loads(str(load_checkpoint(fit_sys, ckpt, start_phase='lbfgs')
                             .get('lbfgs_outcome', '{}')))
     phy = next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'free_params'))
@@ -269,12 +264,12 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         '[evaluate] NRMS_e = RMS(e_hat - e) / sigma_e per record and axis, from k0 = %d, free-run closed loop' % k0,
         '=' * 100]), flush=True)
 
-    # 2. Per split: the free runs, the scores of both frames, the figures; one simulation per record and model.
+    # 2. Per split: free runs, scores in both frames, figures.
     results, saved, score_rows, tables = {}, {}, [], {frame: [] for frame in FRAMES}
     offset = 0
     for split, split_files in zip(SPLITS, files):
         sdl, e_list = getattr(data, split + '_list'), getattr(data, 'e_' + split)
-        # the twin is resampled and trimmed as its record, so e - e_nf compares the same samples
+        # the twin is resampled and trimmed like its record, so e - e_nf compares the same samples
         e_nf = (e_list if twins is None else
                 [_load_record(twins[f], cfg, folder=cfg.data_root)[1] for f in split_files])
         preds, res = _split_scores(models, sdl, e_list, e_nf, bank, rows[offset:offset + len(sdl)], k0)
@@ -308,8 +303,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
             del s['residual']
     print('\n'.join(tables['stage'] + ['', 'GENERALISED FRAME (X, Theta, Y)'] + tables['generalised']), flush=True)
 
-    # 3. Physical parameters: true, start and learned identifiable combinations, in COMBO_NAMES order and the physical
-    # units of theta_base.
+    # 3. Physical parameters: true, start and learned identifiable combinations.
     with torch.no_grad():
         names, start, learned = phy.estimation_parameters()
         true = _true_combinations(phy)
@@ -320,7 +314,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
                        for n, a, b, c in params]), flush=True)
 
     # 4. Data files and the loss curves.
-    # THEORY: 17 significant digits round-trip an IEEE 754 binary64 value, so the floats read back exactly
+    # THEORY: 17 significant digits read an IEEE 754 double back exactly
     with open(os.path.join(out_dir, 'scores.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)
         w.writerow(('split', 'record', 'frame', 'model', 'axis', 'rms', 'nrms_e', 'sigma_e', 'floor_nrms_e'))

@@ -24,20 +24,18 @@ EVAL_RUN_DIR = None    # a run folder: evaluate only that run, no training
 
 
 def _dumps(run_id):
-    """Paths of the deepSI dumps _best.pth and _last.pth of a run; deepSI names them after the model class and keeps
-    them in its checkpoints folder (get_work_dirs), outside the run folder; a resume moves them into previous/."""
+    """Paths of the deepSI dumps _best.pth and _last.pth of a run, in deepSI's checkpoints folder."""
     return [os.path.join(get_work_dirs()['checkpoints'], 'AugmentedModel_%s%s.pth' % (run_id, s))
             for s in ('_best', '_last')]
 
 
 def _rerun_source(kind, run_dir, source):
-    """(config.json, run id, source checkpoint) of a rerun, which continues in its run folder under the
-    folder's run id."""
+    """(config.json, run id, source checkpoint) of a rerun in an existing run folder."""
     with open(os.path.join(run_dir, 'config.json')) as fh:
         cj = json.load(fh)
     run_id = str(cj['run_id'])
     if kind == 'polish-only':
-        # the pre-polish pair: the Adam-selected weights with their Adam moments (training.train, step 3)
+        # the pre-polish pair: the Adam-selected weights and their Adam moments
         src = os.path.join(run_dir, 'gantry_ckpt_%s_pre_lbfgs' % run_id)
         need = [src + '.pt', src + '.npz']
     else:
@@ -51,8 +49,7 @@ def _rerun_source(kind, run_dir, source):
 
 
 def _archive_rerun(kind, run_dir, cj, run_id, src):
-    """Move the previous outcome, and for a resume both deepSI dumps, to previous/<rerun_id>/ and add a
-    RESUMES entry to config.json; returns the source's path in the archive."""
+    """Move the previous outcome to previous/<rerun_id>/, log the rerun in config.json, return the source's new path."""
     rerun_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
     prev = os.path.join(run_dir, 'previous', rerun_id)
     os.makedirs(prev)
@@ -74,10 +71,17 @@ def _archive_rerun(kind, run_dir, cj, run_id, src):
 
 
 def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
-    """Build and train a fresh run or the requested resume/polish-only rerun, evaluate it when evaluate_run; return
-    its final validation score."""
+    """Train one run, fresh or a rerun, then evaluate it.
+
+    Args:
+        cfg: RunConfig of the run.
+        run_id: name of a fresh run folder; None takes the SLURM job id or the time.
+        rerun: ('resume', run_dir, 'best' | 'last'), ('polish-only', run_dir, None), or None for a fresh run.
+        evaluate_run: evaluate the final checkpoint after training.
+    Returns:
+        the best validation score.
+    """
     # 1. Run folder.
-    # rerun = ('resume', run_dir, 'best' | 'last') or ('polish-only', run_dir, None); None for a fresh run
     if rerun is None:
         run_id = run_id or os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
         sdir = os.path.join(save_dir(cfg), run_id)
@@ -119,12 +123,12 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     print('\nLoss rollout: closed loop (the known controller around the model)')
 
     # 4. Encoder start, or the restored checkpoint.
-    # the encoder prefit needs the controller bank to simulate the baseline in closed loop
+    # the encoder prefit simulates the baseline in closed loop, so it needs the controllers built above
     resume = None
     if src is None:
         prefit_physical_encoder(fit_sys, cfg, data, norm)
     else:
-        # the run folder is archived only once data, device and the whole checkpoint have loaded
+        # archive the run folder only after the checkpoint has loaded
         meta = load_checkpoint(fit_sys, src, start_phase=cfg.start_phase)
         resume = (_archive_rerun(rerun[0], sdir, cj, run_id, src), meta)
 
@@ -132,7 +136,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     bestfit = train(fit_sys, hp, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
     print(f"\nTraining complete. Best validation {SCORE_NAME}: {bestfit:.6g}")
 
-    # 6. Evaluation of the final checkpoint gantry_ckpt_<run_id>: the accepted polish, else the Adam-selected model.
+    # 6. Evaluation of the final checkpoint: the accepted polish, else the Adam-selected model.
     if evaluate_run:
         evaluate(sdir, data_root=cfg.data_root)
     return bestfit
@@ -151,11 +155,9 @@ def cli():
     grp.add_argument('--evaluate', metavar='RUN_DIR', default=EVAL_RUN_DIR,
                      help='evaluate the final checkpoint of this run folder, no training')
     ap.add_argument('--no-evaluate', action='store_true', help='no evaluation after training')
-    # best: the dump of the lowest validation score; last: the dump of the latest validation, to continue the latest
-    # weights; both carry their Adam moments, neither the batch stream nor an unfinished PS2 opening
+    # best: dump at the lowest validation score; last: dump at the latest validation
     ap.add_argument('--from', dest='source', choices=('best', 'last'), default=None,
                     help='deepSI dump a --resume starts from (default best)')
-    # skips the LFR output equation (A_combined, w = Y z); the acceleration a is the same
     ap.add_argument('--closed-form', action='store_true',
                     help='baseline derivative as (qdot, a) directly instead of through the LFR output equation; '
                          'results differ from the thesis runs by rounding')
