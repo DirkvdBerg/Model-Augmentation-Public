@@ -18,7 +18,7 @@ from scipy.signal import butter, sosfiltfilt
 
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
 
-from .config import RunConfig, record_trim, y_decimation
+from .config import RunConfig
 
 # data set folder per noise setting; the true system is the baseline plus tanh Coulomb friction and a hidden absorber
 DATASETS = {'lowpass': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
@@ -103,12 +103,12 @@ def _resample_u(u, cfg: RunConfig):
 
     Args:
         u: (N_sim, 3) u_act at fs_orig [N].
-        cfg: run configuration; cfg.d = D.
+        cfg: run configuration; cfg.decimation = D.
     Returns:
         (N, 3) u_act at fs_new [N].
     """
     # THEORY: the block mean keeps the force integral over each model interval
-    D = cfg.d
+    D = cfg.decimation
     n = u.shape[0] // D
     return u[:n * D].astype(np.float64).reshape(n, D, u.shape[1]).mean(axis=1)
 
@@ -125,7 +125,7 @@ def _decimate_y(d, cfg: RunConfig):
     Returns:
         (N, 3) y at fs_new [m].
     """
-    D = cfg.d
+    D = cfg.decimation
     if cfg.noise != 'lowpass':
         return d['y'][::D]
     r = d['r_sim']
@@ -136,11 +136,11 @@ def _decimate_y(d, cfg: RunConfig):
 
 def _record_at_fs_new(d, cfg: RunConfig, fields=()):
     """[u, y, *fields] of one record at FS_NEW on the same samples, trimmed at both ends."""
-    D = cfg.d
+    D = cfg.decimation
     u = _resample_u(_load_u(d), cfg)
     N = len(u)
     arrs = [u, _decimate_y(d, cfg)[:N]] + [np.asarray(d[k])[::D][:N] for k in fields]
-    k = record_trim(cfg)
+    k = cfg.record_trim
     arrs = [a[k:N - k] for a in arrs]
     if cfg.truncate_s is not None:
         arrs = [a[:int(cfg.truncate_s * cfg.fs_new)] for a in arrs]
@@ -179,8 +179,7 @@ def servo_sigma(e_list, k0):
 def load_datasets(cfg: RunConfig) -> DataBundle:
     """Load the train, val and test records of the manifest split."""
     print(f'Data dir ({cfg.noise}): {traj_dir(cfg)}')
-    print(f'y decimation: {y_decimation(cfg)}; {record_trim(cfg)} samples dropped at both '
-          f'record ends (u, y and every field)')
+    print(f'{cfg.record_trim} samples dropped at both record ends (u, y and every field)')
     train_files, val_files, test_files = record_files(cfg)
 
     def _split(files):

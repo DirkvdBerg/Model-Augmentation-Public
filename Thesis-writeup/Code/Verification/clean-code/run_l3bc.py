@@ -101,7 +101,7 @@ if args.layer == '3b':
         from convert_run import convert_run
         convert_run(os.path.join(l3_golden, 'run'), os.path.join(lad, 'converted'))
         load_checkpoint(fit_sys, os.path.join(lad, 'converted', 'gantry_ckpt_%s_pre_lbfgs' % rid_l3),
-                        start_phase='lbfgs')
+                        polish_only=True)
     start = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())
              + [('enc.' + k, v) for k, v in fit_sys.encoder.state_dict().items()]}
     if args.side == 'mainline':            # the spec and meters exactly as mainline run_lbfgs_polish

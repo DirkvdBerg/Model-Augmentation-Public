@@ -7,7 +7,7 @@ verification loads the thesis folders through this converter only.
 - config.json: a thesis folder's axes come from its mainline keys (OBC, COMBO_INIT_DETUNE, NX_ANN, PS2, MODE), and
   every other mainline key must equal the value Clean/ computes with (THESIS_SETTINGS below, the check
   RunConfig.from_config_json made before amendment 10); a folder with other settings is refused. DST gets the
-  config.json Clean/ writes (config_json_dict with the source's GIT), plus run_id, data_dir and RESUMES when the
+  config.json Clean/ writes (config_json_dict), plus run_id, data_dir and RESUMES when the
   source has them, and CONVERTED_FROM (the source folder). A Clean folder must pass RunConfig.from_config_json.
 - checkpoint pairs gantry_ckpt_*.pt / .npz: the state_dict keys of DROPPED_STATE_KEYS leave hfn (R3: unread state
   Clean/ no longer registers); the .npz keeps the keys Clean/'s pair holds, as plain arrays (R19: Clean/ reads it
@@ -39,16 +39,23 @@ _NOT_COMPARED = ('DEVICE', 'COMPILE_MODE', 'TRUNCATE_S', 'EPOCHS', 'N_ITS', 'ITS
                  'LBFGS_INNER_ITER', 'LBFGS_WINDOWS', 'BASELINE_FORM', 'GIT', 'NF_PROBE_PRINT', 'START_PHASE')
 
 
+def _y_decimation(cfg):
+    """The mainline's Y_DECIMATION text; the thesis config.json records the anti-alias filter in it."""
+    if cfg.noise == 'lowpass':
+        return 'r + zero-phase Butterworth %d at %.0f Hz on y - r, then [::%d]' % (cfg.aa_order, cfg.aa_fc_hz,
+                                                                                   cfg.decimation)
+    return 'point sampling [::%d]' % cfg.decimation
+
+
 def thesis_settings(cfg):
     """The mainline config.json keys of a thesis run with the axes of cfg, as Clean/ computes with them (the keys and
     values RunConfig.config_json_dict wrote before amendment 10)."""
-    from gantry_dynamic.config import y_decimation, record_trim
     from model_augmentation.fit_systems import lbfgs_polish as LP
     return json.loads(json.dumps(dict(
         MODE={'lowpass': 'thesis_taf_lowpass_noise', 'noisefree': 'thesis_taf_noisefree'}[cfg.noise],
         ENCODER_INIT='data_lsq', ANN_ACTIVATION='tanh', ANN_ARCH='mlp', G_INIT='live',
         LIVE_G_WEIGHT_INIT='kaiming_uniform_a_sqrt5', WA_ENCODER_INIT='xavier_uniform_gain1',
-        FS_NEW=cfg.fs_new, D=cfg.d, FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=None, JOINT_ESTIMATION=True,
+        FS_NEW=cfg.fs_new, D=cfg.decimation, FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=None, JOINT_ESTIMATION=True,
         PHYSICS_PARAMETERIZATION='reduced', PARAM_RMSE_BASELINE=0.01, PARAM_INIT_DETUNE=None,
         COMBO_INIT_DETUNE=cfg.combo_init_detune, ORTH_BETA=4.66e-4, ORTH_POINT_STRIDE=100, ORTH_RANK_TOL=1e-12,
         CLOSED_LOOP=True, ADAM_EPS=cfg.adam_eps, ORTH=False, ANN_ROUTE_IX=list(range(cfg.nx_phys + cfg.n_a)),
@@ -59,7 +66,7 @@ def thesis_settings(cfg):
         LBFGS_TOL_CHANGE=LP.TOL_CHANGE, LBFGS_FREEZE=[], LBFGS_TIME_BUDGET_S=None, LBFGS_METER_REL_TOL=0.001,
         PARAM_PRIOR=False, STATIC_PASS_BUFFERS=False, OBC=cfg.obc, OBC_SPACE='affine', OBC_REFRESH='epoch',
         OBC_REF_CHUNK=16384, OBC_RANK_RTOL=None, CONTROLLER_GAIN=False, PS2=cfg.ps2,
-        Y_DECIMATION=y_decimation(cfg), RECORD_TRIM=record_trim(cfg), LOSS_WEIGHTING='servo',
+        Y_DECIMATION=_y_decimation(cfg), RECORD_TRIM=cfg.record_trim, LOSS_WEIGHTING='servo',
         VALIDATION_MEASURE='sim-NRMSe', LBFGS_METERS_GATE=False, OBC_REF_SUCCESSOR=True)))
 
 
@@ -69,7 +76,8 @@ def config_of(meta):
     the thesis values of the entry script's SETTINGS (D-292)."""
     from gantry_interconnect_dynamic import SETTINGS
     from gantry_dynamic.config import RunConfig, config_json_dict
-    if meta.get('CODE') == 'clean':
+    # a Clean folder records ARM; a thesis folder records OBC instead
+    if 'ARM' in meta:
         thesis = config_json_dict(RunConfig(**SETTINGS))
         return RunConfig.from_config_json({**{k: v for k, v in thesis.items() if k not in meta}, **meta})
     axes = dict(arm='obc' if meta['OBC'] else 'u', start='correct' if meta['COMBO_INIT_DETUNE'] is None else 'detuned',
@@ -121,12 +129,12 @@ def convert_run(src, dst):
         meta = json.load(fh)
     cfg = config_of(meta)
     os.makedirs(dst)
-    out = config_json_dict(cfg, git=meta.get('GIT'))
+    out = config_json_dict(cfg)
     out.update({k: meta[k] for k in ('run_id', 'data_dir', 'RESUMES') if k in meta})
     out['CONVERTED_FROM'] = src
     with open(os.path.join(dst, 'config.json'), 'w') as fh:
         json.dump(out, fh, indent=2)
-    report = dict(src=src, dst=dst, source_code=meta.get('CODE', 'mainline'), pairs={}, copied=[])
+    report = dict(src=src, dst=dst, source_code='clean' if 'ARM' in meta else 'mainline', pairs={}, copied=[])
     for f in sorted(os.listdir(src)):
         if f.startswith('gantry_ckpt_') and f.endswith('.pt') and os.path.exists(os.path.join(src, f[:-3] + '.npz')):
             report['pairs'][f[:-3]] = convert_pair(os.path.join(src, f[:-3]), os.path.join(dst, f[:-3]))

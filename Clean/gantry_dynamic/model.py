@@ -174,7 +174,8 @@ def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
             # normalised recorded inputs and outputs of the group's records
             un = np.stack([(sdl[i].u - u0) / ustd for i in ixs])
             yn = np.stack([(sdl[i].y - y0) / ystd for i in ixs])
-            # start state: q_0 = P^-T y_0, qdot_0 = 0 (records start at rest), xbar_0 = 0, normalised
+            # start state: q_0 = P^-T y_0, qdot_0 = 0, xbar_0 = 0, normalised; qdot_0 = 0 because every record
+            # starts with a 0.5 s hold at rest (t_hold in data_generation/tdg_config.m), far longer than the trim
             x0 = np.zeros((len(ixs), nx + cfg.n_a))
             q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ P_INV_T64.T for i in ixs])
             x0[:, :nx] = (np.hstack([q0, np.zeros_like(q0)]) - x_mean) / std_x

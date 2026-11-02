@@ -13,7 +13,7 @@ import numpy as np
 import torch
 from deepSI.datasets import get_work_dirs
 
-from gantry_dynamic.config import RunConfig, DATA_ROOT, OUT_ROOT, save_dir, config_json_dict, git_provenance
+from gantry_dynamic.config import RunConfig, DATA_ROOT, OUT_ROOT, save_dir, config_json_dict
 from gantry_dynamic.data import load_datasets, compute_normalization, traj_dir
 from gantry_dynamic.model import build_model, prefit_physical_encoder
 from gantry_dynamic.controller import build_closed_loop
@@ -42,7 +42,8 @@ SETTINGS = dict(
     aa_order=8,         # order of the Butterworth low-pass on y - r
     aa_fc_hz=1600.0,    # [Hz] its cutoff
     aa_trim_s=0.005,    # [s] cut from both record ends: the filter has no samples beyond a record's ends, so its
-                        # output is wrong in the first and last 4.6 ms
+                        # output is wrong in the first and last 4.6 ms; the noise-free data is cut the same, so a
+                        # record and its noise-free twin cover the same samples
     nf_seconds=0.100,   # [s] training window; twice the 50 ms settling time of the closed loop
     stride=10,          # samples between window starts
     na_nb=30,           # past samples of y and u in the encoder input; Hoekstra's 2 n_x + 1 for n_a = 8, plus one
@@ -153,12 +154,11 @@ def _archive_previous_outcome(kind, run_dir, cj, run_id, src):
         for f in _deepsi_checkpoint_paths(run_id):
             if os.path.exists(f):
                 shutil.move(f, os.path.join(prev, os.path.basename(f)))
-    # 4. Log the rerun in config.json: time, kind, start checkpoint, rerun id and the git commit it ran with.
+    # 4. Log the rerun in config.json: time, kind, start checkpoint and rerun id.
     resume_ckpt = os.path.join(prev, os.path.basename(src))
     cj.setdefault('RESUMES', []).append(dict(
         time=datetime.now().isoformat(timespec='seconds'), type=kind,
-        source=os.path.relpath(resume_ckpt, run_dir), code='clean', git=git_provenance(),
-        rerun_id=rerun_id))
+        source=os.path.relpath(resume_ckpt, run_dir), rerun_id=rerun_id))
     with open(os.path.join(run_dir, 'config.json'), 'w') as fh:
         json.dump(cj, fh, indent=2)
     return resume_ckpt
@@ -176,6 +176,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
         the best validation score.
     """
     # 1. Run folder.
+    polish_only = rerun is not None and rerun[0] == 'polish-only'
     if rerun is None:
         run_id = run_id or os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
         sdir = os.path.join(save_dir(cfg), run_id)
@@ -187,8 +188,6 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     else:
         kind, sdir, source = rerun
         cj, run_id, src = _rerun_checkpoint(kind, sdir, source)
-        if kind == 'polish-only':
-            cfg = replace(cfg, start_phase='lbfgs')
     print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s'
           % (cfg.arm, cfg.noise, cfg.start, cfg.n_a, cfg.seed, cfg.nf_seconds, cfg.combo_init_detune)
           + ('  PS2' if cfg.ps2 else '  plain')
@@ -201,7 +200,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     if rerun is None:
         os.makedirs(sdir)
         with open(os.path.join(sdir, 'config.json'), 'w') as fh:
-            json.dump({**config_json_dict(cfg, git=git_provenance()),
+            json.dump({**config_json_dict(cfg),
                        'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
 
     # 3. Model and closed loop.
@@ -222,11 +221,11 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     else:
         # load first: if the checkpoint does not fit, load_checkpoint raises an error 
         # and the outputs are never moved to previous/
-        meta = load_checkpoint(fit_sys, src, start_phase=cfg.start_phase)
+        meta = load_checkpoint(fit_sys, src, polish_only=polish_only)
         resume = (_archive_previous_outcome(rerun[0], sdir, cj, run_id, src), meta)
 
     # 5. Training.
-    bestfit = train(fit_sys, cfg, data, resume=resume, checkpoint_dir=sdir, run_id=run_id)
+    bestfit = train(fit_sys, cfg, data, resume=resume, polish_only=polish_only, checkpoint_dir=sdir, run_id=run_id)
     print(f"\nTraining complete. Best validation {SCORE_NAME}: {bestfit:.6g}")
 
     # 6. Evaluation of the final checkpoint: the accepted polish, else the Adam-selected model.

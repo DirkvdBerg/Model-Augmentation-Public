@@ -143,20 +143,20 @@ def _assert_same_dtype(fit_sys, hfn_sd):
             'checkpoint dtype %s does not match this run\'s %s; use a float64 checkpoint' % (got, want))
 
 
-def load_checkpoint(fit_sys, base_path, start_phase='adam'):
+def load_checkpoint(fit_sys, base_path, polish_only=False):
     """Restore a checkpoint into fit_sys.
 
     Args:
         fit_sys: the augmented model, built with the run's config.
         base_path: checkpoint path, as for resolve_checkpoint.
-        start_phase: 'adam' also restores the Adam moments; 'lbfgs' (polish only) restores the weights only.
+        polish_only: True restores the weights only; False also the Adam moments, for a resume of Adam.
     Returns:
         meta: done_epochs, bestfit and, by format, ps2_opening (deepSI dump) or lbfgs_outcome (final pair).
     """
     # 1. Read; refuse a dump written inside an unfinished PS2 opening, whose own state a dump does not hold.
     hfn_sd, enc_sd, optim_sd, meta, fmt = resolve_checkpoint(base_path)
     opening = meta.get('ps2_opening')
-    if start_phase == 'adam' and opening is not None and opening[0] != 'S3' and opening[1] > 0:
+    if not polish_only and opening is not None and opening[0] != 'S3' and opening[1] > 0:
         raise RuntimeError(
             '%s was written %d updates into an unfinished PS2 opening (phase %s); continue from a dump '
             'written before the opening started or after it ended' % (base_path, opening[1], opening[0]))
@@ -167,11 +167,11 @@ def load_checkpoint(fit_sys, base_path, start_phase='adam'):
     fit_sys.hfn.load_state_dict(hfn_sd)
     fit_sys.encoder.load_state_dict(enc_sd)
     # 3. On an Adam start, the saved moments if the checkpoint has them; else Adam restarts its moments.
-    if optim_sd is not None and start_phase == 'adam':
+    if optim_sd is not None and not polish_only:
         load_optimizer_moments(fit_sys.optimizer, optim_sd)
         print("  Adam moment estimates restored; lr/eps/betas come from this run's config.")
     print(f'  Checkpoint format: {fmt}')
-    if start_phase == 'adam' and optim_sd is None:
+    if not polish_only and optim_sd is None:
         print('  This checkpoint has no Adam state'
               + (' (saved without it: polished weights or a polish-only job)' if fmt == 'pair'
                  else ' (the dump holds no optimizer)')
@@ -285,7 +285,7 @@ def _adam_phase(fit_sys, cfg: RunConfig, data, checkpoint_dir, meta, done_epochs
         meta: meta of the resumed checkpoint, None for a fresh run.
         done_epochs: Adam epochs already done before this job.
         epochs_remaining: Adam epochs this job runs.
-        polish_only: True skips Adam (start_phase 'lbfgs').
+        polish_only: True skips Adam.
     Returns:
         (PS2 opening or None, ValidationHistory, seconds spent).
     """
@@ -309,7 +309,7 @@ def _adam_phase(fit_sys, cfg: RunConfig, data, checkpoint_dir, meta, done_epochs
     # 4. Adam on the remaining budget; fit ends with the best validated weights loaded.
     try:
         if polish_only:
-            print('  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly')
+            print('  polish only: skipping Adam, polishing the resumed weights directly')
         elif epochs_remaining <= 0:
             print('  Adam budget done (%d of %d epochs): skipping Adam' % (done_epochs, cfg.epochs))
         else:
@@ -331,7 +331,7 @@ def _adam_phase(fit_sys, cfg: RunConfig, data, checkpoint_dir, meta, done_epochs
     return opening, history, time.time() - t0
 
 
-def train(fit_sys, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
+def train(fit_sys, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None, polish_only=False):
     """Run the remaining Adam budget, then polish and save the selected model.
 
     Args:
@@ -340,6 +340,7 @@ def train(fit_sys, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
         checkpoint_dir: the run folder.
         run_id: run id in the checkpoint names.
         resume: (archived path, meta) of the checkpoint loaded into fit_sys; None for a fresh run.
+        polish_only: True skips Adam and only polishes the loaded weights (the polish-only mode).
     Returns:
         bestfit: sim-NRMSe (mean validation NRMS_e over records and axes) of the final model: the accepted polish,
         else the Adam-selected model.
@@ -347,7 +348,6 @@ def train(fit_sys, cfg: RunConfig, data, checkpoint_dir, run_id, resume=None):
     # 1. Resume state: epochs done and the score to beat, from the checkpoint meta.
     done_epochs = 0
     resumed_at_epoch = -1
-    polish_only = (cfg.start_phase == 'lbfgs')
 
     fit_sys.unique_code = str(run_id)
     bestfit = float('inf')

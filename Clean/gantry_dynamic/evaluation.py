@@ -19,7 +19,7 @@ from matplotlib.figure import Figure
 from model_augmentation.fit_systems.blocks import Static_ANN_Block
 from model_augmentation.fit_systems.closed_loop import closed_loop_free_run_rms_batch
 
-from .config import RunConfig, DATA_ROOT, git_provenance
+from .config import RunConfig, DATA_ROOT
 from .controller import build_controller_bank
 from .data import load_datasets, compute_normalization, traj_dir, servo_sigma, _load_record
 from .model import build_model
@@ -242,8 +242,8 @@ def evaluate(run_dir, data_root=DATA_ROOT):
     norm = compute_normalization(cfg, data)
     fit_sys = build_model(cfg, data, norm)
     ckpt = os.path.join(run_dir, 'gantry_ckpt_%s' % run_id)
-    # start_phase 'lbfgs': weights only, no Adam moments
-    polish = json.loads(str(load_checkpoint(fit_sys, ckpt, start_phase='lbfgs')
+    # weights only, no Adam moments
+    polish = json.loads(str(load_checkpoint(fit_sys, ckpt, polish_only=True)
                             .get('lbfgs_outcome', '{}')))
     phy = next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'free_params'))
     models = {'augmented': fit_sys, 'trained': _without_learned(fit_sys),
@@ -325,7 +325,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         w.writerow(('name', 'true', 'start', 'learned'))
         w.writerows((n,) + tuple('%.17g' % v for v in p) for n, *p in params)
     with open(os.path.join(out_dir, 'evaluation.json'), 'w') as fh:
-        json.dump(dict(checkpoint=os.path.basename(ckpt) + '.pt', run_id=run_id, git=git_provenance()), fh, indent=2)
+        json.dump(dict(checkpoint=os.path.basename(ckpt) + '.pt', run_id=run_id), fh, indent=2)
     loss_file, hist_file = os.path.join(run_dir, 'loss.npz'), os.path.join(run_dir, 'val_hist.npz')
     curves = os.path.exists(loss_file) and os.path.exists(hist_file)
     if curves:

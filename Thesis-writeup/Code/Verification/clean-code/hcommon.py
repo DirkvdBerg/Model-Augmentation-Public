@@ -298,15 +298,15 @@ def output_problems(out_dir, meta, legacy_newer=()):
 
 def write_meta(out_dir, cfg, data, extra=None):
     """meta.json of design 6.2: sources (the clean manifest is the grey-box files, H2), manifests,
-    records, config, data root, libraries, threads, git provenance, budget, and `outputs`, the
+    records, config, data root, libraries, threads, budget, and `outputs`, the
     SHA256 of every file already in out_dir. Call it LAST, once every output of the case is saved:
     a meta.json then exists only for a complete case and pins the files it was written for."""
-    from gantry_dynamic.config import git_provenance, config_json_dict
+    from gantry_dynamic.config import config_json_dict
     from gantry_dynamic.data import traj_dir
     ddir = traj_dir(cfg)
     files = list(data.train_files) + list(data.val_files) + list(data.test_files)
     try:
-        cj = json.loads(json.dumps(config_json_dict(cfg, git=None), default=str))
+        cj = json.loads(json.dumps(config_json_dict(cfg), default=str))
     except Exception as e:                   # informational only
         cj = 'unavailable: %r' % (e,)
     sources = source_hashes()
@@ -317,7 +317,7 @@ def write_meta(out_dir, cfg, data, extra=None):
                 data_dir=ddir, files=dict(train=list(data.train_files), val=list(data.val_files),
                                           test=list(data.test_files)),
                 config=cj, libraries=lib_versions(), threads=thread_settings(),
-                git=git_provenance(), budget=BUDGET)
+                budget=BUDGET)
     if extra:
         meta.update(extra)
     os.makedirs(out_dir, exist_ok=True)
