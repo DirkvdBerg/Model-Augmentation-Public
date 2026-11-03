@@ -18,7 +18,8 @@ set -eo pipefail
 IDX=${SLURM_ARRAY_TASK_ID:?run as an array job}
 N_ITS=80000   # Adam updates per configuration
 
-# name and arguments per array index: 0 to 8 nx x width at lr 3e-3, 9 and 10 the learning rate at nx 16, width 16
+# name and arguments per array index: 0 to 8 nx x width at lr 3e-3, 9 and 10 the learning rate at nx 16, width 16.
+# The encoder width is twice the f_bb and h_bb width in every line; it is not varied on its own
 GRID=(
   "nx08_w08        --nx 8  --fh-width 8  --e-width 16 --lr 3e-3"
   "nx08_w16        --nx 8  --fh-width 16 --e-width 32 --lr 3e-3"
@@ -41,8 +42,9 @@ cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/Clean
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4
 
-# run folder <index>_<name>_n<updates>_<job>, the form select_bb.py parses
-OUT=../simulations/gantry_clean/blackbox/${IDX}_${NAME}_n${N_ITS}_${SLURM_ARRAY_JOB_ID}
+# Keep each grid job separate: select with python -m blackbox.select_bb <GRID_OUT> after its tasks finish.
+GRID_OUT=../simulations/gantry_clean/blackbox/${SLURM_ARRAY_JOB_ID}
+OUT=${GRID_OUT}/${IDX}_${NAME}_n${N_ITS}_${SLURM_ARRAY_JOB_ID}
 echo "index=${IDX} name=${NAME} args=${ARGS} git=$(git rev-parse --short HEAD 2>/dev/null || echo unavailable)"
 echo "job_id=${SLURM_JOB_ID} node_list=${SLURM_JOB_NODELIST}"; date
 srun --cpu-bind=cores python -u -m blackbox.train_bb $ARGS --n-its "$N_ITS" --out "$OUT"
