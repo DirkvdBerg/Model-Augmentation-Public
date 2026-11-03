@@ -9,8 +9,8 @@
 #SBATCH -o /home/dirk_van_den_berg/logs/augmentation/clean-code/%x_%A_%a.out
 
 # D-295: one task of $WORK/tasks.tsv (written by server_phase.sh) per array index, one thread (bitwise).
-# Arm A imports $WORK/clean-reverted (the D-294 lines reverted), arm B $WORK/clean-final; each is refused unless the
-# copy still matches its manifest and is in its D-294 state.
+# Arm A imports $COPY-reverted (the D-294 lines reverted), arm B $COPY-final (COPY in $WORK/settings.sh); each is
+# refused unless the copy still matches its manifest $WORK/clean-<tree>.sha256 and is in its D-294 state.
 
 set -eo pipefail
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
@@ -26,7 +26,10 @@ LOG="$WORK/logs/$NAME.log"
 {
   echo "task=$NAME arm=$ARM coverage=$COV node=$SLURM_JOB_NODELIST"; date
   TREE=$([ "$ARM" = A ] && echo reverted || echo final)
-  export HARNESS_CLEAN_ROOT="$WORK/clean-$TREE"
+  source "$WORK/settings.sh"
+  export HARNESS_CLEAN_ROOT="$COPY-$TREE"
+  # the black-box scripts run as modules of the copy (python -m blackbox.<script>); the harness sets its own path
+  [ "$ARM" = B ] && export PYTHONPATH="$HARNESS_CLEAN_ROOT"
   (cd "$HARNESS_CLEAN_ROOT" && sha256sum -c --quiet "$WORK/clean-$TREE.sha256") && echo "clean-$TREE matches its manifest"
   python -u d294_revert.py status --expect "$TREE"
   set +e                     # a failing task still writes its TASK_DONE line with the exit code

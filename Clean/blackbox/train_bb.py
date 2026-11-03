@@ -13,7 +13,7 @@ import torch
 import deepSI
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
-from bb import GREY_BOX, data_cfg, load_records, model_kwargs
+from blackbox.bb import GREY_BOX, N_THREADS, load_records, model_kwargs, predict
 from gantry_dynamic.config import OUT_ROOT
 from gantry_dynamic.data import record_files, servo_sigma
 
@@ -24,52 +24,46 @@ E_WIDTH = 32         # hidden width of the encoder psi
 LR = 1e-3            # Adam learning rate
 # run budget and output
 N_ITS = 80000        # Adam updates
-ITS_PER_VAL = 1000   # updates between validations; the best validated checkpoint is kept
-TRUNCATE_S = None    # [s] use only the start of each record, for trial runs
 OUT_DIR = None       # run folder; None: <OUT_ROOT>/blackbox/<SLURM job id or time>
 # fixed (HEURISTIC: thesis values)
+ITS_PER_VAL = 1000   # updates between validations; the best validated checkpoint is kept
 SEED = 1             # initial weights and batch order
 BATCH_SIZE = 256     # windows per update
 STRIDE = 25          # samples between window starts
-N_THREADS = 4        # CPU threads, the server's cores per task
 
 
-def per_record_rms(model, sys_data, ry):
+def per_record_rms(model, recs):
     """Free-run RMS error per record, RMS_j = RMS(y_hat - y) from k0 = n + 1, with y_hat = r + e_hat.
 
     Args:
         model: the black box.
-        sys_data: deepSI System_data per record, u = (r, u^ms) and e, physical.
-        ry: (r, y) per record, each (N, 3), physical.
+        recs: (u, r, y) per record from `load_records`, physical.
     Returns:
         (n_records, 3) RMS_j, physical.
     """
     k0 = GREY_BOX.na_nb
     # a diverging configuration gives inf or NaN; it is scored as such and the selection skips it
     with np.errstate(all='ignore'):
-        e_hat = [np.asarray(model.apply_experiment(sd).y, float) for sd in sys_data]
-        return np.array([np.sqrt(np.mean((r[k0:] + eh[k0:] - y[k0:]) ** 2, 0)) for eh, (r, y) in zip(e_hat, ry)])
+        return np.array([np.sqrt(np.mean((y_hat[k0:] - y[k0:]) ** 2, 0))
+                         for y_hat, (_, _, y) in zip(predict(model, recs), recs)])
 
 
 class ServoWeightedEncoder(SS_encoder_general_hf):
     """SUBNET with the loss weighted per record and axis and validation by NRMS_e."""
 
-    def set_objective(self, train_sigma_e, val_sigma_e, val_ry, val_hist, failure, hist_path):
+    def set_objective(self, train_sigma_e, val_sigma_e, val_recs, failure):
         """Stores the objective's data on the model.
 
         Args:
             train_sigma_e: (n_records, 3) sigma_e of the training records.
             val_sigma_e: (n_records, 3) sigma_e of the validation records.
-            val_ry: (r, y) per validation record, physical.
-            val_hist: list the validation history is appended to.
+            val_recs: (u, r, y) per validation record, physical.
             failure: list the first non-finite loss is appended to.
-            hist_path: val_hist.json, written at every validation and on a failure.
         """
-        self._train_sigma_e, self._val_sigma_e, self._val_ry, self._hist_path = (train_sigma_e, val_sigma_e, val_ry,
-                                                                                 hist_path)
-        # the lists are owned by main: deepSI's reload of the best checkpoint replaces this model's attributes, and
+        self._train_sigma_e, self._val_sigma_e, self._val_recs = train_sigma_e, val_sigma_e, val_recs
+        # the list is owned by main: deepSI's reload of the best checkpoint replaces this model's attributes, and
         # the run's status needs a failure that happened after that checkpoint
-        self._hist, self._failure = val_hist, failure
+        self._failure = failure
 
     def make_training_data(self, sys_data, **kw):
         """deepSI's training windows plus the loss weight w = sigma_y / sigma_e of each window's record, per axis, so
@@ -117,7 +111,6 @@ class ServoWeightedEncoder(SS_encoder_general_hf):
         # 3. Record the first non-finite loss: deepSI then stops and reloads the best checkpoint without a record.
         if not self._failure and not torch.isfinite(L):
             self._failure.append({'update': int(self.batch_counter), 'loss': float(L)})
-            self._write_val_hist()
         return L
 
     def cal_validation_error(self, val_sys_data, validation_measure):
@@ -125,25 +118,16 @@ class ServoWeightedEncoder(SS_encoder_general_hf):
         with the lowest score.
 
         Args:
-            val_sys_data: validation records (deepSI System_data_list).
+            val_sys_data: deepSI's validation records; the score uses the records given to `set_objective`.
             validation_measure: deepSI's display name; the score is always NRMS_e.
         Returns:
             NRMS_e as a float.
         """
-        rms = per_record_rms(self, val_sys_data.sdl, self._val_ry)
-        score = float(np.mean(rms / self._val_sigma_e))
-        self._hist.append({'update': int(self.batch_counter), 'nrms_e': score})
-        self._write_val_hist()
-        return score
-
-    def _write_val_hist(self):
-        """Writes the validation history and the failure at every event, so a killed job keeps them."""
-        with open(self._hist_path, 'w') as fh:
-            json.dump({'history': self._hist, 'failure': self._failure[0] if self._failure else None}, fh)
+        return float(np.mean(per_record_rms(self, self._val_recs) / self._val_sigma_e))
 
 
 def main(args):
-    """Trains one configuration and writes result.json and val_hist.json in the run folder."""
+    """Trains one configuration and writes result.json in the run folder."""
     t0 = time.time()
     out = os.path.abspath(args.out)
     # deepSI writes its checkpoints below LOCALAPPDATA on Windows (~/.deepSI elsewhere); pointing it at the run folder
@@ -156,29 +140,27 @@ def main(args):
 
     # 1. Data: input u = (r, u^ms) and target e = y - r per record; sigma_e from k0 = n + 1.
     k0 = GREY_BOX.na_nb
-    cfg = data_cfg(args.truncate_s)
-    train_files, val_files, _ = record_files(cfg)
-    train, val = load_records(train_files, cfg), load_records(val_files, cfg)
-    sys_data = [[deepSI.System_data(u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=cfg.ts_new)
+    train_files, val_files, _ = record_files(GREY_BOX)
+    train, val = load_records(train_files), load_records(val_files)
+    sys_data = [[deepSI.System_data(u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=GREY_BOX.ts_new)
                  for u, r, y in recs] for recs in (train, val)]
-    val_ry = [(r, y) for _, r, y in val]
-    val_sigma_e = servo_sigma([y - r for r, y in val_ry], k0)
+    val_sigma_e = servo_sigma([y - r for _, r, y in val], k0)
     print('[BB] %d train, %d val records' % (len(train), len(val)), flush=True)
 
     # 2. Model and objective: the weights from the training records, the score from the validation records.
     model = ServoWeightedEncoder(**model_kwargs(args.nx, args.fh_width, args.e_width))
-    val_hist, failure = [], []
-    model.set_objective(servo_sigma([y - r for _, r, y in train], k0), val_sigma_e, val_ry, val_hist, failure,
-                        os.path.join(out, 'val_hist.json'))
+    failure = []
+    model.set_objective(servo_sigma([y - r for _, r, y in train], k0), val_sigma_e, val, failure)
     # 3. Fit: Adam on L over windows of nf steps, NRMS_e on the validation records every its_per_val updates.
     model.fit(deepSI.System_data_list(sys_data[0]), val_sys_data=deepSI.System_data_list(sys_data[1]),
-              n_its=args.n_its, batch_size=BATCH_SIZE, loss_kwargs=dict(nf=cfg.nf, stride=STRIDE),
-              validation_measure='sim-NRMSe', optimizer_kwargs=dict(lr=args.lr), its_per_val=args.its_per_val)
+              n_its=args.n_its, batch_size=BATCH_SIZE, loss_kwargs=dict(nf=GREY_BOX.nf, stride=STRIDE),
+              validation_measure='sim-NRMSe', optimizer_kwargs=dict(lr=args.lr), its_per_val=ITS_PER_VAL)
 
     # 4. Result of the best checkpoint, which deepSI has reloaded; the loss curves stay in its _last.pth.
-    val_rms = per_record_rms(model, sys_data[1], val_ry)
+    val_rms = per_record_rms(model, val)
     res = dict(args=vars(args), k0=k0, checkpoint=model.name + '_best.pth', best_update=int(model.batch_counter),
-               status='failed' if failure else 'completed', nrms_e_per_record=(val_rms / val_sigma_e).tolist(),
+               status='failed' if failure else 'completed', failure=failure[0] if failure else None,
+               nrms_e_per_record=(val_rms / val_sigma_e).tolist(),
                val_sigma_e=val_sigma_e.tolist(), wall_s=time.time() - t0)
     with open(os.path.join(out, 'result.json'), 'w') as fh:
         json.dump(res, fh, indent=1)
@@ -193,8 +175,6 @@ if __name__ == '__main__':
     p.add_argument('--e-width', type=int, default=E_WIDTH)
     p.add_argument('--lr', type=float, default=LR)
     p.add_argument('--n-its', type=int, default=N_ITS)
-    p.add_argument('--its-per-val', type=int, default=ITS_PER_VAL)
-    p.add_argument('--truncate-s', type=float, default=TRUNCATE_S)
     p.add_argument('--out', default=OUT_DIR or os.path.join(
         OUT_ROOT, 'blackbox', os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')))
     main(p.parse_args())

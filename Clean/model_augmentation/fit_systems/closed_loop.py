@@ -12,16 +12,17 @@ SCORE_NAME = 'sim-NRMSe'
 
 
 class ControllerBank(torch.nn.Module):
-    """The known feedback controllers K_fb of the training and validation records, one entry per distinct design,
-    rewritten to act on normalised signals. Each record selects its entry by its design index; K_fb is fixed, never
-    trained."""
+    """The known feedback controllers K_fb of the training and validation records, rewritten to act on normalised
+    signals. Records with the same controller design share one bank entry. The controller parameters are not trained."""
 
     def __init__(self, A, B, C, D, ystd, std_u, dtype=torch.float32):
         """Store each K_fb in the normalised coordinates of the model.
 
-        In physical units K_fb maps the position error e [m] to the feedback force u_fb [N]:
-        x^fb_{k+1} = A_fb x^fb_k + B_fb e_k, u_fb,k = C_fb x^fb_k + D_fb e_k, with nc = 9 states (three per
-        actuator axis).
+        With reference r, measured positions y and controller state x^fb, the known controller maps position
+        error r - y [m] to feedback force u^fb [N]:
+            x^fb_{k+1} = A_fb x^fb_k + B_fb (r_k - y_k),
+            u^fb_k = C_fb x^fb_k + D_fb (r_k - y_k).
+        The gantry controller has nc = 9 states, three per actuator axis.
 
         Args:
             A, B, C, D: A_fb (n_d, nc, nc), B_fb (n_d, nc, 3), C_fb (n_d, 3, nc), D_fb (n_d, 3, 3), stacked over the
@@ -36,11 +37,11 @@ class ControllerBank(torch.nn.Module):
         ystd_t, stdu_t = T(np.asarray(ystd).ravel()), T(np.asarray(std_u).ravel())
         self.nc, self.nu = A.shape[-1], C.shape[-2]
 
-        # THEORY: thesis Eq. (aug_cl_step). The model uses y^n = T_y (y - mu_y) and u^n = T_u (u_act - mu_u), with
+        # The model uses y^n = T_y (y - mu_y) and u^n = T_u (u_act - mu_u), with
         # T_i = diag(sigma_i)^-1, while the controller state stays in physical units. A normalised error goes back to
         # metres with T_y^-1 and a force to normalised units with T_u:
         #   B_fb^n = B_fb T_y^-1,  C_fb^n = T_u C_fb,  D_fb^n = T_u D_fb T_y^-1,  A_fb unchanged.
-        # No mean terms: mu_y cancels in y^n - y_hat^n, and mu_u is already inside the recorded u^n.
+        # The means cancel in output and force differences; the recorded u^n already includes subtraction of mu_u.
         Bn = B * ystd_t[None, None, :]
         Cn = C / stdu_t[None, :, None]
         Dn = D / stdu_t[None, :, None] * ystd_t[None, None, :]
@@ -49,13 +50,14 @@ class ControllerBank(torch.nn.Module):
         self.register_buffer('M_error', torch.cat([Dn, Bn], dim=1))
 
     def step(self, xc, e_norm, ctrl):
-        """One controller step in residual form:
+        """One step of the known controller in residual form.
 
-            u_fb^n = C_fb^n x^c_k + D_fb^n e^n_k,   x^c_{k+1} = A_fb x^c_k + B_fb^n e^n_k,   e^n_k = y^n_k - y_hat^n_k.
-
-        x^c = x_hat^fb - x^fb is the model's controller state minus the system's. Both controllers act on r minus
-        their own output, so r cancels and x^c is driven only by the measured minus the model output. u_fb^n is the
-        force the model's controller adds to the recorded force.
+        x^c = x_hat^fb - x^fb is the model's controller state minus the system's; e^n = y^n - y_hat^n is the
+        normalised output residual. Both controllers act on r minus their own output. Subtracting their equations
+        cancels the common reference r and gives
+            u_fb^n = C_fb^n x^c_k + D_fb^n e^n_k,
+            x^c_{k+1} = A_fb x^c_k + B_fb^n e^n_k.
+        u_fb^n is the normalised difference between the two feedback forces, added to the recorded force.
 
         Args:
             xc: (B, nc) x^c_k, in physical controller units.
@@ -74,13 +76,11 @@ class ControllerBank(torch.nn.Module):
 def closed_loop_step(hfn, bank):
     """One closed-loop step of the augmented model, built as a function of hfn and bank so it can be compiled.
 
-    The model output depends on the state only (no input feedthrough), so each step computes the output first, then
-    the controller force, then the next state:
-
-        y_hat^n_k = C^n x_tilde^n_k,   u_hat^n_k = u^n_k + u_fb^n_k,   x_hat^n_{k+1} = model step with u_hat^n_k,
-
-    with C^n the model's output map and u_fb^n from ControllerBank.step. D_fb therefore closes no algebraic loop
-    (Kessels Remark 5.1).
+    x_tilde^n is the physical part of the model state and C^n its output map. The output has no input
+    feedthrough, so compute it before the controller correction u_fb^n from ControllerBank.step:
+        y_hat^n_k = C^n x_tilde^n_k,   u_hat^n_k = u^n_k + u_fb^n_k.
+    Then advance hfn with u_hat^n_k. This order avoids an algebraic loop through the controller feedthrough D_fb
+    (thesis eq:aug_cl_step; Kessels Remark 5.1).
 
     Args:
         hfn: the interconnect, one step of the augmented model.
@@ -104,9 +104,10 @@ def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, *, pass_mats, o
     """Simulate the augmented model in closed loop with each sequence's K_fb, from x0 over the length of u_data.
 
     The model input is u_hat^n_k = u^n_k + u_fb^n_k (ControllerBank.step), so only the recorded u^n and y^n are
-    needed, not r or u^ff. This equals the model loop driven by r and u^ff only if the recorded force came from this
-    same discrete K_fb. The records were generated with K_1 at 20 kHz, so here it holds approximately (thesis
-    Eq. (aug_residual_split)).
+    needed, not the common reference r or feedforward u^ff. This reproduces their explicit model loop when the
+    recorded force was generated by the same discrete K_fb. Here the records were generated at 20 kHz, while the
+    controller is re-discretised at the model rate and recorded forces are averaged. The resulting force mismatch
+    appears as an extra input term in thesis eq:aug_residual_split; exact equivalence is not assumed.
 
     x0 is the encoder estimate x_hat^n_{tau|tau} in training and validation, and the baseline start state in the
     encoder start (model.py).
@@ -128,8 +129,8 @@ def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, *, pass_mats, o
     # each sequence's controller, gathered once for all steps
     ctrl = (bank.M_state[ctrl_ix], bank.M_error[ctrl_ix])
 
-    # THEORY: x^c_tau = 0 puts the model's controller in the system's controller state (thesis Eq. (aug_residual_loop)),
-    # so that state is never estimated; Kessels needs it (Remark 5.4)
+    # Since x^c is the controller-state difference, x^c_tau = 0 starts both controllers in the same state.
+    # The encoder therefore only estimates the model states (thesis eq:aug_residual_loop).
     xc = torch.zeros(u_data.shape[0], bank.nc, dtype=u_data.dtype, device=u_data.device)
 
     x, ys = x0, []
@@ -152,7 +153,10 @@ class ClosedLoopSimulator:
     validation_error."""
 
     def __init__(self, bank, train_ctrl_rows, val_rows, compiled, train_weights, val_sigma_e):
-        """Args:
+        """Store controllers and per-record scales: sigma_y is the output standard deviation; sigma_e is the
+        standard deviation of servo error y - r after the initial encoder history.
+
+        Args:
             bank: ControllerBank over the training and validation records.
             train_ctrl_rows, val_rows: design index of each training and validation record, in record order.
             compiled: torch.compile of closed_loop_step for the training rollouts on CUDA, or None.
@@ -169,8 +173,7 @@ class ClosedLoopSimulator:
         self.val_rows = [int(r) for r in val_rows]
 
     def __getstate__(self):
-        """The state without the compiled step. deepSI pickles the model, this simulator included, at every
-        checkpoint, and a compiled function cannot be pickled; a simulator restored from a checkpoint runs eager."""
+        """Leave the compiled step out when deepSI pickles the model; a restored simulator runs eager."""
         state = self.__dict__.copy()
         state['_compiled'] = None
         return state
@@ -186,7 +189,7 @@ class ClosedLoopSimulator:
             self._compiled = saved
 
     def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix, *, pass_mats, obc_pass=None, **kw):
-        """Closed-loop rollout of a minibatch of training windows, the simulation inside V (AugmentedModel.loss).
+        """Simulate a batch of windows for V (AugmentedModel.loss) or the PS residual target.
 
         Args:
             fit_sys: the augmented model.
@@ -217,10 +220,10 @@ class ClosedLoopSimulator:
     def augment_training_data(self, data, sys_data, fit_sys, **kw):
         """Append to deepSI's training windows the design index and the W_r diagonal of each window's record.
 
-        deepSI concatenates the windows of all records in record order, window_counts per record; both appended
-        arrays follow that order. A misaligned window would silently be simulated with another record's controller
-        and weighted with its W_r, so the window count and content are checked first. W_r multiplies the normalised
-        error in AugmentedModel.loss, which makes each axis's error relative to that record's servo error.
+        deepSI concatenates windows in record order; the metadata must follow that order to select the right
+        controller and error scale. Check counts and each record's first and last future-input window.
+        In AugmentedModel.loss, W_r = diag(sigma_y / sigma_e,r) converts normalised output error to
+        (y - y_hat) / sigma_e,r, relative to each record's servo-error standard deviation.
 
         Returns:
             data + [ctrl_ix (N_w,), loss_w (N_w, 3)], N_w windows in total.
@@ -245,8 +248,7 @@ class ClosedLoopSimulator:
     def verify_by_content(data, sdl, counts, k0, nf, stride):
         """Compare the input u^n of each record's first and last window with the record itself.
 
-        This catches a shifted or reordered window layout. It does not check y, the history arrays or the windows in
-        between, so it does not prove that every window is aligned."""
+        Only these boundary inputs are checked; outputs, histories and intermediate windows are not checked."""
         ufuture = data[2]
         off = 0
         for sd, c in zip(sdl, counts):
@@ -261,16 +263,16 @@ class ClosedLoopSimulator:
             off += c
 
     def validation_error(self, fit_sys, val_sys_data):
-        """Validation score sim-NRMSe. Adam keeps the checkpoint with the lowest value, and the polish is kept only
-        if it lowers it:
+        """Validation score sim-NRMSe, averaged over R records and axes j = X1, X2, Y.
 
-            sim-NRMSe = 1 / (3 R) sum_r sum_j RMS_{r,j} / sigma_{e,r,j},
+        For record r, RMS_{r,j} is the whole-record closed-loop output error [m] and sigma_{e,r,j} is the standard
+        deviation of servo error y_j - reference_j [m] over the same scored samples:
+            sim-NRMSe = 1 / (3 R) sum_r sum_j RMS_{r,j} / sigma_{e,r,j}.
+        Using sigma_e instead of the output standard deviation avoids normalising by the much larger reference
+        motion. Predicting the reference plus the mean servo error gives a score of 1 (thesis eq:setup_rms).
 
-        over the R validation records and the actuator axes j = X1, X2, Y. RMS_{r,j} is the closed-loop free-run
-        error of closed_loop_free_run_rms_batch [m]. sigma_{e,r,j} is the standard deviation of the record's servo
-        error y_j - r_j over the same samples (thesis Eq. (setup_rms)). A value of 1 is no better than predicting the
-        mean servo error. Jan's deepSI sim-NRMS divides by the standard deviation of y, which the reference motion
-        dominates.
+        Adam keeps the lowest-score checkpoint. Polish acceptance requires finite scores and final training loss,
+        with a strict score reduction.
         """
         sdl = val_sys_data.sdl
         per_channel, _ = closed_loop_free_run_rms_batch(fit_sys, sdl, self.bank, self.val_rows)
@@ -282,9 +284,10 @@ class ClosedLoopSimulator:
 def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=False):
     """Closed-loop free run of whole records, for validation and evaluation.
 
-    Unlike a training window, each record is simulated from a single encoder estimate x_hat^n_{k0} = psi(chi_{k0})
-    with x^c = 0 and never restarted, so model errors accumulate over the whole record. The first k0 = n + 1 samples
-    are the encoder input; samples k0 .. N - 1 are scored per axis j:
+    Each record starts from one encoder estimate x_hat^n_{k0} = psi(chi_{k0}) and controller-state difference
+    x^c = 0. Neither state is reset during the record; the residual feedback remains active.
+    The first k0 = max(fit_sys.na, fit_sys.nb) samples form the encoder history. For a record of N samples,
+    score samples k0 .. N - 1 per axis j:
 
         RMS_j = ( 1 / (N - k0) sum_{k=k0}^{N-1} (y_hat_{j,k} - y_{j,k})^2 )^(1/2)   [m].
 

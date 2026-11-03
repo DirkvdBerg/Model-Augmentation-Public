@@ -11,32 +11,15 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import deepSI
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
-from bb import GREY_BOX, data_cfg, load_records
+from blackbox.bb import GREY_BOX, N_THREADS, load_records, predict
 from gantry_dynamic.config import DATA_ROOT
 from gantry_dynamic.data import DATASETS, record_files, record_name, servo_sigma
 
 RUN_DIR = None     # run folder with result.json; the first command-line argument overrides it
 OUT_DIR = None     # output folder; None: <RUN_DIR>/evaluation; the second argument overrides it
-N_THREADS = 4      # CPU threads, the server's cores per task
 TWINS_DIR = os.path.join(DATA_ROOT, 'Multisine-test-twins')   # multisine twins, used only in the evaluation
-
-
-def predict(model, recs):
-    """Free-run prediction y_hat = r + e_hat over the whole record, from the encoder state x^bb_0 = psi(u_past, e_past).
-
-    Args:
-        model: the black box.
-        recs: (u, r, y) per record from `load_records`, physical.
-    Returns:
-        List of (N, 3) predictions y_hat, physical.
-    """
-    with np.errstate(all='ignore'):
-        return [r + np.asarray(model.apply_experiment(deepSI.System_data(
-                    u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=GREY_BOX.ts_new)).y, float)
-                for u, r, y in recs]
 
 
 def main(run, out):
@@ -59,11 +42,10 @@ def main(run, out):
     print('[BB] %s, nx %d' % (ckpt, model.nx), flush=True)
 
     # 2. Splits, each with the folder of its noise-free twins.
-    cfg = data_cfg()
     nf_dir = os.path.join(DATA_ROOT, DATASETS['noisefree'])
     with open(os.path.join(TWINS_DIR, DATASETS['noisy'], 'MANIFEST.csv'), newline='') as fh:
         twins = ['%s/%s.mat' % (row['folder'], row['file']) for row in csv.DictReader(fh)]
-    train_files, val_files, test_files = record_files(cfg)
+    train_files, val_files, test_files = record_files(GREY_BOX)
     splits = {'train': (train_files, None, nf_dir), 'val': (val_files, None, nf_dir),
               'test': (test_files, None, nf_dir),
               'twins': (twins, os.path.join(TWINS_DIR, DATASETS['noisy']),
@@ -71,13 +53,13 @@ def main(run, out):
     # 3. Predict each split and write it from k0 on, with the noise-free output for the floor.
     out.mkdir(parents=True, exist_ok=True)
     for split, (files, folder, folder_nf) in splits.items():
-        recs = load_records(files, cfg, folder)
+        recs = load_records(files, folder)
         preds = predict(model, recs)
         names = np.array([record_name(f) for f in files])
         saved = dict(records=names, k0=k0, y=np.stack([y[k0:] for _, _, y in recs]),
                      r=np.stack([r[k0:] for _, r, _ in recs]), sigma_e=servo_sigma([y - r for _, r, y in recs], k0),
                      bb=np.stack([p[k0:] for p in preds]),
-                     y_nf=np.stack([y[k0:] for _, _, y in load_records(files, cfg, folder_nf)]))
+                     y_nf=np.stack([y[k0:] for _, _, y in load_records(files, folder_nf)]))
         # code: deepSI's checkpoint code, so a figure can tell which run it shows
         np.savez_compressed(out / ('preds_BB.npz' if split == 'test' else 'preds_BB_%s.npz' % split),
                             code=name.rsplit('_', 2)[-2], **saved)

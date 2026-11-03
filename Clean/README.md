@@ -51,16 +51,15 @@ Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/
 
 ## Black box
 SUBNET on the servo error e = y - r (deepSI 0.3.29), on the grey box's samples and windows (its `SETTINGS`, noisy
-data set). `run_black_box.sh` trains the 11 grid configurations on the server (`sbatch --array=9` for the selected
-one only).
+data set). The scripts run from `Clean/` as modules, e.g. `python -u -m blackbox.train_bb`. `run_black_box.sh` trains
+the 11 grid configurations on the server (`sbatch --array=9` for the selected one only).
 
 | File | Role | Thesis |
 |-|-|-|
-| `blackbox/bb.py` | shared parts: model M_BB, the grey box's data settings and loader | Black-box model |
-| `blackbox/jan_model.py` | encoder psi and state map f_bb (names fixed by the saved checkpoints) | Black-box model |
+| `blackbox/bb.py` | shared parts: model M_BB, the grey box's data settings and loader, free-run prediction | Black-box model |
 | `blackbox/train_bb.py` | trains one configuration, weighted loss, selection by validation NRMS_e | Black-box model |
 | `blackbox/select_bb.py` | selects the configuration with the lowest validation NRMS_e | Black-box model |
-| `blackbox/eval_bb.py` | predictions on every split: `python -u Clean/blackbox/eval_bb.py <run folder> <output folder>` | Metrics |
+| `blackbox/eval_bb.py` | predictions on every split: `python -u -m blackbox.eval_bb <run folder> <output folder>` | Metrics |
 | `blackbox/run_black_box.sh` | SLURM array over the grid | |
 
 ## Data generation (MATLAB)
@@ -92,7 +91,7 @@ grey-box runs. MATLAB with Simulink R2025a for data generation.
 ## Attribution
 `model_augmentation/` is adapted from Model-Augmentation-Public by Jan H. Hoekstra (commit 8200923, BSD 3-Clause,
 see `model_augmentation/LICENSE`). Changes to his code are marked `# CHANGED:`, additions `@added` or
-`__project_origin__`. The black-box nets are his deepSI nets.
+`__project_origin__`. The black-box nets are deepSI's default nets, as in his deepSI black box.
 
 The orthogonal projection in `model_augmentation/fit_systems/obc.py` and `gantry_dynamic/obc_gantry.py` adapts the
 method of B. M. Györök et al., "Orthogonal projection-based regularization for efficient model augmentation" (L4DC

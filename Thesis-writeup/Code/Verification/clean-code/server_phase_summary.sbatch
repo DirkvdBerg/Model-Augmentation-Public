@@ -38,9 +38,9 @@ while IFS=$'\t' read -r NAME ARM COV CMD; do
 done < "$WORK/tasks.tsv"
 
 # the arm-A comparators check the clean outputs against this tree (H2)
-export HARNESS_CLEAN_ROOT="$WORK/clean-reverted"
-check tree-A-manifest bash -c "cd '$WORK/clean-reverted' && sha256sum -c --quiet '$WORK/clean-reverted.sha256'"
-check tree-B-manifest bash -c "cd '$WORK/clean-final' && sha256sum -c --quiet '$WORK/clean-final.sha256'"
+export HARNESS_CLEAN_ROOT="$COPY-reverted"
+check tree-A-manifest bash -c "cd '$COPY-reverted' && sha256sum -c --quiet '$WORK/clean-reverted.sha256'"
+check tree-B-manifest bash -c "cd '$COPY-final' && sha256sum -c --quiet '$WORK/clean-final.sha256'"
 
 # 2. Evaluation: merge per side; arm A bitwise; both arms against the report
 for S in l4A/mainline l4A/clean l4B/clean; do
@@ -49,8 +49,7 @@ done
 check l4-A-bitwise python -u compare_l4.py "$WORK/l4A/mainline-merged" "$WORK/l4A/clean-merged"
 cp compare-l4.json "$R/compare-l4.json" 2>/dev/null
 for S in l4A/mainline l4A/clean l4B/clean; do
-  ( [ "$S" = l4B/clean ] && export HARNESS_CLEAN_ROOT="$WORK/clean-final"
-    check "csv-${S//\//-}" python -u compare_csv.py l4 "$WORK/$S-merged" "$CSV" "$R/csv-${S//\//-}.json" )
+  ( check "csv-${S//\//-}" python -u compare_csv.py l4 "$WORK/$S-merged" "$CSV" "$R/csv-${S//\//-}.json" )
 done
 check csv-bb python -u compare_csv.py bb "$WORK/bb" "$CSV" "$R/csv-bb.json"
 
@@ -75,7 +74,7 @@ done
 if [ "$COVERAGE" = 1 ]; then
   python -m coverage combine --data-file="$WORK/cov/.coverage" "$WORK"/cov/.coverage.* > "$R/coverage-combine.log" 2>&1
   python -m coverage report -m --data-file="$WORK/cov/.coverage" \
-    --include="$WORK/clean-reverted/gantry_interconnect_dynamic.py,$WORK/clean-reverted/gantry_dynamic/*,$WORK/clean-reverted/model_augmentation/*" \
+    --include="$COPY-reverted/gantry_interconnect_dynamic.py,$COPY-reverted/gantry_dynamic/*,$COPY-reverted/model_augmentation/*" \
     > "$R/coverage.txt" 2>&1
   row coverage INFO "$(tail -1 "$R/coverage.txt") (missed lines per file: reports/coverage.txt)"
 fi

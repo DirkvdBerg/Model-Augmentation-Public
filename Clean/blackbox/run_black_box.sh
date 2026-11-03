@@ -10,7 +10,7 @@
 #SBATCH -o /home/dirk_van_den_berg/logs/augmentation/clean/bb_grid_%A_%a.out
 
 # Black-box grid: one array index trains one configuration of GRID on the CPU, since deepSI's eager loop is
-# dispatch-bound (about 1.1 h per 20000 updates); then Clean/blackbox/select_bb.py on the job's run folders.
+# dispatch-bound (about 1.1 h per 20000 updates); then python -m blackbox.select_bb on the job's run folders.
 #   sbatch Clean/blackbox/run_black_box.sh                      # all 11
 #   sbatch --array=9 Clean/blackbox/run_black_box.sh            # the selected configuration only
 
@@ -36,13 +36,14 @@ read -r NAME ARGS <<< "${GRID[$IDX]:?no grid line for index $IDX}"
 
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
-cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation
+# from Clean/, so the scripts run as python -m blackbox.<script>
+cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/Clean
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4
 
 # run folder <index>_<name>_n<updates>_<job>, the form select_bb.py parses
-OUT=simulations/gantry_clean/blackbox/${IDX}_${NAME}_n${N_ITS}_${SLURM_ARRAY_JOB_ID}
+OUT=../simulations/gantry_clean/blackbox/${IDX}_${NAME}_n${N_ITS}_${SLURM_ARRAY_JOB_ID}
 echo "index=${IDX} name=${NAME} args=${ARGS} git=$(git rev-parse --short HEAD 2>/dev/null || echo unavailable)"
 echo "job_id=${SLURM_JOB_ID} node_list=${SLURM_JOB_NODELIST}"; date
-srun --cpu-bind=cores python -u Clean/blackbox/train_bb.py $ARGS --n-its "$N_ITS" --out "$OUT"
+srun --cpu-bind=cores python -u -m blackbox.train_bb $ARGS --n-its "$N_ITS" --out "$OUT"
 date

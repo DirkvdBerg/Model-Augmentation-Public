@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
-from bb import model_kwargs
+from blackbox.bb import model_kwargs
 from gantry_dynamic.config import RunConfig
 
 # folder of one run_black_box.sh job, with run folders <index>_<name>_n<updates>_<job>; the first argument overrides it

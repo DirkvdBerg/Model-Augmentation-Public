@@ -73,7 +73,10 @@ def bitwise(main_out, clean_out, path):
         m, c = _pair(mb, True), _pair(cb, False)
         checks[tag + '_hfn'] = _same(m[0], c[0])
         checks[tag + '_encoder'] = _same(m[1], c[1])
-        checks[tag + '_adam'] = (m[2] is None) == (c[2] is None) and (m[2] is None or _same(m[2]['state'], c[2]['state']))
+        # the pre-polish pair: mainline stores the Adam moments in it, Clean/ never does (nothing resumes Adam from it)
+        if tag == 'final':
+            checks[tag + '_adam'] = ((m[2] is None) == (c[2] is None)
+                                     and (m[2] is None or _same(m[2]['state'], c[2]['state'])))
     checks['bestfit'] = rm['bestfit'] == rc['bestfit']
     om, oc = rm['lbfgs_outcome'] or {}, rc['lbfgs_outcome'] or {}
     for k in ('ran', 'accepted', 'val_before', 'val_after'):
