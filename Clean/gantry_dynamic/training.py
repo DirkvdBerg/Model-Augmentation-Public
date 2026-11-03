@@ -6,6 +6,7 @@ import os
 import json
 import time
 
+import deepSI
 import numpy as np
 import torch
 
@@ -245,6 +246,8 @@ def run_lbfgs_polish(fit_sys, cfg: RunConfig, data, bestfit, history, adam_ran=T
     print('\n[lbfgs] polish phase: Adam is done, L-BFGS from here')
     # 1. Polish settings from the config.
     spec = PolishSpec(n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter, seed=cfg.seed)
+    # deepSI takes all records of a split as one System_data_list
+    train_data, val_data = deepSI.System_data_list(data.train_list), deepSI.System_data_list(data.val_list)
     with on_device(fit_sys, cfg):
         if cfg.device == 'cuda':
             torch.cuda.empty_cache()
@@ -253,10 +256,10 @@ def run_lbfgs_polish(fit_sys, cfg: RunConfig, data, bestfit, history, adam_ran=T
         if not adam_ran and not cfg.obc:
             # without Adam in this job, one eager (uncompiled) validation initialises the model before the
             # compiled polish
-            fit_sys.cal_validation_error(data.val_ckpt_data)
+            fit_sys.cal_validation_error(val_data)
         # on the OBC arm, fit rebuilt the basis at the selected beta, which changes the score a little: rescore
         if cfg.obc:
-            val_rebuilt = float(fit_sys.cal_validation_error(data.val_ckpt_data))
+            val_rebuilt = float(fit_sys.cal_validation_error(val_data))
             print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
                   % (SCORE_NAME, val_rebuilt, bestfit))
             history.record('rebuilt', fit_sys, val_rebuilt)
@@ -264,9 +267,9 @@ def run_lbfgs_polish(fit_sys, cfg: RunConfig, data, bestfit, history, adam_ran=T
                 val_before = val_rebuilt
         # 3. Polish on the training windows; rolled back inside unless the validation score drops.
         out = lbfgs_polish(
-            fit_sys, data.train_data,
+            fit_sys, train_data,
             loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride}, spec=spec,
-            val_sys_data=data.val_ckpt_data,
+            val_sys_data=val_data,
             val_before=val_before,
             validation_measure=SCORE_NAME)
         # 4. Record the polished weights' validation, also when they were rolled back.
@@ -315,7 +318,8 @@ def _adam_phase(fit_sys, cfg: RunConfig, data, checkpoint_dir, meta, done_epochs
         else:
             with on_device(fit_sys, cfg):
                 fit_sys.fit(
-                    train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
+                    train_sys_data=deepSI.System_data_list(data.train_list),
+                    val_sys_data=deepSI.System_data_list(data.val_list),
                     batch_size=cfg.batch_size, epochs=epochs_remaining,
                     n_its=cfg.n_its,
                     its_per_val=(cfg.n_its if cfg.n_its else cfg.its_per_val),

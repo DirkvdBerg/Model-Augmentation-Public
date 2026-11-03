@@ -41,7 +41,7 @@ _NOT_COMPARED = ('DEVICE', 'COMPILE_MODE', 'TRUNCATE_S', 'EPOCHS', 'N_ITS', 'ITS
 
 def _y_decimation(cfg):
     """The mainline's Y_DECIMATION text; the thesis config.json records the anti-alias filter in it."""
-    if cfg.noise == 'lowpass':
+    if cfg.noise == 'noisy':
         return 'r + zero-phase Butterworth %d at %.0f Hz on y - r, then [::%d]' % (cfg.aa_order, cfg.aa_fc_hz,
                                                                                    cfg.decimation)
     return 'point sampling [::%d]' % cfg.decimation
@@ -52,7 +52,7 @@ def thesis_settings(cfg):
     values RunConfig.config_json_dict wrote before amendment 10)."""
     from model_augmentation.fit_systems import lbfgs_polish as LP
     return json.loads(json.dumps(dict(
-        MODE={'lowpass': 'thesis_taf_lowpass_noise', 'noisefree': 'thesis_taf_noisefree'}[cfg.noise],
+        MODE={'noisy': 'thesis_taf_lowpass_noise', 'noisefree': 'thesis_taf_noisefree'}[cfg.noise],
         ENCODER_INIT='data_lsq', ANN_ACTIVATION='tanh', ANN_ARCH='mlp', G_INIT='live',
         LIVE_G_WEIGHT_INIT='kaiming_uniform_a_sqrt5', WA_ENCODER_INIT='xavier_uniform_gain1',
         FS_NEW=cfg.fs_new, D=cfg.decimation, FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=None, JOINT_ESTIMATION=True,
@@ -82,7 +82,7 @@ def config_of(meta):
         return RunConfig.from_config_json({**{k: v for k, v in thesis.items() if k not in meta}, **meta})
     axes = dict(arm='obc' if meta['OBC'] else 'u', start='correct' if meta['COMBO_INIT_DETUNE'] is None else 'detuned',
                 n_a=int(meta['NX_ANN']), ps2=bool(meta.get('PS2', False)),
-                noise={'thesis_taf_lowpass_noise': 'lowpass', 'thesis_taf_noisefree': 'noisefree'}[meta['MODE']])
+                noise={'thesis_taf_lowpass_noise': 'noisy', 'thesis_taf_noisefree': 'noisefree'}[meta['MODE']])
     # the run environment of the thesis folder; every other setting is checked against THESIS_SETTINGS below
     env = {f: meta[f.upper()] for f in _ENV_FIELDS if f.upper() in meta}
     cfg = RunConfig(**dict(SETTINGS, **axes, **env))

@@ -78,7 +78,7 @@ class RunConfig:
         """Raise a ValueError on a value this code does not handle; without it a typo such as arm='OBC' would silently
         run the U arm."""
         allowed = dict(arm=('obc', 'u'), start=('detuned', 'correct'), ps2=(False, True),
-                       noise=('lowpass', 'noisefree'), device=('cpu', 'cuda'),
+                       noise=('noisy', 'noisefree'), device=('cpu', 'cuda'),
                        compile_mode=(None, 'reduce-overhead'),
                        baseline_form=('lfr', 'closed'))
         for name, values in allowed.items():

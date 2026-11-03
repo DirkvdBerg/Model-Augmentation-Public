@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(REPO, 'Clean'))
 
 from gantry_interconnect_dynamic import SETTINGS                  # noqa: E402
 from gantry_dynamic.config import RunConfig                       # noqa: E402
-from gantry_dynamic.data import _load_record                      # noqa: E402
+from gantry_dynamic.data import load_record                       # noqa: E402
 
 CSV = os.path.join(REPO, 'Thesis-writeup', 'Results', '24-10-2026', 'CSV', 'res_time_trace.csv')
 RECORD = 'Test/I1_r1.mat'
@@ -44,13 +44,13 @@ with open(CSV, newline='') as fh:
 t_csv = np.array([float(r['t_s']) for r in rows])
 r_csv = np.array([float(r['r_Y']) for r in rows])
 y_csv = np.array([float(r['y_Y']) for r in rows])
-cfg = RunConfig(**dict(SETTINGS, noise='lowpass', device='cpu', compile_mode=None))
+cfg = RunConfig(**dict(SETTINGS, noise='noisy', device='cpu', compile_mode=None))
 assert rows[0]['t_s'] == '%.6f' % (K0 / cfg.fs_new), 'the trace must start at k0 = %d' % K0
-sd, e = _load_record(RECORD, cfg)
+sd, e, _ = load_record(RECORD, cfg)
 y = np.asarray(sd.y)[:, 2]
 e = e[:, 2]
 r = y - e
-_, e_nf = _load_record('Coulomb-tanh-and-MSD-noise-free/' + RECORD, cfg, folder=cfg.data_root)
+_, e_nf, _ = load_record('Coulomb-tanh-and-MSD-noise-free/' + RECORD, cfg, folder=cfg.data_root)
 e_nf = e_nf[:, 2]
 n = len(rows)
 print('record %s: %d samples loaded, %d in the trace (from k0 = %d); loader ends at %d' % (RECORD, len(y), n, K0,

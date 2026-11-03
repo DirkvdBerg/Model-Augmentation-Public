@@ -79,7 +79,8 @@ t = time.time()
 fit_sys.simulator = build_closed_loop(
     fit_sys, norm, cfg, train_files=data.train_files, val_files=data.val_files,
     e_train=data.e_train, e_val=data.e_val,
-    **({'val_data': data.val_ckpt_data} if args.side == 'mainline' else {}))     # R6: no val_data in Clean
+    # R6: no val_data in Clean; Clean takes the records' stored controllers instead of a global table
+    **({'val_data': data.val_ckpt_data} if args.side == 'mainline' else {'controllers': data.controllers}))
 tim['build_closed_loop'] = time.time() - t
 sim = fit_sys.simulator
 # D-281 (O8): the clean simulator no longer has bank.ystd, bank.stdu (B41) or the validation record
@@ -159,7 +160,7 @@ fit_sys.hfn.load_state_dict(st['hfn'] if MAIN else H.drop_state(st['hfn']))
 fit_sys.encoder.load_state_dict(st['encoder'])
 t = time.time()
 dtype = next(fit_sys.hfn.parameters()).dtype
-tr = fit_sys.make_training_data(fit_sys.norm.transform(data.train_data), nf=hp['nf'], stride=cfg.stride)
+tr = fit_sys.make_training_data(fit_sys.norm.transform(H.train_data(data)), nf=hp['nf'], stride=cfg.stride)
 c1.info['windows/n'] = len(tr[0])
 for k, a in zip(('uh', 'yh', 'uf', 'yf') + tuple(sim.extra_array_names), tr):
     c1.add('windows/' + k, a)
@@ -192,7 +193,7 @@ with torch.no_grad():
     c1.add('fwd/y_pred', y_pred)
     c1.add('fwd/x_final', x_fin)
 # R5, R13: the clean cal_validation_error takes no measure name
-val = fit_sys.cal_validation_error(data.val_ckpt_data, *((cfg.validation_measure,) if MAIN else ()))
+val = fit_sys.cal_validation_error(H.val_data(data), *((cfg.validation_measure,) if MAIN else ()))
 c1.add('fwd/val_score', np.asarray(val))
 c1.add('fwd/last_per_channel', sim.last_per_channel)
 if MAIN:                                     # R12 (D-284 amendment 10): the clean simulator has no sim-RMS

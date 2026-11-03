@@ -50,7 +50,7 @@ Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/
 | `model_augmentation/utils/utils.py` | `@added` marker, tensor conversion, selection matrices | |
 
 ## Black box
-SUBNET on the servo error e = y - r (deepSI 0.3.29), on the grey box's samples and windows (its `SETTINGS`, lowpass
+SUBNET on the servo error e = y - r (deepSI 0.3.29), on the grey box's samples and windows (its `SETTINGS`, noisy
 data set). `run_black_box.sh` trains the 11 grid configurations on the server (`sbatch --array=9` for the selected
 one only).
 

@@ -20,15 +20,11 @@ import torch
 from torch import Tensor, nn
 from scipy.io import loadmat
 
-from model_augmentation.systems.gantry_ss import P
 from model_augmentation.fit_systems.blocks import IdentifiableGantryStateBlock, Static_ANN_Block
 from model_augmentation.fit_systems.obc import OBCProjection, build_stacked_sensitivity
 
 from .config import RunConfig
-from .data import traj_dir, _record_at_fs_new
-
-# the float64 P^-T: measured positions y to generalised positions q = P^-T y
-P_INV_T64 = np.linalg.inv(P.detach().cpu().numpy().astype(np.float64).T)
+from .data import dataset_dir, record_at_fs_new, P_INV_T
 
 
 @dataclass
@@ -80,10 +76,10 @@ def build_reference_set(cfg: RunConfig, norm, n_a: int, files: Sequence[str],
     xs, us = [], []
     for f in files:
         # one training record in float64, resampled as for training
-        d = loadmat(os.path.join(traj_dir(cfg), f), squeeze_me=True)
-        u, y = (np.asarray(a, dtype=np.float64) for a in _record_at_fs_new(d, cfg))
+        d = loadmat(os.path.join(dataset_dir(cfg), f), squeeze_me=True)
+        u, y = (np.asarray(a, dtype=np.float64) for a in record_at_fs_new(d, cfg))
         # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at i = 2 .. N - 4 (the stencil gives qdot at 2 .. N - 3)
-        q = y @ P_INV_T64.T
+        q = y @ P_INV_T.T
         qd = fourth_order_central_difference(q, ts)
         k = np.arange(2, len(u) - 3)
         xs.append(np.hstack([q[k], qd[k - 2]])); us.append(u[k])

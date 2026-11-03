@@ -1,6 +1,6 @@
 """Train the augmented gantry model with the settings below; or, on an existing run folder, continue its Adam
 training from a saved checkpoint up to the epoch budget, rerun its L-BFGS polish, or only evaluate its final
-checkpoint. The default is the thesis model M_OBC (OBC arm, detuned start, two added states, PS opening, lowpass
+checkpoint. The default is the thesis model M_OBC (OBC arm, detuned start, two added states, PS opening, noisy
 data) on CUDA."""
 import argparse
 import json
@@ -14,7 +14,7 @@ import torch
 from deepSI.datasets import get_work_dirs
 
 from gantry_dynamic.config import RunConfig, DATA_ROOT, OUT_ROOT, save_dir, config_json_dict
-from gantry_dynamic.data import load_datasets, compute_normalization, traj_dir
+from gantry_dynamic.data import load_datasets, compute_normalization, dataset_dir
 from gantry_dynamic.model import build_model, prefit_physical_encoder
 from gantry_dynamic.controller import build_closed_loop
 from gantry_dynamic.training import train, load_checkpoint
@@ -35,7 +35,7 @@ SETTINGS = dict(
     start='detuned',    # baseline parameters at the start: 'correct' (nominal) or 'detuned' (tests their recovery)
     n_a=2,              # number of added states; the thesis runs 0, 2 and 8. The baseline has 2 missing states.
     ps2=True,           # PS initialization of the added states (S1, then S2)
-    noise='lowpass',    # data set: 'lowpass' (measurement noise) or 'noisefree'
+    noise='noisy',      # data set: 'noisy' (measurement noise) or 'noisefree'
     # sampling and windows
     fs_new=4000,        # [Hz] training rate; fast enough for the controller, 5x cheaper than the 20 kHz data
     # zero-phase anti-aliasing before decimation to fs_new, so y stays aligned with r and u
@@ -201,7 +201,7 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
         os.makedirs(sdir)
         with open(os.path.join(sdir, 'config.json'), 'w') as fh:
             json.dump({**config_json_dict(cfg),
-                       'run_id': run_id, 'data_dir': traj_dir(cfg)}, fh, indent=2)
+                       'run_id': run_id, 'data_dir': dataset_dir(cfg)}, fh, indent=2)
 
     # 3. Model and closed loop.
     np.random.seed(cfg.seed)
@@ -210,7 +210,8 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
 
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg,
-        train_files=data.train_files, val_files=data.val_files, e_train=data.e_train, e_val=data.e_val)
+        train_files=data.train_files, val_files=data.val_files, controllers=data.controllers,
+        e_train=data.e_train, e_val=data.e_val)
     print('\nTraining loss: each window simulated in closed loop with the known controller')
 
     # 4. Encoder start, or the restored checkpoint.
@@ -244,7 +245,7 @@ def cli():
     ap.add_argument('--n-a', type=int)
     ap.add_argument('--ps2', action=argparse.BooleanOptionalAction,
                     help='PS opening of the added states during the first Adam updates; --no-ps2 runs without')
-    ap.add_argument('--noise', choices=('lowpass', 'noisefree'))
+    ap.add_argument('--noise', choices=('noisy', 'noisefree'))
     ap.add_argument('--closed-form', action='store_true',
                     help='baseline derivative in closed form: same up to rounding, 3 to 8 %% faster')
     ap.add_argument('--cpu', action='store_true', help='run on the CPU, without torch.compile')

@@ -14,6 +14,7 @@
 # same node and card: (a) mainline then clean; task 1 then runs (b), the compiled polish-only start
 # from each side's own (a) `_pre_lbfgs` pair. The one-off CUDA-graph recording took 55 to 61 min in
 # production, so expect about an hour per (a) run. Afterwards: python -u compare_gpu.py $OUT
+# D-294 amendment 1: arm A only, on the tree with d294_revert.py applied (refused otherwise).
 
 set -eo pipefail
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
@@ -23,6 +24,7 @@ REPO=/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation
 cd "$REPO/Thesis-writeup/Code/Verification/clean-code"
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 export HARNESS_THREADS=$SLURM_CPUS_PER_TASK
+python -u d294_revert.py status --expect reverted
 CACHE_KEY="$(. /etc/os-release; echo "${ID}${VERSION_ID}")-$(uname -m)"
 export TORCHINDUCTOR_CACHE_DIR=/dataB1/dirk_van_den_berg/torchinductor-cache/$CACHE_KEY
 export TRITON_CACHE_DIR=/dataB1/dirk_van_den_berg/triton-cache/$CACHE_KEY
@@ -39,7 +41,7 @@ done
 if [ "$ROW" = 226 ]; then
   for SIDE in mainline clean; do
     if [ "$SIDE" = mainline ]; then SRC="$OUT/a-226-mainline/gpuA-226-lowpass"
-    else SRC="$OUT/a-226-clean/thesis_taf_lowpass_noise_data_lsq/gpuA-226-lowpass"; fi
+    else SRC="$OUT/a-226-clean/noisy/gpuA-226-lowpass"; fi
     python -u gpu_smoke.py --side "$SIDE" --row 226 --polish-from "$SRC" --out "$OUT/b-226-$SIDE" 2>&1 \
       | tee "$OUT/logs/b-226-$SIDE.log"
   done

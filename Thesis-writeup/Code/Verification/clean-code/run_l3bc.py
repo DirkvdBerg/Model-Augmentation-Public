@@ -90,7 +90,8 @@ if args.layer == '3b':
     fit_sys.simulator = build_closed_loop(
         fit_sys, norm, cfg, train_files=data.train_files, val_files=data.val_files,
         e_train=data.e_train, e_val=data.e_val,
-        **({'val_data': data.val_ckpt_data} if args.side == 'mainline' else {}))     # R6: no val_data in Clean
+        # R6: no val_data in Clean; Clean takes the records' stored controllers instead of a global table
+        **({'val_data': data.val_ckpt_data} if args.side == 'mainline' else {'controllers': data.controllers}))
     if args.side == 'mainline':
         load_checkpoint(fit_sys, os.path.join(l3_golden, 'run', 'gantry_ckpt_%s_pre_lbfgs' % rid_l3),
                         cfg.joint_estimation, start_phase='lbfgs')
@@ -117,8 +118,8 @@ if args.layer == '3b':
         # D-292: inner iterations, history and tolerances are lbfgs_polish constants (H.make_cfg set INNER_ITER)
         spec = PolishSpec(n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter, seed=cfg.seed)
         kw = {}
-    res = lbfgs_polish(fit_sys, data.train_data, loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride},
-                       spec=spec, val_sys_data=data.val_ckpt_data, val_before=0.0,
+    res = lbfgs_polish(fit_sys, H.train_data(data), loss_kwargs={'nf': cfg.nf, 'stride': cfg.stride},
+                       spec=spec, val_sys_data=H.val_data(data), val_before=0.0,
                        validation_measure=cfg.validation_measure if args.side == 'mainline' else 'sim-NRMSe', **kw)
     after = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())
              + [('enc.' + k, v) for k, v in fit_sys.encoder.state_dict().items()]}

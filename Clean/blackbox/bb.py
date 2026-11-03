@@ -16,12 +16,12 @@ from jan_model import JanEncoder, JanStateNet
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gantry_interconnect_dynamic import SETTINGS                                   # noqa: E402
 from gantry_dynamic.config import RunConfig                                        # noqa: E402
-from gantry_dynamic.data import traj_dir, _record_at_fs_new                        # noqa: E402
+from gantry_dynamic.data import dataset_dir, record_at_fs_new                        # noqa: E402
 
 N_HIDDEN_LAYERS = 2  # hidden tanh layers of psi, f_bb and h_bb (HEURISTIC: thesis value, Jan's default)
-# the grey box's settings on the lowpass data set: both models see the same samples (fs_new, anti-aliasing, trim),
+# the grey box's settings on the noisy data set: both models see the same samples (fs_new, anti-aliasing, trim),
 # the same encoder window (na_nb) and the same training window length (nf)
-GREY_BOX = RunConfig(**dict(SETTINGS, noise='lowpass'))
+GREY_BOX = RunConfig(**dict(SETTINGS, noise='noisy'))
 
 
 def model_kwargs(nx, fh_width, e_width):
@@ -58,15 +58,15 @@ def load_records(files, cfg, folder=None):
     Args:
         files: record file names.
         cfg: loader settings from `data_cfg`.
-        folder: record folder; None for the lowpass data set.
+        folder: record folder; None for the noisy data set.
     Returns:
         List of (u, r, y) per record: u (N, 6) = (r, u^ms), r (N, 3) and y (N, 3), physical units.
     """
     out = []
     for fn in files:
-        mat = loadmat(os.path.join(folder or traj_dir(cfg), fn), squeeze_me=True)
+        mat = loadmat(os.path.join(folder or dataset_dir(cfg), fn), squeeze_me=True)
         # the grey-box loader reads the plant input from u_total; here it gets the injected force u^ms, which it
         # block-averages over each training sample, while y and r are decimated as for the grey box
-        u_ms, y, r = _record_at_fs_new({**mat, 'u_total': mat['f_sim']}, cfg, ('r_sim',))
+        u_ms, y, r = record_at_fs_new({**mat, 'u_total': mat['f_sim']}, cfg, reference=True)
         out.append((np.hstack([r, u_ms]), r, y))
     return out

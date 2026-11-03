@@ -28,7 +28,9 @@ CLEAN = os.path.join(REPO, 'Clean')
 # repository's goldens. The snapshots stay under simulations/clean-golden/src-snapshots either way (SNAPSHOTS).
 GOLDEN = os.environ.get('HARNESS_GOLDEN') or os.path.join(REPO, 'simulations', 'clean-golden')
 SNAPSHOTS = os.path.join(REPO, 'simulations', 'clean-golden', 'src-snapshots')
-CLEAN_OUT = os.path.join(GOLDEN, '_clean')
+# HARNESS_CLEAN_OUT: the root of the clean outputs; unset: GOLDEN/_clean. D-294 arm B captures the final tree into
+# its own root beside arm A's (compare_d294.py), against the same goldens.
+CLEAN_OUT = os.environ.get('HARNESS_CLEAN_OUT') or os.path.join(GOLDEN, '_clean')
 
 # runs.tsv rows 221 to 230 (no 228): preset, arm, start, n_a, ps2 (design section 3, Presets)
 ROWS = {
@@ -123,13 +125,21 @@ def make_cfg(row, noise, run_id, budget=None, **extra):
         return cfg, EP
     # D-292: no presets in Clean/; the row's axes over the entry script's SETTINGS, with the short PS opening
     from gantry_dynamic.config import RunConfig
+    from gantry_dynamic.data import DATASETS
     import gantry_interconnect_dynamic as EP
+    noise = clean_noise(noise, DATASETS)
     kw = dict(device='cpu', compile_mode=None, ps2_opening=short_ps2_opening(EP.SETTINGS))
     kw.update(budget)
     kw.update(extra)
     clean_inner_iter(kw)
     cfg = RunConfig(**dict(EP.SETTINGS, arm=arm, start=start, n_a=na, ps2=bool(ps2), noise=noise, **kw))
     return cfg, EP
+
+
+def clean_noise(noise, datasets):
+    """The clean noise setting of a harness case's noise label: the cases keep the thesis label 'lowpass' (golden
+    folders, both sides), which Clean names 'noisy'; a snapshot from before that rename keeps 'lowpass'."""
+    return 'noisy' if noise == 'lowpass' and 'noisy' in datasets else noise
 
 
 def clean_inner_iter(kw):
@@ -148,6 +158,19 @@ HP_KEYS = ('n_a', 'n_nodes_per_layer', 'n_hidden_layers', 'up_sample', 'nf', 'na
 def hp_of(cfg):
     """The hp dict of cfg: mainline's own, or the same nine values read from the clean RunConfig."""
     return cfg.hp if SIDE == 'mainline' else {k: getattr(cfg, k) for k in HP_KEYS}
+
+
+def train_data(data):
+    """The training records as one System_data_list: mainline's data.train_data; Clean keeps the list only and its
+    callers wrap it at the deepSI call."""
+    import deepSI
+    return data.train_data if SIDE == 'mainline' else deepSI.System_data_list(data.train_list)
+
+
+def val_data(data):
+    """The validation records as one System_data_list: mainline's data.val_ckpt_data, or Clean's list wrapped."""
+    import deepSI
+    return data.val_ckpt_data if SIDE == 'mainline' else deepSI.System_data_list(data.val_list)
 
 
 def build_model(GDM, cfg, data, norm):
@@ -302,8 +325,9 @@ def write_meta(out_dir, cfg, data, extra=None):
     SHA256 of every file already in out_dir. Call it LAST, once every output of the case is saved:
     a meta.json then exists only for a complete case and pins the files it was written for."""
     from gantry_dynamic.config import config_json_dict
-    from gantry_dynamic.data import traj_dir
-    ddir = traj_dir(cfg)
+    import gantry_dynamic.data as GDD
+    # the data folder of the run: traj_dir in mainline, dataset_dir in Clean
+    ddir = (GDD.traj_dir if SIDE == 'mainline' else GDD.dataset_dir)(cfg)
     files = list(data.train_files) + list(data.val_files) + list(data.test_files)
     try:
         cj = json.loads(json.dumps(config_json_dict(cfg), default=str))

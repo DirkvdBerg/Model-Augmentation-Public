@@ -131,47 +131,35 @@ def controller_ss(Y_op, ts, gain=1.0):
 
 
 def _stem(name):
-    """A record's file name without folder and .mat suffix: the key of _CONTROLLER_METADATA."""
+    """A record's file name without folder and .mat suffix."""
     stem = os.path.basename(str(name))
     return stem[:-4] if stem.endswith('.mat') else stem
 
 
-# stem -> (design Y, gain) of a stored controller the bank can build, or the description of one it cannot
-_CONTROLLER_METADATA = {}
-
-
-def register_stored_controller(name, ctrl_name, design_y, gain, fbw_hz):
-    """Register a record's stored controller: (design Y, gain) if the bank can build it, else its description."""
-    # HEURISTIC: 1e-9 Hz tolerance for a bandwidth stored as a MATLAB double
-    _CONTROLLER_METADATA[_stem(name)] = ((design_y, float(gain)) if abs(fbw_hz - FBW) < 1e-9
-                                         else '%s (gain %g, %g Hz)' % (ctrl_name, gain, fbw_hz))
-
-
-def controller_design(name, use_gain=False):
-    """(design Y, gain) of a record's stored controller, by file name; use_gain admits a gain other than 1."""
-    stem = _stem(name)
-    entry = _CONTROLLER_METADATA.get(stem)
-    if entry is None:
-        raise KeyError('no controller registered for record %r; load the record through gantry_dynamic.data, '
-                       'which registers its stored controller' % stem)
-    if not isinstance(entry, tuple):
-        raise KeyError('record %r uses controller %s, which the bank cannot build (it builds the %g Hz '
-                       'ruleOfThumb design at a design Y); leave the record out of training and validation'
-                       % (stem, entry, FBW))
-    # HEURISTIC: 1e-12 tolerance for a gain stored as a MATLAB double
-    if abs(entry[1] - 1.0) > 1e-12 and not use_gain:
+def controller_design(name, spec, use_gain=False):
+    """(design Y, gain) of a record's stored controller spec (data._controller_spec); use_gain admits a gain other
+    than 1."""
+    ctrl_name, design_y, gain, fbw_hz = spec
+    # 1e-9 Hz tolerance for a bandwidth stored as a MATLAB double
+    if abs(fbw_hz - FBW) >= 1e-9:
+        raise KeyError('record %r uses controller %s (gain %g, %g Hz), which the bank cannot build (it builds the '
+                       '%g Hz ruleOfThumb design at a design Y); leave the record out of training and validation'
+                       % (_stem(name), ctrl_name, gain, fbw_hz, FBW))
+    # 1e-12 tolerance for a gain stored as a MATLAB double
+    if abs(gain - 1.0) > 1e-12 and not use_gain:
         raise KeyError('record %r was generated with %g x K1; use a caller that explicitly passes use_gain=True '
-                       'to build_controller_bank, or restrict this run to unit-gain records' % (stem, entry[1]))
-    return entry
+                       'to build_controller_bank, or restrict this run to unit-gain records' % (_stem(name), gain))
+    return design_y, gain
 
 
-def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, use_gain=False):
+def build_controller_bank(record_names, controllers, ts, ystd, std_u, dtype=torch.float32, use_gain=False):
     """Controller bank of a data set.
 
     One K_fb per distinct design (normalised in ControllerBank) and the bank row of each record.
 
     Args:
         record_names: record file names.
+        controllers: record file name -> stored controller spec (Datasets.controllers).
         ts: sample time T_s [s].
         ystd: (3,) sigma_y [m].
         std_u: (3, 1) or (3,) sigma_u [N].
@@ -180,7 +168,7 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
     Returns:
         bank, rows (list of n_records ints), and the distinct design keys.
     """
-    keys = [controller_design(n, use_gain) for n in record_names]
+    keys = [controller_design(n, controllers[n], use_gain) for n in record_names]
     uniq = sorted(set(keys))
     rows = [uniq.index(k) for k in keys]
     mats = [controller_ss(Y_op, float(ts), g) for Y_op, g in uniq]
@@ -189,7 +177,7 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
     return bank, rows, (uniq if use_gain else [y for y, _ in uniq])
 
 
-def build_closed_loop(fs, norm, cfg, *, train_files, val_files, e_train, e_val, verbose=True):
+def build_closed_loop(fs, norm, cfg, *, train_files, val_files, controllers, e_train, e_val, verbose=True):
     """Closed-loop simulator of training and validation.
 
     The bank of K_fb, the loss weights W_r = diag(sigma_y / sigma_e,r) of the training records and sigma_e of the
@@ -200,6 +188,7 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, e_train, e_val, 
         norm: normalisation (data.Norm).
         cfg: run configuration.
         train_files, val_files: record file names.
+        controllers: record file name -> stored controller spec (Datasets.controllers).
         e_train, e_val: lists of (N_r, 3) servo errors y - r [m].
         verbose: print the bank and compile settings.
     Returns:
@@ -212,7 +201,8 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, e_train, e_val, 
                          'exactly one split' % [n for n in names if names.count(n) > 1])
 
     bank, rows, y_ops = build_controller_bank(
-        names, cfg.ts_new, ystd=norm.ystd, std_u=norm.std_u, dtype=cfg.dtype_pt)
+        list(train_files) + list(val_files), controllers, cfg.ts_new, ystd=norm.ystd, std_u=norm.std_u,
+        dtype=cfg.dtype_pt)
     n_tr = len(train_files)
     train_rows, val_rows = rows[:n_tr], rows[n_tr:]
 

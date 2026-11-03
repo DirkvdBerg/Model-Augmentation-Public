@@ -1,11 +1,11 @@
-"""Nominal parameters theta^0 (Garcia-Herreros et al., Table I) and the baseline matrices of the gantry, in float32.
+"""Nominal parameters theta^0 (Garcia-Herreros et al., Table I) and the baseline matrices of the gantry, in float64.
 Code names: alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma = J_eff."""
 __project_origin__ = "added"
 
 import torch
 
-# the model casts these to float64 and keeps their float32 rounding
-_D = torch.float32
+# float64, so theta^0 equals the values of the data generator (data_generation/tdg_config.m) exactly
+_D = torch.float64
 
 # nominal parameters theta^0 (THEORY: Garcia-Herreros et al. Table I)
 mb  = torch.tensor(22.8,   dtype=_D)  # [kg] beam mass

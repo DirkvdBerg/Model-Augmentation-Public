@@ -21,9 +21,8 @@ from model_augmentation.fit_systems.closed_loop import closed_loop_free_run_rms_
 
 from .config import RunConfig, DATA_ROOT
 from .controller import build_controller_bank
-from .data import load_datasets, compute_normalization, traj_dir, servo_sigma, _load_record
+from .data import load_datasets, compute_normalization, dataset_dir, servo_sigma, load_record, P_INV_T
 from .model import build_model
-from .obc_gantry import P_INV_T64
 from .training import load_checkpoint
 
 SPLITS = ('train', 'val', 'test')
@@ -32,7 +31,7 @@ MODELS = (('augmented', 'augmented', '#1f77b4'), ('trained', 'baseline (trained)
           ('true', 'baseline (true)', '#9e9e9e'))
 # frame -> (axis names, map of (N, 3) stage arrays into the frame)
 FRAMES = {'stage': (('X1', 'X2', 'Y'), lambda a: a),
-          'generalised': (('X', 'Theta', 'Y'), lambda a: a @ P_INV_T64.T)}
+          'generalised': (('X', 'Theta', 'Y'), lambda a: a @ P_INV_T.T)}
 # axis name in the figures
 TEX = {'Theta': r'$\Theta$'}
 
@@ -92,7 +91,7 @@ def _noise_free_twins(cfg: RunConfig):
     """Record file -> its noise-free twin (MANIFEST.csv pair_file); None on the noise-free data set."""
     if cfg.noise == 'noisefree':
         return None
-    with open(os.path.join(traj_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
+    with open(os.path.join(dataset_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
         return {'%s/%s.mat' % (row['folder'], row['file']): row['pair_file'] for row in csv.DictReader(fh)}
 
 
@@ -250,8 +249,8 @@ def evaluate(run_dir, data_root=DATA_ROOT):
               'true': _without_learned(fit_sys, _true_free(phy))}
     k0 = max(fit_sys.na, fit_sys.nb)
     files = [getattr(data, s + '_files') for s in SPLITS]
-    bank, rows, _ = build_controller_bank([f for fs in files for f in fs], cfg.ts_new, ystd=norm.ystd,
-                                          std_u=norm.std_u, dtype=cfg.dtype_pt)
+    bank, rows, _ = build_controller_bank([f for fs in files for f in fs], data.controllers, cfg.ts_new,
+                                          ystd=norm.ystd, std_u=norm.std_u, dtype=cfg.dtype_pt)
     twins = _noise_free_twins(cfg)
     out_dir = os.path.join(run_dir, 'evaluation')
     print('\n'.join([
@@ -271,7 +270,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         sdl, e_list = getattr(data, split + '_list'), getattr(data, 'e_' + split)
         # the twin is resampled and trimmed like its record, so e - e_nf compares the same samples
         e_nf = (e_list if twins is None else
-                [_load_record(twins[f], cfg, folder=cfg.data_root)[1] for f in split_files])
+                [load_record(twins[f], cfg, folder=cfg.data_root)[1] for f in split_files])
         preds, res = _split_scores(models, sdl, e_list, e_nf, bank, rows[offset:offset + len(sdl)], k0)
         offset += len(sdl)
         records = [os.path.basename(f).split('_')[0] for f in split_files]
@@ -319,7 +318,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         w = csv.writer(fh)
         w.writerow(('split', 'record', 'frame', 'model', 'axis', 'rms', 'nrms_e', 'sigma_e', 'floor_nrms_e'))
         w.writerows(r[:5] + tuple('%.17g' % v for v in r[5:]) for r in score_rows)
-    np.savez(os.path.join(out_dir, 'predictions.npz'), k0=k0, P_inv_T=P_INV_T64, **saved)
+    np.savez(os.path.join(out_dir, 'predictions.npz'), k0=k0, P_inv_T=P_INV_T, **saved)
     with open(os.path.join(out_dir, 'params.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)
         w.writerow(('name', 'true', 'start', 'learned'))

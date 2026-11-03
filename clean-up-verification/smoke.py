@@ -13,7 +13,7 @@ from datetime import datetime
 
 # Settings
 AXES = dict(arm='u', start='correct', n_a=0, ps2=False)   # the model axes (the thesis model M_U at n_a = 0)
-NOISE = 'lowpass'      # 'lowpass' or 'noisefree'
+NOISE = 'noisy'        # 'noisy' or 'noisefree'
 # the short run, as RunConfig fields
 SHORT_RUN = dict(device='cpu', compile_mode=None, truncate_s=2.0, n_its=4, its_per_val=4, lbfgs_max_iter=2,
                  lbfgs_windows=256)

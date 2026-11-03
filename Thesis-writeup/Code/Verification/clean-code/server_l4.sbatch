@@ -12,6 +12,8 @@
 # Array task 0 = mainline (with --eval-check: the loader proven against the unmodified evaluation),
 # task 1 = clean. One thread each (bitwise comparison). The staging folder must exist first
 # (l4_stage.py). Afterwards: python -u compare_l4.py $OUT/mainline $OUT/clean
+# D-294 amendment 1: arm A (D294=reverted, the default) runs both tasks on the tree with d294_revert.py applied;
+# arm B (D294=final, --array=1, its own OUT) the clean task on the final tree, compared with compare_d294.py l4.
 
 set -eo pipefail
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
@@ -20,6 +22,7 @@ conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
 REPO=/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation
 cd "$REPO/Thesis-writeup/Code/Verification/clean-code"
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+python -u d294_revert.py status --expect "${D294:-reverted}"
 STAGING="${STAGING:-$REPO/simulations/clean-golden/L4-staging}"
 OUT="${OUT:-$REPO/simulations/clean-golden/L4}"
 SIDES=(mainline clean)

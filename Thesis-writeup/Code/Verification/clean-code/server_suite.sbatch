@@ -8,13 +8,17 @@
 #SBATCH -t 48:00:00
 #SBATCH -o /home/dirk_van_den_berg/logs/augmentation/clean-code/%x_%A.out
 
-# The local layers of the clean-code harness on the server (D-284 amendment 10, step 5): layers 1 and 2 (16
-# cases), 3 (5), 3b (2) and 3c (6 with goldens, 3 clean-only), mainline side first and then the clean side, each
-# layer's comparison; the launch smoke with its val check; the branch coverage of the scoreboard (the 16 cases and
-# smoke-R1-lowpass); r1_check.py on the staged R1 folder. The goldens in git were captured on Windows and the
-# comparators refuse goldens of another data folder or library set, so both sides are captured afresh here, in
-# HARNESS_GOLDEN. One thread (bitwise comparison). Run it with the MM16 line REVERTED (step 2 of the commands) and
-# after l4_stage.py, which makes STAGING. A failing step is logged (SEQ_END rc) and the job goes on.
+# The local layers of the clean-code harness on the server (D-284 amendment 10, step 5; D-294 amendment 1), in two
+# arms. The goldens in git were captured on Windows and the comparators refuse goldens of another data folder or
+# library set, so both sides are captured afresh here, in HARNESS_GOLDEN. One thread (bitwise comparison). A failing
+# step is logged (SEQ_END rc) and the job goes on.
+# ARM=A (default), on the tree with d294_revert.py applied (refused otherwise) and after l4_stage.py, which makes
+#   STAGING: layers 1 and 2 (16 cases), 3 (5), 3b (2) and 3c (6 with goldens, 3 clean-only), mainline side first and
+#   then the clean side, each layer's bitwise comparison; the branch coverage of the scoreboard (the 16 cases and
+#   smoke-R1-lowpass); r1_check.py on the staged R1 folder.
+# ARM=B, on the final tree (refused otherwise), after arm A with HARNESS_GOLDEN its root: the clean layers 1 and 2
+#   again into HARNESS_CLEAN_OUT, compare_d294.py l12 against arm A's clean outputs, the launch smoke with its val
+#   check, r1_check.py on the final tree.
 
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 export CONDA_PKGS_DIRS=/dataB1/dirk_van_den_berg/conda-pkgs
@@ -22,12 +26,22 @@ conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
 REPO=/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation
 cd "$REPO/Thesis-writeup/Code/Verification/clean-code"
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-export HARNESS_GOLDEN="${HARNESS_GOLDEN:-$REPO/simulations/clean-golden/server-D284}"
-STAGING="${STAGING:-$REPO/simulations/clean-golden/L4-staging-D284}"
+ARM="${ARM:-A}"
+export HARNESS_GOLDEN="${HARNESS_GOLDEN:-$REPO/simulations/clean-golden/server-D294}"
+STAGING="${STAGING:-$REPO/simulations/clean-golden/L4-staging-D294}"
 LABEL="${LABEL:-residue-after}"
-if [ -e "$HARNESS_GOLDEN" ]; then echo "$HARNESS_GOLDEN exists; goldens are never overwritten"; exit 1; fi
-echo "golden root ${HARNESS_GOLDEN} staging ${STAGING} label ${LABEL} node ${SLURM_JOB_NODELIST}"; date
-sha256sum ../../../../Clean/gantry_dynamic/data.py
+if [ "$ARM" = A ]; then
+  python -u d294_revert.py status --expect reverted || exit 1
+  if [ -e "$HARNESS_GOLDEN" ]; then echo "$HARNESS_GOLDEN exists; goldens are never overwritten"; exit 1; fi
+elif [ "$ARM" = B ]; then
+  python -u d294_revert.py status --expect final || exit 1
+  export HARNESS_CLEAN_OUT="${HARNESS_CLEAN_OUT:-$HARNESS_GOLDEN/_clean-armB}"
+  if [ ! -d "$HARNESS_GOLDEN/_clean" ]; then echo "no arm A outputs in $HARNESS_GOLDEN"; exit 1; fi
+  if [ -e "$HARNESS_CLEAN_OUT" ]; then echo "$HARNESS_CLEAN_OUT exists; outputs are never overwritten"; exit 1; fi
+else
+  echo "ARM must be A or B"; exit 1
+fi
+echo "arm ${ARM} golden root ${HARNESS_GOLDEN} staging ${STAGING} node ${SLURM_JOB_NODELIST}"; date
 
 run() {
   echo "SEQ_START $*"
@@ -38,6 +52,17 @@ run() {
 
 CASES="221-lowpass 222-lowpass 223-lowpass 224-lowpass 226-lowpass 227-lowpass 229-lowpass 230-lowpass
        221-noisefree 222-noisefree 223-noisefree 224-noisefree 226-noisefree 227-noisefree 229-noisefree 230-noisefree"
+if [ "$ARM" = B ]; then
+  for c in $CASES; do run capture_l12.py --side clean --row ${c%%-*} --noise ${c#*-}; done
+  run compare_d294.py l12 "$HARNESS_GOLDEN/_clean" "$HARNESS_CLEAN_OUT"
+  # the launch smoke (clean-up-verification/smoke.py defaults) and its val check, on the delivered tree
+  run ../../../../clean-up-verification/smoke.py | tee smoke-suite.log
+  SMOKE_RUN_DIR=$(grep "^SMOKE_RUN_DIR" smoke-suite.log | tail -1 | cut -d' ' -f2-)
+  run ../../../../clean-up-verification/val_check.py "$SMOKE_RUN_DIR"
+  run ../../../../clean-up-verification/r1_check.py "$STAGING/89792"
+  date; echo "CLEAN_SUITE_SERVER_DONE arm B"
+  exit 0
+fi
 for SIDE in mainline clean; do
   for c in $CASES; do run capture_l12.py --side $SIDE --row ${c%%-*} --noise ${c#*-}; done
   run run_l3.py --side $SIDE --row 221 --noise lowpass
@@ -55,15 +80,11 @@ run run_l3bc.py --side clean --layer 3c --row 224 --noise noisefree --kind vi
 run run_l3bc.py --side clean --layer 3c --row 226 --noise lowpass --kind vii
 for layer in l12 l3 l3b l3c; do run compare.py $layer; done
 
-# the launch smoke (clean-up-verification/smoke.py defaults) and its val check
-run ../../../../clean-up-verification/smoke.py | tee smoke-suite.log
-SMOKE_RUN_DIR=$(grep "^SMOKE_RUN_DIR" smoke-suite.log | tail -1 | cut -d' ' -f2-)
-run ../../../../clean-up-verification/val_check.py "$SMOKE_RUN_DIR"
-
-# branch coverage of the grey box over the 16 cases and smoke-R1-lowpass (scoreboard.py, step 4b method)
+# branch coverage of the grey box over the 16 cases and smoke-R1-lowpass (scoreboard.py, step 4b method); the
+# reverted tree keeps every line number of the final one
 run scoreboard.py coverage --label "$LABEL"
 run scoreboard.py report --label "$LABEL"
 
-# evaluate() on the converted thesis R1 folder (job 89792) against res_errors.csv, MM16 reverted
+# evaluate() on the converted thesis R1 folder (job 89792) against res_errors.csv, D-294 reverted
 run ../../../../clean-up-verification/r1_check.py "$STAGING/89792"
-date; echo "CLEAN_SUITE_SERVER_DONE"
+date; echo "CLEAN_SUITE_SERVER_DONE arm A"

@@ -61,12 +61,12 @@ def main(run, out):
     # 2. Splits, each with the folder of its noise-free twins.
     cfg = data_cfg()
     nf_dir = os.path.join(DATA_ROOT, DATASETS['noisefree'])
-    with open(os.path.join(TWINS_DIR, DATASETS['lowpass'], 'MANIFEST.csv'), newline='') as fh:
+    with open(os.path.join(TWINS_DIR, DATASETS['noisy'], 'MANIFEST.csv'), newline='') as fh:
         twins = ['%s/%s.mat' % (row['folder'], row['file']) for row in csv.DictReader(fh)]
     train_files, val_files, test_files = record_files(cfg)
     splits = {'train': (train_files, None, nf_dir), 'val': (val_files, None, nf_dir),
               'test': (test_files, None, nf_dir),
-              'twins': (twins, os.path.join(TWINS_DIR, DATASETS['lowpass']),
+              'twins': (twins, os.path.join(TWINS_DIR, DATASETS['noisy']),
                         os.path.join(TWINS_DIR, DATASETS['noisefree']))}
     # 3. Predict each split and write it from k0 on, with the noise-free output for the floor.
     out.mkdir(parents=True, exist_ok=True)

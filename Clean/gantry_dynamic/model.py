@@ -4,6 +4,7 @@ __project_origin__ = "added"
 
 from contextlib import contextmanager
 
+import deepSI
 import numpy as np
 import torch
 
@@ -16,7 +17,8 @@ from model_augmentation.fit_systems.closed_loop import closed_loop_rollout, clos
 from model_augmentation.systems import gantry_ss
 
 from .config import RunConfig
-from .obc_gantry import attach_obc, P_INV_T64
+from .data import P_INV_T
+from .obc_gantry import attach_obc
 
 # rows of the physical state x_tilde^n in the model state x_hat^n
 PHYSICAL_STATE_IX = np.arange(6)
@@ -110,7 +112,8 @@ def build_model(cfg: RunConfig, data, norm):
             'device="cuda" was requested but CUDA is not available; check the GPU allocation '
             '(--gres=gpu:1) or run with --cpu.')
     # Adam over every parameter (encoder and hfn), learning rate cfg.lr; the normaliser keeps the values set above
-    fit_sys.init_model(sys_data=data.train_data, optimizer_kwargs={'lr': cfg.lr, 'eps': cfg.adam_eps})
+    fit_sys.init_model(sys_data=deepSI.System_data_list(data.train_list),
+                       optimizer_kwargs={'lr': cfg.lr, 'eps': cfg.adam_eps})
     eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
     if eps_values != {float(cfg.adam_eps)}:
         raise RuntimeError(
@@ -162,7 +165,7 @@ def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
 
         # 1. Simulate the start model in closed loop, records of equal length together:
         #    x_tilde^n,0_{k+1} = f_base^n(theta^0_base, x_tilde^n,0_k, u_hat^n,0_k).
-        sdl = data.train_data.sdl
+        sdl = data.train_list
         x_mean, std_x = as_vector(norm.x_mean), as_vector(norm.std_x)
         u0, ustd = as_vector(fit_sys.norm.u0), as_vector(fit_sys.norm.ustd)
         y0, ystd = as_vector(fit_sys.norm.y0), as_vector(fit_sys.norm.ystd)
@@ -177,7 +180,7 @@ def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
             # start state: q_0 = P^-T y_0, qdot_0 = 0, xbar_0 = 0, normalised; qdot_0 = 0 because every record
             # starts with a 0.5 s hold at rest (t_hold in data_generation/tdg_config.m), far longer than the trim
             x0 = np.zeros((len(ixs), nx + cfg.n_a))
-            q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ P_INV_T64.T for i in ixs])
+            q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ P_INV_T.T for i in ixs])
             x0[:, :nx] = (np.hstack([q0, np.zeros_like(q0)]) - x_mean) / std_x
             # the rollout through a wrapper that records every state and controller input it passes
             xs, us = [], []

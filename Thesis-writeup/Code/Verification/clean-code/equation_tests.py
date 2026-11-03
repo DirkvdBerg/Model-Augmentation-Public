@@ -303,7 +303,7 @@ def test_A_encoder_sim():
     cfg=NS(device='cpu',nx_phys=6,n_a=2,stride=1)  # K8
     norm=NS(x_mean=np.zeros(6),std_x=np.ones(6))
     with patch.object(gm,'least_squares_start',side_effect=inspect_fit):
-        gm.prefit_physical_encoder(fs,cfg,NS(train_data=NS(sdl=[sd])),norm)
+        gm.prefit_physical_encoder(fs,cfg,NS(train_list=[sd]),norm)
     assert captured==[37]
 
 @case('A_init_beta')
@@ -417,7 +417,7 @@ def test_O_tuple_position():
     y=rand(15,3).numpy();u=rand(15,3).numpy()
     norm=NS(x_mean=rand(6).numpy(),std_x=np.linspace(.8,1.3,6),u_mean=rand(3).numpy(),std_u=np.linspace(.7,1.2,3))
     cfg=NS(ts_new=.03,dtype_pt=DT)
-    with patch.object(og,'loadmat',return_value={}),patch.object(og,'traj_dir',return_value='synthetic'),patch.object(og,'_record_at_fs_new',return_value=(u,y)):
+    with patch.object(og,'loadmat',return_value={}),patch.object(og,'dataset_dir',return_value='synthetic'),patch.object(og,'record_at_fs_new',return_value=(u,y)):
         ref=og.build_reference_set(cfg,norm,2,['memory'],verbose=False)
     P=gs.P.double().numpy();q=np.linalg.solve(P.T,y.T).T
     v=np.stack([(-q[i+2]+8*q[i+1]-8*q[i-1]+q[i-2])/(12*.03) for i in range(2,13)])
