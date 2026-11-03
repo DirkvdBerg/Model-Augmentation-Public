@@ -3,7 +3,6 @@ fits the network's added-state update to them; after that, training continues as
 __project_origin__ = "added"
 
 import json
-import os
 from dataclasses import asdict, dataclass
 
 import numpy as np

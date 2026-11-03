@@ -8,7 +8,7 @@ import torch
 # float64, so theta^0 equals the values of the data generator (data_generation/tdg_config.m) exactly
 _D = torch.float64
 
-# nominal parameters theta^0 (THEORY: Garcia-Herreros et al. Table I)
+# nominal parameters theta^0
 mb  = torch.tensor(22.8,   dtype=_D)  # [kg] cross-arm mass
 mh  = torch.tensor(10.1,   dtype=_D)  # [kg] payload mass
 m1  = torch.tensor(10.2,   dtype=_D)  # [kg] X1 carriage mass
@@ -32,25 +32,17 @@ Lb  = torch.tensor(0.725,  dtype=_D)  # [m] distance between the X1 and X2 actua
 d   = torch.tensor(0.1,    dtype=_D)  # [m] offset of the payload from the cross-arm axis
 
 # q = P^-T q_act and u = P u_act; q_act = (X1, X2, Y), u_act = (F_X1, F_X2, F_Y), u = (F_X, torque on Theta, F_Y)
-P = torch.zeros(3, 3, dtype=_D)
-P[0, 0] = 1.0
-P[0, 1] = 1.0
-P[1, 0] = Lb / 2
-P[1, 1] = -Lb / 2
-P[2, 2] = 1.0
+P = torch.tensor([[1.0, 1.0, 0.0], [float(Lb) / 2, -float(Lb) / 2, 0.0], [0.0, 0.0, 1.0]], dtype=_D)
 # P^-T written out: X = (X1 + X2)/2, Theta = (X1 - X2)/L_b, Y = Y
 P_INV_T = np.array([[0.5, 0.5, 0.0], [1 / float(Lb), -1 / float(Lb), 0.0], [0.0, 0.0, 1.0]])
 
 # output map y_hat = Cd x_tilde = P^T q, D = 0
-Cd = torch.zeros(3, 6, dtype=_D)
-Cd[:, :3] = P.T
-
-Dd = torch.zeros(3, 3, dtype=_D)
+Cd = np.hstack([P.numpy().T, np.zeros((3, 3), P.numpy().dtype)])
+Dd = np.zeros((3, 3), P.numpy().dtype)
 
 
-def damping_and_stiffness(kb1, kb2, cg1, cg2, cy, cb1, cb2, Lb):
-    """Stiffness K and damping C in generalised coordinates (X, Theta, Y); the joint pairs enter only through their
-    sums.
+def stiffness_and_damping(kb1, kb2, cg1, cg2, cy, cb1, cb2, Lb):
+    """Stiffness K and damping C in generalised coordinates (X, Theta, Y); the joints enter only through their sums.
 
     Args:
         kb1, kb2: torsional stiffness of the joints [N m/rad] (scalar tensors).
@@ -76,8 +68,8 @@ def damping_and_stiffness(kb1, kb2, cg1, cg2, cy, cb1, cb2, Lb):
 
 
 def inertia_constants(m1, m2, mb, mh, Jb, Jh, Lb):
-    """The three mass combinations of the inertia matrix: alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta and
-    gamma = J_eff.
+    """The three mass terms of the inertia matrix: alpha the total mass, beta the carriage mass difference times
+    L_b/2 and gamma the effective inertia about the Theta axis (J_eff).
 
     Args:
         m1, m2, mb, mh: masses of the X1 and X2 carriages, the cross-arm and the payload [kg] (scalar tensors).
@@ -135,71 +127,70 @@ def inertia_matrix(Y, m1, m2, mb, mh, Jb, Jh, Lb, d):
     return M0 + Y * M1 + Y**2 * M2
 
 
-def build_poly_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_, d_):
-    """Rational inverse of the inertia matrix.
-
-    M(Y)^-1 = (N0 + Y N1 + Y^2 N2) / d(Y), with N0 + Y N1 + Y^2 N2 = adj M(Y) and
-    d(Y) = m_h (alpha gamma - beta^2 + 2 beta m_h Y + m_h (alpha - m_h) Y^2) formed by the caller.
+def inertia_adjugate(alpha, beta, gamma, mh, d):
+    """Adjugate of the inertia matrix in parts, adj M(Y) = N_0 + Y N_1 + Y^2 N_2, so M(Y)^-1 = adj M(Y) / det M(Y);
+    the entries are the cofactors of inertia_matrix.
 
     Args:
-        m1_, m2_, mb_, mh_: m_1, m_2, m_b, m_h [kg] (scalar tensors).
-        Jb_, Jh_: J_b, J_h [kg m^2].
-        Lb_, d_: L_b, d [m].
+        alpha, beta, gamma: as returned by inertia_constants.
+        mh: payload mass m_h [kg] (scalar tensor).
+        d: offset of the payload from the cross-arm axis [m].
     Returns:
-        alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma = J_eff (scalars) and N0, N1, N2 (3, 3), physical.
+        N_0, N_1 and N_2, each (3, 3).
     """
-    # the adjugate of M(Y) as built in inertia_matrix
-    alpha, beta, gamma = inertia_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_)
-
-    z = torch.zeros((), dtype=m1_.dtype, device=m1_.device)
-
-    # adjugate coefficients of Y^0, Y^1, Y^2
+    z = mh.new_zeros(())
     N0 = torch.stack([
-        torch.stack([mh_ * gamma,      -beta * mh_,                  -beta * d_ * mh_             ]),
-        torch.stack([-beta * mh_,       alpha * mh_,                  alpha * d_ * mh_             ]),
-        torch.stack([-beta * d_ * mh_,  alpha * d_ * mh_,  alpha * (gamma + mh_ * d_**2) - beta**2]),
+        torch.stack([mh * gamma,      -beta * mh,      -beta * d * mh]),
+        torch.stack([-beta * mh,       alpha * mh,      alpha * d * mh]),
+        torch.stack([-beta * d * mh,   alpha * d * mh,  alpha * (gamma + mh * d**2) - beta**2]),
     ])
     N1 = torch.stack([
-        torch.stack([z,           mh_**2,       d_ * mh_**2  ]),
-        torch.stack([mh_**2,      z,             z            ]),
-        torch.stack([d_ * mh_**2, z,             2 * beta * mh_]),
+        torch.stack([z,           mh**2,  d * mh**2]),
+        torch.stack([mh**2,       z,      z]),
+        torch.stack([d * mh**2,   z,      2 * beta * mh]),
     ])
     N2 = torch.stack([
-        torch.stack([mh_**2,  z,  z                       ]),
-        torch.stack([z,        z,  z                       ]),
-        torch.stack([z,        z,  alpha * mh_ - mh_**2   ]),
+        torch.stack([mh**2,  z,  z]),
+        torch.stack([z,      z,  z]),
+        torch.stack([z,      z,  alpha * mh - mh**2]),
     ])
-    return alpha, beta, gamma, N0, N1, N2
+    return N0, N1, N2
 
 
-def build_G_matrix_entries(N0_, d0_, M1_, M2_, K_, C_):
-    """State row of the LFR G.
-
-    A_x = [0 I; -R K -R C], B_w = [0 0; -R M_1 -R M_2], B_u = [0; R], R = M_0^-1 = N0 / d0;
-    xdot = A_combined (x, w, u), A_combined = [A_x B_w B_u].
+def inertia_determinant(Y, alpha, beta, gamma, mh):
+    """Determinant of the inertia matrix, det M(Y) = m_h (alpha gamma - beta^2 + 2 beta m_h Y + m_h (alpha - m_h) Y^2).
 
     Args:
-        N0_: (3, 3) adj M_0.
-        d0_: scalar det M_0.
-        M1_, M2_: (3, 3) Y-dependent inertia parts, M(Y) = M_0 + Y M_1 + Y^2 M_2.
-        K_, C_: (3, 3) stiffness and damping.
+        Y: payload position along the cross-arm [m].
+        alpha, beta, gamma: as returned by inertia_constants.
+        mh: payload mass m_h [kg].
     Returns:
-        A_x (6, 6), B_w (6, 6), B_u (6, 3), A_combined (6, 15), continuous time, xdot = (qdot, qddot);
-        B_u acts on u = P u_act.
+        det M(Y), with the shape of Y.
     """
-    dtype  = N0_.dtype
-    device = N0_.device
-    eye3   = torch.eye(3, dtype=dtype, device=device)
-    z33    = torch.zeros(3, 3, dtype=dtype, device=device)
+    return mh * (alpha * gamma - beta ** 2
+                 + 2 * beta * mh * Y
+                 + mh * (alpha - mh) * Y ** 2)
 
-    # R = M_0^-1 = N0 / d0
-    M0inv   = N0_ / d0_
-    M0invK  = M0inv @ K_
-    M0invC  = M0inv @ C_
-    M0invM1 = M0inv @ M1_
-    M0invM2 = M0inv @ M2_
 
-    # A_x = [0 I; -R K -R C], B_w = [0 0; -R M_1 -R M_2], B_u = [0; R]
+def lfr_state_matrix(M0_inv, M1, M2, K, C):
+    """State matrix of the baseline LFR, xdot = A_combined (x, w, u), with x = (q, qdot), xdot = (qdot, qddot) and
+    the latent signal w = (Y qddot, Y^2 qddot). It is M(Y) qddot = u - C qdot - K q with the Y-dependent parts moved
+    to the right-hand side: M_0 qddot = u - C qdot - K q - M_1 w_1 - M_2 w_2.
+
+    Args:
+        M0_inv: (3, 3) inverse of M_0, the part of the inertia matrix that does not change with Y.
+        M1, M2: (3, 3) as returned by inertia_parts.
+        K, C: (3, 3) stiffness and damping.
+    Returns:
+        (6, 15) A_combined = [A_x B_w B_u], continuous time; B_u acts on u = P u_act.
+    """
+    eye3 = torch.eye(3, dtype=M0_inv.dtype, device=M0_inv.device)
+    z33 = torch.zeros(3, 3, dtype=M0_inv.dtype, device=M0_inv.device)
+    M0invK = M0_inv @ K
+    M0invC = M0_inv @ C
+    M0invM1 = M0_inv @ M1
+    M0invM2 = M0_inv @ M2
+
     Ax = torch.cat([
         torch.cat([z33,      eye3    ], dim=1),
         torch.cat([-M0invK, -M0invC  ], dim=1),
@@ -210,8 +201,5 @@ def build_G_matrix_entries(N0_, d0_, M1_, M2_, K_, C_):
         torch.cat([-M0invM1, -M0invM2  ], dim=1),
     ], dim=0)
 
-    Bu = torch.cat([z33, M0inv], dim=0)
-
-    A_combined = torch.cat([Ax, Bw, Bu], dim=1)
-
-    return Ax, Bw, Bu, A_combined
+    Bu = torch.cat([z33, M0_inv], dim=0)
+    return torch.cat([Ax, Bw, Bu], dim=1)

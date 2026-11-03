@@ -235,8 +235,8 @@ def compute_normalization(cfg: RunConfig, data: Datasets) -> Norm:
     # 3. Output map in normalised units: each column of Cd is multiplied by its state's standard deviation and each
     # row divided by its position's standard deviation. No bias term is needed: y = P^T q holds for every sample, so
     # the mean of y is P^T times the mean of q.
-    Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]
-    Dd_np = Dd.numpy()
+    Cd_norm = Cd * std_x.flatten()[None, :] / ystd[:, None]
+    Dd_np = Dd
 
     return Norm(
         x_mean=x_mean, std_x=std_x, u_mean=u_mean, std_u=std_u,

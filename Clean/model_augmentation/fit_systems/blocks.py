@@ -206,12 +206,9 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
                 - (x2[:, 3:] @ C_mat.T)
                 + u_log)
 
-        # 3. Acceleration a = M(Y)^-1 fnet = (N0 + Y N1 + Y^2 N2) fnet / d(Y),
-        # d(Y) = det M(Y) = m_h (alpha gamma - beta^2 + 2 beta m_h Y + m_h (alpha - m_h) Y^2); no linear solve per stage
+        # 3. Acceleration a = M(Y)^-1 fnet = (N0 + Y N1 + Y^2 N2) fnet / det M(Y); no linear solve per stage
         Y   = x2[:, 2]
-        dY  = mh * (alpha * gamma_ - beta ** 2
-                    + 2 * beta * mh * Y
-                    + mh * (alpha - mh) * Y ** 2)
+        dY  = gantry_ss.inertia_determinant(Y, alpha, beta, gamma_, mh)
         Y_r = Y.unsqueeze(0)
         n0f = N0 @ fnet.T
         n1f = N1 @ fnet.T
@@ -369,7 +366,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         self.register_buffer("Lb", gantry_ss.Lb.clone())
 
     def _build_KC(self, p: Tensor):
-        """Stiffness K and damping C of the raw parameters p, as built in gantry_ss.damping_and_stiffness.
+        """Stiffness K and damping C of the raw parameters p, as built in gantry_ss.stiffness_and_damping.
 
         Args:
             p: (14,) raw parameters theta.
@@ -378,7 +375,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         """
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          _, _, _, _, _, _, _) = p
-        return gantry_ss.damping_and_stiffness(kb1, kb2, cg1, cg2, cy, cb1, cb2, self.Lb)
+        return gantry_ss.stiffness_and_damping(kb1, kb2, cg1, cg2, cy, cb1, cb2, self.Lb)
 
     def _mats_from_raw(self, p: Tensor):
         """Baseline matrices of one objective.
@@ -393,13 +390,12 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         """
         (_, _, _, _, _, _, _,
          mh, m1, m2, mb, Jb, Jh, d) = p
-        alpha, beta, gamma_, N0, N1, N2 = gantry_ss.build_poly_constants(
-            m1, m2, mb, mh, Jb, Jh, self.Lb, d)
-        # d0 = det M_0 = m_h (alpha gamma - beta^2), so M_0^-1 = N0 / d0
-        d0 = mh * (alpha * gamma_ - beta ** 2)
+        alpha, beta, gamma_ = gantry_ss.inertia_constants(m1, m2, mb, mh, Jb, Jh, self.Lb)
+        N0, N1, N2 = gantry_ss.inertia_adjugate(alpha, beta, gamma_, mh, d)
+        d0 = gantry_ss.inertia_determinant(0.0, alpha, beta, gamma_, mh)
         M1, M2 = gantry_ss.inertia_parts(mh)
         K, C = self._build_KC(p)
-        _, _, _, A_combined = gantry_ss.build_G_matrix_entries(N0, d0, M1, M2, K, C)
+        A_combined = gantry_ss.lfr_state_matrix(N0 / d0, M1, M2, K, C)
         return (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
 
     def nonlinear_function(self, z: Tensor, mats):

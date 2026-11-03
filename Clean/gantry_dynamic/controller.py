@@ -18,7 +18,7 @@ BANDWIDTH_RAD_S = 2 * np.pi * BANDWIDTH_HZ   # [rad/s]
 
 # the controller is designed on the nominal baseline: theta^0, P, K and C of gantry_ss
 P = gantry_ss.P.numpy()
-K_STIFF, C_DAMP = (m.numpy() for m in gantry_ss.damping_and_stiffness(
+K_STIFF, C_DAMP = (m.numpy() for m in gantry_ss.stiffness_and_damping(
     gantry_ss.kb1, gantry_ss.kb2, gantry_ss.cg1, gantry_ss.cg2, gantry_ss.cy, gantry_ss.cb1, gantry_ss.cb2,
     gantry_ss.Lb))
 
