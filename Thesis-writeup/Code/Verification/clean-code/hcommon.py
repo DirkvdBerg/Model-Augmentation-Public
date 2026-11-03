@@ -188,14 +188,34 @@ def dropped_state_keys():
     return DROPPED_STATE_KEYS
 
 
+# hfn state_dict keys mainline registers outside the baseline block and Clean does not: the OBC row selection E
+# (2026-11-03: Clean pads f_obc with zeros instead)
+DROPPED_OBC_KEYS = ('obc_correction.E',)
+
+
 def is_dropped_state_key(key):
-    """True for an hfn state_dict key that R3 dropped from the clean baseline block."""
-    return key.startswith('connected_blocks.0.') and key.rsplit('.', 1)[1] in dropped_state_keys()
+    """True for an hfn state_dict key that R3 dropped from the clean baseline block, or a dropped OBC key."""
+    return ((key.startswith('connected_blocks.0.') and key.rsplit('.', 1)[1] in dropped_state_keys())
+            or key in DROPPED_OBC_KEYS)
+
+
+# OBC renames in Clean (2026-11-03): mainline hfn state_dict key -> the clean key of the same buffer
+RENAMED_STATE_KEYS = {'obc_correction.vbar': 'obc_correction.beta_lin',
+                      'obc_correction.theta_frozen': 'obc_correction.theta_aux'}
+
+
+def clean_state_key(key):
+    """The clean name of a mainline hfn state_dict key, or of a capture name ending in one; others unchanged."""
+    for old, new in RENAMED_STATE_KEYS.items():
+        if key == old or key.endswith(('/' + old, '.' + old)):
+            return key[:-len(old)] + new
+    return key
 
 
 def drop_state(sd):
-    """An hfn state_dict without the keys R3 dropped, so the clean model loads a mainline state."""
-    return {k: v for k, v in sd.items() if not is_dropped_state_key(k)}
+    """A mainline hfn state_dict without the keys R3 dropped and with the OBC keys under their clean names, so the
+    clean model loads a mainline state."""
+    return {clean_state_key(k): v for k, v in sd.items() if not is_dropped_state_key(k)}
 
 
 def short_ps2_opening(settings):

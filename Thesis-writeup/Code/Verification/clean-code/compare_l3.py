@@ -48,8 +48,12 @@ def _cmp_tensors(prefix, a, b, out):
 
 def without_dropped_state(g, c):
     """The golden dict g without the hfn keys R3 dropped from the clean baseline block (D-284 amendment 10), where the
-    clean dict c lacks them; the keys may carry a prefix (state.pt's 'enc.' entries are never R3 keys)."""
-    return {k: v for k, v in g.items() if not (H.is_dropped_state_key(k) and k not in c)}
+    clean dict c lacks them, and with the renamed OBC keys under their clean names where c has those; the keys may
+    carry a prefix (state.pt's 'enc.' entries are never R3 keys)."""
+    def name(k):
+        ck = H.clean_state_key(k)
+        return ck if ck != k and ck in c and k not in c else k
+    return {name(k): v for k, v in g.items() if not (H.is_dropped_state_key(k) and k not in c)}
 
 
 def compare_pair(gbase, cbase, out, name):

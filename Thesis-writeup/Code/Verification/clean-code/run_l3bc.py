@@ -124,7 +124,7 @@ if args.layer == '3b':
     after = {k: v.clone() for k, v in list(fit_sys.hfn.state_dict().items())
              + [('enc.' + k, v) for k, v in fit_sys.encoder.state_dict().items()]}
     params_restored = all(torch.equal(start[k], after[k]) for k in start
-                          if not k.endswith(('theta_frozen', 'vbar')))
+                          if not k.endswith(('theta_frozen', 'vbar', 'theta_aux', 'beta_lin')))   # Clean's names
     torch.save({'start': start, 'after': after}, os.path.join(out, 'state.pt'))
     with open(os.path.join(out, 'outcome.json'), 'w') as fh:
         json.dump(dict(outcome=res, params_restored=params_restored), fh, indent=1, default=str)

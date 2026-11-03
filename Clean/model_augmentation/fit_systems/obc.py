@@ -15,12 +15,12 @@ class OBCRankLossAbort(RuntimeError):
 class OBCBasis:
     """The basis J factorised once: economy SVD of J with unit-norm columns, and its numerical rank."""
 
-    def __init__(self, J: Tensor, vbar: Tensor):
+    def __init__(self, J: Tensor, beta_lin: Tensor):
         """Factorise J D^-1 = U S V^T, D = column norms of J; a rank loss truncates the factors.
 
         Args:
-            J: (M, 11) basis [Phi F_base^n(beta_lin)], float64, M = N r for r protected rows.
-            vbar: (10,) beta_lin, float64.
+            J: (M, 11) basis [Phi F_base^n(beta_lin)], float64, M = N r for r physical rows.
+            beta_lin: (10,) the beta J is built at, float64.
         """
         with torch.no_grad():
             n_rows, n_cols = J.shape
@@ -39,7 +39,7 @@ class OBCBasis:
                 U, S, Vh = U[:, :rank], S[:rank], Vh[:rank]
         self.U, self.S, self.Vh = U, S, Vh
         self.column_scale = column_scale
-        self.vbar = vbar
+        self.beta_lin = beta_lin
         self.n_cols, self.rank, self.tol = n_cols, rank, tol
 
     def coefficient(self, F: Tensor) -> Tensor:
@@ -60,7 +60,7 @@ class OBCBasis:
     def to(self, device) -> 'OBCBasis':
         """Move the factors to device."""
         self.U, self.S, self.Vh = self.U.to(device), self.S.to(device), self.Vh.to(device)
-        self.vbar = self.vbar.to(device)
+        self.beta_lin = self.beta_lin.to(device)
         self.column_scale = self.column_scale.to(device)
         return self
 
@@ -70,40 +70,41 @@ class OBCBasis:
         return self.U.device
 
 
-def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], vbar: Tensor, Z: Tensor,
-                              row_ix: Sequence[int], chunk: int,
+def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], beta_lin: Tensor, Z: Tensor,
+                              physical_rows: Sequence[int], chunk: int,
                               device=None, append_value: bool = False) -> Tensor:
     """How the baseline step moves when its parameters move, stacked over the reference tuples.
 
-    Phi = col(varphi(beta_lin, z_i)), varphi = d step(beta, z_i) / d beta at beta_lin, rows row_ix, tuple by tuple.
+    Phi = col(varphi(beta_lin, z_i)), varphi = d step(beta, z_i) / d beta at beta_lin, rows physical_rows,
+    tuple by tuple.
 
     Args:
         step: (beta, Z) -> next state, e.g. f_base^n(theta_base(beta), z).
-        vbar: (10,) beta_lin, float64.
+        beta_lin: (10,) the beta the Jacobian is taken at, float64.
         Z: (N, 9, 1) tuples (x_tilde^n_i, u^n_i).
-        row_ix: protected rows, the state rows the projection keeps orthogonal.
+        physical_rows: the state rows of J.
         chunk: tuples per jacfwd call; sets the memory use, not the result.
-        device: device of the build, else that of vbar.
+        device: device of the build, else that of beta_lin.
         append_value: add step(beta_lin, z_i) as a last column (the f_base^n column of J).
     Returns:
-        (N r, p) Phi, or (N r, p + 1) J with append_value, float64; r = len(row_ix), p = vbar.numel().
+        (N r, p) Phi, or (N r, p + 1) J with append_value, float64; r = len(physical_rows), p = beta_lin.numel().
     """
     # 1. Build in float64, on the chosen device.
-    if vbar.dtype != torch.float64:
-        raise TypeError('build in float64: vbar is %s; pass vbar.double()' % vbar.dtype)
-    dev = device if device is not None else vbar.device
-    row_ix = torch.as_tensor(list(row_ix), dtype=torch.long, device=dev)
-    vbar = vbar.detach().to(dev)
+    if beta_lin.dtype != torch.float64:
+        raise TypeError('build in float64: beta_lin is %s; pass beta_lin.double()' % beta_lin.dtype)
+    dev = device if device is not None else beta_lin.device
+    physical_rows = torch.as_tensor(list(physical_rows), dtype=torch.long, device=dev)
+    beta_lin = beta_lin.detach().to(dev)
     out, values = [], []
     with torch.no_grad():
         # 2. Parameter Jacobian of the step, per chunk of tuples (forward mode: 10 parameters, many outputs).
         for s in range(0, Z.shape[0], chunk):
             Zc = Z[s:s + chunk].to(device=dev, dtype=torch.float64)
-            # varphi_i = d step(beta, z_i) / d beta at beta_lin, rows row_ix
-            Jc = torch.func.jacfwd(lambda v: step(v, Zc))(vbar)
-            out.append(Jc[:, row_ix, 0, :].reshape(-1, vbar.shape[0]))
+            # varphi_i = d step(beta, z_i) / d beta at beta_lin, rows physical_rows
+            Jc = torch.func.jacfwd(lambda v: step(v, Zc))(beta_lin)
+            out.append(Jc[:, physical_rows, 0, :].reshape(-1, beta_lin.shape[0]))
             if append_value:
-                values.append(step(vbar, Zc)[:, row_ix, 0].reshape(-1))
+                values.append(step(beta_lin, Zc)[:, physical_rows, 0].reshape(-1))
     # 3. Stack the chunks; optionally append the baseline step itself as the last column.
     J = torch.cat(out, 0)
     if append_value:
@@ -123,7 +124,7 @@ class OBCProjection:
 
         Args:
             reference_field: network block -> (M,) its field F^n_aug on the reference tuples, ordered as J's rows.
-            basis_builder: beta_lin -> (J, build time [s]).
+            basis_builder: beta_lin -> J.
         """
         self.reference_field = reference_field
         self.basis_builder = basis_builder
@@ -133,19 +134,19 @@ class OBCProjection:
         self.last_refresh_epoch: Optional[int] = None
         self.consecutive_rank_loss = 0
 
-    def refresh(self, vbar: Tensor, epoch: int) -> None:
+    def refresh(self, beta_lin: Tensor, epoch: int) -> None:
         """Rebuild the OBC basis at beta_lin.
 
-        J at beta_lin = vbar (detached); a rank-deficient basis keeps the last full-rank one, up to the abort limit.
+        J at beta_lin (detached); a rank-deficient basis keeps the last full-rank one, up to the abort limit.
 
         Args:
-            vbar: (10,) beta, the new beta_lin.
+            beta_lin: (10,) beta, the new beta_lin.
             epoch: integer epoch of the refresh.
         """
         # 1. Build a candidate basis at the new beta_lin, on the device of the current one.
-        vbar64 = vbar.detach().to(torch.float64).clone()
-        J, _ = self.basis_builder(vbar64)
-        candidate_basis = OBCBasis(J, vbar64)
+        beta_lin64 = beta_lin.detach().to(torch.float64).clone()
+        J = self.basis_builder(beta_lin64)
+        candidate_basis = OBCBasis(J, beta_lin64)
         del J
         if self.basis is not None and candidate_basis.device != self.basis.device:
             candidate_basis.to(self.basis.device)
@@ -167,17 +168,17 @@ class OBCProjection:
             self.basis = candidate_basis
         self.last_refresh_epoch = epoch
 
-    def maybe_refresh(self, epoch: int, vbar_fn: Callable[[], Tensor]) -> None:
+    def maybe_refresh(self, epoch: int, beta: Tensor) -> None:
         """Per-epoch refresh of beta_lin.
 
         beta_lin = beta at the first objective of every epoch, fixed within the epoch.
 
         Args:
             epoch: integer epoch.
-            vbar_fn: returns the current beta.
+            beta: (10,) the current beta.
         """
         if self.basis is None or epoch != self.last_refresh_epoch:
-            self.refresh(vbar_fn(), epoch)
+            self.refresh(beta, epoch)
 
     def coefficient(self, learning_component) -> Tensor:
         """theta_aux of the current network.

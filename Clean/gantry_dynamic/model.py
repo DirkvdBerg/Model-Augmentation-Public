@@ -118,7 +118,7 @@ def build_model(cfg: RunConfig, data, norm):
     # encoder to the simulated states; on the OBC arm the trained model includes f_obc^n, so the simulation must too,
     # else the encoder starts fitted to a different model
     if cfg.obc:
-        attach_obc(fit_sys, cfg, data, norm)
+        attach_obc(fit_sys, baseline_block, cfg, data, norm)
 
     return fit_sys
 

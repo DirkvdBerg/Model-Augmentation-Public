@@ -102,16 +102,18 @@ if MAIN:
 elif fit_sys.obc is not None:
     # K15: the clean model keeps no reference set; the tuples are rebuilt here as attach_obc builds them
     from gantry_dynamic.obc_gantry import build_reference_set
-    ref = build_reference_set(cfg, norm, n_a=fit_sys.hfn.nx - cfg.nx_phys, records=data.train_list,
-                              verbose=False)
+    ref = build_reference_set(cfg, norm, records=data.train_list)     # reads cfg.n_a
 else:
     ref = None
 if ref is not None:
+    # captured under the mainline names; Clean calls Z_step baseline_input and Z_field network_input
+    clean_name = {'Z_step': 'baseline_input', 'Z_field': 'network_input'}
     for f in ('Z_step', 'Z_field') + (('record_ix', 'sample_ix', 'x_phys_next_rec') if MAIN else ()):
-        c1.add('obcref/' + f, getattr(ref, f))
+        c1.add('obcref/' + f, getattr(ref, f if MAIN else clean_name[f]))
     if MAIN:
         c1.info['obcref/record_names'] = list(ref.record_names)
-    c1.info['obcref/n'] = ref.n if MAIN else int(ref.Z_step.shape[0])     # K15: no n property on the clean side
+    # K15: no n property on the clean side
+    c1.info['obcref/n'] = ref.n if MAIN else int(ref.baseline_input.shape[0])
 
 # the encoder pre-fit, with its least-squares windows captured (harness-side wrapper)
 _ls = GDM.least_squares_start
@@ -144,11 +146,13 @@ c1.add_state('prefit/hfn', fit_sys.hfn.state_dict())
 c1.add_state('prefit/encoder', fit_sys.encoder.state_dict())
 if fit_sys.obc is not None:
     B = fit_sys.obc.basis
+    # captured under the mainline names; Clean calls vbar beta_lin and theta_frozen theta_aux
     for f in ('U', 'S', 'Vh', 'vbar', 'column_scale'):
-        c1.add('basis/' + f, getattr(B, f))
+        c1.add('basis/' + f, getattr(B, f if MAIN or f != 'vbar' else 'beta_lin'))
     c1.add('basis/rank', np.asarray(B.rank))
     c1.add('basis/tol', np.asarray(B.report.tol if MAIN else B.tol))     # C19b (D-281): no RankReport
-    c1.add('basis/theta_frozen', fit_sys.hfn.obc_correction.theta_frozen)
+    corr = fit_sys.hfn.obc_correction
+    c1.add('basis/theta_frozen', corr.theta_frozen if MAIN else corr.theta_aux)
 if args.side == 'mainline':
     os.makedirs(out1, exist_ok=True)
     torch.save({'hfn': fit_sys.hfn.state_dict(), 'encoder': fit_sys.encoder.state_dict()}, golden_state)
@@ -181,7 +185,8 @@ with torch.no_grad():
     if fit_sys.obc is not None:
         theta = fit_sys.obc.coefficient(fit_sys.hfn.connected_blocks[fit_sys._ann_ix])
         c1.add('fwd/obc_theta', theta)
-        for j, m in enumerate(corr.tangent_pair(theta)):
+        # Clean: tangent_pair is correction_matrices
+        for j, m in enumerate(corr.tangent_pair(theta) if MAIN else corr.correction_matrices(theta)):
             if isinstance(m, (tuple, list)):
                 for q, mm in enumerate(m):
                     c1.add('fwd/tangent/%d/%02d' % (j, q), mm)

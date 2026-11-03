@@ -590,8 +590,8 @@ class AugmentedModel(SSE_Interconnect):
         return math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6)
 
     def sync_obc_coefficient(self, refresh_basis=False):
-        """Set the OBC coefficient used for prediction (validation, polish, PS2): theta_frozen = theta_aux of the
-        current network; the basis is rebuilt at the current beta on request or when missing.
+        """Set the OBC coefficient used for prediction (validation, polish, PS2): correction.theta_aux = theta_aux of
+        the current network; the basis is rebuilt at the current beta on request or when missing.
 
         Args:
             refresh_basis: rebuild the basis at the current beta first.
@@ -604,25 +604,25 @@ class AugmentedModel(SSE_Interconnect):
         epoch = self._epoch_index()
         with torch.no_grad():
             if refresh_basis or self.obc.basis is None:
-                self.obc.refresh(correction.expansion_point(), epoch)
+                self.obc.refresh(self.hfn.connected_blocks[self._mats_ix].free_params, epoch)
             theta = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])
-            correction.set_frozen(theta, self.obc.basis.vbar)
+            correction.set_theta_aux(theta, self.obc.basis.beta_lin)
         return True
 
     def objective_matrices(self, theta_aux=None):
         """Matrices of one objective, built once and reused by every rollout step: pass_mats at the current beta and,
-        on the OBC arm, the tangent pair of theta_aux.
+        on the OBC arm, the correction matrices of theta_aux.
 
         Args:
-            theta_aux: (11,) coefficient, or None for theta_frozen.
+            theta_aux: (11,) coefficient, or None for the stored correction.theta_aux.
         Returns:
             dict with pass_mats and, on the OBC arm, obc_pass.
         """
         mats = {'pass_mats': self.hfn.connected_blocks[self._mats_ix].pass_mats()}
         correction = self.hfn.obc_correction
         if correction is not None:
-            mats['obc_pass'] = correction.tangent_pair(
-                correction.theta_frozen if theta_aux is None else theta_aux)
+            mats['obc_pass'] = correction.correction_matrices(
+                correction.theta_aux if theta_aux is None else theta_aux)
         return mats
 
     def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
@@ -644,11 +644,11 @@ class AugmentedModel(SSE_Interconnect):
         if self.obc is not None:
             correction = self.hfn.obc_correction
             # beta_lin = beta at the first objective of each epoch; the basis stays fixed within the epoch
-            self.obc.maybe_refresh(self._epoch_index(), correction.expansion_point)
+            self.obc.maybe_refresh(self._epoch_index(), self.hfn.connected_blocks[self._mats_ix].free_params)
             # theta_aux = (J^T J)^-1 J^T F^n_aug at every objective, differentiable in theta_aug
             theta_aux = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])
             # a detached copy for prediction; the attached theta_aux below keeps V differentiable through it
-            correction.set_frozen(theta_aux, self.obc.basis.vbar)
+            correction.set_theta_aux(theta_aux, self.obc.basis.beta_lin)
         # 3. Closed-loop rollout over the window and the weighted squared output error.
         Loss_kwargs = dict(Loss_kwargs, **self.objective_matrices(theta_aux))
         # loss_w (windows, ny): W_r of each window's record

@@ -51,6 +51,7 @@ DROPPED_IN_CLEAN = {'bank/ystd': 'B41', 'bank/stdu': 'B41', 'info:sim/val_labels
 #: sim-RMS the clean simulator no longer computes.
 for _prefix in ('build/hfn', 'prefit/hfn'):
     DROPPED_IN_CLEAN.update({'%s/connected_blocks.0.%s' % (_prefix, _k): 'R3' for _k in H.dropped_state_keys()})
+    DROPPED_IN_CLEAN.update({'%s/%s' % (_prefix, _k): 'OBC E (2026-11-03)' for _k in H.DROPPED_OBC_KEYS})
 DROPPED_IN_CLEAN['fwd/last_sim_rms'] = 'R12'
 
 
@@ -110,13 +111,16 @@ def diff_arrays(a, b):
 
 def _without_dropped_state(ginfo, cinfo, dropped):
     """The golden info with the dropped state keys (R3) left out of each '<prefix>:keys' list and the matching
-    entries of its '<prefix>:shapes' list."""
+    entries of its '<prefix>:shapes' list, and the renamed OBC keys under their clean names where the clean list has
+    those."""
     out = dict(ginfo)
     for k, names in ginfo.items():
         prefix, _, part = k.rpartition(':')
         if part != 'keys' or prefix + ':shapes' not in ginfo:
             continue
         keep = ['%s/%s' % (prefix, n) not in dropped or n in cinfo.get(k, ()) for n in names]
+        cl = cinfo.get(k, ())
+        names = [H.clean_state_key(n) if H.clean_state_key(n) in cl and n not in cl else n for n in names]
         out[k] = [n for n, ok in zip(names, keep) if ok]
         out[prefix + ':shapes'] = [s for s, ok in zip(ginfo[prefix + ':shapes'], keep) if ok]
     return out
@@ -132,18 +136,24 @@ def compare_npz(gdir, cdir, stem):
     out['dropped'] = sorted(((gk - ck) | (gh - ch) | {'info:' + k for k in set(gj['info']) - set(cj['info'])})
                             & set(DROPPED_IN_CLEAN))
     gk -= set(out['dropped'])
-    out['missing_clean'] = sorted(gk - ck)
-    out['extra_clean'] = sorted(ck - gk)
-    for k in sorted(gk & ck):
-        d = diff_arrays(g[k], c[k])
+    # the OBC buffers Clean renamed (H.RENAMED_STATE_KEYS): golden name -> clean name, where only the clean name exists
+    ren = {k: H.clean_state_key(k) for k in gk | gh
+           if H.clean_state_key(k) != k and H.clean_state_key(k) in ck | ch and k not in ck | ch}
+    out['renamed'] = sorted(ren.items())
+    cname = {k: ren.get(k, k) for k in gk}
+    out['missing_clean'] = sorted(k for k in gk if cname[k] not in ck)
+    out['extra_clean'] = sorted(ck - set(cname.values()))
+    for k in sorted(k for k in gk if cname[k] in ck):
+        d = diff_arrays(g[k], c[cname[k]])
         out['n_compared'] += 1
         if d:
             out['mismatch'][k] = d
-    for k in sorted((gh - set(out['dropped'])) | ch):
+    gh_c = {ren.get(k, k): gj['hashed'][k] for k in gh - set(out['dropped'])}
+    for k in sorted(set(gh_c) | ch):
         out['n_compared'] += 1
-        if gj['hashed'].get(k, {}).get('sha256') != cj['hashed'].get(k, {}).get('sha256') \
-                or gj['hashed'].get(k, {}).get('shape') != cj['hashed'].get(k, {}).get('shape'):
-            out['mismatch'][k] = 'hash differs (golden %s, clean %s)' % (gj['hashed'].get(k), cj['hashed'].get(k))
+        if gh_c.get(k, {}).get('sha256') != cj['hashed'].get(k, {}).get('sha256') \
+                or gh_c.get(k, {}).get('shape') != cj['hashed'].get(k, {}).get('shape'):
+            out['mismatch'][k] = 'hash differs (golden %s, clean %s)' % (gh_c.get(k), cj['hashed'].get(k))
     ginfo = _without_dropped_state(gj['info'], cj['info'], out['dropped'])
     for k in sorted(set(ginfo) | set(cj['info'])):
         if 'info:' + k in out['dropped']:

@@ -316,7 +316,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         s_xdot = (s_xdot_phys / self.std_x_1d).unsqueeze(-1)
         return xdot, s_xdot
 
-    def _rk4_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
+    def rk4_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
         """Baseline transition f_base^n and its directional derivative.
 
         The RK4 step of _rk4 and its tangent, stage by stage: k_i = h F(x_i), s_i = h DF(x_i)[sx_i, dmats]. With a zero

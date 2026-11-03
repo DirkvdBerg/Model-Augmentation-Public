@@ -26,7 +26,7 @@ from model_augmentation.fit_systems.obc import OBCBasis, build_stacked_sensitivi
 from model_augmentation.fit_systems.ps2_opening import PS2Opening, PS2Spec, _plateaued, calibration_split
 from model_augmentation.utils.deepSI_corrections import SystemDataNormalizer, WindowedSystemData
 from model_augmentation.utils.torch_nets import AugmentationNetwork
-from gantry_dynamic.obc_gantry import fourth_order_central_difference, GantryOBCCorrection, make_reference_field
+from gantry_dynamic.obc_gantry import fourth_order_central_difference, GantryOBCCorrection
 from gantry_dynamic.data import compute_normalization, servo_sigma
 from gantry_dynamic.model import least_squares_start
 from gantry_dynamic import controller as ctl
@@ -37,6 +37,8 @@ PS2_THESIS = dict(SETTINGS['ps2_opening'], seed=0)
 
 torch.set_num_threads(1)
 DT = torch.float64
+# a one-tuple OBC reference set for GantryOBCCorrection where the test reads neither J nor F^n_aug
+REF1 = NS(baseline_input=torch.zeros(1, 9, 1, dtype=DT), network_input=torch.zeros(1, 11, 1, dtype=DT))
 TESTS = {}
 ERRORS = {}
 def case(name):
@@ -300,8 +302,8 @@ def test_A_encoder_sim():
         expected=torch.cat((y[:,-1]+.1*vprev,.9*vprev+u[:,-1]),1)
         close(target,expected);captured.append(len(target))
         least_squares_start(e,nx,u,y,target)
-    cfg=NS(device='cpu',nx_phys=6,n_a=2,stride=1)  # K8
-    norm=NS(x_mean=np.zeros(6),std_x=np.ones(6))
+    cfg=NS(device='cpu',nx_phys=6,n_a=2,stride=1,dtype_np=np.float64)  # K8
+    norm=NS(x_mean=np.zeros(6),std_x=np.ones(6),u_mean=np.zeros(3),std_u=np.ones(3),y0=np.zeros(3),ystd=np.ones(3))
     with patch.object(gm,'least_squares_start',side_effect=inspect_fit):
         gm.encoder_start(fs,cfg,NS(train_list=[sd]),norm)
     assert captured==[37]
@@ -396,16 +398,16 @@ def test_O_coefficient():
 
 @case('O_correction')
 def test_O_correction():
-    b=block();corr=GantryOBCCorrection(b,8,6,DT);v=rand(10)*.01;theta=rand(11)*.01
-    corr.set_frozen(theta,v);x=rand(4,8,1)*.02;u=rand(4,3,1)
+    b=block();corr=GantryOBCCorrection(b,8,6,DT,REF1,16384);v=rand(10)*.01;theta=rand(11)*.01
+    corr.set_theta_aux(theta,v);x=rand(4,8,1)*.02;u=rand(4,3,1)
     f=rk(b,x[:,:6],u,v);J=torch.func.jacfwd(lambda t:rk(b,x[:,:6],u,t))(v)
     expected=torch.cat((torch.einsum('bikp,p->bik',J,theta[:-1])+theta[-1]*f,torch.zeros(4,2,1,dtype=DT)),1)
-    close(corr(x,u,corr.tangent_pair(corr.theta_frozen)),expected)  # K14: obc_pass passed
+    close(corr(x,u,corr.correction_matrices(corr.theta_aux)),expected)  # K14: obc_pass passed
 
 @case('O_field')
 def test_O_field():
     ic,b,ann,C=interconnect();z=rand(4,11,1);z[:,6:8]=0
-    got=make_reference_field(NS(Z_field=z),range(6))(ann)
+    got=GantryOBCCorrection(b,8,6,DT,NS(baseline_input=torch.cat((z[:,:6],z[:,8:]),1),network_input=z),16384).network_field(ann)
     expected=ann.net(z.squeeze(-1))[:,:6].reshape(-1)
     close(got,expected)
 
@@ -415,26 +417,26 @@ def test_O_tuple_position():
     from gantry_dynamic import obc_gantry as og
     y=rand(15,3).numpy();u=rand(15,3).numpy()
     norm=NS(x_mean=rand(6).numpy(),std_x=np.linspace(.8,1.3,6),u_mean=rand(3).numpy(),std_u=np.linspace(.7,1.2,3))
-    cfg=NS(ts_new=.03,dtype_pt=DT)
-    ref=og.build_reference_set(cfg,norm,2,[NS(u=u,y=y)],verbose=False)
+    cfg=NS(ts_new=.03,dtype_pt=DT,dtype_np=np.float64,n_a=2,nx_phys=6,nu=3)
+    ref=og.build_reference_set(cfg,norm,[NS(u=u,y=y)])
     P=gs.P.double().numpy();q=np.linalg.solve(P.T,y.T).T
     v=np.stack([(-q[i+2]+8*q[i+1]-8*q[i-1]+q[i-2])/(12*.03) for i in range(2,13)])
     k=np.arange(2,12);x=np.hstack((q[k],v[k-2]))  # K15: no successor states
     expected=np.hstack(((x-norm.x_mean)/norm.std_x,(u[k]-norm.u_mean)/norm.std_u))
-    close(ref.Z_step.squeeze(-1),expected)
-    close(ref.Z_field[:,6:8],torch.zeros(10,2,1,dtype=DT))
+    close(ref.baseline_input.squeeze(-1),expected)
+    close(ref.network_input[:,6:8],torch.zeros(10,2,1,dtype=DT))
 
 @case('O_physical_step')
 def test_O_physical_step():
-    ic,b,ann,C=interconnect();corr=GantryOBCCorrection(b,8,6,DT)
-    v=rand(10)*.01;theta=rand(11)*.01;corr.set_frozen(theta,v);ic.obc_correction=corr
+    ic,b,ann,C=interconnect();corr=GantryOBCCorrection(b,8,6,DT,REF1,16384)
+    v=rand(10)*.01;theta=rand(11)*.01;corr.set_theta_aux(theta,v);ic.obc_correction=corr
     x=rand(4,8)*.02;u=rand(4,3)
     f=rk(b,x[:,:6,None],u[:,:,None],v)
     J=torch.func.jacfwd(lambda t:rk(b,x[:,:6,None],u[:,:,None],t))(v)
     removed=torch.einsum('bikp,p->bi',J,theta[:-1])+theta[-1]*f.squeeze(-1)
     raw=ann.net(torch.cat((x,u),1))
     expected=rk(b,x[:,:6,None],u[:,:,None]).squeeze(-1)+raw[:,:6]-removed
-    y,xp=ic(x,u,corr.tangent_pair(corr.theta_frozen),b.pass_mats())  # K14: matrices passed
+    y,xp=ic(x,u,corr.correction_matrices(corr.theta_aux),b.pass_mats())  # K14: matrices passed
     close(xp[:,:6],expected);close(xp[:,6:],raw[:,6:])
 
 @case('L_blocks')

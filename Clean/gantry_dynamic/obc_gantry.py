@@ -1,16 +1,22 @@
-"""Gantry part of the orthogonal projection (OBC): the tuples (x_tilde^n_i, xbar_i = 0, u^n_i), the basis J of
-f_base^n, the network field F^n_aug on the tuples and the correction f_obc^n.
+"""Orthogonal projection (OBC) for the gantry: removes from the network's correction what the baseline parameters
+beta could also give, so beta keeps its physical meaning. Superscript n = normalised.
 
-Notation: beta_lin = the beta the basis is built at, renewed once per epoch; varphi(beta_lin, z_i) = d f_base^n / d beta
-at one tuple (6 x 10); Phi = col(varphi) over the tuples; J = [Phi  col(f_base^n(beta_lin))], the same span as the
-affine model [Phi Gamma]; theta_aux = (a, c), the least-squares coefficients of the network field on J.
-Conventions: samples are rows (q = y @ P^-T.T); superscript n = normalised. Code names: vbar = beta_lin,
-theta_frozen = theta_aux, E = the physical-row selector.
+  tuples     (x_tilde_i, xbar_i = 0, u_i): measured state, zero added states and measured force at training
+             sample i; x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i
+  beta_lin   beta at the start of the epoch
+  varphi     d f_base^n(theta_base(beta), x_tilde^n, u^n) / d beta at beta_lin (6 x 10); Phi = col(varphi)
+  J          [Phi  col(f_base^n(beta_lin))], stacked over the tuples
+  F^n_aug    col(f^n_aug(theta_aug, (x_tilde^n_i, 0), u^n_i)), the network's correction on the tuples
+  theta_aux  (a, c) = (J^T J)^-1 J^T F^n_aug, the least-squares coefficients of F^n_aug on J (solved in obc.py)
+  f_obc^n    varphi(beta_lin) a + c f_base^n(beta_lin) on the six physical rows: the part of the network's
+             correction that beta could also give; subtracted at every step
+
+The thesis uses [Phi Gamma], Gamma = col(f_base^n(beta_lin) - varphi beta_lin). J appends f_base^n(beta_lin)
+itself, which the Jacobian build already evaluates; both span the same space, so f_obc^n is the same and only
+theta_aux differs, (a + c beta_lin, c) in the thesis.
 """
 __project_origin__ = "added"
 
-import copy
-import time
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -27,16 +33,18 @@ from .config import RunConfig
 
 @dataclass
 class GantryReferenceSet:
-    """The fixed OBC tuples of the training records: Z_step = (x_tilde^n_i, u^n_i), the baseline input for J;
-    Z_field = (x_tilde^n_i, 0, u^n_i), the network input for F^n_aug."""
-    Z_step: Tensor
-    Z_field: Tensor
+    """The fixed OBC tuples of the training records, normalised: baseline_input = (x_tilde^n_i, u^n_i), from which
+    J is built; network_input = (x_tilde^n_i, 0, u^n_i), from which F^n_aug is computed."""
+    baseline_input: Tensor
+    network_input: Tensor
 
 
 def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
-    """Velocity of the OBC tuples.
+    """Velocity of the OBC tuples; at the 212 Hz absorber mode its error is 0.04 %, against 1.8 % for a
+    second-order central difference.
 
-    qdot_k = (-q_{k+2} + 8 q_{k+1} - 8 q_{k-1} + q_{k-2}) / (12 T_s), aligned with q[2:-2].
+    qdot_i = (-q_{i+2} + 8 q_{i+1} - 8 q_{i-1} + q_{i-2}) / (12 T_s); qdot_i needs the two samples before and after
+    i, so row j of the result is the velocity at sample i = j + 2.
 
     Args:
         q: (N, 3) generalised positions [m, rad, m].
@@ -47,207 +55,163 @@ def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
     return (-q[4:] + 8.0 * q[3:-1] - 8.0 * q[1:-3] + q[:-4]) / (12.0 * ts)
 
 
-def build_reference_set(cfg: RunConfig, norm, n_a: int, records: Sequence,
-                        verbose: bool = True) -> GantryReferenceSet:
-    """OBC tuples of the training records.
-
-    (x_tilde^n_i, xbar_i = 0, u^n_i), x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at the samples i = 2 .. N - 4.
-    Built once before training from measured data, so the points of the orthogonality do not move with the model.
+def build_reference_set(cfg: RunConfig, norm, records: Sequence) -> GantryReferenceSet:
+    """OBC tuples of the training records, at i = 2 .. N - 4: the samples where qdot can be computed at i and at
+    i + 1.
+    Built once before training from the measured data, not from the simulated states, so J and F^n_aug are evaluated
+    at the same points throughout training.
 
     Args:
         cfg: run configuration.
-        norm: normalisation.
-        n_a: number of added states n_xbar.
+        norm: means and standard deviations of the training records (Norm).
         records: the training records at fs_new (Datasets.train_list).
-        verbose: print the tuple count.
     Returns:
-        GantryReferenceSet: Z_step (N, 9, 1) and Z_field (N, 9 + n_xbar, 1), normalised.
+        GantryReferenceSet: baseline_input (N, 9, 1) and network_input (N, 9 + n_a, 1), normalised.
     """
-    ts = cfg.ts_new
-    x_mean = np.asarray(norm.x_mean, dtype=np.float64).reshape(1, 6)
-    std_x = np.asarray(norm.std_x, dtype=np.float64).reshape(1, 6)
-    u_mean = np.asarray(norm.u_mean, dtype=np.float64).reshape(1, 3)
-    std_u = np.asarray(norm.std_u, dtype=np.float64).reshape(1, 3)
+    x_mean = np.asarray(norm.x_mean, dtype=cfg.dtype_np).reshape(1, cfg.nx_phys)
+    std_x = np.asarray(norm.std_x, dtype=cfg.dtype_np).reshape(1, cfg.nx_phys)
+    u_mean = np.asarray(norm.u_mean, dtype=cfg.dtype_np).reshape(1, cfg.nu)
+    std_u = np.asarray(norm.std_u, dtype=cfg.dtype_np).reshape(1, cfg.nu)
 
     # 1. Tuples per record, in physical units.
     xs, us = [], []
     for record in records:
-        u, y = np.asarray(record.u, dtype=np.float64), np.asarray(record.y, dtype=np.float64)
-        # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at i = 2 .. N - 4 (the stencil gives qdot at 2 .. N - 3)
+        u, y = np.asarray(record.u, dtype=cfg.dtype_np), np.asarray(record.y, dtype=cfg.dtype_np)
+        # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, i = 2 .. N - 4; one sample per row, so q = y @ P_INV_T.T
         q = y @ P_INV_T.T
-        # central differences on the zero-phase filtered positions, the method of Janot et al. (2019) for velocities
-        # from measured positions
-        qd = fourth_order_central_difference(q, ts)
-        k = np.arange(2, len(u) - 3)
-        xs.append(np.hstack([q[k], qd[k - 2]])); us.append(u[k])
-    x_phys = np.concatenate(xs); u_stage = np.concatenate(us)
+        # qdot by central differences on the positions filtered by the anti-alias filter of data.py (zero phase,
+        # 1.6 kHz), so the noise above 1.6 kHz is not amplified by the difference
+        qdot = fourth_order_central_difference(q, cfg.ts_new)
+        i = np.arange(2, len(u) - 3)
+        # row i - 2 of qdot is the velocity at sample i
+        xs.append(np.hstack([q[i], qdot[i - 2]]))
+        us.append(u[i])
+    x_tilde = np.concatenate(xs)
+    u_act = np.concatenate(us)
 
-    # 2. Normalise and stack: x_tilde^n = T_x (x_tilde - mu_x), u^n = T_u (u - mu_u).
-    x_n = (x_phys - x_mean) / std_x
-    u_n = (u_stage - u_mean) / std_u
+    # 2. Normalise: x_tilde^n = (x_tilde - mu_x) / sigma_x, u^n = (u_act - mu_u) / sigma_u.
+    x_n = (x_tilde - x_mean) / std_x
+    u_n = (u_act - u_mean) / std_u
     N = x_n.shape[0]
-    dt = cfg.dtype_pt
-    Z_step = torch.from_numpy(np.hstack([x_n, u_n])).to(dt).unsqueeze(-1)
-    Z_field = torch.from_numpy(
-        np.hstack([x_n, np.zeros((N, n_a)), u_n])).to(dt).unsqueeze(-1)
-    reference = GantryReferenceSet(Z_step=Z_step, Z_field=Z_field)
-    if verbose:
-        print('[obc] reference set: %d tuples from %d records' % (N, len(records)))
-    return reference
+    # stack per tuple, as column vectors: baseline input (x_tilde^n_i, u^n_i), (N, 9, 1); network input
+    # (x_tilde^n_i, 0, u^n_i), (N, 9 + n_a, 1)
+    baseline_input = torch.from_numpy(np.hstack([x_n, u_n])).to(cfg.dtype_pt).unsqueeze(-1)
+    network_input = torch.from_numpy(
+        np.hstack([x_n, np.zeros((N, cfg.n_a)), u_n])).to(cfg.dtype_pt).unsqueeze(-1)
+    print('[obc] reference set: %d tuples from %d records' % (N, len(records)))
+    return GantryReferenceSet(baseline_input=baseline_input, network_input=network_input)
 
 
 class GantryOBCCorrection(nn.Module):
-    """f_obc^n = E (varphi(beta_lin) a + c f_base^n(beta_lin)) at the current (x_tilde^n, u_hat^n), on the six
-    physical rows."""
+    """The OBC correction f_obc^n at the current state and input, subtracted from the network's correction of the
+    six physical states at every step. Training computes theta_aux at
+    every training step on the basis J, which is rebuilt at beta_lin once per epoch; validation, polish, PS2 and
+    evaluation use the copy of theta_aux and beta_lin stored here."""
 
-    def __init__(self, phy_block: IdentifiableGantryStateBlock, nx: int, nx_phys: int, dtype: torch.dtype):
-        """OBC correction on the physical rows; beta_lin and theta_aux start at zero.
+    def __init__(self, baseline_block: IdentifiableGantryStateBlock, nx: int, nx_phys: int, dtype: torch.dtype,
+                 reference: GantryReferenceSet, chunk: int):
+        """Create the stored beta_lin and theta_aux, which are zero until the first set_theta_aux, and hold the
+        OBC tuples.
 
         Args:
-            phy_block: the identifiable baseline block (beta, f_base^n).
-            nx: model state size 6 + n_xbar.
+            baseline_block: the identifiable baseline block, which holds beta and computes f_base^n.
+            nx: model state size 6 + n_a.
             nx_phys: number of physical states (6).
-            dtype: model dtype.
+            dtype: dtype of beta_lin and theta_aux (cfg.dtype_pt).
+            reference: the OBC tuples.
+            chunk: tuples per Jacobian evaluation; sets the memory use, not the result.
         """
         super().__init__()
-        self._phy = [phy_block]
-        self.nx, self.nx_phys = int(nx), int(nx_phys)
-        # every physical row is protected; network output i corrects state i
-        self.row_ix = tuple(range(self.nx_phys))
-        self.field_cols = self.row_ix
-        p = int(phy_block.free_params.numel())
-        # E (nx, nx_phys) selects the protected rows
-        E = torch.zeros(self.nx, self.nx_phys, dtype=dtype)
-        for i in self.row_ix:
-            E[i, i] = 1.0
-        self.register_buffer('E', E)
-        self.register_buffer('vbar', torch.zeros(p, dtype=dtype))
-        # theta_aux = (a, c): p sensitivity coefficients and the coefficient of f_base^n
-        self.register_buffer('theta_frozen', torch.zeros(p + 1, dtype=dtype))
-
-    def expansion_point(self) -> Tensor:
-        """beta, the next beta_lin."""
-        return self._phy[0].free_params
+        # the baseline matrices (K, C, parts of M(Y)^-1) at beta_lin, and their change when beta moves in the
+        # direction a, theta_aux = (a, c)
+        self.baseline_matrices_and_derivative = baseline_block.mats_and_tangent_from_free
+        # one baseline step with those matrices: f_base^n(beta_lin) and varphi(beta_lin) a
+        self.baseline_step_and_derivative = baseline_block.rk4_with_tangent
+        self.baseline_step = baseline_block.transition_from_free
+        self.chunk = chunk
+        self.nx, self.nx_phys = nx, nx_phys
+        # network output i is the correction of physical state i
+        self.physical_rows = tuple(range(self.nx_phys))
+        n_beta = baseline_block.free_params.numel()
+        # beta_lin: the beta that J was built at
+        self.register_buffer('beta_lin', torch.zeros(n_beta, dtype=dtype))
+        # theta_aux = (a, c), the coefficients of f_obc^n = varphi(beta_lin) a + c f_base^n(beta_lin)
+        self.register_buffer('theta_aux', torch.zeros(n_beta + 1, dtype=dtype))
+        # the OBC tuples, on the model's device (CPU or GPU) because J and F^n_aug are evaluated on them; not saved
+        # in the checkpoint, since build_reference_set rebuilds them from the data
+        self.register_buffer('baseline_input', reference.baseline_input, persistent=False)
+        self.register_buffer('network_input', reference.network_input, persistent=False)
 
     @torch.no_grad()
-    def set_frozen(self, theta: Tensor, vbar: Tensor) -> None:
-        """Store theta_aux and the beta_lin of its basis for the prediction path."""
-        self.theta_frozen.copy_(theta.detach().to(self.theta_frozen.dtype))
-        self.vbar.copy_(vbar.detach().to(self.vbar.dtype))
+    def set_theta_aux(self, theta_aux: Tensor, beta_lin: Tensor) -> None:
+        """Store theta_aux and the beta_lin of its basis, for validation, polish, PS2 and evaluation."""
+        self.theta_aux.copy_(theta_aux)
+        self.beta_lin.copy_(beta_lin)
 
-    def tangent_pair(self, theta: Tensor):
-        """Matrices of the OBC correction.
+    def correction_matrices(self, theta_aux: Tensor):
+        """Matrices for forward, built once per rollout because they do not depend on the state.
 
-        (matrices at beta_lin, their tangent along a, c) for theta_aux = (a, c), built once per objective.
+        varphi(beta_lin) a is the derivative of f_base^n in the direction a. f_base^n depends on beta only through
+        its matrices, so forward needs the matrices at beta_lin and their derivative in the direction a.
 
         Args:
-            theta: (11,) theta_aux = (a, c).
+            theta_aux: (11,) (a, c).
         Returns:
-            mats (the matrix tuple of blocks.py), dmats (its derivative along a), c (scalar).
+            mats: the baseline matrices at beta_lin.
+            dmats: the derivative of mats in the direction a.
+            c: the coefficient of f_base^n.
         """
-        mats, dmats = self._phy[0].mats_and_tangent_from_free(self.vbar, theta[:-1])
-        alpha = theta[-1]
-        return mats, dmats, alpha
+        mats, dmats = self.baseline_matrices_and_derivative(self.beta_lin, theta_aux[:-1])
+        return mats, dmats, theta_aux[-1]
 
     def forward(self, x: Tensor, u: Tensor, obc_pass) -> Tensor:
-        """OBC correction f_obc^n.
-
-        f_obc^n = E (varphi a + c f_base^n(beta_lin)) at the current physical state and input. Subtracting it makes
-        the corrected network field orthogonal to J on the OBC tuples.
+        """OBC correction f_obc^n at the current state and input; subtracting it makes the network's correction
+        orthogonal to J on the tuples.
 
         Args:
-            x: (B, nx, 1) x_hat^n_k.
-            u: (B, 3, 1) u_hat^n_k.
-            obc_pass: this objective's tangent_pair.
+            x: (B, nx, 1) x_hat^n_k, the normalised model state (physical and added) at step k; B the number of
+                rollouts simulated in parallel.
+            u: (B, 3, 1) u_hat^n_k, the normalised closed-loop input at step k.
+            obc_pass: (mats, dmats, c) from correction_matrices.
         Returns:
-            (B, nx, 1) correction, zero on the added rows.
+            (B, nx, 1) f_obc^n on the six physical rows, zero on the n_a added rows.
         """
-        xb, ub = x[:, : self.nx_phys, :], u
-        mats, dmats = obc_pass[:2]
-        # f_base^n(beta_lin) and varphi(beta_lin) a, the RK4 tangent along a
-        fbar, jv = self._phy[0]._rk4_with_tangent(
-            xb, torch.zeros_like(xb), ub, mats, dmats)
-        # f_obc^n = E (varphi a + c f_base^n)
-        return torch.matmul(self.E, jv + obc_pass[2] * fbar)
+        # x_tilde^n_k: the six physical rows of x_hat^n_k
+        x_tilde = x[:, : self.nx_phys, :]
+        mats, dmats, c = obc_pass
+        # f_base^n(beta_lin) and varphi(beta_lin) a, the derivative of f_base^n in the direction a, in one RK4 step
+        # from mats and dmats; x_tilde^n_k is an input of the step, so its derivative is zero (torch.zeros_like)
+        f_base, varphi_a = self.baseline_step_and_derivative(
+            x_tilde, torch.zeros_like(x_tilde), u, mats, dmats)
+        # f_obc^n = varphi a + c f_base^n on the six physical rows, zero on the n_a added rows
+        n_a = self.nx - self.nx_phys
+        return torch.nn.functional.pad(varphi_a + c * f_base, (0, 0, 0, n_a))
+
+    def basis(self, beta_lin: Tensor) -> Tensor:
+        """J at beta_lin: at every tuple, how the baseline step changes with each of the 10 parameters, and the
+        step itself."""
+        # J = [Phi  col(f_base^n(beta_lin, x_tilde^n_i, u^n_i))], (6 N, 11)
+        return build_stacked_sensitivity(self.baseline_step, beta_lin, self.baseline_input, self.physical_rows,
+                                         chunk=self.chunk, append_value=True)
+
+    def network_field(self, ann: Static_ANN_Block) -> Tensor:
+        """F^n_aug: the network's correction of the six physical states at every tuple, in the row order of J."""
+        # F^n_aug = col(f^n_aug(theta_aug, (x_tilde^n_i, 0), u^n_i)), (6 N,)
+        return ann(self.network_input)[:, list(self.physical_rows), 0].reshape(-1)
 
 
-def make_float64_block(phy_block: IdentifiableGantryStateBlock) -> IdentifiableGantryStateBlock:
-    """A float64 copy of the physics block for the basis build; the live block keeps the training dtype."""
-    return copy.deepcopy(phy_block).to(torch.float64)
-
-
-def make_basis_builder(blk64: IdentifiableGantryStateBlock, ref: GantryReferenceSet,
-                       row_ix: Sequence[int], chunk: int, device=None):
-    """Builder of the OBC basis.
-
-    J = [Phi  col(f_base^n(beta_lin, x_tilde^n_i, u^n_i))] on a float64 copy of the baseline, rebuilt at every refresh.
-
-    Args:
-        blk64: float64 baseline block.
-        ref: the tuples.
-        row_ix: protected rows.
-        chunk: tuples per jacfwd call.
-        device: device of the build, else that of vbar64.
-    Returns:
-        build(vbar64) -> (J (N r, 11), seconds), vbar64 = beta_lin (10,), r = len(row_ix).
-        Rows tuple-major, then protected row; columns d/d beta_1 .. beta_10, then f_base^n.
-    """
-    def build(vbar64: Tensor):
-        """J = [Phi  col(f_base^n(beta_lin, z_i))] at beta_lin = vbar64, with its build time."""
-        dev = device if device is not None else vbar64.device
-        if next(blk64.buffers()).device != dev:
-            blk64.to(dev)
-        t0 = time.perf_counter()
-        # J = [Phi  F_base^n(beta_lin)]
-        J = build_stacked_sensitivity(blk64.transition_from_free,
-                                      vbar64.to(dev), ref.Z_step, row_ix, chunk=chunk, device=dev,
-                                      append_value=True)
-        return J, time.perf_counter() - t0
-    return build
-
-
-def make_reference_field(ref: GantryReferenceSet, field_cols: Sequence[int]):
-    """Network field on the OBC tuples.
-
-    F^n_aug(theta_aug) = col(f^n_aug(theta_aug, (x_tilde^n_i, 0), u^n_i)), stacked sample-major, differentiable.
+def attach_obc(fit_sys, baseline_block: IdentifiableGantryStateBlock, cfg: RunConfig, data, norm):
+    """Give the model the OBC correction f_obc^n (subtracted at every step) and the projection that computes it.
 
     Args:
-        ref: the tuples.
-        field_cols: network outputs of the protected rows.
-    Returns:
-        field(ann) -> (N r,) F^n_aug, tuple-major, r = len(field_cols).
+        fit_sys: the augmented model; gets hfn.obc_correction and obc.
+        baseline_block: the identifiable baseline block of the model.
+        cfg: run configuration.
+        data: the records (Datasets); the tuples come from the training records.
+        norm: means and standard deviations of the training records (Norm).
     """
-    cols = torch.as_tensor(list(field_cols), dtype=torch.long)
-    # the reference inputs, cached per device and dtype
-    cache = {}
-
-    def field(ann: Static_ANN_Block) -> Tensor:
-        """F^n_aug = col(f^n_aug(theta_aug, (x_tilde^n_i, 0), u^n_i)), sample-major."""
-        param = next(ann.parameters())
-        key = (param.device, param.dtype)
-        if cache.get('key') != key:
-            cache['Z'] = ref.Z_field.to(device=param.device, dtype=param.dtype)
-            cache['cols'] = cols.to(param.device)
-            cache['key'] = key
-        w = ann(cache['Z'])
-        return w[:, cache['cols'], 0].reshape(-1)
-    return field
-
-
-def attach_obc(fit_sys, cfg: RunConfig, data, norm):
-    """Attach the OBC tuples, the correction f_obc^n and the projection to a model."""
-    phy = fit_sys.hfn.connected_blocks[0]
-    nx = fit_sys.hfn.nx
-    reference = build_reference_set(cfg, norm, n_a=nx - cfg.nx_phys, records=data.train_list)
-    correction = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, dtype=cfg.dtype_pt)
-    correction = correction.to(next(phy.parameters()).device)
-    baseline64 = make_float64_block(phy)
-    projection = OBCProjection(
-        reference_field=make_reference_field(reference, correction.field_cols),
-        basis_builder=make_basis_builder(baseline64, reference, correction.row_ix, chunk=cfg.obc_ref_chunk))
+    reference = build_reference_set(cfg, norm, records=data.train_list)
+    correction = GantryOBCCorrection(baseline_block, nx=fit_sys.hfn.nx, nx_phys=cfg.nx_phys, dtype=cfg.dtype_pt,
+                                     reference=reference, chunk=cfg.obc_ref_chunk)
     fit_sys.hfn.obc_correction = correction
-    fit_sys.obc = projection
-    # affine: J holds the f_base^n column besides Phi; epoch: beta_lin renewed once per epoch
-    print('[obc] attached: protected rows %s (ANN cols %s), %d reference tuples, '
-          'space=affine, refresh=epoch, solve float64, rollout %s'
-          % (correction.row_ix, correction.field_cols, int(reference.Z_step.shape[0]), cfg.dtype_pt))
+    fit_sys.obc = OBCProjection(reference_field=correction.network_field, basis_builder=correction.basis)

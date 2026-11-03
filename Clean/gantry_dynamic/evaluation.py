@@ -56,7 +56,7 @@ def _without_learned(fit_sys, free=None):
     with torch.no_grad():
         ann.out_gate.zero_()
         if corr is not None:
-            corr.theta_frozen.zero_()
+            corr.theta_aux.zero_()
         if free is not None:
             next(b for b in blocks if hasattr(b, 'free_params')).free_params.copy_(free)
     return m
