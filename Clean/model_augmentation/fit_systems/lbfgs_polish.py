@@ -1,5 +1,4 @@
-"""The polish: L-BFGS on the training loss V over one fixed set of windows, from the selected parameters, kept only
-if the validation error drops."""
+"""Refine the selected model with L-BFGS on fixed training windows; accept only if validation improves."""
 __project_origin__ = "added"
 
 import time
@@ -12,25 +11,25 @@ import torch
 from model_augmentation.fit_systems.closed_loop import window_counts
 
 
-# L-BFGS settings of the polish
-HISTORY_SIZE = 50    # past gradient changes kept to approximate the curvature; memory 50, as Hoekstra et al. (2026)
-INNER_ITER = 20      # iterations per optimizer call, PyTorch's default; the polish ends when a call stops early
-# HEURISTIC: stop tolerances 1e-12 and 1e-14 scaled by 2.6e7, the measured ratio of the weighted to the unweighted
-# loss, so they act at the same relative level
-TOL_GRAD = 2.6e-5    # stop when the largest gradient entry is below this
-TOL_CHANGE = 2.6e-7  # stop when the loss or the parameter step changes less than this
+HISTORY_SIZE = 50    # past parameter and gradient changes used to approximate curvature
+INNER_ITER = 20      # maximum iterations per optimizer call
+# Dividing output errors by the servo error increased the loss and largest absolute gradient
+# by about 2.6e7 on 128 training windows. We use this measured factor to scale the stopping
+# tolerances from 1e-12 and 1e-14 to 2.6e-5 and 2.6e-7.
+TOL_GRAD = 2.6e-5    # threshold for the largest absolute gradient entry
+TOL_CHANGE = 2.6e-7  # shared threshold for loss change, parameter step and directional derivative
 
 
 @dataclass(frozen=True)
 class PolishSpec:
-    """Settings of the polish that a run sets; values come from the run config (lbfgs_*)."""
-    n_windows: int       # windows in the fixed batch; fewer lowers memory use
-    max_iter: int        # L-BFGS iterations in total
-    seed: int            # seed of the random window subset
+    """Run settings for the fixed training batch and L-BFGS iteration budget."""
+    n_windows: int       # maximum windows in the fixed batch
+    max_iter: int        # iteration budget, rounded up to blocks of INNER_ITER (at least one block)
+    seed: int            # seed for selecting windows
 
 
 def _restore(fit_sys, params, snap):
-    """Restore the parameter snapshot and recompute theta_aux for it with the existing OBC basis."""
+    """Restore starting parameters and recompute theta_aux using the unchanged OBC basis."""
     with torch.no_grad():
         for p, saved in zip(params, snap):
             p.copy_(saved)
@@ -38,19 +37,19 @@ def _restore(fit_sys, params, snap):
 
 
 class FixedWindowBatch:
-    """The one fixed batch the polish optimises; L-BFGS needs the same loss at every evaluation, so no minibatches."""
+    """Keep training windows fixed so line-search evaluations compare the same objective."""
 
     def __init__(self, fit_sys, sys_data, loss_kwargs, n_windows, seed):
-        """Windows at a stride scaled to give about n_windows, then a random subset of n_windows if there are more.
+        """Increase the stride to limit window construction, then select at most n_windows.
 
         Args:
             fit_sys: the augmented model.
             sys_data: training records.
-            loss_kwargs: nf (window length [samples]) and stride (samples between window starts).
-            n_windows: wanted number of windows.
-            seed: seed of the subset.
+            loss_kwargs: training-data and loss options, including nf and stride in samples.
+            n_windows: maximum number of windows.
+            seed: seed for sampling without replacement.
         """
-        # 1. Stride: the base stride times the factor that brings the window count down to about n_windows.
+        # Reduce the number of windows built before selecting the fixed batch.
         nf = loss_kwargs['nf']
         base_stride = loss_kwargs['stride']
         self.n_total = sum(window_counts(fit_sys, sys_data.sdl, nf, base_stride))
@@ -59,13 +58,12 @@ class FixedWindowBatch:
         scale = max(1, self.n_total // max(1, want))
         self.effective_stride = base_stride * scale
 
-        # 2. Build the windows at that stride, as for Adam.
         build_kwargs = dict(loss_kwargs)
         build_kwargs['stride'] = self.effective_stride
         built = fit_sys.make_training_data(fit_sys.norm.transform(sys_data), **build_kwargs)
         n_built = len(built[0])
 
-        # 3. If still more than wanted, a random subset, kept in the original order.
+        # Sample without replacement and preserve the original window order.
         self.n_used = min(want, n_built)
         if self.n_used < n_built:
             ix = np.random.default_rng(seed).choice(n_built, size=self.n_used, replace=False)
@@ -73,19 +71,18 @@ class FixedWindowBatch:
         else:
             ix = np.arange(n_built)
 
-        # 4. Keep the batch as tensors on the model's device, ready as loss(*args, **kw).
         p = next(fit_sys.hfn.parameters())
 
         def _to_tensor(a):
-            """The selected windows of one array, on the model's device and dtype."""
+            """Move selected windows to the model's device; preserve integer index types."""
             t = torch.as_tensor(np.asarray(a)[ix])
             return (t.to(p.dtype) if t.is_floating_point() else t).to(p.device)
 
         cols = [_to_tensor(a) for a in built]
         names = fit_sys.simulator.extra_array_names
-        # args: uhist, yhist, ufuture, yfuture; kw: the loss kwargs and the simulator's extras (ctrl_ix, loss_w)
+        # The loss takes four history/future arrays, plus simulator extras such as ctrl_ix and loss_w.
         self.args = tuple(cols[:4])
-        # kw keeps the base stride; the rollout does not use it
+        # Stride controls window construction; the loss does not use it.
         self.kw = {**loss_kwargs, **dict(zip(names, cols[4:]))}
 
         print('  [lbfgs] fixed batch: %d of %d windows (stride %d -> %d), %.1f MB on %s, '
@@ -96,39 +93,41 @@ class FixedWindowBatch:
 
 
 def _make_closure(fit_sys, batch, opt, counter):
-    """L-BFGS closure: V and its gradient on the fixed batch; counter[0] counts its calls."""
+    """Build a loss-and-gradient evaluation; counter[0] includes probes and line-search trials."""
     def closure():
-        """Write grad V to .grad and return V on the fixed batch, detached."""
         counter[0] += 1
         opt.zero_grad(set_to_none=False)
         loss = fit_sys.loss(*batch.args, **batch.kw)
         loss.backward()
-        # detached, so the graph is freed before the next call
+        # Return only the loss value so the optimizer does not retain its computation graph.
         return torch.as_tensor(float(loss))
     return closure
 
 
 def _lbfgs_counts(opt, params):
-    """(iterations, closure evaluations) as torch counts them, cumulative over step() calls."""
+    """Return cumulative optimizer iterations and loss evaluations; exclude separate closure probes."""
     st = opt.state[params[0]]
     return int(st.get('n_iter', 0)), int(st.get('func_evals', 0))
 
 
 def _is_oom(exc):
-    """True for a CUDA out-of-memory error."""
+    """Recognise torch out-of-memory errors and RuntimeErrors containing 'out of memory'."""
     return isinstance(exc, torch.cuda.OutOfMemoryError) or (isinstance(exc, RuntimeError)
                                                            and 'out of memory' in str(exc).lower())
 
 
 def _probe_closure(closure, label):
-    """Evaluate the closure twice without a step; returns (identical, first value, error or None)."""
+    """Compare two losses at unchanged parameters; return (equal, first loss, exception or None).
+
+    Both calls compute gradients, but only the loss values are compared.
+    """
     try:
         a = float(closure())
         b = float(closure())
     except Exception as e:
         print('  [lbfgs] %s rollout FAILED (%s): %s'
               % (label, type(e).__name__, str(e).splitlines()[0][:160]))
-        # drop the traceback so the tensors of the failed rollout are freed
+        # Release traceback references to tensors from the failed evaluation.
         return False, float('nan'), e.with_traceback(None)
     ok = (a == b)
     print('  [lbfgs] determinism check (%s): %.17e vs %.17e -> %s'
@@ -137,7 +136,7 @@ def _probe_closure(closure, label):
 
 
 def _acceptance(out, validation_measure):
-    """(keep, why): keep the polished weights only if V is finite and the validation error drops."""
+    """Return (accept, reason): require finite final loss and validation scores, with lower validation error."""
     if not np.isfinite(out['loss_last']):
         return False, 'non-finite loss'
     if not (np.isfinite(out['val_before']) and np.isfinite(out['val_after'])):
@@ -149,21 +148,22 @@ def _acceptance(out, validation_measure):
 
 def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, val_before=None,
                  validation_measure):
-    """Polish of the selected model.
+    """Refine the model with L-BFGS on fixed training windows, choosing the step size by line search.
 
-    L-BFGS (strong Wolfe) on V over one fixed batch of windows, rolled back unless the validation error drops, so it
-    can only improve on the Adam result.
+    Restore starting parameters on failure or rejection. Acceptance requires a finite final training loss and
+    finite validation scores with a strict improvement; the training loss need not decrease.
 
     Args:
         fit_sys: the augmented model, changed in place.
         train_sys_data, val_sys_data: training and validation records.
-        loss_kwargs: nf and stride.
-        spec: PolishSpec.
-        val_before: score to beat; None measures it.
-        validation_measure: name of the score.
+        loss_kwargs: training-data and loss options, including nf and stride in samples.
+        spec: fixed-batch size, iteration budget and sampling seed.
+        val_before: validation score to beat; None evaluates the starting model.
+        validation_measure: score name for messages; fit_sys computes the score.
     Returns:
-        dict with the outcome: ran, accepted, deterministic, used_compiled, iteration and closure counts, loss and
-        validation before and after, and reason.
+        dict with acceptance, reason, losses, validation scores, window counts, optimizer counts and runtime.
+        n_closure includes probes; func_evals counts optimizer evaluations only. deterministic records exact
+        equality of the two probe losses. Final scores describe the candidate even when it is rolled back.
     """
     t0 = time.time()
     out = dict(ran=False, accepted=False, reason='', n_iter=0,
@@ -174,15 +174,15 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                effective_stride=0, deterministic=None, used_compiled=None,
                params_polished=0)
 
-    # all trainable parameters in deepSI's order (encoder, then hfn), one group; the OBC basis stays at its beta_lin
+    # Optimise the encoder and model together; keep the OBC basis fixed at beta_lin.
     params = [p for item in fit_sys.parameters_with_names.values() for p in item['params']]
-    # the start weights, for an exact rollback
+    # Save parameters before any trial steps so failure or rejection can restore them.
     snap = [p.detach().clone() for p in params]
     batch = opt = closure = failure = None
     n_closure = [0]
 
     def _validate():
-        """The validation error at the current weights, theta_aux synced first."""
+        """Evaluate validation after updating theta_aux; restore the previous training mode."""
         was_training = fit_sys.hfn.training
         fit_sys.eval()
         try:
@@ -193,12 +193,11 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                 fit_sys.train()
 
     def _record_counts():
-        """Store the L-BFGS iteration and closure counts in out."""
         out['n_iter'], out['func_evals'] = _lbfgs_counts(opt, params)
         out['n_closure'] = n_closure[0]
 
     def _abort(reason, oom, word):
-        """Abandon the polish and restore the start weights; the pre-polish result stands."""
+        """Restore starting parameters and report why the polish failed."""
         out['reason'] = reason
         out['wall_s'] = time.time() - t0
         _restore(fit_sys, params, snap)
@@ -207,9 +206,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         print('  [lbfgs] ABORTED, weights %s: %s' % (word, reason))
         return out
 
-    # any exception from here on aborts the polish with the weights restored
     try:
-        # 1. Score to beat (measured here if not given) and the fixed batch of training windows.
         out['val_before'] = _validate() if val_before is None else float(val_before)
 
         out['params_polished'] = sum(p.numel() for p in params)
@@ -219,28 +216,26 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                    effective_stride=batch.effective_stride)
 
         def _new_opt():
-            """A fresh L-BFGS optimizer with the spec's settings, strong-Wolfe line search."""
             return torch.optim.LBFGS(
                 params, lr=1.0, max_iter=INNER_ITER, history_size=HISTORY_SIZE,
                 tolerance_grad=TOL_GRAD, tolerance_change=TOL_CHANGE,
                 line_search_fn='strong_wolfe')
 
-        # 2. Determinism check: the strong-Wolfe line search compares the loss at several points, so evaluating it
-        #    twice must give the same value. Tried on the compiled rollout first if there is one, else eager.
+        # A line search needs repeatable evaluations. Probe the active rollout before taking a step.
         compiled_available = fit_sys.simulator._compiled is not None
 
         opt = _new_opt()
         closure = _make_closure(fit_sys, batch, opt, n_closure)
         ok, first, err = _probe_closure(closure, 'compiled' if compiled_available else 'eager')
 
-        # a failed compiled probe is retried once on the eager rollout
+        # Retry without compilation if the compiled rollout raises or returns unequal probe losses.
         force_eager = compiled_available and not ok
         if force_eager:
             print('  [lbfgs] falling back to the eager rollout (%s): the strong-Wolfe line search compares f at '
                   'several points, so it needs a loss that both runs and reproduces'
                   % ('the compiled rollout raised' if err is not None
                      else 'the compiled loss is not reproducible'))
-            # the failed attempt's optimizer and allocations go before the eager retry
+            # Release the first optimizer before allocating the eager retry.
             opt = closure = None
             if err is not None and _is_oom(err):
                 torch.cuda.empty_cache()
@@ -251,7 +246,6 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                 closure = _make_closure(fit_sys, batch, opt, n_closure)
                 ok, first, err = _probe_closure(closure, 'eager')
             out['deterministic'], out['used_compiled'] = ok, compiled_available and not force_eager
-            # not reproducible even eagerly: abort with the weights unchanged
             if not ok:
                 return _abort('the eager rollout raised (%s: %s)' % (type(err).__name__, err)
                               if err is not None else
@@ -260,18 +254,17 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                               False, 'unchanged')
 
             out['loss_first'] = first
-            # HEURISTIC: 1e-300 guards the printed ratio tol_change / |V| against V = 0
+            # Round the budget up to full optimizer calls, with at least one call.
+            n_outer = max(1, -(-spec.max_iter // max(1, INNER_ITER)))
+            # Avoid division by zero in the displayed tolerance-to-loss ratio.
             print('  [lbfgs] %d parameters in one group, m=%d, strong-Wolfe, '
                   'tol_grad=%.1e tol_change=%.1e (%.1e relative to the opening loss), '
                   'max %d iterations, %s rollout'
                   % (out['params_polished'], HISTORY_SIZE, TOL_GRAD,
                      TOL_CHANGE, TOL_CHANGE / max(abs(first), 1e-300),
-                     spec.max_iter, 'compiled' if out['used_compiled'] else 'eager'))
+                     n_outer * INNER_ITER, 'compiled' if out['used_compiled'] else 'eager'))
 
-            # 3. L-BFGS in blocks of inner_iter iterations, logged after each block, up to max_iter in total;
-            #    a block that stops early has met tol_grad or tol_change and ends the polish.
-            # number of blocks: ceil(max_iter / inner_iter)
-            n_outer = max(1, -(-spec.max_iter // max(1, INNER_ITER)))
+            # A call can stop on a tolerance or its evaluation limit; the optimizer does not report which.
             for _ in range(n_outer):
                 it_before, _ = _lbfgs_counts(opt, params)
                 opt.step(closure)
@@ -281,20 +274,19 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
                       % (out['n_iter'], done, INNER_ITER, n_closure[0],
                          time.time() - t0))
                 if done < INNER_ITER:
-                    out['reason'] = ('converged: L-BFGS stopped internally after %d of %d '
-                                     'iterations in this block (tol_grad=%.1e, tol_change=%.1e)'
-                                     % (done, INNER_ITER, TOL_GRAD, TOL_CHANGE))
+                    out['reason'] = ('L-BFGS stopped after %d of %d iterations in this call; '
+                                     'internal stopping condition not reported'
+                                     % (done, INNER_ITER))
                     break
             else:
-                out['reason'] = 'iteration cap %d reached' % spec.max_iter
+                out['reason'] = 'iteration cap %d reached' % (n_outer * INNER_ITER)
 
-            # the objective at the final weights: one forward pass over the batch, without gradient
+            # Measure the final loss explicitly: step() can return the loss from before its updates.
             with torch.no_grad():
                 out['loss_last'] = float(fit_sys.loss(*batch.args, **batch.kw))
             if not np.isfinite(out['loss_last']):
                 out['reason'] += ' | non-finite loss at the final point'
 
-        # validation score of the polished weights, compared in step 4
         out['ran'] = True
         out['val_after'] = _validate()
         out['wall_s'] = time.time() - t0
@@ -304,13 +296,12 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         failure = (_is_oom(e), 'CUDA out of memory' if _is_oom(e) else type(e).__name__, out['n_iter'],
                    'Lower lbfgs_windows.' if _is_oom(e) else str(e).splitlines()[0][:200] if str(e) else '')
     if failure is not None:
-        # handled after the except block, so the tensors of the failed step are released
+        # Leave the exception handler and release failed-step tensors before restoring parameters.
         batch = opt = closure = None
         out.update(ran=False, accepted=False, val_after=float('nan'))
         return _abort('%s after %d iterations in the polish; phase abandoned, weights restored. %s' % failure[1:],
                       failure[0], 'restored')
 
-    # 4. Keep the polished weights only if the loss is finite and the validation score dropped; else restore.
     out['accepted'], why = _acceptance(out, validation_measure)
     out['reason'] = '%s | %s' % (out['reason'], why)
 
