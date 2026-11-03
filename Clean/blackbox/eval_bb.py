@@ -16,7 +16,7 @@ from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
 from bb import GREY_BOX, data_cfg, load_records
 from gantry_dynamic.config import DATA_ROOT
-from gantry_dynamic.data import DATASETS, record_files, servo_sigma
+from gantry_dynamic.data import DATASETS, record_files, record_name, servo_sigma
 
 RUN_DIR = None     # run folder with result.json; the first command-line argument overrides it
 OUT_DIR = None     # output folder; None: <RUN_DIR>/evaluation; the second argument overrides it
@@ -73,7 +73,7 @@ def main(run, out):
     for split, (files, folder, folder_nf) in splits.items():
         recs = load_records(files, cfg, folder)
         preds = predict(model, recs)
-        names = np.array([os.path.basename(f).split('_')[0] for f in files])
+        names = np.array([record_name(f) for f in files])
         saved = dict(records=names, k0=k0, y=np.stack([y[k0:] for _, _, y in recs]),
                      r=np.stack([r[k0:] for _, r, _ in recs]), sigma_e=servo_sigma([y - r for _, r, y in recs], k0),
                      bb=np.stack([p[k0:] for p in preds]),

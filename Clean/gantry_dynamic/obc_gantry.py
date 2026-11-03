@@ -10,7 +10,6 @@ theta_frozen = theta_aux, E = the physical-row selector.
 __project_origin__ = "added"
 
 import copy
-import os
 import time
 from dataclasses import dataclass
 from typing import Sequence
@@ -18,13 +17,12 @@ from typing import Sequence
 import numpy as np
 import torch
 from torch import Tensor, nn
-from scipy.io import loadmat
 
 from model_augmentation.fit_systems.blocks import IdentifiableGantryStateBlock, Static_ANN_Block
 from model_augmentation.fit_systems.obc import OBCProjection, build_stacked_sensitivity
+from model_augmentation.systems.gantry_ss import P_INV_T
 
 from .config import RunConfig
-from .data import dataset_dir, record_at_fs_new, P_INV_T
 
 
 @dataclass
@@ -46,11 +44,10 @@ def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
     Returns:
         (N - 4, 3) qdot [m/s, rad/s, m/s].
     """
-    # THEORY: fourth-order central difference (Fornberg 1988)
     return (-q[4:] + 8.0 * q[3:-1] - 8.0 * q[1:-3] + q[:-4]) / (12.0 * ts)
 
 
-def build_reference_set(cfg: RunConfig, norm, n_a: int, files: Sequence[str],
+def build_reference_set(cfg: RunConfig, norm, n_a: int, records: Sequence,
                         verbose: bool = True) -> GantryReferenceSet:
     """OBC tuples of the training records.
 
@@ -61,7 +58,7 @@ def build_reference_set(cfg: RunConfig, norm, n_a: int, files: Sequence[str],
         cfg: run configuration.
         norm: normalisation.
         n_a: number of added states n_xbar.
-        files: training record file names.
+        records: the training records at fs_new (Datasets.train_list).
         verbose: print the tuple count.
     Returns:
         GantryReferenceSet: Z_step (N, 9, 1) and Z_field (N, 9 + n_xbar, 1), normalised.
@@ -74,12 +71,12 @@ def build_reference_set(cfg: RunConfig, norm, n_a: int, files: Sequence[str],
 
     # 1. Tuples per record, in physical units.
     xs, us = [], []
-    for f in files:
-        # one training record in float64, resampled as for training
-        d = loadmat(os.path.join(dataset_dir(cfg), f), squeeze_me=True)
-        u, y = (np.asarray(a, dtype=np.float64) for a in record_at_fs_new(d, cfg))
+    for record in records:
+        u, y = np.asarray(record.u, dtype=np.float64), np.asarray(record.y, dtype=np.float64)
         # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, at i = 2 .. N - 4 (the stencil gives qdot at 2 .. N - 3)
         q = y @ P_INV_T.T
+        # central differences on the zero-phase filtered positions, the method of Janot et al. (2019) for velocities
+        # from measured positions
         qd = fourth_order_central_difference(q, ts)
         k = np.arange(2, len(u) - 3)
         xs.append(np.hstack([q[k], qd[k - 2]])); us.append(u[k])
@@ -95,7 +92,7 @@ def build_reference_set(cfg: RunConfig, norm, n_a: int, files: Sequence[str],
         np.hstack([x_n, np.zeros((N, n_a)), u_n])).to(dt).unsqueeze(-1)
     reference = GantryReferenceSet(Z_step=Z_step, Z_field=Z_field)
     if verbose:
-        print('[obc] reference set: %d tuples from %d records' % (N, len(files)))
+        print('[obc] reference set: %d tuples from %d records' % (N, len(records)))
     return reference
 
 
@@ -241,7 +238,7 @@ def attach_obc(fit_sys, cfg: RunConfig, data, norm):
     """Attach the OBC tuples, the correction f_obc^n and the projection to a model."""
     phy = fit_sys.hfn.connected_blocks[0]
     nx = fit_sys.hfn.nx
-    reference = build_reference_set(cfg, norm, n_a=nx - cfg.nx_phys, files=data.train_files)
+    reference = build_reference_set(cfg, norm, n_a=nx - cfg.nx_phys, records=data.train_list)
     correction = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, dtype=cfg.dtype_pt)
     correction = correction.to(next(phy.parameters()).device)
     baseline64 = make_float64_block(phy)

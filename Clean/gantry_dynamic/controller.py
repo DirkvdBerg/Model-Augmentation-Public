@@ -1,9 +1,7 @@
-"""The known controller K_fb: one K_1 per stage axis, tuned on the nominal baseline at the design Y, discretised by
-Tustin and gathered in the ControllerBank of the closed loop. Code names: Cfb = K_fb, W = w_b,
-Cnorm(s) = K_1,j(s) / kappa_j. THEORY tags cite the MATLAB of the data generator (Clean/data_generation/)."""
+"""The feedback controller K_fb of the closed loop: per actuator axis (X1, X2, Y) one controller K_1, tuned on the
+nominal baseline at a design Y and discretised with Tustin's method. The controller bank holds one K_fb per design
+used in the data."""
 __project_origin__ = "added"
-
-import os
 
 import numpy as np
 import torch
@@ -11,181 +9,153 @@ from scipy.linalg import block_diag
 from scipy.signal import cont2discrete, tf2ss
 
 from model_augmentation.fit_systems.closed_loop import ControllerBank, ClosedLoopSimulator, closed_loop_step
+from model_augmentation.systems import gantry_ss
 
 from .data import servo_sigma
 
-# torch.compile backend of the training rollout; the mode is cfg.compile_mode
-COMPILE_BACKEND = 'inductor'
+BANDWIDTH_HZ = 100.0                         # [Hz] bandwidth the controller is tuned to
+BANDWIDTH_RAD_S = 2 * np.pi * BANDWIDTH_HZ   # [rad/s]
 
-# controller design parameters: a fixed copy of theta^0, units as in gantry_ss (THEORY: tdg_config.m)
-mb, mh, m1, m2, Jb, Jh = 22.8, 10.1, 10.2, 10.7, 1.0, 0.05
-cg1, cg2, cy, cb1, cb2 = 14.5, 20.3, 10.0, 9.0, 9.0
-kb1, kb2, Lb, d = 1987.5, 1987.5, 0.725, 0.1
-
-FBW = 100.0             # [Hz] design bandwidth (THEORY: tdg_config.m)
-W = 2 * np.pi * FBW
-
-# stage-to-generalised transform P, damping and stiffness matrices (THEORY: getss.m)
-P = np.array([[1., 1., 0.], [Lb / 2, -Lb / 2, 0.], [0., 0., 1.]])
-C_DAMP = np.array([[cg1 + cg2, (cg1 - cg2) * Lb / 2, 0.],
-                   [(cg1 - cg2) * Lb / 2, cb1 + cb2 + (cg1 + cg2) * Lb ** 2 / 4, 0.],
-                   [0., 0., cy]])
-K_STIFF = np.array([[0., 0., 0.], [0., kb1 + kb2, 0.], [0., 0., 0.]])
+# the controller is designed on the nominal baseline: theta^0, P, K and C of gantry_ss
+P = gantry_ss.P.numpy()
+K_STIFF, C_DAMP = (m.numpy() for m in gantry_ss.damping_and_stiffness(
+    gantry_ss.kb1, gantry_ss.kb2, gantry_ss.cg1, gantry_ss.cg2, gantry_ss.cy, gantry_ss.cb1, gantry_ss.cb2,
+    gantry_ss.Lb))
 
 
-def mass_matrix_at(Y_op):
-    """Inertia matrix for the controller design.
-
-    M(Y_op) = [[m_Sigma + m_h, (L_b/2) m_Delta - m_h Y, 0], [., J_eff + m_h (d^2 + Y^2), -m_h d], [0, -m_h d, m_h]]
-    at the nominal parameters (THEORY: gtd_build_plant.m).
+def mass_matrix_at_fixed_y(Y_op):
+    """Mass matrix M(Y_op) of the nominal baseline in generalised coordinates (X, Theta, Y), with the payload held
+    at position Y_op along the cross-arm.
 
     Args:
-        Y_op: frozen head position Y [m].
+        Y_op: payload position Y along the cross-arm [m].
     Returns:
         (3, 3) M(Y_op).
     """
-    return np.array([
-        [m1 + m2 + mb + mh, (m1 - m2) * Lb / 2 - mh * Y_op, 0.],
-        [(m1 - m2) * Lb / 2 - mh * Y_op,
-         Jb + Jh + (m1 + m2) * Lb ** 2 / 4 + mh * d ** 2 + mh * Y_op ** 2, -mh * d],
-        [0., -mh * d, mh]])
+    return gantry_ss.inertia_matrix(Y_op, gantry_ss.m1, gantry_ss.m2, gantry_ss.mb, gantry_ss.mh, gantry_ss.Jb,
+                                    gantry_ss.Jh, gantry_ss.Lb, gantry_ss.d).numpy()
 
 
-def stage_frequency_response(Y_op, s):
-    """Plant frequency response for the controller tuning.
-
-    P^T G(s) P, G(s) = [I 0] (s I - A)^-1 B of the plant frozen at Y_op, from actuator force to actuator position
-    (THEORY: getss.m).
+def actuator_response_at_fixed_y(Y_op, s):
+    """Frequency response of the nominal baseline with the payload held at position Y_op along the cross-arm, from
+    the actuator forces (F_X1, F_X2, F_Y) to the actuator positions (X1, X2, Y).
 
     Args:
-        Y_op: frozen head position Y [m].
-        s: complex Laplace frequency [1/s].
+        Y_op: payload position Y along the cross-arm [m].
+        s: Laplace variable [rad/s].
     Returns:
         (3, 3) complex response [m/N].
     """
-    Minv = np.linalg.inv(mass_matrix_at(Y_op))
-    # A = [0 I; -R K -R C], B = [0; R], R = M(Y_op)^-1
-    A = np.block([[np.zeros((3, 3)), np.eye(3)], [-Minv @ K_STIFF, -Minv @ C_DAMP]])
+    Minv = np.linalg.inv(mass_matrix_at_fixed_y(Y_op))
+    # state space of M qddot + C qdot + K q = u in (q, qdot); P on the input and P^T on the output give the response
+    # between the actuator axes
+    A =np.block([[np.zeros((3, 3)), np.eye(3)], [-Minv @ K_STIFF, -Minv @ C_DAMP]])
     B = np.vstack([np.zeros((3, 3)), Minv])
     Cm = np.hstack([np.eye(3), np.zeros((3, 3))])
     return P.T @ (Cm @ np.linalg.solve(s * np.eye(6) - A, B)) @ P
 
 
-def normalized_controller_coefficients():
-    """Shape of the controller K_1.
-
-    Cnorm(s) = 10 w_b (s + w_b/6)(s + w_b/3) / (s (s + 3 w_b)(s + 10 w_b)), scaled per axis by kappa_j
-    (THEORY: ruleOfThumb.m).
+def controller_shape():
+    """K_1 before its per-axis gain: integral action (s + w_b/6)/s, a lead filter (s + w_b/3)/(s + 3 w_b) and a
+    low-pass 10 w_b/(s + 10 w_b), with w_b the bandwidth in rad/s.
 
     Returns:
         num (3,) and den (4,), coefficients in descending powers of s.
     """
-    num = 10 * W * np.polymul([1., W / 6], [1., W / 3])
-    den = np.polymul([1., 0.], np.polymul([1., 3 * W], [1., 10 * W]))
+    w_b = BANDWIDTH_RAD_S
+    num = 10 * w_b * np.polymul([1., w_b / 6], [1., w_b / 3])
+    den = np.polymul([1., 0.], np.polymul([1., 3 * w_b], [1., 10 * w_b]))
     return num, den
 
 
-def build_cfb_at(Y_op, ts):
-    """Per-axis controller K_1.
-
-    K_1,j(z) = kappa_j Cnorm(s) by Tustin at ts, kappa_j = 1 / |G_jj(j w_b) Cnorm(j w_b)|: unit open-loop gain at the
-    bandwidth on the nominal baseline at Y_op.
+def axis_controllers(Y_op, ts):
+    """The three per-axis controllers K_1 for the design payload position Y_op: the shape times a gain per axis that
+    sets the open-loop magnitude of that axis to 1 at the bandwidth, discretised with Tustin's method at ts.
 
     Args:
-        Y_op: design head position Y [m].
+        Y_op: design payload position Y along the cross-arm [m].
         ts: sample time T_s [s].
     Returns:
-        three (b, a) pairs, each (4,) in descending powers of z.
+        three (b, a) pairs: the numerator and denominator coefficients of each axis's K_1(z).
     """
-    # 1. Plant and controller shape at w_b.
-    sysw = stage_frequency_response(Y_op, 1j * W)
-    num, den = normalized_controller_coefficients()
-    cw = np.polyval(num, 1j * W) / np.polyval(den, 1j * W)
-    out = []
+    # 1. Plant and controller shape at the bandwidth.
+    plant_at_bandwidth = actuator_response_at_fixed_y(Y_op, 1j * BANDWIDTH_RAD_S)
+    num, den = controller_shape()
+    shape_at_bandwidth = np.polyval(num, 1j * BANDWIDTH_RAD_S) / np.polyval(den, 1j * BANDWIDTH_RAD_S)
+    axis_coefficients = []
     for j in range(3):
-        # 2. Gain kappa_j.
-        # THEORY: ruleOfThumb.m
-        kj = 1.0 / abs(sysw[j, j] * cw)
-        # 3. Tustin at ts.
-        b, a, _ = cont2discrete((kj * num, den), ts, method='bilinear')
-        out.append((np.asarray(b).ravel(), np.asarray(a).ravel()))
-    return out
+        # 2. Gain that sets this axis's open-loop magnitude to 1 at the bandwidth, tuned on the diagonal entry of the
+        # plant only
+        axis_gain = 1.0 / abs(plant_at_bandwidth[j, j] * shape_at_bandwidth)
+        # 3. Tustin (scipy's 'bilinear') at ts, the rule the data generator used for K_1; ZOH not compared
+        b, a, _ = cont2discrete((axis_gain * num, den), ts, method='bilinear')
+        axis_coefficients.append((np.asarray(b).ravel(), np.asarray(a).ravel()))
+    return axis_coefficients
 
 
 def controller_ss(Y_op, ts, gain=1.0):
-    """Controller K_fb as a state space.
-
-    K_fb(z) = gain diag(K_1,1(z), K_1,2(z), K_1,3(z)) as one block-diagonal (A_fb, B_fb, C_fb, D_fb), from the
-    position error r - y [m] to the feedback force [N] on the actuator axes.
+    """K_fb as one state space: the three per-axis controllers block diagonal, so the position error of each axis
+    drives only the force of that axis, times gain. Input the position error r - y [m], output the feedback force [N]
+    per actuator axis.
 
     Args:
-        Y_op: design head position Y [m].
+        Y_op: design payload position Y along the cross-arm [m].
         ts: sample time T_s [s].
-        gain: output scale.
+        gain: factor on the controller output; 1 for K_1, other values for a record generated with a scaled K_1.
     Returns:
-        A_fb (9, 9), B_fb (9, 3), C_fb (3, 9), D_fb (3, 3), physical.
+        A_fb (9, 9), B_fb (9, 3), C_fb (3, 9), D_fb (3, 3), in physical units.
     """
-    As, Bs, Cs, Ds = zip(*(tf2ss(b, a) for b, a in build_cfb_at(Y_op, ts)))
-    D = np.diag([Dj.ravel()[0] for Dj in Ds])
-    return block_diag(*As), block_diag(*Bs), gain * block_diag(*Cs), gain * D
+    As, Bs, Cs, Ds = zip(*(tf2ss(b, a) for b, a in axis_controllers(Y_op, ts)))
+    return block_diag(*As), block_diag(*Bs), gain * block_diag(*Cs), gain * block_diag(*Ds)
 
 
-def _stem(name):
-    """A record's file name without folder and .mat suffix."""
-    stem = os.path.basename(str(name))
-    return stem[:-4] if stem.endswith('.mat') else stem
-
-
-def controller_design(name, spec, use_gain=False):
-    """(design Y, gain) of a record's stored controller spec (data._controller_spec); use_gain admits a gain other
-    than 1."""
-    ctrl_name, design_y, gain, fbw_hz = spec
-    # 1e-9 Hz tolerance for a bandwidth stored as a MATLAB double
-    if abs(fbw_hz - FBW) >= 1e-9:
-        raise KeyError('record %r uses controller %s (gain %g, %g Hz), which the bank cannot build (it builds the '
-                       '%g Hz ruleOfThumb design at a design Y); leave the record out of training and validation'
-                       % (_stem(name), ctrl_name, gain, fbw_hz, FBW))
-    # 1e-12 tolerance for a gain stored as a MATLAB double
+def design_y_and_gain(name, spec, use_gain=False):
+    """Design Y and gain of a record's stored controller. Raises a ValueError for a bandwidth other than BANDWIDTH_HZ
+    or, without use_gain, a gain other than 1."""
+    controller_name, design_y, gain, bandwidth_hz = spec
+    # small tolerances, so stored values that differ only by rounding still match
+    if abs(bandwidth_hz - BANDWIDTH_HZ) >= 1e-9:
+        raise ValueError('record %r uses controller %s at %g Hz; the bank only builds the %g Hz design'
+                         % (name, controller_name, bandwidth_hz, BANDWIDTH_HZ))
     if abs(gain - 1.0) > 1e-12 and not use_gain:
-        raise KeyError('record %r was generated with %g x K1; use a caller that explicitly passes use_gain=True '
-                       'to build_controller_bank, or restrict this run to unit-gain records' % (_stem(name), gain))
+        raise ValueError('record %r uses %g x K_1; a gain other than 1 is only built with use_gain=True'
+                         % (name, gain))
     return design_y, gain
 
 
-def build_controller_bank(record_names, controllers, ts, ystd, std_u, dtype=torch.float32, use_gain=False):
-    """Controller bank of a data set.
-
-    One K_fb per distinct design (normalised in ControllerBank) and the bank row of each record.
+def build_controller_bank(record_names, controllers, ts, ystd, std_u, dtype, use_gain=False):
+    """ControllerBank with the stored controller of each record. Records with the same controller share one entry;
+    rows gives each record's entry.
 
     Args:
         record_names: record file names.
         controllers: record file name -> stored controller spec (Datasets.controllers).
         ts: sample time T_s [s].
-        ystd: (3,) sigma_y [m].
-        std_u: (3, 1) or (3,) sigma_u [N].
+        ystd: (3,) standard deviation of the measured positions [m].
+        std_u: (3, 1) or (3,) standard deviation of the actuator forces [N].
         dtype: model dtype.
         use_gain: allow controllers with a stored gain other than 1.
     Returns:
-        bank, rows (list of n_records ints), and the distinct design keys.
+        bank, rows (index of each record's K_fb), and the distinct (design Y, gain) pairs.
     """
-    keys = [controller_design(n, controllers[n], use_gain) for n in record_names]
-    uniq = sorted(set(keys))
-    rows = [uniq.index(k) for k in keys]
-    mats = [controller_ss(Y_op, float(ts), g) for Y_op, g in uniq]
-    A, B, C, D = (np.stack([np.asarray(m[k], float) for m in mats]) for k in range(4))
+    designs = [design_y_and_gain(name, controllers[name], use_gain) for name in record_names]
+    distinct_designs = sorted(set(designs))
+    rows = [distinct_designs.index(design) for design in designs]
+    state_spaces = [controller_ss(Y_op, float(ts), gain) for Y_op, gain in distinct_designs]
+    A, B, C, D = (np.stack([np.asarray(state_space[k], float) for state_space in state_spaces]) for k in range(4))
     bank = ControllerBank(A, B, C, D, ystd=ystd, std_u=std_u, dtype=dtype)
-    return bank, rows, (uniq if use_gain else [y for y, _ in uniq])
+    return bank, rows, distinct_designs
 
 
-def build_closed_loop(fs, norm, cfg, *, train_files, val_files, controllers, e_train, e_val, verbose=True):
+def build_closed_loop(model, norm, cfg, *, train_files, val_files, controllers, e_train, e_val, verbose=True):
     """Closed-loop simulator of training and validation.
 
-    The bank of K_fb, the loss weights W_r = diag(sigma_y / sigma_e,r) of the training records and sigma_e of the
-    validation records.
+    It holds the bank of K_fb, the loss weight per training record and channel (sigma_y / sigma_e) and sigma_e of
+    the validation records.
 
     Args:
-        fs: the augmented model.
-        norm: normalisation (data.Norm).
+        model: the augmented model.
+        norm: means and standard deviations of the training records (Norm).
         cfg: run configuration.
         train_files, val_files: record file names.
         controllers: record file name -> stored controller spec (Datasets.controllers).
@@ -195,36 +165,31 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, controllers, e_t
         ClosedLoopSimulator.
     """
     # 1. Controller bank over the training and validation records.
-    names = [_stem(f) for f in list(train_files) + list(val_files)]
-    if len(set(names)) != len(names):
-        raise ValueError('records %s appear more than once in train_files and val_files; give each record to '
-                         'exactly one split' % [n for n in names if names.count(n) > 1])
-
-    bank, rows, y_ops = build_controller_bank(
+    bank, rows, distinct_designs = build_controller_bank(
         list(train_files) + list(val_files), controllers, cfg.ts_new, ystd=norm.ystd, std_u=norm.std_u,
         dtype=cfg.dtype_pt)
-    n_tr = len(train_files)
-    train_rows, val_rows = rows[:n_tr], rows[n_tr:]
+    n_train = len(train_files)
+    train_rows, val_rows = rows[:n_train], rows[n_train:]
 
     if verbose:
-        print('[closed loop] one bank over %d records, %d distinct controllers, Y_op %s'
-              % (len(names), bank.M_state.shape[0], y_ops))
-        print('[closed loop] stepped at ts = %g s (%d Hz), nc = %d states'
+        print('[closed loop] one bank over %d records, %d distinct controllers, (design Y, gain) %s'
+              % (len(rows), bank.M_state.shape[0], distinct_designs))
+        print('[closed loop] stepped at ts = %g s (%d Hz), %d controller states'
               % (cfg.ts_new, round(1 / cfg.ts_new), bank.nc))
-    # 2. Compiled step.
-    # compiled for the training rollouts only; validation runs eager
+    # 2. Compiled closed-loop step (residual form, closed_loop.py).
+    # compiled for the training rollouts only; validation runs eager: deepSI moves the model to the CPU for every
+    # validation, where a compiled step would recompile each time
     compiled = None
     if cfg.compile_mode is not None:
-        compiled = torch.compile(closed_loop_step(fs.hfn, bank), backend=COMPILE_BACKEND, mode=cfg.compile_mode,
-                                 fullgraph=True)
+        compiled = torch.compile(closed_loop_step(model.hfn, bank), mode=cfg.compile_mode, fullgraph=True)
         if verbose:
-            print('[closed loop] training rollout COMPILED: backend=%s mode=%s fullgraph=True'
-                  % (COMPILE_BACKEND, cfg.compile_mode))
+            print('[closed loop] training rollout COMPILED: mode=%s fullgraph=True' % cfg.compile_mode)
     # 3. Loss and validation scales.
-    # k0 = n + 1, the first sample with a full encoder window
-    k0 = max(fs.na, fs.nb)
+    # first scored sample: the encoder uses the first max(na, nb) samples
+    k0 = max(model.na, model.nb)
     val_sigma_e = servo_sigma(e_val, k0)
-    # loss weight W_r = diag(sigma_y / sigma_e,r) per training record
+    # loss weight per training record and channel: sigma_y / sigma_e, so the loss is relative to each record's servo
+    # error
     train_weights = np.asarray(norm.ystd, np.float64).ravel() / servo_sigma(e_train, k0)
     return ClosedLoopSimulator(bank, train_rows, val_rows, compiled=compiled,
                                train_weights=train_weights, val_sigma_e=val_sigma_e)

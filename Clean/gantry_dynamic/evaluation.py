@@ -18,10 +18,11 @@ from matplotlib.figure import Figure
 
 from model_augmentation.fit_systems.blocks import Static_ANN_Block
 from model_augmentation.fit_systems.closed_loop import closed_loop_free_run_rms_batch
+from model_augmentation.systems.gantry_ss import P_INV_T
 
 from .config import RunConfig, DATA_ROOT
 from .controller import build_controller_bank
-from .data import load_datasets, compute_normalization, dataset_dir, servo_sigma, load_record, P_INV_T
+from .data import load_datasets, compute_normalization, dataset_dir, servo_sigma, load_record, record_name
 from .model import build_model
 from .training import load_checkpoint
 
@@ -273,7 +274,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
                 [load_record(twins[f], cfg, folder=cfg.data_root)[1] for f in split_files])
         preds, res = _split_scores(models, sdl, e_list, e_nf, bank, rows[offset:offset + len(sdl)], k0)
         offset += len(sdl)
-        records = [os.path.basename(f).split('_')[0] for f in split_files]
+        records = [record_name(f) for f in split_files]
         results[split] = dict(res, records=records)
         refs = [np.asarray(sd.y) - e for sd, e in zip(sdl, e_list)]
         # t = 0 at the first sample kept after the edge trim

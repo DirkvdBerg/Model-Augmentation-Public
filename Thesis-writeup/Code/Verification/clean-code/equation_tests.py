@@ -102,7 +102,7 @@ def test_B_transform():
 @case('B_mass')
 def test_B_mass():
     b=block(); _,Y,M,_,_=matrices(b)
-    for y,expected in zip(Y,M): close(ctl.mass_matrix_at(float(y)),expected,rtol=2e-7,atol=2e-7)
+    for y,expected in zip(Y,M): close(ctl.mass_matrix_at_fixed_y(float(y)),expected,rtol=2e-7,atol=2e-7)
 
 @case('B_damping')
 def test_B_damping():
@@ -116,7 +116,7 @@ def test_B_stiffness(): test_B_damping()
 def test_B_mass_split():
     b=block(); c,Y,M,_,_=matrices(b); h,m,md,j,d=c[5:]; L=b.Lb
     M0=torch.stack((torch.stack((m+h,L/2*md,h*0)),torch.stack((L/2*md,j+h*d*d,-h*d)),torch.stack((h*0,-h*d,h))))
-    M1,M2=b._build_M1M2(h)
+    M1,M2=gs.inertia_parts(h)
     expected1=torch.zeros(3,3,dtype=DT); expected1[0,1]=expected1[1,0]=-h
     expected2=torch.zeros(3,3,dtype=DT); expected2[1,1]=h
     close(M1,expected1);close(M2,expected2)
@@ -411,14 +411,12 @@ def test_O_field():
 
 @case('O_tuple_position')
 def test_O_tuple_position():
-    # Supply synthetic records in memory, without opening any data file.
-    from unittest.mock import patch
+    # A synthetic record in memory (the reference set reads the loaded records' u and y).
     from gantry_dynamic import obc_gantry as og
     y=rand(15,3).numpy();u=rand(15,3).numpy()
     norm=NS(x_mean=rand(6).numpy(),std_x=np.linspace(.8,1.3,6),u_mean=rand(3).numpy(),std_u=np.linspace(.7,1.2,3))
     cfg=NS(ts_new=.03,dtype_pt=DT)
-    with patch.object(og,'loadmat',return_value={}),patch.object(og,'dataset_dir',return_value='synthetic'),patch.object(og,'record_at_fs_new',return_value=(u,y)):
-        ref=og.build_reference_set(cfg,norm,2,['memory'],verbose=False)
+    ref=og.build_reference_set(cfg,norm,2,[NS(u=u,y=y)],verbose=False)
     P=gs.P.double().numpy();q=np.linalg.solve(P.T,y.T).T
     v=np.stack([(-q[i+2]+8*q[i+1]-8*q[i-1]+q[i-2])/(12*.03) for i in range(2,13)])
     k=np.arange(2,12);x=np.hstack((q[k],v[k-2]))  # K15: no successor states
@@ -443,7 +441,7 @@ def test_O_physical_step():
 def test_L_blocks():
     b=block();m=b.pass_mats();K,C,A,h,alpha,beta,gamma,N0,N1,N2=m
     R=torch.linalg.inv(torch.tensor([[float(alpha),float(beta),0],[float(beta),float(gamma+h*b.params_init[13]**2),float(-h*b.params_init[13])],[0,float(-h*b.params_init[13]),float(h)]],dtype=DT))
-    M1,M2=b._build_M1M2(h);Z=torch.zeros(3,3,dtype=DT);I=torch.eye(3,dtype=DT)
+    M1,M2=gs.inertia_parts(h);Z=torch.zeros(3,3,dtype=DT);I=torch.eye(3,dtype=DT)
     expected=torch.cat((torch.cat((Z,I,Z,Z,Z),1),torch.cat((-R@K,-R@C,-R@M1,-R@M2,R),1)),0)
     close(A,expected)
 
@@ -483,16 +481,17 @@ def test_S_metric():
 
 @case('S_controller')
 def test_S_controller():
-    num,den=ctl.normalized_controller_coefficients();s=rand(4).numpy()*1j*100
-    expected=10*ctl.W*(s+ctl.W/6)*(s+ctl.W/3)/(s*(s+3*ctl.W)*(s+10*ctl.W))
+    W=ctl.BANDWIDTH_RAD_S
+    num,den=ctl.controller_shape();s=rand(4).numpy()*1j*100
+    expected=10*W*(s+W/6)*(s+W/3)/(s*(s+3*W)*(s+10*W))
     close(np.polyval(num,s)/np.polyval(den,s),expected)
     Y=.07;ts=.00025
-    G=ctl.P.T@np.linalg.solve((1j*ctl.W)**2*ctl.mass_matrix_at(Y)+1j*ctl.W*ctl.C_DAMP+ctl.K_STIFF,ctl.P)
-    close(ctl.stage_frequency_response(Y,1j*ctl.W),G)
+    G=ctl.P.T@np.linalg.solve((1j*W)**2*ctl.mass_matrix_at_fixed_y(Y)+1j*W*ctl.C_DAMP+ctl.K_STIFF,ctl.P)
+    close(ctl.actuator_response_at_fixed_y(Y,1j*W),G)
     A,B,C,D=ctl.controller_ss(Y,ts)
     z=np.exp(1j*.17);sb=2/ts*(z-1)/(z+1)
-    shape=lambda s:10*ctl.W*(s+ctl.W/6)*(s+ctl.W/3)/(s*(s+3*ctl.W)*(s+10*ctl.W))
-    gains=1/np.abs(np.diag(G)*shape(1j*ctl.W))
+    shape=lambda s:10*W*(s+W/6)*(s+W/3)/(s*(s+3*W)*(s+10*W))
+    gains=1/np.abs(np.diag(G)*shape(1j*W))
     # Expanded discrete polynomial coefficients followed by tf2ss are less
     # well conditioned than the factored continuous formula at mapped s.
     close(C@np.linalg.solve(z*np.eye(len(A))-A,B)+D,np.diag(gains*shape(sb)),rtol=2e-9,atol=1e-11)

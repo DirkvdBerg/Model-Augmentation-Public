@@ -369,10 +369,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         self.register_buffer("Lb", gantry_ss.Lb.clone())
 
     def _build_KC(self, p: Tensor):
-        """Damping and stiffness matrices.
-
-        K = diag(0, k_b,Sigma, 0); C = [[c_g1 + c_g2, (L_b/2)(c_g1 - c_g2), 0], [(L_b/2)(c_g1 - c_g2),
-        c_b,Sigma + (L_b^2/4)(c_g1 + c_g2), 0], [0, 0, c_y]]. The joint pairs enter only through their sums.
+        """Stiffness K and damping C of the raw parameters p, as built in gantry_ss.damping_and_stiffness.
 
         Args:
             p: (14,) raw parameters theta.
@@ -381,47 +378,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         """
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          _, _, _, _, _, _, _) = p
-        z = p.new_zeros(())
-        Lb = self.Lb
-        kb_sum, cb_sum = kb1 + kb2, cb1 + cb2
-        # K = diag(0, k_b,Sigma, 0)
-        K = torch.stack([
-            torch.stack([z, z,      z]),
-            torch.stack([z, kb_sum, z]),
-            torch.stack([z, z,      z]),
-        ])
-        C = torch.stack([
-            torch.stack([cg1 + cg2,            (cg1 - cg2) * Lb / 2,                z]),
-            torch.stack([(cg1 - cg2) * Lb / 2, cb_sum + (cg1 + cg2) * Lb ** 2 / 4,  z]),
-            torch.stack([z,                    z,                                   cy]),
-        ])
-        return K, C
-
-    @staticmethod
-    def _build_M1M2(mh: Tensor):
-        """Y-dependent parts of the inertia matrix.
-
-        M(Y) = M_0 + Y M_1 + Y^2 M_2: M_1 = -m_h (e1 e2^T + e2 e1^T), M_2 = m_h e2 e2^T.
-
-        Args:
-            mh: head mass m_h (scalar tensor).
-        Returns:
-            M_1 and M_2, each (3, 3).
-        """
-        z = mh.new_zeros(())
-        # M_1 = -m_h (e1 e2^T + e2 e1^T)
-        M1 = torch.stack([
-            torch.stack([z,   -mh,  z]),
-            torch.stack([-mh,  z,   z]),
-            torch.stack([z,    z,   z]),
-        ])
-        # M_2 = m_h e2 e2^T
-        M2 = torch.stack([
-            torch.stack([z,   z,   z]),
-            torch.stack([z,   mh,  z]),
-            torch.stack([z,   z,   z]),
-        ])
-        return M1, M2
+        return gantry_ss.damping_and_stiffness(kb1, kb2, cg1, cg2, cy, cb1, cb2, self.Lb)
 
     def _mats_from_raw(self, p: Tensor):
         """Baseline matrices of one objective.
@@ -440,7 +397,7 @@ class _TrainableGantryStateBlock(GantryStateBlock):
             m1, m2, mb, mh, Jb, Jh, self.Lb, d)
         # d0 = det M_0 = m_h (alpha gamma - beta^2), so M_0^-1 = N0 / d0
         d0 = mh * (alpha * gamma_ - beta ** 2)
-        M1, M2 = self._build_M1M2(mh)
+        M1, M2 = gantry_ss.inertia_parts(mh)
         K, C = self._build_KC(p)
         _, _, _, A_combined = gantry_ss.build_G_matrix_entries(N0, d0, M1, M2, K, C)
         return (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
@@ -527,10 +484,11 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         """
         (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = raw
         Lb = torch.as_tensor(Lb, dtype=raw.dtype, device=raw.device)
+        _, _, J_eff = gantry_ss.inertia_constants(m1, m2, mb, mh, Jb, Jh, Lb)
         return torch.stack([
             kb1 + kb2, cg1, cg2, cy, cb1 + cb2, mh,
             m1 + m2 + mb, m1 - m2,
-            Jb + Jh + (m1 + m2) * Lb ** 2 / 4, d,
+            J_eff, d,
         ])
 
     @classmethod

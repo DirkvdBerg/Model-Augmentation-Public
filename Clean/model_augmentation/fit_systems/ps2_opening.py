@@ -10,6 +10,8 @@ import numpy as np
 import torch
 from torch import nn
 
+from gantry_dynamic.data import record_name
+
 
 @dataclass(frozen=True)
 class PS2Spec:
@@ -74,7 +76,7 @@ class PS2Opening:
         for sd in data.train_list:
             sdn = fit_sys.norm.transform(sd)
             self.records.append((np.asarray(sdn.u), np.asarray(sdn.y)))
-        self.names = [os.path.splitext(os.path.basename(str(f)))[0].split('_')[0] for f in data.train_files]
+        self.names = [record_name(f) for f in data.train_files]
         self.spec, self.ctrl_rows = spec, list(fit_sys.simulator.train_ctrl_rows)
         self.n_xb, self.n_a, self.width = n_xb, n_a, width
         self.fit_ix, self.cal_ix = calibration_split(self.names)

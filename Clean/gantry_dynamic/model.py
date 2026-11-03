@@ -15,9 +15,9 @@ from model_augmentation.fit_systems.blocks import IdentifiableGantryStateBlock, 
 from model_augmentation.fit_systems.pre_encoder import AugmentedEncoder
 from model_augmentation.fit_systems.closed_loop import closed_loop_rollout, closed_loop_step
 from model_augmentation.systems import gantry_ss
+from model_augmentation.systems.gantry_ss import P_INV_T
 
 from .config import RunConfig
-from .data import P_INV_T
 from .obc_gantry import attach_obc
 
 # rows of the physical state x_tilde^n in the model state x_hat^n

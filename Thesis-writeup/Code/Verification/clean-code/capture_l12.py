@@ -102,7 +102,7 @@ if MAIN:
 elif fit_sys.obc is not None:
     # K15: the clean model keeps no reference set; the tuples are rebuilt here as attach_obc builds them
     from gantry_dynamic.obc_gantry import build_reference_set
-    ref = build_reference_set(cfg, norm, n_a=fit_sys.hfn.nx - cfg.nx_phys, files=data.train_files,
+    ref = build_reference_set(cfg, norm, n_a=fit_sys.hfn.nx - cfg.nx_phys, records=data.train_list,
                               verbose=False)
 else:
     ref = None

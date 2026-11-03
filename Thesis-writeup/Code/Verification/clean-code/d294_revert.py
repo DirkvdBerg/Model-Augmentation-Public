@@ -5,11 +5,11 @@
     python -u d294_revert.py status [--expect final|reverted]
 
 Four whole-line swaps in two files, each line matched exactly once, so the line numbers (coverage) stay the same:
-theta^0 and P in float32 (gantry_ss.py); P imported again, P_INV_T the float64 inverse of the float32 P (Clean/
-before D-294, the inverse of mainline model.py and obc_gantry.py); q in compute_normalization from the float32
-inverse, as mainline data.py (MM16 reverted). The reverted tree is what the bitwise comparators prove against
-mainline; compare_d294.py proves that final and reverted differ in these lines only. Prints the state and the
-SHA256 of both files; a tree that is neither final nor reverted is 'mixed' and refused.
+theta^0 and P in float32 and P_INV_T the float64 inverse of the float32 P (gantry_ss.py; Clean/ before D-294,
+the inverse of mainline model.py and obc_gantry.py); P imported into data.py, whose compute_normalization takes q
+from the float32 inverse, as mainline data.py (MM16 reverted). The reverted tree is what the bitwise comparators
+prove against mainline; compare_d294.py proves that final and reverted differ in these lines only. Prints the
+state and the SHA256 of both files; a tree that is neither final nor reverted is 'mixed' and refused.
 """
 import argparse
 import hashlib
@@ -23,12 +23,12 @@ SWAPS = (
     ('model_augmentation/systems/gantry_ss.py',
      '_D = torch.float64',
      '_D = torch.float32'),
-    ('gantry_dynamic/data.py',
-     'from model_augmentation.systems.gantry_ss import Cd, Dd, Lb',
-     'from model_augmentation.systems.gantry_ss import Cd, Dd, Lb, P'),
-    ('gantry_dynamic/data.py',
+    ('model_augmentation/systems/gantry_ss.py',
      'P_INV_T = np.array([[0.5, 0.5, 0.0], [1 / float(Lb), -1 / float(Lb), 0.0], [0.0, 0.0, 1.0]])',
      'P_INV_T = np.linalg.inv(P.detach().cpu().numpy().astype(np.float64).T)'),
+    ('gantry_dynamic/data.py',
+     'from model_augmentation.systems.gantry_ss import Cd, Dd, P_INV_T',
+     'from model_augmentation.systems.gantry_ss import Cd, Dd, P_INV_T, P'),
     ('gantry_dynamic/data.py',
      '        q = record.y @ P_INV_T.T',
      '        q = (np.linalg.inv(P.numpy().T).astype(cfg.dtype_np) @ record.y.T).T'),

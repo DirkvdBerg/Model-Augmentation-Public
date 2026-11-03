@@ -2,25 +2,26 @@
 Code names: alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma = J_eff."""
 __project_origin__ = "added"
 
+import numpy as np
 import torch
 
 # float64, so theta^0 equals the values of the data generator (data_generation/tdg_config.m) exactly
 _D = torch.float64
 
 # nominal parameters theta^0 (THEORY: Garcia-Herreros et al. Table I)
-mb  = torch.tensor(22.8,   dtype=_D)  # [kg] beam mass
-mh  = torch.tensor(10.1,   dtype=_D)  # [kg] head mass
+mb  = torch.tensor(22.8,   dtype=_D)  # [kg] cross-arm mass
+mh  = torch.tensor(10.1,   dtype=_D)  # [kg] payload mass
 m1  = torch.tensor(10.2,   dtype=_D)  # [kg] X1 carriage mass
 m2  = torch.tensor(10.7,   dtype=_D)  # [kg] X2 carriage mass
 
-Jb  = torch.tensor(1.0,    dtype=_D)  # [kg m^2] beam inertia about the Theta axis
-Jh  = torch.tensor(0.05,   dtype=_D)  # [kg m^2] head inertia about the Theta axis
+Jb  = torch.tensor(1.0,    dtype=_D)  # [kg m^2] cross-arm inertia about the Theta axis
+Jh  = torch.tensor(0.05,   dtype=_D)  # [kg m^2] payload inertia about the Theta axis
 
 cg1 = torch.tensor(14.5,   dtype=_D)  # [N s/m] guide damping of the X1 carriage
 cg2 = torch.tensor(20.3,   dtype=_D)  # [N s/m] guide damping of the X2 carriage
-cy  = torch.tensor(10.0,   dtype=_D)  # [N s/m] guide damping of the head along Y
+cy  = torch.tensor(10.0,   dtype=_D)  # [N s/m] guide damping of the payload along Y
 
-# the two beam-carriage joints; only the sums enter the model
+# the two cross-arm-carriage joints; only the sums enter the model
 cb1 = torch.tensor(9.0,    dtype=_D)  # [N m s/rad] rotational damping, joint 1
 cb2 = torch.tensor(9.0,    dtype=_D)  # [N m s/rad] rotational damping, joint 2
 
@@ -28,7 +29,7 @@ kb1 = torch.tensor(1987.5, dtype=_D)  # [N m/rad] torsional stiffness, joint 1
 kb2 = torch.tensor(1987.5, dtype=_D)  # [N m/rad] torsional stiffness, joint 2
 
 Lb  = torch.tensor(0.725,  dtype=_D)  # [m] distance between the X1 and X2 actuators
-d   = torch.tensor(0.1,    dtype=_D)  # [m] offset of the head from the beam axis
+d   = torch.tensor(0.1,    dtype=_D)  # [m] offset of the payload from the cross-arm axis
 
 # q = P^-T q_act and u = P u_act; q_act = (X1, X2, Y), u_act = (F_X1, F_X2, F_Y), u = (F_X, torque on Theta, F_Y)
 P = torch.zeros(3, 3, dtype=_D)
@@ -37,12 +38,102 @@ P[0, 1] = 1.0
 P[1, 0] = Lb / 2
 P[1, 1] = -Lb / 2
 P[2, 2] = 1.0
+# P^-T written out: X = (X1 + X2)/2, Theta = (X1 - X2)/L_b, Y = Y
+P_INV_T = np.array([[0.5, 0.5, 0.0], [1 / float(Lb), -1 / float(Lb), 0.0], [0.0, 0.0, 1.0]])
 
 # output map y_hat = Cd x_tilde = P^T q, D = 0
 Cd = torch.zeros(3, 6, dtype=_D)
 Cd[:, :3] = P.T
 
 Dd = torch.zeros(3, 3, dtype=_D)
+
+
+def damping_and_stiffness(kb1, kb2, cg1, cg2, cy, cb1, cb2, Lb):
+    """Stiffness K and damping C in generalised coordinates (X, Theta, Y); the joint pairs enter only through their
+    sums.
+
+    Args:
+        kb1, kb2: torsional stiffness of the joints [N m/rad] (scalar tensors).
+        cg1, cg2, cy: guide damping of the X1 and X2 carriages and of the payload along Y [N s/m].
+        cb1, cb2: rotational damping of the joints [N m s/rad].
+        Lb: distance between the X1 and X2 actuators [m].
+    Returns:
+        K and C, each (3, 3).
+    """
+    z = kb1.new_zeros(())
+    kb_sum, cb_sum = kb1 + kb2, cb1 + cb2
+    K = torch.stack([
+        torch.stack([z, z,      z]),
+        torch.stack([z, kb_sum, z]),
+        torch.stack([z, z,      z]),
+    ])
+    C = torch.stack([
+        torch.stack([cg1 + cg2,            (cg1 - cg2) * Lb / 2,                z]),
+        torch.stack([(cg1 - cg2) * Lb / 2, cb_sum + (cg1 + cg2) * Lb ** 2 / 4,  z]),
+        torch.stack([z,                    z,                                   cy]),
+    ])
+    return K, C
+
+
+def inertia_constants(m1, m2, mb, mh, Jb, Jh, Lb):
+    """The three mass combinations of the inertia matrix: alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta and
+    gamma = J_eff.
+
+    Args:
+        m1, m2, mb, mh: masses of the X1 and X2 carriages, the cross-arm and the payload [kg] (scalar tensors).
+        Jb, Jh: inertia of the cross-arm and the payload about the Theta axis [kg m^2].
+        Lb: distance between the X1 and X2 actuators [m].
+    Returns:
+        alpha [kg], beta [kg m], gamma [kg m^2].
+    """
+    alpha = m1 + m2 + mb + mh
+    beta = (m1 - m2) * Lb / 2
+    gamma = Jb + Jh + (m1 + m2) * Lb**2 / 4
+    return alpha, beta, gamma
+
+
+def inertia_parts(mh):
+    """The parts of the inertia matrix that change with the payload position, M(Y) = M_0 + Y M_1 + Y^2 M_2.
+
+    Args:
+        mh: payload mass m_h [kg] (scalar tensor).
+    Returns:
+        M_1 and M_2, each (3, 3).
+    """
+    z = mh.new_zeros(())
+    M1 = torch.stack([
+        torch.stack([z,   -mh,  z]),
+        torch.stack([-mh,  z,   z]),
+        torch.stack([z,    z,   z]),
+    ])
+    M2 = torch.stack([
+        torch.stack([z,   z,   z]),
+        torch.stack([z,   mh,  z]),
+        torch.stack([z,   z,   z]),
+    ])
+    return M1, M2
+
+
+def inertia_matrix(Y, m1, m2, mb, mh, Jb, Jh, Lb, d):
+    """Inertia matrix M(Y) = M_0 + Y M_1 + Y^2 M_2 in generalised coordinates (X, Theta, Y), with the payload at Y.
+
+    Args:
+        Y: payload position along the cross-arm [m].
+        m1, m2, mb, mh, Jb, Jh, Lb: as in inertia_constants (scalar tensors).
+        d: offset of the payload from the cross-arm axis [m].
+    Returns:
+        (3, 3) M(Y).
+    """
+    alpha, beta, gamma = inertia_constants(m1, m2, mb, mh, Jb, Jh, Lb)
+    z = mh.new_zeros(())
+    M0 = torch.stack([
+        torch.stack([alpha, beta,               z]),
+        torch.stack([beta,  gamma + mh * d**2,  -mh * d]),
+        torch.stack([z,     -mh * d,            mh]),
+    ])
+    M1, M2 = inertia_parts(mh)
+    return M0 + Y * M1 + Y**2 * M2
+
 
 def build_poly_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_, d_):
     """Rational inverse of the inertia matrix.
@@ -57,10 +148,8 @@ def build_poly_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_, d_):
     Returns:
         alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma = J_eff (scalars) and N0, N1, N2 (3, 3), physical.
     """
-    # M(Y) = [[alpha, beta - m_h Y, 0], [beta - m_h Y, gamma + m_h (d^2 + Y^2), -m_h d], [0, -m_h d, m_h]]
-    alpha = m1_ + m2_ + mb_ + mh_
-    beta  = (m1_ - m2_) * Lb_ / 2
-    gamma = Jb_ + Jh_ + (m1_ + m2_) * Lb_**2 / 4
+    # the adjugate of M(Y) as built in inertia_matrix
+    alpha, beta, gamma = inertia_constants(m1_, m2_, mb_, mh_, Jb_, Jh_, Lb_)
 
     z = torch.zeros((), dtype=m1_.dtype, device=m1_.device)
 
