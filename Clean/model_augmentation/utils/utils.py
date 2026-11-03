@@ -1,47 +1,45 @@
-"""Small helpers: the @added marker, tensor conversion and the selection and expansion matrices."""
-# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
-# commit 8200923 (model_augmentation/__init__.py)
+"""Project attribution marker, tensor conversion and signal selection and expansion matrices."""
+# CHANGED: removed helpers unused by the thesis path; original: Model-Augmentation-Public-main
+# CHANGED: algebraic-loop detection is handled in Interconnect.init_forward.
 import torch
 import numpy as np
 
 
 def added(obj):
-    """Mark a class or function as added by this project, not part of Jan's framework (grep "@added")."""
+    """Project attribution marker; returns the class or function unchanged."""
     return obj
 
 
 def to_tensor(input) -> torch.Tensor:
-    """input as a tensor; a tensor is returned as it is."""
-    # CHANGED: None is no longer passed through (no caller passes it)
+    """Convert to a tensor; existing tensors are returned unchanged."""
+    # CHANGED: removed unused None handling; keep PyTorch's conversion errors instead of wrapping them.
     return input if isinstance(input, torch.Tensor) else torch.Tensor(input)
 
 
+# CHANGED: local matrix names match the notation: E for expansion, S for selection.
 def expansion_matrix(ix, n):
-    """Routing matrix E.
-
-    E (n, len(ix)) with E[ix[j], j] = 1: puts a len(ix) signal on the rows ix of an n signal.
+    """E places values at rows ix, with zeros elsewhere: E[ix[j], j] = 1.
 
     Args:
-        ix: target rows.
-        n: size of the target signal.
+        ix: destination row indices, one per input value.
+        n: destination signal length.
     Returns:
-        (n, len(ix)) E.
+        (n, len(ix)) expansion matrix E.
     """
-    S = np.zeros((n, len(ix)))
-    S[ix, np.arange(len(ix)), ] = 1
-    return torch.Tensor(S)
+    E = np.zeros((n, len(ix)))
+    E[ix, np.arange(len(ix)), ] = 1
+    return torch.Tensor(E)
+
 
 def selection_matrix(ix, n):
-    """Selection matrix S.
-
-    S (len(ix), n) with S[j, ix[j]] = 1: selects the rows ix of an n signal.
+    """S selects entries from a signal: S @ x = x[ix], with S[j, ix[j]] = 1.
 
     Args:
-        ix: selected rows.
-        n: size of the source signal.
+        ix: source indices, in the requested order.
+        n: source signal length.
     Returns:
-        (len(ix), n) S.
+        (len(ix), n) selection matrix S.
     """
-    E = np.zeros((len(ix), n))
-    E[np.arange(len(ix)), ix] = 1
-    return torch.Tensor(E)
+    S = np.zeros((len(ix), n))
+    S[np.arange(len(ix)), ix] = 1
+    return torch.Tensor(S)
