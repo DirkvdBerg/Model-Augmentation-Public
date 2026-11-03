@@ -15,7 +15,7 @@ from deepSI.datasets import get_work_dirs
 
 from gantry_dynamic.config import RunConfig, DATA_ROOT, OUT_ROOT, save_dir, config_json_dict
 from gantry_dynamic.data import load_datasets, compute_normalization, dataset_dir
-from gantry_dynamic.model import build_model, prefit_physical_encoder
+from gantry_dynamic.model import build_model, encoder_start
 from gantry_dynamic.controller import build_closed_loop
 from gantry_dynamic.training import train, load_checkpoint
 from gantry_dynamic.evaluation import evaluate
@@ -175,6 +175,12 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     Returns:
         the best validation score.
     """
+    # a GPU run without a GPU stops here, before anything is built, instead of silently running on the CPU
+    if cfg.device == 'cuda' and not torch.cuda.is_available():
+        raise RuntimeError(
+            'device="cuda" was requested but CUDA is not available; check the GPU allocation '
+            '(--gres=gpu:1) or run with --cpu.')
+
     # 1. Run folder.
     polish_only = rerun is not None and rerun[0] == 'polish-only'
     if rerun is None:
@@ -215,9 +221,9 @@ def main(cfg, run_id=None, rerun=None, evaluate_run=EVALUATE):
     print('\nTraining loss: each window simulated in closed loop with the known controller')
 
     # 4. Encoder start, or the restored checkpoint.
-    # after build_closed_loop: the encoder start simulates the start model in closed loop through its simulator
+    # after build_closed_loop: the encoder start simulates the untrained model in closed loop through its simulator
     if src is None:
-        prefit_physical_encoder(fit_sys, cfg, data, norm)
+        encoder_start(fit_sys, cfg, data, norm)
         resume = None               # fresh run: train starts from the encoder start above
     else:
         # load first: if the checkpoint does not fit, load_checkpoint raises an error 

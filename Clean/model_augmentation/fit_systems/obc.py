@@ -26,9 +26,9 @@ class OBCBasis:
             n_rows, n_cols = J.shape
             # 1. Column scale, so columns of very different size get equal weight in the rank test:
             #    D = diag(||J_:,i||), 1 for a zero column.
-            G_raw = J.T @ J
-            norms_raw = G_raw.diagonal().sqrt()
-            column_scale = torch.where(norms_raw > 0, norms_raw, torch.ones_like(norms_raw))
+            gram = J.T @ J
+            column_norms = gram.diagonal().sqrt()
+            column_scale = torch.where(column_norms > 0, column_norms, torch.ones_like(column_norms))
             # 2. Factorise once; every later coefficient is then a cheap product: J D^-1 = U S V^T.
             U, S, Vh = torch.linalg.svd(J / column_scale, full_matrices=False)
             # 3. Numerical rank: singular values above tol count; on rank loss keep only those directions.

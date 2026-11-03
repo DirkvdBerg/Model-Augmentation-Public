@@ -348,7 +348,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
 
 @added
 class _TrainableGantryStateBlock(GantryStateBlock):
-    """The baseline block whose matrices are rebuilt from the fourteen raw parameters theta."""
+    """The baseline block whose matrices are rebuilt from the fourteen parameters theta."""
 
     # the order of theta; meanings and units at gantry_ss
     PARAM_NAMES = ("kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
@@ -366,10 +366,10 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         self.register_buffer("Lb", gantry_ss.Lb.clone())
 
     def _build_KC(self, p: Tensor):
-        """Stiffness K and damping C of the raw parameters p, as built in gantry_ss.stiffness_and_damping.
+        """Stiffness K and damping C of the parameters p, as built in gantry_ss.stiffness_and_damping.
 
         Args:
-            p: (14,) raw parameters theta.
+            p: (14,) parameters theta.
         Returns:
             K and C, each (3, 3), physical.
         """
@@ -377,14 +377,14 @@ class _TrainableGantryStateBlock(GantryStateBlock):
          _, _, _, _, _, _, _) = p
         return gantry_ss.stiffness_and_damping(kb1, kb2, cg1, cg2, cy, cb1, cb2, self.Lb)
 
-    def _mats_from_raw(self, p: Tensor):
+    def _mats_from_parameters(self, p: Tensor):
         """Baseline matrices of one objective.
 
         theta -> (K, C, A_combined, m_h, alpha, beta, gamma_, N0, N1, N2), with M(Y)^-1 = (N0 + Y N1 + Y^2 N2) / d(Y)
         and A_combined the state row of the LFR; built once per objective and reused by every RK4 stage.
 
         Args:
-            p: (14,) raw parameters theta.
+            p: (14,) parameters theta.
         Returns:
             the tuple above, physical.
         """
@@ -426,7 +426,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
     M_TOTAL_IX = 6
     M_DIFF_IX = 7
     J_EFF_IX = 8
-    # raw parameters the gauge section keeps from theta^0
+    # parameters the gauge section keeps from theta^0
     MB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('mb')
     JB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jb')
     JH_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jh')
@@ -447,10 +447,10 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         super().__init__(*args, **kwargs)
 
         # 1. beta = 0 at theta^0_base.
-        raw_init = self.params_init
-        combo_init = to_tensor(combo_init).reshape(10).to(raw_init.dtype).clone()
+        theta_init = self.params_init
+        combo_init = to_tensor(combo_init).reshape(10).to(theta_init.dtype).clone()
 
-        self.free_params = nn.Parameter(torch.zeros(10, dtype=raw_init.dtype))
+        self.free_params = nn.Parameter(torch.zeros(10, dtype=theta_init.dtype))
         self.register_buffer("combo_init", combo_init)
 
         # 2. Calibrate the signed coordinate.
@@ -466,20 +466,20 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         self.register_buffer("m_diff_scale", scale)
 
     @staticmethod
-    def combos_of(raw: Tensor, Lb) -> Tensor:
+    def combos_of(theta: Tensor, Lb) -> Tensor:
         """Identifiable combinations theta_base(theta).
 
         k_b,Sigma = k_b1 + k_b2, c_b,Sigma = c_b1 + c_b2, m_Sigma = m_1 + m_2 + m_b, m_Delta = m_1 - m_2,
         J_eff = J_b + J_h + (L_b^2/4)(m_1 + m_2); the matrices depend on theta only through these ten.
 
         Args:
-            raw: (14,) raw parameters theta.
+            theta: (14,) parameters theta.
             Lb: actuator distance L_b [m].
         Returns:
             (10,) theta_base in COMBO_NAMES order.
         """
-        (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = raw
-        Lb = torch.as_tensor(Lb, dtype=raw.dtype, device=raw.device)
+        (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = theta
+        Lb = torch.as_tensor(Lb, dtype=theta.dtype, device=theta.device)
         _, _, J_eff = gantry_ss.inertia_constants(m1, m2, mb, mh, Jb, Jh, Lb)
         return torch.stack([
             kb1 + kb2, cg1, cg2, cy, cb1 + cb2, mh,
@@ -488,23 +488,23 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         ])
 
     @classmethod
-    def gauge_section(cls, combo: Tensor, raw_init: Tensor, Lb) -> Tensor:
-        """A raw parameter vector with given combinations.
+    def gauge_section(cls, combo: Tensor, theta_init: Tensor, Lb) -> Tensor:
+        """A parameter vector with given combinations.
 
-        theta with theta_base(theta) = combo: equal splits of the sums, m_b and the ratio J_b : J_h from raw_init. A
+        theta with theta_base(theta) = combo: equal splits of the sums, m_b and the ratio J_b : J_h from theta_init. A
         gauge choice, not an estimate: any such theta gives the same matrices.
 
         Args:
             combo: (10,) theta_base.
-            raw_init: (14,) theta^0, the source of m_b and J_b : J_h.
+            theta_init: (14,) theta^0, the source of m_b and J_b : J_h.
             Lb: actuator distance L_b [m].
         Returns:
             (14,) theta.
         """
         kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d = combo
         Lb = torch.as_tensor(Lb, dtype=combo.dtype, device=combo.device)
-        mb = raw_init[cls.MB_IX]
-        Jb0, Jh0 = raw_init[cls.JB_IX], raw_init[cls.JH_IX]
+        mb = theta_init[cls.MB_IX]
+        Jb0, Jh0 = theta_init[cls.JB_IX], theta_init[cls.JH_IX]
         # m_1 + m_2 = m_Sigma - m_b, J_b + J_h = J_eff - (L_b^2/4)(m_1 + m_2), r = J_b0 / (J_b0 + J_h0)
         m_sum = m_total - mb
         J_sum = J_eff - m_sum * Lb ** 2 / 4
@@ -615,7 +615,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
 
     def _mats_at(self, free: Tensor):
         """Matrices at beta = free: beta -> theta_base -> theta (gauge_section) -> matrices."""
-        return self._mats_from_raw(
+        return self._mats_from_parameters(
             self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb))
 
     def estimation_parameters(self):

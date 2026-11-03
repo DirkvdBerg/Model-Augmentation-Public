@@ -34,7 +34,7 @@ def _restore(fit_sys, params, snap):
     with torch.no_grad():
         for p, saved in zip(params, snap):
             p.copy_(saved)
-    fit_sys._sync_obc_coefficient(refresh_basis=False)
+    fit_sys.sync_obc_coefficient(refresh_basis=False)
 
 
 class FixedWindowBatch:
@@ -186,7 +186,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec, val_sys_data, va
         was_training = fit_sys.hfn.training
         fit_sys.eval()
         try:
-            fit_sys._sync_obc_coefficient(refresh_basis=False)
+            fit_sys.sync_obc_coefficient(refresh_basis=False)
             return float(fit_sys.cal_validation_error(val_sys_data))
         finally:
             if was_training:

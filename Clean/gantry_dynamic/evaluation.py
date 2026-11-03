@@ -65,7 +65,7 @@ def _without_learned(fit_sys, free=None):
 def _true_combinations(phy):
     """Identifiable combinations of the data-generating parameters.
 
-    theta_base(theta^0) of the raw parameters theta^0 the data were generated with, the gantry_ss nominal values.
+    theta_base(theta^0) of the parameters theta^0 the data were generated with, the gantry_ss nominal values.
 
     Args:
         phy: the identifiable baseline block.

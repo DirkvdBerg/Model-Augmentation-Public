@@ -213,7 +213,7 @@ class ClosedLoopSimulator:
 
     @staticmethod
     def verify_by_content(data, sdl, counts, k0, nf, stride):
-        """Check each record's first and last window against its raw data."""
+        """Check each record's first and last window against its recorded data."""
         ufuture = data[2]
         off = 0
         for sd, c in zip(sdl, counts):

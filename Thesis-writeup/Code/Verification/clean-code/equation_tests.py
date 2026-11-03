@@ -290,7 +290,7 @@ def test_A_encoder_sim():
             return x[:,:3],torch.cat((x[:,:6]@A.T+u@B.T,torch.zeros(len(x),2,dtype=DT)),1)
     bank=ControllerBank(np.zeros((1,1,1)),np.zeros((1,1,3)),np.zeros((1,3,1)),np.zeros((1,3,3)),np.ones(3),np.ones(3),DT)
     fs=NS(encoder=enc,hfn=H(),na=3,nb=3,norm=NS(u0=np.zeros(3),ustd=np.ones(3),y0=np.zeros(3),ystd=np.ones(3)),
-          simulator=NS(bank=bank,train_ctrl_rows=[0]),_sync_obc_coefficient=lambda:None,objective_matrices=lambda:{'pass_mats':None})
+          simulator=NS(bank=bank,train_ctrl_rows=[0]),sync_obc_coefficient=lambda:None,objective_matrices=lambda:{'pass_mats':None})
     sd=WindowedSystemData(u=rand(40,3).numpy(),y=rand(40,3).numpy())
     captured=[]
     def inspect_fit(e,nx,u,y,target):
@@ -303,7 +303,7 @@ def test_A_encoder_sim():
     cfg=NS(device='cpu',nx_phys=6,n_a=2,stride=1)  # K8
     norm=NS(x_mean=np.zeros(6),std_x=np.ones(6))
     with patch.object(gm,'least_squares_start',side_effect=inspect_fit):
-        gm.prefit_physical_encoder(fs,cfg,NS(train_list=[sd]),norm)
+        gm.encoder_start(fs,cfg,NS(train_list=[sd]),norm)
     assert captured==[37]
 
 @case('A_init_beta')

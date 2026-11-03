@@ -448,7 +448,7 @@ class SSE_Interconnect(SS_encoder_general):
             """Validate; save the dump _best if the error is the lowest so far and always _last; return the error."""
             # CHANGED: validation on the training device, theta_aux synced first on the OBC arm
             self.eval()
-            self._sync_obc_coefficient(refresh_basis=False)
+            self.sync_obc_coefficient(refresh_basis=False)
             Loss_val = self.cal_validation_error(val_sys_data)
             self.Loss_val.append(Loss_val)
 
@@ -492,7 +492,7 @@ class SSE_Interconnect(SS_encoder_general):
         data_train_loader = DtypeDataLoader(data_train, batch_size=batch_size,
                                             dtype=model_dtype)
 
-        # validation before the first update: the start model is a candidate for selection
+        # validation before the first update: the untrained model is a candidate for selection
         validation(train_loss=float('nan'), time_elapsed_total=0)
         print(f'Initial Validation {validation_measure}=', self.Loss_val[-1])
 
@@ -557,7 +557,7 @@ class SSE_Interconnect(SS_encoder_general):
         except FileNotFoundError:
             print('no best checkpoint found keeping last')
             selected_checkpoint = '_last'
-        if self._sync_obc_coefficient(refresh_basis=True):
+        if self.sync_obc_coefficient(refresh_basis=True):
             self.checkpoint_save_system(name=selected_checkpoint)
         print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4}, selected at update {best_it}; last validation epoch_id={self.epoch_id[-1]:.2f}')
 
@@ -589,7 +589,7 @@ class AugmentedModel(SSE_Interconnect):
         # HEURISTIC: + 1e-6, since the summed epoch counter can end just below an integer
         return math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6)
 
-    def _sync_obc_coefficient(self, refresh_basis=False):
+    def sync_obc_coefficient(self, refresh_basis=False):
         """Set the OBC coefficient used for prediction (validation, polish, PS2): theta_frozen = theta_aux of the
         current network; the basis is rebuilt at the current beta on request or when missing.
 

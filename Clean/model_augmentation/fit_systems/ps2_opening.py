@@ -108,7 +108,7 @@ class PS2Opening:
             self._start(fs)
         self.it += 1
         # matrices of the model after this Adam update, used by the S1 rollouts
-        fs._sync_obc_coefficient(refresh_basis=False)
+        fs.sync_obc_coefficient(refresh_basis=False)
         with torch.no_grad():
             self._mats = fs.objective_matrices()
         # 1. S1 step: train encoder and decoder so the added states predict the output error.

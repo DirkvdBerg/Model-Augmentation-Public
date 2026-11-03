@@ -127,7 +127,7 @@ def _ls_capture(enc, nx, uh, yh, xt):
 
 GDM.least_squares_start = _ls_capture
 t = time.time()
-GDM.prefit_physical_encoder(fit_sys, cfg, data, norm)
+(GDM.prefit_physical_encoder if MAIN else GDM.encoder_start)(fit_sys, cfg, data, norm)     # Clean: encoder_start
 tim['prefit'] = time.time() - t
 GDM.least_squares_start = _ls
 for k in ('uh', 'yh', 'xt', 'W', 'b'):
