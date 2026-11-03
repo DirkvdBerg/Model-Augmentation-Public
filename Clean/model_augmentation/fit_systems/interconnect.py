@@ -1,29 +1,29 @@
 """Jan's interconnect, which joins blocks into one state-space model, and his encoder fit system, plus the augmented
 model that is trained here."""
-# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
-# commit 8200923 (model_augmentation/__init__.py)
+# CHANGED: restricted to the thesis model; original: Model-Augmentation-Public-main
 from deepSI.fit_systems.encoders import SS_encoder_general
 
 from torch import nn, Tensor
 import torch
 import numpy as np
-# CHANGED: os, math and get_work_dirs added for the changed fit
 import os
 import time
 import math
+import warnings
 
 from deepSI.datasets import get_work_dirs
 from deepSI.fit_systems.fit_system import print_array_byte_size, My_Simple_DataLoader, loop_dataset
 
-# CHANGED: imports of the added code instead of the parameterised blocks and detect_algebraic_loop
 from model_augmentation.utils.utils import added
 from model_augmentation.fit_systems.blocks import Block, Static_ANN_Block
 from model_augmentation.utils.deepSI_corrections import SystemDataNormalizer
 
 class Interconnect(nn.Module):
     """Blocks joined by signal connection matrices into one state-space step (x, u) -> (y, x_next)."""
+    # CHANGED: removed unused init_model, reset_saved_signals and convert_signal_ix_to_name
     def __init__(self, nx, nu, ny) -> None:
         """An empty interconnect with state size nx, input size nu and output size ny."""
+        # CHANGED: removed unused debugging and recording fields; nb is local to forward
         super().__init__()
 
         self.nu = nu
@@ -43,12 +43,12 @@ class Interconnect(nn.Module):
 
         # init_forward runs once, at the first forward call
         self.initialized_forward_function = False
-        # CHANGED: the OBC correction f_obc^n on the OBC arm, else None
+        # CHANGED: optional OBC correction, subtracted from the next state in forward
         self.obc_correction = None
 
     @added
     def _apply(self, fn, *args, **kwargs):
-        """nn.Module._apply that also moves the connection matrices with the module."""
+        """Move and cast the connection matrices with the model; they are not registered buffers."""
         out = super()._apply(fn, *args, **kwargs)
         acm = getattr(self, 'array_connection_matrices', None)
         if acm is not None:
@@ -69,7 +69,8 @@ class Interconnect(nn.Module):
         Returns:
             y_hat^n_k (B, ny) and x_hat^n_{k+1} (B, nx).
         """
-        # CHANGED: the per-objective matrices are arguments, so torch.compile sees them as graph inputs
+        # CHANGED: pass matrices explicitly so torch.compile receives them as graph inputs
+        # CHANGED: use the rollout's 2D arrays; removed Jan's check that the next state matches the input shape
         # 1. Signals as column vectors (B, n, 1).
         x = x.view(x.size(0), self.nx, 1)
         u = u.view(u.size(0), self.nu, 1)
@@ -83,17 +84,17 @@ class Interconnect(nn.Module):
             self.initialized_forward_function = True
 
         # 3. Evaluate the blocks in order and sum their contributions into xp and y.
-        # CHANGED: the signal loop is _propagate, shared with output_only
+        # CHANGED: signal evaluation moved to _propagate for reuse by output_only
         output_signals = self._propagate(x, u, self.order_output_signal_computation, pass_mats)
 
         y = output_signals[1]
         xp = output_signals[0]
 
-        # 4. OBC arm: remove the part of the network's effect that the baseline parameters could also produce.
-        # CHANGED: subtract f_obc^n, which makes the corrected field orthogonal to J on the OBC tuples
+        # CHANGED: subtract f_obc^n to make the network correction orthogonal to J on the reference tuples
         if self.obc_correction is not None:
             xp = xp - self.obc_correction(x, u, obc_pass)
 
+        # CHANGED: return (B, nx) and (B, ny) as required by the rollout; no single-output squeeze
         xp = xp.view(nb, self.nx)
         y = y.view(nb, self.ny)
 
@@ -101,13 +102,16 @@ class Interconnect(nn.Module):
 
     @added
     def _propagate(self, x, u, order, pass_mats):
-        """Evaluate the signals listed in order; returns the list of output signals [xp, y, block inputs...].
+        """Evaluate the requested signals, with sources before destinations.
+
+        Each destination needs at least one source. The baseline block receives pass_mats.
 
         Args:
             x, u: (B, nx, 1) state and (B, nu, 1) input.
-            order: output-signal indices to compute, in a computable order (all for forward, the output's cone for
-                output_only); the others stay None.
+            order: destination indices; all for forward, only those needed for y for output_only.
             pass_mats: the baseline matrices of this objective, passed to the physics block.
+        Returns:
+            [xp, y, block inputs...]; signals not listed in order remain None.
         """
         # input signals: x, u, then each block's output once computed
         input_signals = [x, u] + [None] * (self.n_input_signals - 2)
@@ -123,8 +127,7 @@ class Interconnect(nn.Module):
             output_signals[output_signal_ix] = signal
 
             if output_signal_ix >= 2:
-                # a block input is complete: run the block, whose output becomes a source signal; the physics block
-                # also takes pass_mats
+                # indices 2 onward are block inputs; each block's output becomes a source at the same index
                 block = self.connected_blocks[output_signal_ix - 2]
                 if output_signal_ix - 2 == self._pass_mats_ix:
                     input_signals[output_signal_ix] = block.forward(output_signals[output_signal_ix], pass_mats)
@@ -160,38 +163,41 @@ class Interconnect(nn.Module):
         # row i is output signal i (xp, y, blocks), column j input signal j (x, u, blocks)
         connection_interconnect_matrix = np.roll(directional_signal_connection_matrix[2:,:-2], 2, axis=0)
 
-        # 2. Computation order: repeatedly take the signals whose sources are all available; x and u are available
-        #    from the start. An algebraic loop would never become computable.
+        # 2. Order signals by their dependencies; x and u are available from the start.
         self.order_output_signal_computation = []
         connection_interconnect_matrix[:,:2] = 0
 
         while len(self.order_output_signal_computation) < self.n_output_signals:
+            n_computed = len(self.order_output_signal_computation)
             computable_elements = np.argwhere(np.sum(connection_interconnect_matrix, axis=1)==0).flatten()
             for element in computable_elements:
                 if element not in self.order_output_signal_computation:
-                    # CHANGED: Python ints, so torch.compile needs no graph break
+                    # CHANGED: use Python indices to avoid NumPy scalar handling inside the compiled rollout
                     self.order_output_signal_computation.append(int(element))
                     connection_interconnect_matrix[:,element] = 0
+            # CHANGED: replace Jan's loop assertion with an error if no further signals can be computed
+            if len(self.order_output_signal_computation) == n_computed:
+                raise ValueError('Algebraic loop in the signal connections.')
 
         # 3. Connection matrices of every destination signal.
         for output_signal_ix in range(self.n_output_signals):
             input_ix_dependencies = self.init_connection_matrices(output_signal_ix, output_ix_sorted_signal_connections[output_signal_ix])
             self.output_ix_sorted_input_ix_dependencies.append(input_ix_dependencies)
 
-        # CHANGED: the output's dependency cone, resolved once for output_only
+        # CHANGED: output_only needs y before the controller calculates u; skip blocks used only for the state update
         self.output_cone = self._signal_cone(1)
-        # CHANGED: the block that takes the per-objective matrices pass_mats, resolved once
+        # CHANGED: identify which block needs pass_mats; the other blocks take only their input signal
         self._pass_mats_ix = next(
             (i for i, b in enumerate(self.connected_blocks) if hasattr(b, 'pass_mats')), None)
 
-        # CHANGED: the connection matrices on the module's device and dtype
+        # CHANGED: match the model's device and dtype; Jan's connection matrices are created on the CPU
         p = next(self.parameters())
         self.array_connection_matrices = [[t.to(device=p.device, dtype=p.dtype) for t in row]
                                           for row in self.array_connection_matrices]
 
     @added
     def _signal_cone(self, target_output_ix):
-        """Output-signal indices that must be computed to obtain output signal target_output_ix."""
+        """Return the target's required signal indices in computation order."""
         needed, stack = set(), [target_output_ix]
         while stack:
             k = stack.pop()
@@ -203,9 +209,9 @@ class Interconnect(nn.Module):
 
     @added
     def output_only(self, x):
-        """Output of the augmented model without a state update.
+        """Compute y without updating the state; the controller needs y before calculating u.
 
-        y_hat^n_k = C^n x_tilde^n_k, from the output's dependency cone only; the controller needs it first.
+        Assumes no input feedthrough (D = 0).
 
         Args:
             x: (B, nx) x_hat^n_k.
@@ -233,7 +239,9 @@ class Interconnect(nn.Module):
             output_signal_ix: the destination signal.
             signal_connections: the connections into it.
         """
+        # CHANGED: removed unused add_to handling and debug output; matrix construction is otherwise Jan's
         # 1. Split the connections by method.
+        n_out = self.output_signal_sizes[output_signal_ix]
         n_out_total = 0
 
         concat_signal_connections = []
@@ -271,15 +279,36 @@ class Interconnect(nn.Module):
             n_in = self.input_signal_sizes[signal_connection.input_signal_ix]
             self.array_connection_matrices[output_signal_ix][signal_connection.input_signal_ix] = torch.vstack((connection_matrix, torch.zeros((n_out_total - n_out_current, n_in))))
 
+        assert n_out_total == n_out, "total: {0}, required: {1}".format(n_out_total, n_out)
+
         # 4. Additive: the given matrix maps the source onto the whole destination.
         for signal_connection in additive_signal_connections:
-            self.array_connection_matrices[output_signal_ix][signal_connection.input_signal_ix] = signal_connection.connection_matrix
-            input_signal_ixs.append(signal_connection.input_signal_ix)
+            n_in = self.input_signal_sizes[signal_connection.input_signal_ix]
+            connection_matrix = signal_connection.connection_matrix
+            if not connection_matrix.numel():
+                connection_matrix = torch.eye(n_out, n_in)
+                warnings.warn("The additive method was not given a connection matrix and thus filled in a identity matrix that might not be square. This could give unintended behaviour")
+            else:
+                assert connection_matrix.size(0) == n_out
+                assert connection_matrix.size(1) == n_in
+
+            if signal_connection.input_signal_ix in input_signal_ixs:
+                self.array_connection_matrices[output_signal_ix][signal_connection.input_signal_ix] += connection_matrix
+            else:
+                self.array_connection_matrices[output_signal_ix][signal_connection.input_signal_ix] = connection_matrix
+                input_signal_ixs.append(signal_connection.input_signal_ix)
+
+        for signal_connection in signal_connections:
+            connection_matrix = self.array_connection_matrices[output_signal_ix][signal_connection.input_signal_ix]
+            if not connection_matrix.numel(): raise ValueError("Connection matrix should not be empty.")
+            assert connection_matrix.size(0) == n_out
 
         return input_signal_ixs
 
     def add_block(self, new_block: Block):
         """Add a block; its output and input get the next signal index."""
+        # CHANGED: removed unused block names and debug output
+        assert new_block not in self.connected_blocks
         self.nr_blocks += 1
         new_block.block_ix = self.nr_blocks + 1
         self.connected_blocks.append(new_block)
@@ -296,6 +325,7 @@ class Interconnect(nn.Module):
                 takes 'concatenation' into a block and 'additive' into xp or y.
             connection_matrix: maps the source (selection or expansion matrix); empty means identity.
         """
+        # CHANGED: removed unused add_to and debug output; method lookup replaces the method assertion
         input_signal_ix = self.determine_signal_ix(input_signal)
         output_signal_ix = self.determine_signal_ix(output_signal)
 
@@ -320,6 +350,8 @@ class Interconnect(nn.Module):
             return signal.block_ix
         if isinstance(signal, str):
             return self.convert_signal_name_to_ix(signal)
+        # CHANGED: removed integer references unused by the model builder
+        raise TypeError("Input could not be converted to signal ix.")
 
     def convert_signal_name_to_ix(self, signal_name: str):
         """0 for x and xp, 1 for u and y."""
@@ -327,14 +359,18 @@ class Interconnect(nn.Module):
             return 0
         if signal_name in ["u", "y"]:
             return 1
+        # CHANGED: removed numbered names such as 'w2', unused by the model builder
+        raise TypeError("Input could not be converted to signal ix.")
 
     def parse_connection_function_method(self, connection_function_method: str):
         """The canonical name of a connection method."""
+        # CHANGED: removed unused aliases and case conversion; accept concatenation, concat and additive
         return {"concatenation": "concatenation", "concat": "concatenation",
                 "additive": "additive"}[connection_function_method]
 
 class Signal_Connection():
-    '''Object to hold information regarding connection between two signals in the interconnect'''
+    '''Connection source, destination, method and matrix.'''
+    # CHANGED: removed unused add_to, __str__ and __repr__; connect_signals supplies the matrix argument
     def __init__(self, input_signal_ix, output_signal_ix, connection_function_method, connection_matrix) -> None:
         """Store the two signal indices, the method and the connection matrix."""
         self.input_signal_ix = input_signal_ix
@@ -346,7 +382,7 @@ class Signal_Connection():
 
 @added
 def _replace_with_retry(src, dst, tries=20):
-    """os.replace, retried while another process briefly holds dst open (PermissionError on Windows)."""
+    """Retry checkpoint replacement after PermissionError, which can occur when Windows holds the file open."""
     # HEURISTIC: 20 tries 0.25 s apart, about 5 s for the file to be released
     for i in range(tries):
         try:
@@ -359,13 +395,12 @@ def _replace_with_retry(src, dst, tries=20):
 
 @added
 class DtypeDataLoader(My_Simple_DataLoader):
-    """My_Simple_DataLoader that keeps the training windows at the model's dtype (the original casts to float32)."""
+    """Batch windows at the model dtype; deepSI's loader casts floating arrays to float32."""
 
     def __init__(self, data, batch_size, dtype):
-        """The windows at dtype, batched as My_Simple_DataLoader does: reshuffled every pass, and the remainder after
-        the last full batch of a pass skipped."""
+        """Cast floating arrays to dtype; retain deepSI's shuffle and skip incomplete batches."""
         def _conv(d):
-            """A floating array cast to dtype, other arrays unchanged."""
+            """Convert to a tensor, casting only floating arrays to dtype."""
             t = torch.as_tensor(d)
             return t.to(dtype) if t.is_floating_point() else t
         self.data = [_conv(d) for d in data]
@@ -376,13 +411,15 @@ class DtypeDataLoader(My_Simple_DataLoader):
 
 class SSE_Interconnect(SS_encoder_general):
     """Jan's fit system: an encoder and an interconnect, trained on deepSI's simulation windows."""
-    # CHANGED: the rollout of the loss and the validation (the closed loop)
+    # CHANGED: removed measure_act_multi; predictions use the attached simulator
+    # CHANGED: AugmentedModel.loss replaces Jan's loss with weighted closed-loop error and OBC
+    # CHANGED: use the closed-loop simulator for training rollouts and validation
     simulator = None
 
-    # CHANGED: callables run after every validation (the validation history)
+    # CHANGED: callbacks record per-record validation results for training.py
     validation_probes = ()
 
-    # CHANGED: a callable run after every Adam update (the PS2 opening), or None
+    # CHANGED: PS2 needs an auxiliary training step after each Adam update
     training_phase = None
 
     def __init__(self, interconnect, na=5, nb=5, na_right=0, nb_right=0):
@@ -395,13 +432,16 @@ class SSE_Interconnect(SS_encoder_general):
         """
         super(SSE_Interconnect, self).__init__(nx=interconnect.nx, nb=nb, na=na, na_right=na_right, nb_right=nb_right)
 
+        # CHANGED: model.py sets the augmented encoder, replacing init_nets and e_net options; no unused multi_loss_val
         self.hfn = interconnect
 
-        # CHANGED: a normaliser whose windows keep the data's dtype
+        # CHANGED: use the renamed SystemDataNormalizer from deepSI_corrections
         self.norm = SystemDataNormalizer()
 
     def init_model(self, sys_data=None, optimizer_kwargs={}):
         '''Set nu and ny, build Adam over every parameter (encoder, then hfn) and reset bestfit.'''
+        # CHANGED: model.py already sets the encoder and normalisation; training.py handles the device
+        # CHANGED: no scheduler (fixed Adam learning rate) or block initialization (blocks are set up by constructors)
         self.nu, self.ny = sys_data.nu, sys_data.ny
         self.optimizer = self.init_optimizer(list(self.parameters_with_names.values()), **optimizer_kwargs)
         self.bestfit = float('inf')
@@ -409,29 +449,31 @@ class SSE_Interconnect(SS_encoder_general):
 
     @added
     def simulate(self, x, ufuture, yfuture=None, **Loss_kwargs):
-        """Return (y_pred, x_final) through the attached simulator, with y_pred shaped (batch, nf, ny)."""
+        """Run the attached simulator; return predictions (B, nf, ny) and final states (B, nx)."""
         return self.simulator(self, x, ufuture, yfuture, **Loss_kwargs)
 
     @added
     def make_training_data(self, sys_data, **Loss_kwargs):
-        """deepSI's training windows, uhist, yhist (N, n + 1, 3) and ufuture, yfuture (N, n_f, 3), normalised, plus
-        ctrl_ix and loss_w per window."""
+        """Add controller indices and record weights to deepSI's training windows.
+
+        Returns uhist, yhist (N, n + 1, 3), ufuture, yfuture (N, nf, 3), ctrl_ix and loss_w."""
         data = super().make_training_data(sys_data, **Loss_kwargs)
         return self.simulator.augment_training_data(data, sys_data, self, **Loss_kwargs)
 
     @added
     def cal_validation_error(self, val_sys_data):
-        """The simulator's validation score, then the validation probes (side effects only)."""
+        """Compute the simulator's validation score and pass it to the history callbacks."""
         value = self.simulator.validation_error(self, val_sys_data)
         for probe in self.validation_probes:
             probe(self, val_sys_data, value)
         return value
 
-    # CHANGED: arguments of the thesis path only; init_model is called by the pipeline
+    # CHANGED: require an initialized model; model.py builds it and training.py handles its device
+    # CHANGED: removed Dataset and parallel-validation options unused by training.py
+    # CHANGED: removed timeout, verbosity and profiling options unused by training.py
     def fit(self, train_sys_data, val_sys_data, epochs=30, n_its=None, batch_size=256, loss_kwargs={}, \
             validation_measure='sim-NRMS', its_per_val='epoch', cuda=False):
-        """Adam phase with checkpoint selection: Adam on V over minibatches of windows, the PS2 step after each
-        update, validation every its_per_val updates; the model ends with the parameters of the lowest validation error.
+        """Run Adam and the optional PS2 opening; finish with the weights selected by validation.
 
         Args:
             train_sys_data, val_sys_data: training and validation records.
@@ -439,14 +481,14 @@ class SSE_Interconnect(SS_encoder_general):
             n_its: Adam budget in updates instead, or None.
             batch_size: windows per update.
             loss_kwargs: nf and stride of the windows.
-            validation_measure: name of the validation error.
+            validation_measure: score label for logging; the simulator computes the score.
             its_per_val: updates between validations, or 'epoch'.
             cuda: run the updates on the GPU.
         """
 
         def validation(train_loss=None, time_elapsed_total=None):
-            """Validate; save the dump _best if the error is the lowest so far and always _last; return the error."""
-            # CHANGED: validation on the training device, theta_aux synced first on the OBC arm
+            """Return the validation score; save _best if it improves or ties, and always save _last."""
+            # CHANGED: validate on the training device instead of the CPU; update theta_aux for the current network
             self.eval()
             self.sync_obc_coefficient(refresh_basis=False)
             Loss_val = self.cal_validation_error(val_sys_data)
@@ -459,15 +501,15 @@ class SSE_Interconnect(SS_encoder_general):
             # >=: on equal errors the later weights become the best
             if self.bestfit>=Loss_val:
                 self.bestfit = Loss_val
-                # dump saved as is, also from the GPU; resolve_checkpoint loads it onto the CPU
+                # resolve_checkpoint loads GPU checkpoints onto the CPU
                 self.checkpoint_save_system()
-            # CHANGED: _last.pth at every validation, so a stopped run can resume from its last weights
+            # CHANGED: save _last at every validation so interrupted runs can resume
             self.checkpoint_save_system(name='_last')
             self.train()
             return Loss_val
 
         # 1. Windows, data loader and the initial validation.
-        # CHANGED: counters and history start empty
+        # CHANGED: reset counters and history for this job; training.py tracks earlier jobs
         self.train()
 
         self.epoch_counter = 0
@@ -487,12 +529,12 @@ class SSE_Interconnect(SS_encoder_general):
         its_per_val = N_batch_updates_per_epoch if its_per_val=='epoch' else its_per_val
         print(f'N_training_samples = {N_training_samples}, batch_size = {batch_size}, N_batch_updates_per_epoch = {N_batch_updates_per_epoch}')
 
-        # CHANGED: DtypeDataLoader keeps the window dtype; same seed-0 shuffle
+        # CHANGED: use DtypeDataLoader to prevent float64 windows being cast to float32
         model_dtype = next(self.hfn.parameters()).dtype
         data_train_loader = DtypeDataLoader(data_train, batch_size=batch_size,
                                             dtype=model_dtype)
 
-        # validation before the first update: the untrained model is a candidate for selection
+        # validate before the first update so the starting weights can be selected, including on resume
         validation(train_loss=float('nan'), time_elapsed_total=0)
         print(f'Initial Validation {validation_measure}=', self.Loss_val[-1])
 
@@ -504,7 +546,7 @@ class SSE_Interconnect(SS_encoder_general):
             for it_count, train_batch in zip(range(n_its), loop_dataset(data_train_loader)):
                 if cuda:
                     train_batch = [b.cuda() for b in train_batch]
-                # CHANGED: the simulator's extra arrays (controller row, W_r) reach loss() by name
+                # CHANGED: pass each window's controller index and error weight to loss alongside its signals
                 batch_kwargs = dict(loss_kwargs, **dict(zip(self.simulator.extra_array_names, train_batch[4:])))
 
                 # one Adam update on V of this minibatch
@@ -520,7 +562,7 @@ class SSE_Interconnect(SS_encoder_general):
                 if np.isnan(training_loss):
                     print(f'&&&&&&&&&&&&& Encountered a NaN value in the training loss at it {it_count}, breaking from loop &&&&&&&&&&')
                     break
-                # CHANGED: the PS2 opening after every update, and its progress for the dumps
+                # CHANGED: run PS2 after each Adam update; record its progress so loading can reject unfinished openings
                 if self.training_phase is not None:
                     self.training_phase.after_step(self)
                     self.ps2_opening = (self.training_phase.phase, self.training_phase.it)
@@ -544,8 +586,8 @@ class SSE_Interconnect(SS_encoder_general):
         except KeyboardInterrupt:
             print('Stopping early due to a KeyboardInterrupt')
 
-        # 3. Select: reload the best dump.
-        # CHANGED: last dump, then reload the best; on the OBC arm rebuild the basis at its beta and rewrite the dump
+        # 3. Select: reload the best checkpoint.
+        # CHANGED: rebuild OBC at the selected beta and resave it so the checkpoint includes the updated correction
         self.train(); self.cpu()
         del data_train_loader
 
@@ -564,18 +606,17 @@ class SSE_Interconnect(SS_encoder_general):
 
 @added
 class AugmentedModel(SSE_Interconnect):
-    """The augmented model: the W_r-weighted closed-loop objective, the OBC coefficient per objective, and dumps
-    without the training-time state."""
+    """Weighted closed-loop training with OBC and checkpoint handling."""
 
     # OBCProjection on the OBC arm, else None
     obc = None
-    # training-time state, left out of every dump and kept across a dump load
+    # exclude these objects from checkpoints; preserve their current instances when loading
     _UNPICKLABLE = ('obc', 'training_phase', 'fit_history')
-    # fit's loss history, as far as a dump holds it
+    # save the current job's loss and counters separately before loading the selected checkpoint
     _FIT_HISTORY = ('batch_id', 'epoch_id', 'time', 'Loss_train')
 
     def __init__(self, *args, **kwargs):
-        """As SSE_Interconnect; also locate the network block and the block that takes pass_mats."""
+        """Locate the network and baseline blocks used by the loss and OBC projection."""
         super().__init__(*args, **kwargs)
         blocks = tuple(self.hfn.connected_blocks)
 
@@ -585,18 +626,19 @@ class AugmentedModel(SSE_Interconnect):
         self._mats_ix = next((i for i, m in enumerate(blocks) if hasattr(m, 'pass_mats')), None)
 
     def _epoch_index(self):
-        """The integer epoch the OBC refresh counts in."""
+        """Current epoch index for the OBC basis refresh."""
         # HEURISTIC: + 1e-6, since the summed epoch counter can end just below an integer
         return math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6)
 
     def sync_obc_coefficient(self, refresh_basis=False):
-        """Set the OBC coefficient used for prediction (validation, polish, PS2): correction.theta_aux = theta_aux of
-        the current network; the basis is rebuilt at the current beta on request or when missing.
+        """Update the stored OBC coefficient for prediction from the current network.
+
+        Rebuild the basis first if requested or missing; no gradients are recorded.
 
         Args:
             refresh_basis: rebuild the basis at the current beta first.
         Returns:
-            whether OBC is attached.
+            True if the OBC coefficient was updated; False without OBC.
         """
         if self.obc is None:
             return False
@@ -610,8 +652,7 @@ class AugmentedModel(SSE_Interconnect):
         return True
 
     def objective_matrices(self, theta_aux=None):
-        """Matrices of one objective, built once and reused by every rollout step: pass_mats at the current beta and,
-        on the OBC arm, the correction matrices of theta_aux.
+        """Build baseline and OBC matrices once for reuse throughout the rollout.
 
         Args:
             theta_aux: (11,) coefficient, or None for the stored correction.theta_aux.
@@ -639,7 +680,7 @@ class AugmentedModel(SSE_Interconnect):
         """
         # 1. Initial states from the past window: x_hat^n_{tau|tau} = psi(theta_enc, chi_tau).
         x = self.encoder(uhist, yhist)
-        # 2. OBC arm: solve the coefficient theta_aux of this objective, so the correction tracks the network.
+        # 2. Recompute theta_aux from the current network on the fixed OBC tuples.
         theta_aux = None
         if self.obc is not None:
             correction = self.hfn.obc_correction
@@ -647,7 +688,7 @@ class AugmentedModel(SSE_Interconnect):
             self.obc.maybe_refresh(self._epoch_index(), self.hfn.connected_blocks[self._mats_ix].beta)
             # theta_aux = (J^T J)^-1 J^T F^n_aug at every objective, differentiable in theta_aug
             theta_aux = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])
-            # a detached copy for prediction; the attached theta_aux below keeps V differentiable through it
+            # store a detached copy for prediction; use theta_aux below to retain the loss gradient
             correction.set_theta_aux(theta_aux, self.obc.basis.beta_lin)
         # 3. Closed-loop rollout over the window and the weighted squared output error.
         Loss_kwargs = dict(Loss_kwargs, **self.objective_matrices(theta_aux))
@@ -655,18 +696,17 @@ class AugmentedModel(SSE_Interconnect):
         w = Loss_kwargs.pop('loss_w')
         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
         # THEORY: W_r = diag(sigma_y / sigma_e,r) scales the normalised error to the error over sigma_e
-        # V = mean (W_r (y^n - y_hat^n))^2
         return ((y_pred - yfuture) * w[:, None, :]).square().mean()
 
     def checkpoint_save_system(self, name='_best'):
-        """deepSI's dump of the model, written atomically."""
-        # save to <file>.tmp, then rename, so a kill while saving keeps the old dump
+        """Write the checkpoint to a temporary file, then replace the previous checkpoint."""
+        # an interrupted write leaves the previous checkpoint intact
         file = os.path.join(get_work_dirs()['checkpoints'], self.name + name + '.pth')
         torch.save(self.__getstate__(), file + '.tmp')
         _replace_with_retry(file + '.tmp', file)
 
     def checkpoint_load_system(self, *args, **kwargs):
-        """deepSI's dump load, keeping this process's training-time state and fit's whole loss history."""
+        """Load weights and checkpoint state; keep the current OBC projection, PS2 opening and job loss history."""
         self.fit_history = {k: self.__dict__[k] for k in self._FIT_HISTORY if k in self.__dict__}
         stash = {k: self.__dict__.get(k) for k in self._UNPICKLABLE}
         out = super().checkpoint_load_system(*args, **kwargs)
@@ -676,5 +716,5 @@ class AugmentedModel(SSE_Interconnect):
         return out
 
     def __getstate__(self):
-        """The state without the training-time keys, as every dump holds it."""
+        """Checkpoint state without the OBC projection, PS2 opening or separately kept job history."""
         return {k: v for k, v in self.__dict__.items() if k not in self._UNPICKLABLE}
