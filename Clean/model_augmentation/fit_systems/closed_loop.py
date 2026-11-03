@@ -1,10 +1,5 @@
-"""Closed-loop model simulation with the known controller K_fb in residual form (Kessels): the controller bank, the
-rollout and the simulator of training and validation.
-
-Conventions: batch rows are samples; superscript n = normalised; xc = x^c = x_hat^fb - x^fb, in controller units;
-e^n = y^n - y_hat^n, the residual between measured and model output (the reference cancels in the residual form).
-In this file B^n, C^n, D^n are the controller seen from the normalised model, not the model's output map.
-"""
+"""Closed-loop simulation of the augmented model with the known controller K_fb, in residual form (Kessels): the
+controller bank, one closed-loop step, the rollout, and the simulator that training and validation call."""
 __project_origin__ = "added"
 
 from contextlib import contextmanager
@@ -12,24 +7,27 @@ from contextlib import contextmanager
 import numpy as np
 import torch
 
-# name of the validation score in the prints: closed-loop free-run NRMS_e, mean over records and axes
+# name of the validation score in the logs; defined in ClosedLoopSimulator.validation_error
 SCORE_NAME = 'sim-NRMSe'
 
 
 class ControllerBank(torch.nn.Module):
-    """The distinct controllers K_fb of a data set seen from the normalised model, gathered per window by design
-    index."""
+    """The known feedback controllers K_fb of the training and validation records, one entry per distinct design,
+    rewritten to act on normalised signals. Each record selects its entry by its design index; K_fb is fixed, never
+    trained."""
 
     def __init__(self, A, B, C, D, ystd, std_u, dtype=torch.float32):
-        """Controller bank, one per distinct design, seen from the normalised model; x^c stays in controller units.
+        """Store each K_fb in the normalised coordinates of the model.
+
+        In physical units K_fb maps the position error e [m] to the feedback force u_fb [N]:
+        x^fb_{k+1} = A_fb x^fb_k + B_fb e_k, u_fb,k = C_fb x^fb_k + D_fb e_k, with nc = 9 states (three per
+        actuator axis).
 
         Args:
-            A: (K, nc, nc) controller state matrices.
-            B: (K, nc, ny) from the position error [m] to the next controller state.
-            C: (K, nu, nc) from the controller state to the force [N].
-            D: (K, nu, ny) feedthrough [N/m].
-            ystd: (ny,) or (ny, 1) sigma_y [m].
-            std_u: (nu,) or (nu, 1) sigma_u [N].
+            A, B, C, D: A_fb (n_d, nc, nc), B_fb (n_d, nc, 3), C_fb (n_d, 3, nc), D_fb (n_d, 3, 3), stacked over the
+                n_d distinct designs.
+            ystd: sigma_y, standard deviation of the measured positions [m].
+            std_u: sigma_u, standard deviation of the actuator forces [N].
             dtype: model dtype.
         """
         super().__init__()
@@ -38,83 +36,100 @@ class ControllerBank(torch.nn.Module):
         ystd_t, stdu_t = T(np.asarray(ystd).ravel()), T(np.asarray(std_u).ravel())
         self.nc, self.nu = A.shape[-1], C.shape[-2]
 
-        # THEORY: e = diag(sigma_y) e^n and u_fb^n = diag(1/sigma_u) u_fb give B^n = B diag(sigma_y),
-        # C^n = diag(1/sigma_u) C, D^n = diag(1/sigma_u) D diag(sigma_y)
+        # THEORY: thesis Eq. (aug_cl_step). The model uses y^n = T_y (y - mu_y) and u^n = T_u (u_act - mu_u), with
+        # T_i = diag(sigma_i)^-1, while the controller state stays in physical units. A normalised error goes back to
+        # metres with T_y^-1 and a force to normalised units with T_u:
+        #   B_fb^n = B_fb T_y^-1,  C_fb^n = T_u C_fb,  D_fb^n = T_u D_fb T_y^-1,  A_fb unchanged.
+        # No mean terms: mu_y cancels in y^n - y_hat^n, and mu_u is already inside the recorded u^n.
         Bn = B * ystd_t[None, None, :]
         Cn = C / stdu_t[None, :, None]
         Dn = D / stdu_t[None, :, None] * ystd_t[None, None, :]
-        # one step is one product: (u_fb^n, xc_next) = [C^n; A] xc + [D^n; B^n] e^n
+        # stacked so that one controller step is one product, see step
         self.register_buffer('M_state', torch.cat([Cn, A], dim=1))
         self.register_buffer('M_error', torch.cat([Dn, Bn], dim=1))
 
     def step(self, xc, e_norm, ctrl):
-        """Controller step in residual form.
+        """One controller step in residual form:
 
-        u_fb^n = C^n x^c + D^n e^n, x^c_{k+1} = A x^c + B^n e^n, with e^n = y^n - y_hat^n.
+            u_fb^n = C_fb^n x^c_k + D_fb^n e^n_k,   x^c_{k+1} = A_fb x^c_k + B_fb^n e^n_k,   e^n_k = y^n_k - y_hat^n_k.
+
+        x^c = x_hat^fb - x^fb is the model's controller state minus the system's. Both controllers act on r minus
+        their own output, so r cancels and x^c is driven only by the measured minus the model output. u_fb^n is the
+        force the model's controller adds to the recorded force.
 
         Args:
-            xc: (B, nc) x^c_k.
-            e_norm: (B, ny) e^n_k.
-            ctrl: (M_state, M_error) rows of the bank for this batch.
+            xc: (B, nc) x^c_k, in physical controller units.
+            e_norm: (B, 3) e^n_k.
+            ctrl: (M_state, M_error) of each sequence, gathered by closed_loop_rollout.
         Returns:
-            u_fb^n (B, nu) and x^c_{k+1} (B, nc).
+            u_fb^n (B, 3) and x^c_{k+1} (B, nc).
         """
-        # THEORY: the controller state stays outside the model state (Kessels)
         M_state, M_error = ctrl
-        # both rows in one product: (u_fb^n, x^c_{k+1}) = [C^n; A] x^c + [D^n; B^n] e^n
+        # (u_fb^n, x^c_{k+1}) = [C_fb^n; A_fb] x^c_k + [D_fb^n; B_fb^n] e^n_k
         out = torch.baddbmm(torch.bmm(M_error, e_norm.unsqueeze(-1)),
                             M_state, xc.unsqueeze(-1)).squeeze(-1)
         return out[:, :self.nu], out[:, self.nu:]
 
 
 def closed_loop_step(hfn, bank):
-    """Closed-loop model step.
+    """One closed-loop step of the augmented model, built as a function of hfn and bank so it can be compiled.
 
-    y_hat^n = C^n x_tilde^n, u_hat^n = u^n + u_fb^n with the controller step, then x_hat^n_{k+1} from the augmented
-    model with u_hat^n.
+    The model output depends on the state only (no input feedthrough), so each step computes the output first, then
+    the controller force, then the next state:
+
+        y_hat^n_k = C^n x_tilde^n_k,   u_hat^n_k = u^n_k + u_fb^n_k,   x_hat^n_{k+1} = model step with u_hat^n_k,
+
+    with C^n the model's output map and u_fb^n from ControllerBank.step. D_fb therefore closes no algebraic loop
+    (Kessels Remark 5.1).
 
     Args:
-        hfn: the interconnect (augmented model).
+        hfn: the interconnect, one step of the augmented model.
         bank: the ControllerBank.
     Returns:
-        step(x, xc, u_t, y_t, ctrl, obc_pass, pass_mats) -> (y_hat^n_k, x_hat^n_{k+1}, x^c_{k+1}), with x (B, nx),
-        xc (B, nc), u_t (B, nu), y_t (B, ny) and ctrl the bank rows of the batch.
+        step(x, xc, u_t, y_t, ctrl, obc_pass, pass_mats) -> (y_hat^n_k, x_hat^n_{k+1}, x^c_{k+1}), with x the model
+        state (B, 6 + n_a), xc (B, nc), u_t and y_t the recorded u^n_k and y^n_k (B, 3), and the rest as in
+        closed_loop_rollout.
     """
     def step(x, xc, u_t, y_t, ctrl, obc_pass, pass_mats):
-        """One step: y_hat^n = C^n x_tilde^n, u_hat^n = u^n + u_fb^n, then x_hat^n_{k+1}."""
-        # THEORY: output before input, so D_fb closes no algebraic loop (Kessels Remark 5.1)
-        # output y_hat^n = C^n x_tilde^n
+        """One closed-loop step; see closed_loop_step."""
         y_model = hfn.output_only(x)
-        # feedback on e^n = y^n - y_hat^n, and x^c_{k+1}
         u_fb, xc = bank.step(xc, y_t - y_model, ctrl)
-        # state update with u_hat^n = u^n + u_fb^n
+        # hfn also returns y_hat^n_k, already computed above
         _, x = hfn(x, u_t + u_fb, obc_pass, pass_mats)
         return y_model, x, xc
     return step
 
 
 def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, *, pass_mats, obc_pass=None):
-    """Closed-loop simulation of a window.
+    """Simulate the augmented model in closed loop with each sequence's K_fb, from x0 over the length of u_data.
 
-    y_hat^n_{k|tau} for k = tau .. tau + n_f - 1 from x_hat^n_{tau|tau} = x0 and x^c_tau = 0, driven by the recorded
-    u^n and y^n; used by training, validation and the encoder start.
+    The model input is u_hat^n_k = u^n_k + u_fb^n_k (ControllerBank.step), so only the recorded u^n and y^n are
+    needed, not r or u^ff. This equals the model loop driven by r and u^ff only if the recorded force came from this
+    same discrete K_fb. The records were generated with K_1 at 20 kHz, so here it holds approximately (thesis
+    Eq. (aug_residual_split)).
+
+    x0 is the encoder estimate x_hat^n_{tau|tau} in training and validation, and the baseline start state in the
+    encoder start (model.py).
 
     Args:
-        step: a closed_loop_step (compiled or eager).
-        u_data, y_data: (B, n_f, 3) recorded u^n and y^n.
-        x0: (B, 6 + n_xbar) x_hat^n_{tau|tau}.
+        step: closed_loop_step(hfn, bank), compiled or eager.
+        u_data, y_data: (B, N, 3) recorded u^n, y^n from the first simulated sample on.
+        x0: (B, 6 + n_a) initial model state, n_a added states.
         bank: the ControllerBank.
-        ctrl_ix: (B,) controller row of each window.
-        pass_mats, obc_pass: matrices of this objective (obc_pass None on the unconstrained arm).
+        ctrl_ix: (B,) design index of each sequence.
+        pass_mats: baseline matrices at the current parameters (objective_matrices).
+        obc_pass: OBC correction matrices; None on the U arm, where the step has no correction.
     Returns:
-        y_hat^n (B, n_f, 3), final x_hat^n (B, 6 + n_xbar) and final x^c (B, nc).
+        y_hat^n (B, N, 3), the final x_hat^n (B, 6 + n_a) and the final x^c (B, nc).
     """
+    # the bank is not a submodule of the model, so moving the model does not move it
     if bank.M_state.device != u_data.device:
         bank.to(u_data.device)
+    # each sequence's controller, gathered once for all steps
     ctrl = (bank.M_state[ctrl_ix], bank.M_error[ctrl_ix])
 
-    # THEORY: x^c = x_hat^fb - x^fb (Kessels Eqs. (5.12), (5.13)); x^c_tau = 0 at the window start, so the system's
-    # own controller state is never needed
+    # THEORY: x^c_tau = 0 puts the model's controller in the system's controller state (thesis Eq. (aug_residual_loop)),
+    # so that state is never estimated; Kessels needs it (Remark 5.4)
     xc = torch.zeros(u_data.shape[0], bank.nc, dtype=u_data.dtype, device=u_data.device)
 
     x, ys = x0, []
@@ -125,37 +140,45 @@ def closed_loop_rollout(step, u_data, y_data, x0, bank, ctrl_ix, *, pass_mats, o
 
 
 def window_counts(fit_sys, sdl, nf, stride):
-    """Number of training windows per record, as WindowedSystemData builds them: ends k0 + n_f .. N, at the stride."""
+    """Number of training windows per record, as deepSI's to_hist_future_data builds them: window starts
+    tau = k0, k0 + stride, ... with tau + n_f <= N, where k0 = max(na, nb) leaves room for the encoder history."""
     first = max(fit_sys.na, fit_sys.nb) + nf
     return [len(range(first, len(sd.u) + 1, stride)) for sd in sdl]
 
 
 class ClosedLoopSimulator:
-    """The closed loop of training and validation; assigned to fit_sys.simulator."""
+    """Closed-loop simulator of training and validation, attached as fit_sys.simulator: the training loss calls it
+    through fit_sys.simulate, make_training_data calls augment_training_data, and cal_validation_error calls
+    validation_error."""
 
     def __init__(self, bank, train_ctrl_rows, val_rows, compiled, train_weights, val_sigma_e):
-        """Store the bank, the controller rows, the loss weights W_r, sigma_e and the compiled step."""
+        """Args:
+            bank: ControllerBank over the training and validation records.
+            train_ctrl_rows, val_rows: design index of each training and validation record, in record order.
+            compiled: torch.compile of closed_loop_step for the training rollouts on CUDA, or None.
+            train_weights: (R_train, 3) diagonal of W_r = diag(sigma_y / sigma_e,r) of each training record.
+            val_sigma_e: (R_val, 3) sigma_e of each validation record [m].
+        """
         self.bank = bank
-        # loss() receives these per-window arrays by name
+        # per-window arrays appended by augment_training_data; fit passes them to loss under these names
         self.extra_array_names = ('ctrl_ix', 'loss_w')
-        # (n_val, ny) sigma_e per validation record and axis, the denominator of sim-NRMSe
         self.val_sigma_e = np.asarray(val_sigma_e, np.float64)
-        # compiled closed_loop_step, or None for eager
         self._compiled = compiled
         self.train_ctrl_rows = [int(r) for r in train_ctrl_rows]
-        # W_r per training record, (ny,) each, appended to every window as loss_w
         self.record_weights = [np.asarray(w) for w in train_weights]
         self.val_rows = [int(r) for r in val_rows]
 
     def __getstate__(self):
-        """The state without the compiled step, which cannot be pickled."""
+        """The state without the compiled step. deepSI pickles the model, this simulator included, at every
+        checkpoint, and a compiled function cannot be pickled; a simulator restored from a checkpoint runs eager."""
         state = self.__dict__.copy()
         state['_compiled'] = None
         return state
 
     @contextmanager
     def eager(self):
-        """Run through the uncompiled step inside the block, then restore."""
+        """Use the eager step inside the block, then restore the compiled one; the polish falls back to it when the
+        compiled loss raises or does not reproduce."""
         saved, self._compiled = self._compiled, None
         try:
             yield
@@ -163,24 +186,23 @@ class ClosedLoopSimulator:
             self._compiled = saved
 
     def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix, *, pass_mats, obc_pass=None, **kw):
-        """Closed-loop rollout of a batch of windows (the simulator of V).
-
-        (y_hat^n_{k|tau}, final state) from x_hat^n_{tau|tau} = x.
+        """Closed-loop rollout of a minibatch of training windows, the simulation inside V (AugmentedModel.loss).
 
         Args:
             fit_sys: the augmented model.
-            x: (B, 6 + n_xbar) encoder states.
-            ufuture, yfuture: (B, n_f, 3) recorded u^n, y^n.
-            ctrl_ix: (B,) controller rows.
-            pass_mats, obc_pass: matrices of this objective.
-            kw: nf and stride from loss(); unused here.
+            x: (B, 6 + n_a) encoder estimates x_hat^n_{tau|tau}.
+            ufuture, yfuture: (B, n_f, 3) recorded u^n, y^n of each window.
+            ctrl_ix: (B,) design index of each window.
+            pass_mats, obc_pass: as in closed_loop_rollout.
+            kw: nf and stride, which loss passes on; unused here.
         Returns:
-            y_hat^n (B, n_f, 3) and the final state.
+            y_hat^n_{k|tau} (B, n_f, 3) and the final x_hat^n (B, 6 + n_a).
         """
-        # compiled step for gradient-enabled CUDA rollouts, the polish included
+        # the compiled step serves only CUDA rollouts that record gradients, i.e. training losses; others run eager
         use_compiled = (self._compiled is not None and ufuture.is_cuda and torch.is_grad_enabled())
         if use_compiled:
             step = self._compiled
+            # marks a new call, so the CUDA graphs may reuse the previous call's buffers
             torch.compiler.cudagraph_mark_step_begin()
         else:
             step = closed_loop_step(fit_sys.hfn, self.bank)
@@ -188,13 +210,22 @@ class ClosedLoopSimulator:
         y_pred, x_final, _ = closed_loop_rollout(step, ufuture, yfuture, x, self.bank, ctrl_ix.long(),
                                                  obc_pass=obc_pass, pass_mats=pass_mats)
         if use_compiled:
-            # copy out of the CUDA graph buffers, which the next step overwrites
+            # copy out of the CUDA graph buffers, which the next call overwrites
             y_pred, x_final = y_pred.clone(), x_final.clone()
         return y_pred, x_final
 
     def augment_training_data(self, data, sys_data, fit_sys, **kw):
-        """Check window alignment and append each window's controller row and W_r = diag(sigma_y / sigma_e,r)."""
-        # defaults for a direct call only; training and the polish pass nf and stride
+        """Append to deepSI's training windows the design index and the W_r diagonal of each window's record.
+
+        deepSI concatenates the windows of all records in record order, window_counts per record; both appended
+        arrays follow that order. A misaligned window would silently be simulated with another record's controller
+        and weighted with its W_r, so the window count and content are checked first. W_r multiplies the normalised
+        error in AugmentedModel.loss, which makes each axis's error relative to that record's servo error.
+
+        Returns:
+            data + [ctrl_ix (N_w,), loss_w (N_w, 3)], N_w windows in total.
+        """
+        # deepSI's own defaults, for a direct call; fit and the polish pass nf and stride
         nf = kw.get('nf', 25)
         stride = kw.get('stride', 1)
         sdl = sys_data.sdl
@@ -207,13 +238,15 @@ class ClosedLoopSimulator:
                 'ctrl_ix misalignment: %d windows derived, %d in the training data; make the window count here '
                 'follow the windowing of WindowedSystemData' % (len(ctrl_ix), len(data[0])))
         self.verify_by_content(data, sdl, counts, k0, nf, stride)
-        # same record order and counts as ctrl_ix
         loss_w = np.concatenate([np.tile(w, (c, 1)) for w, c in zip(self.record_weights, counts)])
         return list(data) + [ctrl_ix, loss_w]
 
     @staticmethod
     def verify_by_content(data, sdl, counts, k0, nf, stride):
-        """Check each record's first and last window against its recorded data."""
+        """Compare the input u^n of each record's first and last window with the record itself.
+
+        This catches a shifted or reordered window layout. It does not check y, the history arrays or the windows in
+        between, so it does not prove that every window is aligned."""
         ufuture = data[2]
         off = 0
         for sd, c in zip(sdl, counts):
@@ -228,37 +261,43 @@ class ClosedLoopSimulator:
             off += c
 
     def validation_error(self, fit_sys, val_sys_data):
-        """Validation error for checkpoint selection.
+        """Validation score sim-NRMSe. Adam keeps the checkpoint with the lowest value, and the polish is kept only
+        if it lowers it:
 
-        Mean over records and axes j of NRMS_e,j = RMS_j / sigma_e,j, each record simulated in closed loop from one
-        encoder estimate; Adam keeps the parameters with the lowest value.
+            sim-NRMSe = 1 / (3 R) sum_r sum_j RMS_{r,j} / sigma_{e,r,j},
 
-        Args:
-            fit_sys: the augmented model.
-            val_sys_data: validation records.
-        Returns:
-            the validation error sim-NRMSe.
+        over the R validation records and the actuator axes j = X1, X2, Y. RMS_{r,j} is the closed-loop free-run
+        error of closed_loop_free_run_rms_batch [m]. sigma_{e,r,j} is the standard deviation of the record's servo
+        error y_j - r_j over the same samples (thesis Eq. (setup_rms)). A value of 1 is no better than predicting the
+        mean servo error. Jan's deepSI sim-NRMS divides by the standard deviation of y, which the reference motion
+        dominates.
         """
         sdl = val_sys_data.sdl
         per_channel, _ = closed_loop_free_run_rms_batch(fit_sys, sdl, self.bank, self.val_rows)
-        self.last_per_channel = np.asarray(per_channel)          # (n_val, ny) [m]
+        # kept for the per-record validation history in training.py
+        self.last_per_channel = np.asarray(per_channel)          # (R, 3) RMS_{r,j} [m]
         return float(np.mean(self.last_per_channel / self.val_sigma_e))
 
 
 def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=False):
-    """Closed-loop free run of full records.
+    """Closed-loop free run of whole records, for validation and evaluation.
 
-    RMS_j = (mean over k = k0 .. N - 1 of (y_hat_j,k - y_j,k)^2)^(1/2), from x_hat^n_{k0} = psi(chi_{k0}) and x^c = 0.
-    Free run: one encoder estimate, then no state reset; records of equal length run as one batch.
+    Unlike a training window, each record is simulated from a single encoder estimate x_hat^n_{k0} = psi(chi_{k0})
+    with x^c = 0 and never restarted, so model errors accumulate over the whole record. The first k0 = n + 1 samples
+    are the encoder input; samples k0 .. N - 1 are scored per axis j:
+
+        RMS_j = ( 1 / (N - k0) sum_{k=k0}^{N-1} (y_hat_{j,k} - y_{j,k})^2 )^(1/2)   [m].
+
+    Runs without gradients and with the eager step; records of equal length run as one batch.
 
     Args:
         fit_sys: the augmented model.
-        sdl: the records, physical.
-        bank, ctrl_rows: controller bank and one row per record.
+        sdl: the records, unnormalised.
+        bank, ctrl_rows: the controller bank and the design index of each record.
         return_pred: also return the predictions.
     Returns:
-        per_channel: R arrays (ny,) RMS [m]; aggregate: R record RMS values [m]; with return_pred, preds: R arrays
-        (N_r - k0, ny) of y_hat [m].
+        per_channel: per record (3,) RMS_j [m]; aggregate: per record (mean_j RMS_j^2)^(1/2) [m]; with return_pred
+        also preds: per record (N - k0, 3) y_hat [m].
     """
     norm = fit_sys.norm
     na, nb = fit_sys.na, fit_sys.nb
@@ -275,10 +314,11 @@ def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=Fa
             'closed_loop_free_run_rms_batch got %d records and %d controller rows; pass one controller row per '
             'record, in record order' % (len(sdl), len(ctrl_rows)))
 
-    # 1. Normalise, u^n = (u - mu_u) / sigma_u, y^n = (y - mu_y) / sigma_y, and group records by length.
+    # u^n = T_u (u - mu_u), y^n = T_y (y - mu_y)
     un = [((sd.u - rv(norm.u0)) / rv(norm.ustd)).astype(np_dtype) for sd in sdl]
     yn = [((sd.y - rv(norm.y0)) / rv(norm.ystd)).astype(np_dtype) for sd in sdl]
 
+    # records of equal length share one batch
     groups = {}
     for i, u in enumerate(un):
         groups.setdefault(len(u) - k0, []).append(i)
@@ -287,14 +327,13 @@ def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=Fa
     aggregate = [None] * len(sdl)
     preds = [None] * len(sdl)                          # filled with return_pred only
     with torch.no_grad():
-        # the matrices at the current parameters, once for every group and step
+        # baseline and OBC matrices at the current parameters, shared by every group and step
         step_kw = fit_sys.objective_matrices()
-    # 2. Free run per group, then RMS per record.
     for ixs in groups.values():
+        # chi_{k0}: the nb inputs and na outputs before k0
         uh = T(np.stack([un[i][k0 - nb:k0] for i in ixs]))
         yh = T(np.stack([yn[i][k0 - na:k0] for i in ixs]))
         with torch.no_grad():
-            # x_hat^n_{k0} = psi(chi_{k0}); the scored samples are k0 .. N - 1
             x0 = fit_sys.encoder(uh, yh)
             u_t = T(np.stack([un[i][k0:] for i in ixs]))
             y_t = T(np.stack([yn[i][k0:] for i in ixs]))
@@ -303,7 +342,7 @@ def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, return_pred=Fa
                 torch.tensor([int(ctrl_rows[i]) for i in ixs], dtype=torch.long, device=device), **step_kw)
         y_pred = y_pred.cpu().numpy()
         for j, i in enumerate(ixs):
-            # y_hat = y_hat^n sigma_y + mu_y; RMS_j = (mean_k e_j,k^2)^(1/2), record RMS = (mean_j RMS_j^2)^(1/2)
+            # back to metres: y_hat = T_y^-1 y_hat^n + mu_y
             y_phys = y_pred[j] * rv(norm.ystd) + rv(norm.y0)
             e = y_phys - np.asarray(sdl[i].y)[k0:]
             mse_per_channel = np.mean(e ** 2, axis=0)

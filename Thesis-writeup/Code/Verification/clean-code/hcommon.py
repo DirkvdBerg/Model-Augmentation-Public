@@ -22,7 +22,9 @@ from dataclasses import replace
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..', '..', '..'))
-CLEAN = os.path.join(REPO, 'Clean')
+# HARNESS_CLEAN_ROOT: another copy of Clean/ as the clean code root (D-295 arm B imports a copy of the final tree
+# while arm A runs on the repository's reverted Clean/); unset: the repository's Clean/
+CLEAN = os.path.abspath(os.environ.get('HARNESS_CLEAN_ROOT') or os.path.join(REPO, 'Clean'))
 # HARNESS_GOLDEN: the root of the layer 1 to 3c goldens and clean outputs (server_suite.sbatch captures both sides
 # afresh in its own root, since the comparators refuse goldens of another data folder or library set); unset: the
 # repository's goldens. The snapshots stay under simulations/clean-golden/src-snapshots either way (SNAPSHOTS).

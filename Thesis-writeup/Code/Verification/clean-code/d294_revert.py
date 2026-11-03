@@ -17,7 +17,8 @@ import os
 import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
-CLEAN = os.path.join(REPO, 'Clean')
+# HARNESS_CLEAN_ROOT: a copy of Clean/ to swap instead (D-295 reverts a copy, never the repository's Clean/)
+CLEAN = os.path.abspath(os.environ.get('HARNESS_CLEAN_ROOT') or os.path.join(REPO, 'Clean'))
 # (file below Clean/, line in the final tree, line in the reverted tree)
 SWAPS = (
     ('model_augmentation/systems/gantry_ss.py',

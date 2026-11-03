@@ -12,8 +12,9 @@ verification loads the thesis folders through this converter only.
 - checkpoint pairs gantry_ckpt_*.pt / .npz: the state_dict keys of DROPPED_STATE_KEYS leave hfn (R3: unread state
   Clean/ no longer registers); the .npz keeps the keys Clean/'s pair holds, as plain arrays (R19: Clean/ reads it
   with allow_pickle=False).
-- val_hist.npz and loss.npz are copied when present. deepSI whole dumps (*.pth) are not converted: no verification
-  step resumes from a thesis dump.
+- val_hist.npz and loss.npz are copied when present. A thesis deepSI dump (*.pth) pickles mainline classes, so it is
+  converted in two steps: the harness's extract_dump.py (mainline root) writes its state as plain tensors, and
+  convert_dump() here (Clean/ root) writes a dump that Clean/'s resolve_checkpoint reads (D-295).
 DST must not exist; SRC is only read.
 """
 import json
@@ -29,6 +30,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # to the baseline block connected_blocks.0): the 13 nominal matrices at theta^0 and the parameter-prior scale
 DROPPED_STATE_KEYS = ('mh', 'alpha', 'beta', 'gamma_', 'N0', 'N1', 'N2', 'Ax', 'Bw', 'Bu', 'A_combined', 'K_mat',
                       'C_mat', 'Lambda_combo')
+# hfn state_dict keys of the OBC correction (2026-11-03): mainline's row selection E, which Clean/ replaces by zero
+# padding, and the two buffers Clean/ renamed (mainline name -> Clean/ name); the harness's hcommon holds the same
+DROPPED_OBC_KEYS = ('obc_correction.E',)
+RENAMED_STATE_KEYS = {'obc_correction.vbar': 'obc_correction.beta_lin',
+                      'obc_correction.theta_frozen': 'obc_correction.theta_aux'}
 # the keys of Clean/'s checkpoint pair .npz (training.save_checkpoint_pair)
 PAIR_NPZ_KEYS = ('done_epochs', 'bestfit', 'lbfgs_outcome', 'resumed_at_epoch', 'ps2_summary')
 # RunConfig fields a thesis folder records as its own run environment (the former config._ENV_KEYS)
@@ -104,18 +110,51 @@ def _plain(v):
     return a
 
 
+def convert_hfn_state(sd):
+    """A thesis hfn state_dict as Clean/ registers it: without the DROPPED_STATE_KEYS and DROPPED_OBC_KEYS, the OBC
+    buffers under their Clean/ names; returns (state, dropped keys)."""
+    dropped = [k for k in sd if (k.startswith('connected_blocks.0.') and k.rsplit('.', 1)[1] in DROPPED_STATE_KEYS)
+               or k in DROPPED_OBC_KEYS]
+    return {RENAMED_STATE_KEYS.get(k, k): v for k, v in sd.items() if k not in dropped}, dropped
+
+
 def convert_pair(src_base, dst_base):
-    """One checkpoint pair <base>.pt / <base>.npz: the DROPPED_STATE_KEYS leave hfn, the .npz keeps PAIR_NPZ_KEYS as
+    """One checkpoint pair <base>.pt / <base>.npz: hfn through convert_hfn_state, the .npz keeps PAIR_NPZ_KEYS as
     plain arrays; returns the dropped hfn keys."""
     import torch
     ckpt = torch.load(src_base + '.pt', map_location='cpu')
-    dropped = [k for k in ckpt['hfn'] if k.startswith('connected_blocks.0.')
-               and k.rsplit('.', 1)[1] in DROPPED_STATE_KEYS]
-    ckpt['hfn'] = {k: v for k, v in ckpt['hfn'].items() if k not in dropped}
+    ckpt['hfn'], dropped = convert_hfn_state(ckpt['hfn'])
     torch.save(ckpt, dst_base + '.pt')
     with np.load(src_base + '.npz', allow_pickle=True) as z:
         meta = {k: _plain(z[k]) for k in PAIR_NPZ_KEYS if k in z.files}
     np.savez(dst_base + '.npz', **meta)
+    return dropped
+
+
+class SavedState:
+    """A saved state_dict behind the one method Clean/'s resolve_checkpoint calls on a dump's hfn, encoder and
+    optimizer entries."""
+
+    def __init__(self, sd):
+        self.sd = sd
+
+    def state_dict(self):
+        return self.sd
+
+
+def convert_dump(plain_pt, dst_pth):
+    """A thesis deepSI dump, extracted by extract_dump.py into plain_pt, as a dump at dst_pth that Clean/ resumes from:
+    hfn through convert_hfn_state; encoder, Adam state and progress (epochs_before, epoch_counter, bestfit,
+    ps2_opening) unchanged. Reading dst_pth needs this module importable (the harness puts it on sys.path)."""
+    import torch
+    if os.path.exists(dst_pth):
+        raise FileExistsError(dst_pth)
+    d = torch.load(plain_pt, map_location='cpu', weights_only=False)
+    hfn, dropped = convert_hfn_state(d['hfn'])
+    out = {k: d[k] for k in ('epochs_before', 'epoch_counter', 'bestfit', 'ps2_opening') if k in d}
+    out.update(hfn=SavedState(hfn), encoder=SavedState(d['encoder']), optimizer=SavedState(d['optimizer']))
+    os.makedirs(os.path.dirname(os.path.abspath(dst_pth)), exist_ok=True)
+    torch.save(out, dst_pth)
     return dropped
 
 
