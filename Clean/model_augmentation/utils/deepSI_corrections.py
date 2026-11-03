@@ -1,35 +1,38 @@
-"""deepSI data classes whose training windows keep the data's dtype.
-
-Conventions: superscript n = normalised; u0, ustd, y0, ystd are mu_u, sigma_u, mu_y, sigma_y.
-"""
-# CHANGED: Jan's fixed_System_data and fixed_System_data_norm, renamed WindowedSystemData and SystemDataNormalizer;
-# restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
-# commit 8200923 (model_augmentation/__init__.py)
+"""Jan's dtype-preserving training windows and record normalisation, restricted to the thesis path."""
+# CHANGED: renamed fixed_System_data and fixed_System_data_norm to WindowedSystemData and SystemDataNormalizer.
+# Original: Model-Augmentation-Public-main/model_augmentation/utils/deepSI_corrections.py
 
 from deepSI.system_data.system_data import System_data, System_data_list
 import numpy as np
 
 class WindowedSystemData(System_data):
-    """System_data whose training windows keep the data's dtype: deepSI's stride-1 path casts them to float32."""
+    """Jan's window builder preserves array dtype; deepSI's stride-1 windowing casts to float32."""
     def __init__(self, u=None, y=None, x=None, cheat_n=0, normed=False, dt=None):
-        """deepSI's System_data; x is accepted and dropped, normed marks normalised data, dt = T_s [s]."""
+        """Store inputs and outputs; x is accepted for deepSI compatibility but not stored.
+
+        normed marks normalised data; dt is the sample time [s].
+        """
         super().__init__(u=u, y=y, cheat_n=cheat_n, normed=normed, dt=dt)
 
     def to_hist_future_data(self, na=10, nb=10, nf=5, na_right = 0, nb_right = 0, stride=1, \
                             force_multi_u=False, force_multi_y=False, online_construct=False):
-        """Training windows of a record.
+        """Split a record into histories and prediction windows, preserving array dtype.
 
-        chi_tau = (y[tau - na:tau], u[tau - nb:tau]) and the futures [tau:tau + nf], for window ends tau + nf at the
-        stride.
+        kmid starts each prediction window [kmid:kmid + nf]. Histories contain samples before kmid;
+        na_right and nb_right optionally include samples from kmid onward.
 
         Args:
-            na, nb: history lengths (n + 1).
-            nf: window length n_f.
+            na, nb: past output and input samples per window.
+            nf: samples per prediction window.
             stride: samples between window starts.
-            na_right, nb_right: samples from tau on added to the histories (0 here).
-            force_multi_u, force_multi_y, online_construct: unused, kept for deepSI's signature.
+            na_right, nb_right: output and input samples from kmid onward included in the histories (0 here).
+            force_multi_u, force_multi_y, online_construct: unused; retained for deepSI compatibility.
         Returns:
-            uhist, yhist, ufuture, yfuture, each (n_windows, length, 3).
+            For multi-channel records with N > 0 windows:
+            uhist (N, nb + nb_right, nu), yhist (N, na + na_right, ny),
+            ufuture (N, nf, nu), yfuture (N, nf, ny).
+            For a single signal stored as a 1D array, there is no separate channel dimension.
+            If no window fits, all four arrays have shape (0,).
         """
 
         u, y = np.copy(self.u), np.copy(self.y)
@@ -37,9 +40,11 @@ class WindowedSystemData(System_data):
         uhist = []
         ufuture = []
         yfuture = []
+        # Required samples before the window start and from that start onward.
         k0 = max(nb, na)
         k0_right = max(nf, na_right, nb_right)
         for k in range(k0+k0_right,len(u)+1,stride):
+            # k is one past the last sample needed; kmid starts the prediction window.
             kmid = k - k0_right
             yhist.append(y[kmid-na:kmid+na_right])
             uhist.append(u[kmid-nb:kmid+nb_right])
@@ -50,33 +55,37 @@ class WindowedSystemData(System_data):
         return uhist, yhist, ufuture, yfuture
 
 class SystemDataNormalizer(object):
-    """deepSI's normalisation u^n = (u - u0) / ustd, y^n = (y - y0) / ystd, returning WindowedSystemData."""
+    """Normalise records using supplied means and scales; no fitting or inverse transform.
+
+    u^n = (u - u0) / ustd, y^n = (y - y0) / ystd; model.py sets the training means and standard deviations.
+    """
+    # CHANGED: removed fit, make_training_data, inverse and per-signal transforms, __repr__ and their type helper;
+    # these are unused by the thesis training and simulation code.
     def __init__(self, u0=0, ustd=1, y0=0, ystd=1):
-        """Store mu_u, sigma_u, mu_y, sigma_y as u0, ustd, y0, ystd."""
+        """Store input/output means and scales; defaults give identity normalisation."""
         self.u0 = u0
         self.ustd = ustd
         self.y0 = y0
         self.ystd = ystd
 
     def transform(self,sys_data):
-        """Normalisation of the records.
-
-        u^n = (u - mu_u) / sigma_u, y^n = (y - mu_y) / sigma_y, record lengths and signal shapes unchanged.
+        """Normalise each record with the stored means and scales, keeping record lengths and signal shapes.
 
         Args:
-            sys_data: unnormalised System_data, or a list of them.
+            sys_data: unnormalised System_data, or a list, tuple or System_data_list of records.
         Returns:
-            WindowedSystemData, or a System_data_list of them, normalised.
+            normalised WindowedSystemData, or a System_data_list for multiple records.
         """
+        # CHANGED: also accept multiple records; normalise each separately
         if isinstance(sys_data, (list, tuple, System_data_list)):
             return System_data_list([self.transform(s) for s in sys_data])
-        # CHANGED: lists handled record by record; errors name the expected input
+        # CHANGED: name the accepted record types in the error.
         if not isinstance(sys_data, System_data):
             raise NotImplementedError(f'type={type(sys_data)} cannot be transformed by norm; pass System_data '
                                       f'or a System_data_list')
 
+        # CHANGED: removed is_id; always check that the record is unnormalised, even with zero means and unit scales.
         assert sys_data.normed==False, 'System_data is already normalized; pass the original unnormalised data'
-        # u^n = (u - u0) / ustd, y^n = (y - y0) / ystd
         u_transformed = (sys_data.u-self.u0)/self.ustd if sys_data.u is not None else None
         y_transformed = (sys_data.y-self.y0)/self.ystd if sys_data.y is not None else None
         return WindowedSystemData(u=u_transformed,x=sys_data.x,y=y_transformed, \
