@@ -43,8 +43,8 @@ TEX = {'Theta': r'$\Theta$'}
 
 
 def _baseline_block(fit_sys):
-    """The identifiable baseline block of a model: the block that holds beta (free_params)."""
-    return next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'free_params'))
+    """The identifiable baseline block of a model: the block that holds beta."""
+    return next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'beta'))
 
 
 def _without_learned(fit_sys, beta=None):
@@ -68,7 +68,7 @@ def _without_learned(fit_sys, beta=None):
         if correction is not None:
             correction.theta_aux.zero_()
         if beta is not None:
-            _baseline_block(baseline_model).free_params.copy_(beta)
+            _baseline_block(baseline_model).beta.copy_(beta)
     return baseline_model
 
 
@@ -83,7 +83,7 @@ def _true_combinations(baseline_block):
     """
     # in double precision, so the combinations are rounded to the model's precision only once
     return type(baseline_block).combos_of(baseline_block.params_init.double(), float(baseline_block.Lb)).to(
-        baseline_block.free_params.dtype)
+        baseline_block.beta.dtype)
 
 
 def _true_beta(baseline_block):
@@ -95,7 +95,7 @@ def _true_beta(baseline_block):
     Returns:
         (10,) beta.
     """
-    return baseline_block.free_from_combinations(_true_combinations(baseline_block))
+    return baseline_block.beta_from_combinations(_true_combinations(baseline_block))
 
 
 def _noise_free_twins(cfg: RunConfig):

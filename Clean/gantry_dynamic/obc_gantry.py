@@ -124,15 +124,15 @@ class GantryOBCCorrection(nn.Module):
         super().__init__()
         # the baseline matrices (K, C, parts of M(Y)^-1) at beta_lin, and their change when beta moves in the
         # direction a, theta_aux = (a, c)
-        self.baseline_matrices_and_derivative = baseline_block.mats_and_tangent_from_free
+        self.baseline_matrices_and_derivative = baseline_block.mats_and_tangent_from_beta
         # one baseline step with those matrices: f_base^n(beta_lin) and varphi(beta_lin) a
         self.baseline_step_and_derivative = baseline_block.rk4_with_tangent
-        self.baseline_step = baseline_block.transition_from_free
+        self.baseline_step = baseline_block.transition_from_beta
         self.chunk = chunk
         self.nx, self.nx_phys = nx, nx_phys
         # network output i is the correction of physical state i
         self.physical_rows = tuple(range(self.nx_phys))
-        n_beta = baseline_block.free_params.numel()
+        n_beta = baseline_block.beta.numel()
         # beta_lin: the beta that J was built at
         self.register_buffer('beta_lin', torch.zeros(n_beta, dtype=dtype))
         # theta_aux = (a, c), the coefficients of f_obc^n = varphi(beta_lin) a + c f_base^n(beta_lin)

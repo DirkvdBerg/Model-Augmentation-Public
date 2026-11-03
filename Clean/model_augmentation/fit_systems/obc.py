@@ -8,10 +8,6 @@ import torch
 from torch import Tensor
 
 
-class OBCRankLossAbort(RuntimeError):
-    """The projection basis lost column rank at the first build, or at too many refreshes in a row."""
-
-
 class OBCBasis:
     """The basis J factorised once: economy SVD of J with unit-norm columns, and its numerical rank."""
 
@@ -156,13 +152,13 @@ class OBCProjection:
             msg = ('[obc] refresh at epoch %s: numerical rank %d < %d (tol %.3e)'
                    % (epoch, candidate_basis.rank, candidate_basis.n_cols, candidate_basis.tol))
             if self.basis is None:
-                raise OBCRankLossAbort(msg + ' at the first build, with no previous basis to keep; check that the '
-                                       'reference tuples excite every training coordinate, and the linear '
-                                       'dependence among the sensitivity columns and the baseline column')
+                raise RuntimeError(msg + ' at the first build, with no previous basis to keep; check that the '
+                                   'reference tuples excite every training coordinate, and the linear '
+                                   'dependence among the sensitivity columns and the baseline column')
             if self.consecutive_rank_loss >= self.max_consecutive_rank_loss:
-                raise OBCRankLossAbort(msg + ' for %d refreshes in a row; check reference excitation and linear '
-                                       'dependence among the sensitivity columns and the baseline column at this '
-                                       'parameter point' % self.consecutive_rank_loss)
+                raise RuntimeError(msg + ' for %d refreshes in a row; check reference excitation and linear '
+                                   'dependence among the sensitivity columns and the baseline column at this '
+                                   'parameter point' % self.consecutive_rank_loss)
         else:
             self.consecutive_rank_loss = 0
             self.basis = candidate_basis

@@ -631,5 +631,16 @@ class Nonlinear_MSD_State_Block(Discrete_Nonlinear_Function_Block):
         return xk
 
 
-# TODO: Not certain we need the output block
-# physical_output_model_block = Nonlinear_MSD_Output_Block()
+class Nonlinear_MSD_Output_Block(Block):
+    """Return the normalized displacement of the second mass."""
+
+    def __init__(self, std_x=np.ones((4, 1)), std_y=1, *args, **kwargs) -> None:
+        self.nx = 4
+        self.nu = 1
+        self.ny = 1
+        super().__init__(nw=self.ny, nz=self.nx + self.nu, *args, **kwargs)
+        self.register_buffer("output_scale", (to_tensor(std_x)[2] / std_y).reshape(()))
+
+    def forward(self, z: Tensor):
+        assert z.size(1) == self.nz
+        return z[:, 2:3, :] * self.output_scale

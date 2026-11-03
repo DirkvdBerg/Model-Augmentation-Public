@@ -604,7 +604,7 @@ class AugmentedModel(SSE_Interconnect):
         epoch = self._epoch_index()
         with torch.no_grad():
             if refresh_basis or self.obc.basis is None:
-                self.obc.refresh(self.hfn.connected_blocks[self._mats_ix].free_params, epoch)
+                self.obc.refresh(self.hfn.connected_blocks[self._mats_ix].beta, epoch)
             theta = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])
             correction.set_theta_aux(theta, self.obc.basis.beta_lin)
         return True
@@ -644,7 +644,7 @@ class AugmentedModel(SSE_Interconnect):
         if self.obc is not None:
             correction = self.hfn.obc_correction
             # beta_lin = beta at the first objective of each epoch; the basis stays fixed within the epoch
-            self.obc.maybe_refresh(self._epoch_index(), self.hfn.connected_blocks[self._mats_ix].free_params)
+            self.obc.maybe_refresh(self._epoch_index(), self.hfn.connected_blocks[self._mats_ix].beta)
             # theta_aux = (J^T J)^-1 J^T F^n_aug at every objective, differentiable in theta_aug
             theta_aux = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])
             # a detached copy for prediction; the attached theta_aux below keeps V differentiable through it

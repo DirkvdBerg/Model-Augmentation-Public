@@ -93,3 +93,8 @@ grey-box runs. MATLAB with Simulink R2025a for data generation.
 `model_augmentation/` is adapted from Model-Augmentation-Public by Jan H. Hoekstra (commit 8200923, BSD 3-Clause,
 see `model_augmentation/LICENSE`). Changes to his code are marked `# CHANGED:`, additions `@added` or
 `__project_origin__`. The black-box nets are his deepSI nets.
+
+The orthogonal projection in `model_augmentation/fit_systems/obc.py` and `gantry_dynamic/obc_gantry.py` adapts the
+method of B. M. Györök et al., "Orthogonal projection-based regularization for efficient model augmentation" (L4DC
+2025; code: https://github.com/AIMotionLab-SZTAKI/orthogonal-augmentation, MIT License). Györök adds the projection as
+a penalty on the training loss; here the network's part along the baseline's directions is removed by construction.

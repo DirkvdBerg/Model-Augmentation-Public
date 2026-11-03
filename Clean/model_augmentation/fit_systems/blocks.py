@@ -1,16 +1,11 @@
-"""The blocks of the augmented model: Jan's block types and the gantry physics blocks of the baseline.
+"""Blocks of the augmented model: the baseline predicts the next physical state, the network adds its correction
+and predicts the next added states, and the output map gives the measured positions.
 
-Conventions: batch rows are samples, so A x is written x @ A.T; superscript n = normalised; polynomials in Y are
-evaluated in Horner form. Code names: alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma_ = J_eff (the mass terms
-in mats); a = qddot; fnet = u - C qdot - K q; free / free_params = beta, the training coordinates; M_DIFF_RHO = gamma,
-the margin of the m_Delta bound.
-
-Units: theta and theta_base are physical, beta is dimensionless. mats = (K, C, A_combined, m_h, alpha, beta, gamma_,
-N0, N1, N2) with K, C, N0, N1, N2 (3, 3) and A_combined (6, 15); dmats has the same layout. One objective is one
-evaluation of V or one validation; its matrices are built once (pass_mats).
+Jan Hoekstra's block types are adapted for this model; the gantry blocks are added. Superscript n = normalised;
+theta holds fourteen physical parameters, theta_base their ten identifiable combinations, and beta the
+dimensionless training coordinates. In shapes, ... denotes any leading batch dimensions.
 """
-# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
-# commit 8200923 (model_augmentation/__init__.py)
+# CHANGED: restricted to the thesis training path; Jan's full code is in Model-Augmentation-Public-main
 import torch
 from torch import Tensor, nn
 
@@ -20,10 +15,11 @@ from model_augmentation.systems import gantry_ss
 
 
 class Block(nn.Module):
-    """Basic block implementation with variables that need to be defined for interconnect."""
+    """Block input and output sizes nz and nw, used by the interconnect to connect its signals."""
 
     def __init__(self, nz, nw, **kwargs) -> None:
         """Store the block input size nz and output size nw."""
+        # CHANGED: no block name; add_block sets the block index
         super().__init__(**kwargs)
 
         self.nw = nw
@@ -32,19 +28,21 @@ class Block(nn.Module):
 
 class Static_ANN_Block(Block):
     """Network block: (f_aug^n, g_aug^n) = phi_aug(x_hat^n, u^n), times a gate per output."""
+    # CHANGED: every argument required, no defaults
     def __init__(self, nz, nw, net, n_nodes_per_layer, n_hidden_layers, activation, net_kwargs) -> None:
-        """Network block: phi_aug with a gate per output.
+        """Network phi_aug: corrections f_aug^n to the physical states and next added states g_aug^n.
 
-        The interconnect feeds it z = (x_hat^n, u^n) and routes its outputs to the state rows.
+        The interconnect feeds it (x_hat^n, u^n), adds f_aug^n to the baseline transition and sets the next added
+        states to g_aug^n.
 
         Args:
             nz: input size 6 + n_xbar + 3.
-            nw: output size, one per routed state.
+            nw: output size 6 + n_xbar, physical rows first.
             net: network class (AugmentationNetwork).
             n_nodes_per_layer: width n_h of each hidden layer.
             n_hidden_layers: number of hidden layers.
-            activation: tanh.
-            net_kwargs: extra network arguments (nx_phys).
+            activation: hidden-layer activation (nn.Tanh).
+            net_kwargs: extra network arguments; nx_phys sets the number of physical output rows.
         """
         super(Static_ANN_Block, self).__init__(nz, nw)
 
@@ -61,25 +59,24 @@ class Static_ANN_Block(Block):
         self.register_buffer('out_gate', torch.ones(self.nw), persistent=False)
 
     def forward(self, z: Tensor):
-        """Network block of the augmented model.
-
-        w = gate * phi_aug(z), z = (x_hat^n, u^n); the gate is 0 only when the evaluation removes the network.
+        """Network output w = out_gate * phi_aug(z); evaluation sets out_gate to zero to simulate the baseline alone.
 
         Args:
             z: (B, nz, 1) network input (x_tilde^n, xbar, u^n).
         Returns:
-            (B, nw, 1) outputs (f_aug^n, g_aug^n), routed to the state rows by the interconnect.
+            (B, nw, 1) physical-state corrections followed by next added states.
         """
+        # CHANGED: no size assertion
         w = self.net(z.view(-1, self.nz))
         w = w * self.out_gate
         return w.view(-1, self.nw, 1)
 
 
 class Linear_Output_Block(Block):
-    """Output map y_hat^n = C^n x_tilde^n + D u, fixed, in normalised coordinates; D must stay 0 for the closed loop."""
+    """Fixed output map y_hat^n = C^n x_tilde^n + D u^n; D = 0, so the output depends only on the physical state."""
     # CHANGED: C and D required, as buffers; no empty-matrix cases
     def __init__(self, C, D) -> None:
-        """C and D as fixed buffers; ny, nx, nu from their shapes."""
+        """Store C (ny, nx) and D (ny, nu) as buffers: they move with the model and are not trained."""
         _C = to_tensor(C)
         _D = to_tensor(D)
 
@@ -110,31 +107,31 @@ class Linear_Output_Block(Block):
 
 
 class Discrete_Nonlinear_Function_Block(Block):
-    """w = nonlinear_function(z), defined by the subclass."""
+    """Block whose subclass defines w = nonlinear_function(z, mats)."""
     def forward(self, z: Tensor, mats):
         """Evaluate the subclass's map with the matrices of this objective."""
-        # CHANGED: the per-objective matrices are passed on to nonlinear_function
+        # CHANGED: the per-objective matrices are passed on to nonlinear_function; no size assertion
         return self.nonlinear_function(z, mats)
 
 
 @added
 class GantryStateBlock(Discrete_Nonlinear_Function_Block):
-    """Baseline transition f_base^n: one RK4 step over T_s of xdot = F(x, u), with M(Y)^-1 in rational form, in
-    normalised coordinates."""
+    """Baseline transition f_base^n: RK4 over one sampling interval T_s, with up_sample substeps.
 
-    def __init__(self, std_x, std_u, x_mean, u_mean, Ts, up_sample, *args, closed_form=False, **kwargs) -> None:
-        """Baseline transition f_base^n.
+    The dynamics are computed in physical units; the block receives and returns normalised states.
+    """
 
-        Stores the force transform P and the normalisation, so the block maps normalised states and inputs.
+    def __init__(self, std_x, std_u, x_mean, u_mean, Ts, up_sample, closed_form=False) -> None:
+        """Store the sampling interval, force transform P and normalisation of the baseline.
 
         Args:
             std_x, x_mean: (6, 1) sigma_x, mu_x of x_tilde = (q, qdot), physical.
             std_u, u_mean: (3, 1) sigma_u, mu_u of u_act = (F_X1, F_X2, F_Y) [N].
             Ts: sample time T_s [s].
             up_sample: RK4 steps per T_s.
-            closed_form: xdot = (qdot, a) directly instead of through the LFR output equation.
+            closed_form: compute xdot = (qdot, qddot) directly; otherwise use the equivalent LFR state equation.
         """
-        super().__init__(nz=9, nw=6, *args, **kwargs)
+        super().__init__(nz=9, nw=6)
 
         self.Ts   = Ts
         self.up_sample = up_sample
@@ -145,7 +142,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         # from (F_X1, F_X2, F_Y) to (F_X, torque on Theta, F_Y)
         self.register_buffer("P_mat", gantry_ss.P.clone())
 
-        # 2. Normalisation buffers.
+        # 2. Means and standard deviations; std_x_1d is for arrays with one state per row.
         self.register_buffer("std_x",    to_tensor(std_x).reshape(6, 1))
         self.register_buffer("std_x_1d", to_tensor(std_x).reshape(6))
         self.register_buffer("std_u",    to_tensor(std_u).reshape(3, 1))
@@ -153,16 +150,16 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         self.register_buffer("u_mean",   to_tensor(u_mean).reshape(3, 1))
 
     def _rk4(self, x: Tensor, u: Tensor, mats) -> Tensor:
-        """Baseline transition f_base^n: one RK4 step of the vector field over T_s.
+        """Baseline transition f_base^n over T_s: up_sample RK4 substeps of length h = T_s / up_sample.
 
-        x_{k+1} = x_k + (k1 + 2 k2 + 2 k3 + k4) / 6, h = T_s / up_sample, u held over the step.
+        The input is held constant over T_s; each substep adds (k1 + 2 k2 + 2 k3 + k4) / 6 to the state.
 
         Args:
             x: (B, 6, 1) x_tilde^n_k.
             u: (B, 3, 1) u^n_k.
             mats: matrices of this objective.
         Returns:
-            (B, 6, 1) x_tilde^n_{k+1} = f_base^n(theta_base, x_tilde^n_k, u^n_k).
+            (B, 6, 1) next normalised physical state.
         """
         h = self.Ts / self.up_sample
         for _ in range(self.up_sample):
@@ -175,17 +172,16 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         return x
 
     def _deriv_with(self, x: Tensor, u: Tensor, mats) -> Tensor:
-        """Baseline vector field F.
+        """State derivative used by each RK4 stage: xdot = (qdot, M(Y)^-1 (P u_act - K q - C qdot)).
 
-        xdot = (qdot, M(Y)^-1 (P u - K q - C qdot)), evaluated in physical units and returned normalised; the RK4 stages
-        of f_base^n call it.
+        State and actuator force are first denormalised; the derivative is divided by sigma_x on return.
 
         Args:
             x: (B, 6, 1) x_tilde^n.
             u: (B, 3, 1) u^n.
             mats: matrices of this objective.
         Returns:
-            (B, 6, 1) xdot^n = xdot / sigma_x [1/s].
+            (B, 6, 1) normalised state derivative xdot^n [1/s].
         """
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
@@ -197,16 +193,16 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         x2 = x_phys.squeeze(-1)
         u2 = u_phys.squeeze(-1)
 
-        # 2. Net force.
-        # generalised force u = P u_act
+        # 2. Actuator forces mapped to generalised forces (F_X, torque on Theta, F_Y); samples are rows.
         u_log = u2 @ self.P_mat.T
 
-        # fnet = u - K q - C qdot
+        # net generalised force: fnet = P u_act - K q - C qdot
         fnet = (-(x2[:, :3] @ K_mat.T)
                 - (x2[:, 3:] @ C_mat.T)
                 + u_log)
 
-        # 3. Acceleration a = M(Y)^-1 fnet = (N0 + Y N1 + Y^2 N2) fnet / det M(Y); no linear solve per stage
+        # 3. Acceleration a = M(Y)^-1 fnet; the adjugate N0 + Y N1 + Y^2 N2 avoids a linear solve at each stage.
+        # In these inertia terms beta = (L_b/2) m_Delta and gamma_ = J_eff; beta here is not the training coordinate.
         Y   = x2[:, 2]
         dY  = gantry_ss.inertia_determinant(Y, alpha, beta, gamma_, mh)
         Y_r = Y.unsqueeze(0)
@@ -221,7 +217,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
             # closed form: xdot = (qdot, a)
             xdot_phys = torch.cat([x2[:, 3:], a], dim=-1)
         else:
-            # LFR output equation: xdot = A_combined (x, w, u), z = (a, Y a), w = Delta(Y) z = Y z
+            # LFR state equation: xdot = A_combined (x, w, u), with w = (Y a, Y^2 a).
             z = torch.cat([a, Y_val * a], dim=-1)
             w = Y_val * z
 
@@ -233,25 +229,22 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         return xdot
 
     def _deriv_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
-        """Baseline vector field F and its directional derivative.
-
-        (F^n, DF^n[sx, dmats]): F^n of _deriv_with and its derivative along the state tangent sx and the matrix
-        tangent dmats, written out in forward mode; the OBC correction uses it for varphi a.
+        """State derivative and its directional derivative along (sx, dmats), with u fixed.
 
         Args:
             x: (B, 6, 1) x_tilde^n.
-            sx: (B, 6, 1) state tangent.
+            sx: (B, 6, 1) derivative of the normalised state in the chosen direction.
             u: (B, 3, 1) u^n.
-            mats, dmats: matrices of this objective and their tangent.
+            mats, dmats: baseline matrices and their derivatives in the same direction.
         Returns:
-            xdot^n and its tangent s_xdot^n, both (B, 6, 1) [1/s].
+            xdot^n and its directional derivative s_xdot^n, both (B, 6, 1) [1/s].
         """
         (K_mat, C_mat, A_combined,
          mh, alpha, beta, gamma_, N0, N1, N2) = mats
         (dK, dC, dA_combined,
          dmh, dalpha, dbeta, dgamma_, dN0, dN1, dN2) = dmats
 
-        # every s_* below is the directional derivative of * along (sx, dmats)
+        # s_* denotes a directional derivative; dK, dC, etc. are the matrix derivatives supplied in dmats.
         # 1. Denormalise: x = x^n sigma_x + mu_x, s_x = sx sigma_x; u = u^n sigma_u + mu_u, u = P u_act.
         s_x2 = (sx * self.std_x).squeeze(-1)
         x2 = (x * self.std_x + self.x_mean).squeeze(-1)
@@ -317,17 +310,17 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         return xdot, s_xdot
 
     def rk4_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
-        """Baseline transition f_base^n and its directional derivative.
+        """Baseline transition and its derivative in a chosen parameter direction, through every RK4 substep.
 
-        The RK4 step of _rk4 and its tangent, stage by stage: k_i = h F(x_i), s_i = h DF(x_i)[sx_i, dmats]. With a zero
-        state tangent and dmats along a, the tangent is varphi(beta_lin) a.
+        OBC uses sx = 0 because its reference states are fixed; with dmats in direction a at beta_lin, the
+        returned derivative is varphi(beta_lin) a.
 
         Args:
-            x, sx: (B, 6, 1) x_tilde^n and its tangent.
+            x, sx: (B, 6, 1) normalised physical state and its derivative in the chosen direction.
             u: (B, 3, 1) u^n.
-            mats, dmats: matrices at beta_lin and their tangent.
+            mats, dmats: baseline matrices and their derivatives in the same direction.
         Returns:
-            x_next and sx_next, both (B, 6, 1).
+            next normalised physical state and its directional derivative, both (B, 6, 1).
         """
         h = self.Ts / self.up_sample
         for _ in range(self.up_sample):
@@ -348,14 +341,14 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
 
 @added
 class _TrainableGantryStateBlock(GantryStateBlock):
-    """The baseline block whose matrices are rebuilt from the fourteen parameters theta."""
+    """Build the baseline matrices from fourteen physical parameters theta and use them in the state transition."""
 
     # the order of theta; meanings and units at gantry_ss
     PARAM_NAMES = ("kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
                    "mh", "m1", "m2", "mb", "Jb", "Jh", "d")
 
     def __init__(self, *args, params_init, **kwargs) -> None:
-        """theta^0 = params_init, and L_b fixed at its nominal value."""
+        """Store the nominal physical parameters theta^0 = params_init; L_b stays fixed during training."""
         super().__init__(*args, **kwargs)
 
         params_init = to_tensor(params_init).reshape(14).clone()
@@ -371,22 +364,24 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         Args:
             p: (14,) parameters theta.
         Returns:
-            K and C, each (3, 3), physical.
+            Stiffness K and damping C, each (3, 3).
         """
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          _, _, _, _, _, _, _) = p
         return gantry_ss.stiffness_and_damping(kb1, kb2, cg1, cg2, cy, cb1, cb2, self.Lb)
 
     def _mats_from_parameters(self, p: Tensor):
-        """Baseline matrices of one objective.
+        """Build stiffness, damping and the inertia terms used by the baseline dynamics.
 
-        theta -> (K, C, A_combined, m_h, alpha, beta, gamma_, N0, N1, N2), with M(Y)^-1 = (N0 + Y N1 + Y^2 N2) / d(Y)
-        and A_combined the state row of the LFR; built once per objective and reused by every RK4 stage.
+        M(Y)^-1 = (N0 + Y N1 + Y^2 N2) / det M(Y); A_combined maps (x, w, u) to xdot in the LFR.
+        The matrices are reused by every RK4 stage of the rollout.
 
         Args:
             p: (14,) parameters theta.
         Returns:
-            the tuple above, physical.
+            (K, C, A_combined, m_h, alpha, beta, gamma_, N0, N1, N2), in physical units:
+            K, C, N0, N1, N2 each (3, 3), A_combined (6, 15), and scalar inertia terms
+            alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma_ = J_eff.
         """
         (_, _, _, _, _, _, _,
          mh, m1, m2, mb, Jb, Jh, d) = p
@@ -407,26 +402,25 @@ class _TrainableGantryStateBlock(GantryStateBlock):
             z: (B, 9, 1) (x_tilde^n_k, u^n_k).
             mats: matrices of this objective (pass_mats).
         Returns:
-            (B, 6, 1) x_tilde^n_{k+1}.
+            (B, 6, 1) next normalised physical state.
         """
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
     def pass_mats(self):
         """The matrices at the current beta, built once per objective."""
-        return self._mats_at(self.free_params)
+        return self._mats_at(self.beta)
 
 
 @added
 class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
-    """The baseline block trained in theta_base = (k_b,Sigma, c_g1, c_g2, c_y, c_b,Sigma, m_h, m_Sigma, m_Delta,
-    J_eff, d) through training coordinates beta (free_params), beta = 0 at theta^0_base."""
+    """Train the ten identifiable combinations theta_base using dimensionless coordinates beta."""
 
     COMBO_NAMES = ("kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
                    "m_total", "m_diff", "J_eff", "d")
     M_TOTAL_IX = 6
     M_DIFF_IX = 7
     J_EFF_IX = 8
-    # parameters the gauge section keeps from theta^0
+    # nominal cross-arm mass and inertias used to reconstruct fourteen parameters from the ten combinations
     MB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('mb')
     JB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jb')
     JH_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jh')
@@ -436,12 +430,10 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
     COORDINATE_VERSION = 2
 
     def __init__(self, *args, combo_init, **kwargs) -> None:
-        """Baseline block in the training coordinates beta.
-
-        beta = 0 at theta^0_base = combo_init; every beta gives an admissible baseline.
+        """Set beta = 0 at combo_init and calibrate the signed mass-difference coordinate.
 
         Args:
-            combo_init: (10,) theta^0_base, physical.
+            combo_init: (10,) starting combinations theta^0_base, nominal or detuned, in physical units.
             *args, **kwargs: those of _TrainableGantryStateBlock.
         """
         super().__init__(*args, **kwargs)
@@ -450,12 +442,13 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         theta_init = self.params_init
         combo_init = to_tensor(combo_init).reshape(10).to(theta_init.dtype).clone()
 
-        self.free_params = nn.Parameter(torch.zeros(10, dtype=theta_init.dtype))
+        # keep the saved parameter name, so existing checkpoints and Adam moments still load
+        self.register_parameter('free_params', nn.Parameter(torch.zeros(10, dtype=theta_init.dtype)))
         self.register_buffer("combo_init", combo_init)
 
-        # 2. Calibrate the signed coordinate.
+        # 2. Set the offset and scale of the tanh map for m_Delta.
         # m_Delta map: r_0 = m_Delta,0 / b_0, eta_0 = atanh(r_0), s = m_Delta,0 / (b_0 (1 - r_0^2)),
-        # so beta = 0 gives m_Delta,0 with slope m_Delta,0, like the nine log coordinates
+        # so beta = 0 gives m_Delta,0 with slope m_Delta,0, with the other coordinates fixed
         bound = self._m_diff_bound(combo_init)
         r0 = combo_init[self.M_DIFF_IX] / bound
         eta0 = torch.atanh(r0)
@@ -465,9 +458,14 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         self.register_buffer("m_diff_eta0", eta0)
         self.register_buffer("m_diff_scale", scale)
 
+    @property
+    def beta(self) -> Tensor:
+        """Training coordinates; stored as free_params in checkpoints."""
+        return self._parameters['free_params']
+
     @staticmethod
     def combos_of(theta: Tensor, Lb) -> Tensor:
-        """Identifiable combinations theta_base(theta).
+        """The ten parameter combinations that determine the baseline matrices, theta_base(theta).
 
         k_b,Sigma = k_b1 + k_b2, c_b,Sigma = c_b1 + c_b2, m_Sigma = m_1 + m_2 + m_b, m_Delta = m_1 - m_2,
         J_eff = J_b + J_h + (L_b^2/4)(m_1 + m_2); the matrices depend on theta only through these ten.
@@ -476,7 +474,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
             theta: (14,) parameters theta.
             Lb: actuator distance L_b [m].
         Returns:
-            (10,) theta_base in COMBO_NAMES order.
+            (10,) identifiable combinations, in COMBO_NAMES order.
         """
         (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = theta
         Lb = torch.as_tensor(Lb, dtype=theta.dtype, device=theta.device)
@@ -488,18 +486,18 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         ])
 
     @classmethod
-    def gauge_section(cls, combo: Tensor, theta_init: Tensor, Lb) -> Tensor:
-        """A parameter vector with given combinations.
+    def parameters_from_combinations(cls, combo: Tensor, theta_init: Tensor, Lb) -> Tensor:
+        """Reconstruct theta from the identifiable combinations.
 
-        theta with theta_base(theta) = combo: equal splits of the sums, m_b and the ratio J_b : J_h from theta_init. A
-        gauge choice, not an estimate: any such theta gives the same matrices.
+        Keep the nominal m_b and J_b : J_h ratio; split joint stiffness and damping equally.
+        The reconstruction is not unique, but gives the same baseline matrices.
 
         Args:
             combo: (10,) theta_base.
             theta_init: (14,) theta^0, the source of m_b and J_b : J_h.
             Lb: actuator distance L_b [m].
         Returns:
-            (14,) theta.
+            (14,) reconstructed parameters, in PARAM_NAMES order.
         """
         kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d = combo
         Lb = torch.as_tensor(Lb, dtype=combo.dtype, device=combo.device)
@@ -518,60 +516,54 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         ])
 
     def _m_diff_bound(self, combo: Tensor) -> Tensor:
-        """Bound on |m_Delta|.
+        """Bound on |m_Delta|, with m_Delta = m_1 - m_2 the mass of the X1 carriage minus that of the X2 carriage.
+        The bound keeps M(Y) positive definite for every payload position Y.
 
-        b = gamma (2 / L_b) sqrt(m_Sigma J_eff), gamma = M_DIFF_RHO = 0.99; |m_Delta| < b keeps
-        m_Sigma J_eff > (L_b^2/4) m_Delta^2, so M(Y) > 0 for every Y.
+        b = gamma (2 / L_b) sqrt(m_Sigma J_eff), gamma = M_DIFF_RHO = 0.99. With the other combinations positive,
+        |m_Delta| < b keeps m_Sigma J_eff > (L_b^2/4) m_Delta^2; gamma keeps the bound below that limit.
 
         Args:
-            combo: (..., 10) theta_base.
+            combo: (..., 10) physical combinations; uses m_Sigma and J_eff.
         Returns:
-            (...,) bound b.
+            Bound b [kg] on |m_1 - m_2|, with the last dimension of combo removed.
         """
         k = 2 * self.M_DIFF_RHO / self.Lb.to(combo.dtype)
         return k * torch.sqrt(combo[..., self.M_TOTAL_IX] * combo[..., self.J_EFF_IX])
 
-    def combinations_from_free(self, free: Tensor) -> Tensor:
-        """Parameter map theta_base(beta).
+    def combinations_from_beta(self, beta: Tensor) -> Tensor:
+        """Map training coordinates beta to the physical combinations theta_base.
 
-        theta_base,j = theta^0_base,j exp(beta_j) for the nine positive combinations, m_Delta = b tanh(eta_0 + s
-        beta_mDelta); every beta gives an admissible baseline, so no bound or penalty is needed.
+        theta_base,j = theta^0_base,j exp(beta_j) for nine positive combinations;
+        m_Delta = b tanh(eta_0 + s beta_mDelta), with b from _m_diff_bound.
 
         Args:
-            free: (..., 10) training coordinates beta.
+            beta: (..., 10) training coordinates; zero gives combo_init.
         Returns:
-            (..., 10) theta_base.
+            physical combinations theta_base in the same order and shape as beta.
         """
         i = self.M_DIFF_IX
-        # positive combinations: theta_base,j = theta^0_base,j exp(beta_j)
-        c = self.combo_init * torch.exp(free)
-        # signed mass difference: m_Delta = b tanh(eta_0 + s beta_mDelta)
+        c = self.combo_init * torch.exp(beta)
         m_diff = self._m_diff_bound(c) * torch.tanh(
-            self.m_diff_eta0 + self.m_diff_scale * free[..., i])
+            self.m_diff_eta0 + self.m_diff_scale * beta[..., i])
         return torch.cat((c[..., :i], m_diff.unsqueeze(-1), c[..., i + 1:]), dim=-1)
 
-    def free_from_combinations(self, combo: Tensor) -> Tensor:
-        """Inverse parameter map beta(theta_base).
+    def beta_from_combinations(self, combo: Tensor) -> Tensor:
+        """Training coordinates beta of given physical combinations; evaluation uses this to set the true baseline.
 
-        beta_j = log(theta_base,j / theta^0_base,j), beta_mDelta = (atanh(m_Delta / b) - eta_0) / s; the evaluation uses
-        it for the coordinate of the true combinations.
+        beta_j = log(theta_base,j / theta^0_base,j) for the nine positive combinations;
+        beta_mDelta = (atanh(m_Delta / b) - eta_0) / s for the signed mass difference.
 
         Args:
-            combo: (..., 10) admissible theta_base.
+            combo: (..., 10) physical combinations in COMBO_NAMES order;
+                positive except m_Delta, with |m_Delta| < _m_diff_bound(combo).
         Returns:
-            (..., 10) beta.
+            dimensionless training coordinates beta in the same order and shape as combo; zero at combo_init.
         """
         i = self.M_DIFF_IX
         c = torch.as_tensor(combo, dtype=self.combo_init.dtype, device=self.combo_init.device)
         positive = torch.cat((c[..., :i], c[..., i + 1:]), dim=-1)
-        if not torch.isfinite(c).all() or (positive <= 0).any():
-            raise ValueError("combinations must be finite and positive except for signed m_diff; pass "
-                             "physical combinations")
         # r = m_Delta / b, |r| < 1 required
         r = c[..., i] / self._m_diff_bound(c)
-        if (r.abs() >= 1).any():
-            raise ValueError("m_diff lies outside the rho-contracted positive-definite domain, so no training "
-                             "coordinate represents it; pass admissible combinations")
         init = torch.cat((self.combo_init[:i], self.combo_init[i + 1:]))
         # beta_j = log(theta_base,j / theta^0_base,j), beta_mDelta = (atanh(r) - eta_0) / s
         log = torch.log(positive / init)
@@ -582,41 +574,41 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         """Current parameter estimate theta_base(beta), for reporting.
 
         Returns:
-            (10,) theta_base, physical.
+            (10,) estimated parameter combinations, in physical units.
         """
-        return self.combinations_from_free(self.free_params)
+        return self.combinations_from_beta(self.beta)
 
-    def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
-        """Baseline transition as a function of beta.
+    def transition_from_beta(self, beta: Tensor, z: Tensor) -> Tensor:
+        """Baseline transition at the supplied beta, without changing the stored beta.
 
-        f_base^n(theta_base(beta), x_tilde^n, u^n), without changing the block; the OBC basis differentiates it.
+        OBC differentiates this transition with respect to beta to build the sensitivity columns of J.
 
         Args:
-            free: (10,) beta.
+            beta: (10,) beta.
             z: (B, 9, 1) (x_tilde^n, u^n).
         Returns:
-            (B, 6, 1) next physical state.
+            (B, 6, 1) next normalised physical state.
         """
-        mats = self._mats_at(free)
+        mats = self._mats_at(beta)
         return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
 
-    def mats_and_tangent_from_free(self, free: Tensor, dfree: Tensor):
-        """Baseline matrices and their directional derivative in beta.
+    def mats_and_tangent_from_beta(self, beta: Tensor, dbeta: Tensor):
+        """Baseline matrices at beta and their directional derivatives in direction dbeta, computed with torch.func.jvp.
 
-        (m(beta), Dm(beta)[dfree]) by forward-mode jvp; with dfree = a this gives the matrix tangent of varphi a.
+        OBC uses dbeta = a and passes both tuples to rk4_with_tangent to compute varphi(beta_lin) a.
 
         Args:
-            free: (10,) beta (beta_lin for the OBC correction).
-            dfree: (10,) direction a.
+            beta: (10,) beta (beta_lin for the OBC correction).
+            dbeta: (10,) direction in the training coordinates.
         Returns:
-            The matrix tuple and its tangent tuple.
+            the matrix tuple of _mats_from_parameters and its directional derivative, with the same layout.
         """
-        return torch.func.jvp(self._mats_at, (free,), (dfree,))
+        return torch.func.jvp(self._mats_at, (beta,), (dbeta,))
 
-    def _mats_at(self, free: Tensor):
-        """Matrices at beta = free: beta -> theta_base -> theta (gauge_section) -> matrices."""
+    def _mats_at(self, beta: Tensor):
+        """Matrices at beta: beta -> theta_base -> theta (parameters_from_combinations) -> matrices."""
         return self._mats_from_parameters(
-            self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb))
+            self.parameters_from_combinations(self.combinations_from_beta(beta), self.params_init, self.Lb))
 
     def estimation_parameters(self):
         """Names, start values and current values of the identifiable combinations."""
