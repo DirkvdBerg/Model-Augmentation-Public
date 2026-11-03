@@ -1,31 +1,28 @@
-"""The layer stack of the networks and the augmentation network phi_aug.
-
-Conventions: superscript n = normalised; the network input is (x_tilde^n, xbar, u^n), its outputs are routed to
-the states in order (6 physical rows, then n_xbar added rows).
-"""
-# CHANGED: restricted to the thesis training path; Jan's full code: Model-Augmentation-Public,
-# commit 8200923 (model_augmentation/__init__.py)
+"""Shared layer construction for the augmentation network phi_aug and encoder correction psi_tilde."""
+# CHANGED: reuse Jan's zero_init_feed_forward_nn layer construction; callers initialize selected output rows.
+# CHANGED: removed unused network classes; original: Model-Augmentation-Public-main
 from torch import nn
 import torch
 
-from model_augmentation.utils.utils import added  # CHANGED: the marker of the added definitions
+from model_augmentation.utils.utils import added
 
 
 @added
 def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
-    """Multilayer perceptron of phi_aug and psi_tilde.
+    """Build hidden Linear/activation layers followed by a linear output layer.
 
-    phi(z) = W_L h + b_L, h_l = tanh(W_l h_{l-1} + b_l); default nn.Linear initialisation, then b_L = 0.
+    h_0 = z, h_l = activation(W_l h_{l-1} + b_l), output = W_L h_{L-1} + b_L.
+    All weights and hidden biases retain nn.Linear defaults; only b_L is zeroed.
 
     Args:
         n_in, n_out: input and output size.
         n_nodes_per_layer: width n_h of each hidden layer.
         n_hidden_layers: number of hidden layers, at least 1.
-        activation: activation class (tanh).
+        activation: hidden-layer activation class; both callers use nn.Tanh.
     Returns:
-        (Sequential, output layer).
+        network (nn.Sequential) and its output layer, so callers can initialize selected output rows.
     """
-    # keep the layer order: it fixes the seeded initialisation
+    # Keep layer creation order: changing it changes which seeded random draws initialize each layer.
     seq = [nn.Linear(n_in, n_nodes_per_layer), activation()]
     for _ in range(n_hidden_layers - 1):
         seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
@@ -36,20 +33,19 @@ def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
 
     net = nn.Sequential(*seq)
 
-    # b_L = 0
+    # Zero bias lets callers zero selected outputs by changing only their output-layer weights.
     nn.init.constant_(final_layer.bias, val=0.0)
     return net, final_layer
 
 
 @added
 class AugmentationNetwork(nn.Module):
-    """phi_aug: (f_aug^n, g_aug^n) = MLP(x_hat^n, u^n); f_aug^n starts at zero, g_aug^n random."""
+    """phi_aug(x_hat^n, u^n): physical-state corrections f_aug^n followed by next added states g_aug^n."""
 
     def __init__(self, n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation, nx_phys):
-        """Augmentation network phi_aug at its start.
+        """Zero the physical correction so the physical transition starts as the baseline.
 
-        The f_aug^n rows start at zero, so the model starts as the baseline; the g_aug^n rows stay random, so the
-        added states move from the first step.
+        Unlike Jan's fully zero output layer, the added-state weights remain random to give g_aug^n a nonzero map.
 
         Args:
             n_in: input size 6 + n_xbar + 3.
@@ -60,17 +56,15 @@ class AugmentationNetwork(nn.Module):
         super().__init__()
         self.net, final_layer = build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation)
         with torch.no_grad():
-            # W^xtilde_L = 0, so f_aug^n = 0 at the start
+            # build_mlp already zeros the bias; zero only the f_aug^n weights, keeping g_aug^n random.
             final_layer.weight[:nx_phys].zero_()
 
     def forward(self, X):
-        """Augmentation network phi_aug.
-
-        (f_aug^n, g_aug^n) = phi_aug(x_hat^n, u^n).
+        """Compute the physical-state corrections and next added states.
 
         Args:
-            X: (B, 6 + n_xbar + 3) (x_tilde^n, xbar, u^n).
+            X: (B, 6 + n_xbar + 3) normalised physical state, added states and normalised input.
         Returns:
-            (B, 6 + n_xbar): f_aug^n, then g_aug^n, normalised.
+            (B, 6 + n_xbar) normalised physical-state corrections, then next added states.
         """
         return self.net(X)
