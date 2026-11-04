@@ -1,6 +1,6 @@
 """Estimate each window's initial physical and added states from its past normalised inputs and outputs."""
 # CHANGED: replaced Jan's linear_encoder_init with AugmentedEncoder; least_squares_start fits the physical rows
-# to simulated baseline states instead of computing them from A, B, C, D.
+# to simulated baseline states instead of computing them from A, B, C, D, which hold only near one Y (LPV baseline).
 # CHANGED: removed unused state-data helpers, SS_pre_encoder and the example; original: Model-Augmentation-Public-main
 from torch import nn
 import torch
@@ -12,7 +12,8 @@ from model_augmentation.utils.torch_nets import build_mlp
 
 @added
 class AugmentedEncoder(nn.Module):
-    """Estimate the initial physical states x_b and added states x_a from the past normalised inputs and outputs:
+    """Estimate the initial physical states x_b (x_tilde) and added states x_a (x_bar) from the past normalised
+    inputs and outputs:
 
     x_b = Wb_u u_hist + Wb_y y_hist + psi_tilde_b(chi)
     x_a = Wa_u u_hist + Wa_y y_hist + psi_tilde_a(chi)

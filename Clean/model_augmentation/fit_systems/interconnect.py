@@ -19,7 +19,9 @@ from model_augmentation.fit_systems.blocks import Block, Static_ANN_Block
 from model_augmentation.utils.deepSI_corrections import SystemDataNormalizer
 
 class Interconnect(nn.Module):
-    """Blocks joined by signal connection matrices into one state-space step (x, u) -> (y, x_next)."""
+    """Blocks joined by signal connection matrices into one state-space step (x, u) -> (y, xp).
+
+    Signals: x = state x_hat_k, u = input, xp = next state x_hat_{k+1}, y = output y_hat_k."""
     # CHANGED: removed unused init_model, reset_saved_signals and convert_signal_ix_to_name
     def __init__(self, nx, nu, ny) -> None:
         """An empty interconnect with state size nx, input size nu and output size ny."""
@@ -84,7 +86,7 @@ class Interconnect(nn.Module):
             self.initialized_forward_function = True
 
         # 3. Evaluate the blocks in order and sum their contributions into xp and y.
-        # CHANGED: signal evaluation moved to _propagate for reuse by output_only
+        # CHANGED: loop moved to _propagate, so output_only can compute y_k before the controller sets u_k
         output_signals = self._propagate(x, u, self.order_output_signal_computation, pass_mats)
 
         y = output_signals[1]
@@ -354,7 +356,7 @@ class Interconnect(nn.Module):
         raise TypeError("Input could not be converted to signal ix.")
 
     def convert_signal_name_to_ix(self, signal_name: str):
-        """0 for x and xp, 1 for u and y."""
+        """0 for x and xp, 1 for u and y: x and u index the signals read, xp and y the signals written."""
         if signal_name in ["x", "xp"]:
             return 0
         if signal_name in ["u", "y"]:
@@ -441,7 +443,8 @@ class SSE_Interconnect(SS_encoder_general):
     def init_model(self, sys_data=None, optimizer_kwargs={}):
         '''Set nu and ny, build Adam over every parameter (encoder, then hfn) and reset bestfit.'''
         # CHANGED: model.py already sets the encoder and normalisation; training.py handles the device
-        # CHANGED: no scheduler (fixed Adam learning rate) or block initialization (blocks are set up by constructors)
+        # CHANGED: removed Jan's optional scheduler (off by default; the thesis uses a fixed learning rate) and his
+        # init_block call on each block, which did nothing; build_model sets each block's values when it creates it
         self.nu, self.ny = sys_data.nu, sys_data.ny
         self.optimizer = self.init_optimizer(list(self.parameters_with_names.values()), **optimizer_kwargs)
         self.bestfit = float('inf')
@@ -713,6 +716,10 @@ class AugmentedModel(SSE_Interconnect):
         for k, v in stash.items():
             if v is not None:
                 self.__dict__[k] = v
+        # the kept OBC projection must build J and F^n_aug from the loaded model's correction, not the replaced one
+        if self.obc is not None:
+            correction = self.hfn.obc_correction
+            self.obc.reference_field, self.obc.basis_builder = correction.network_field, correction.basis
         return out
 
     def __getstate__(self):

@@ -204,6 +204,11 @@ class ClosedLoopSimulator:
         # the compiled step serves only CUDA rollouts that record gradients, i.e. training losses; others run eager
         use_compiled = (self._compiled is not None and ufuture.is_cuda and torch.is_grad_enabled())
         if use_compiled:
+            # the interconnect's one-time setup (computation order, connection matrices on the model's device) cannot
+            # be traced; run it eagerly before the first compiled call, which a polish-only job reaches first
+            if not fit_sys.hfn.initialized_forward_function:
+                fit_sys.hfn.init_forward()
+                fit_sys.hfn.initialized_forward_function = True
             step = self._compiled
             # marks a new call, so the CUDA graphs may reuse the previous call's buffers
             torch.compiler.cudagraph_mark_step_begin()

@@ -22,8 +22,8 @@ from .obc_gantry import attach_obc
 
 
 def build_model(cfg: RunConfig, data, norm):
-    """The untrained augmented model, which starts as the baseline (beta = 0, f_aug^n = 0), one step per T_s in
-    normalised coordinates.
+    """The untrained augmented model, which starts as the baseline (beta = 0: theta_base = theta^0_base;
+    f_aug^n = 0), one step per T_s in normalised coordinates.
 
     Args:
         cfg: run configuration.
@@ -38,7 +38,7 @@ def build_model(cfg: RunConfig, data, norm):
     # na = nb past samples before the window start, the current sample excluded
     na = nb = cfg.na_nb
 
-    # 1. Baseline block (physics, f_base^n) and output map C^n.
+    # 1. Baseline block (physics, f_base^n) and output map C^n; nu here is the number of inputs, not the PS score.
     interconnect = Interconnect(nx, cfg.nu, cfg.ny)
 
     # start values theta^0_base of the 10 identifiable parameter combinations, from the nominal parameters of
@@ -96,8 +96,8 @@ def build_model(cfg: RunConfig, data, norm):
     fit_sys.norm.y0   = norm.y0
     fit_sys.norm.ystd = norm.ystd
 
-    # encoder psi(chi) = [W^b; W^a] chi + psi_tilde(chi), psi_tilde a network; its window holds na + 1 samples of the
-    # given na, so na - 1 gives the na samples of the model
+    # encoder psi(chi) = [W^b; W^a] chi + psi_tilde(chi), psi_tilde a network; AugmentedEncoder reads na + 1 samples,
+    # so passing na - 1 gives the model's na samples
     fit_sys.encoder = AugmentedEncoder(
         nx=cfg.nx_phys, nu=cfg.nu, ny=cfg.ny, na=na - 1, nb=nb - 1,
         nx_aug=cfg.n_a,
@@ -107,8 +107,8 @@ def build_model(cfg: RunConfig, data, norm):
     ).to(cfg.dtype_pt)
 
     # 5. Optimizer and, on the OBC arm, the projection.
-    # Adam over every parameter (encoder and interconnect), learning rate cfg.lr; the normaliser keeps the values set
-    # above
+    # Adam over every parameter (encoder, network and baseline beta, so theta_base is estimated jointly), learning
+    # rate cfg.lr; the normaliser keeps the values set above
     fit_sys.init_model(sys_data=deepSI.System_data_list(data.train_list),
                        optimizer_kwargs={'lr': cfg.lr, 'eps': cfg.adam_eps})
     # cast the interconnect to the run's dtype: torch builds the network in its default float32
@@ -153,11 +153,12 @@ def encoder_start(fit_sys, cfg: RunConfig, data, norm):
         dtype, device = next(encoder.parameters()).dtype, next(encoder.parameters()).device
         to_torch = lambda a: torch.as_tensor(a, dtype=dtype, device=device)
         to_flat_numpy = lambda a: np.asarray(a, cfg.dtype_np).ravel()
-        # OBC arm: compute the basis and theta_aux of the untrained model, which f_obc^n reads in the rollout;
-        # nothing on the U arm
+        # OBC arm: compute the basis J and theta_aux (least-squares coefficients of the network output on J) of the
+        # untrained model, which f_obc^n reads in the rollout; nothing on the U arm
         fit_sys.sync_obc_coefficient()
         with torch.no_grad():
-            # baseline matrices (K, C, M(Y)^-1 parts) and on the OBC arm those of f_obc^n, built once for the rollout
+            # baseline matrices (stiffness K, damping C, M(Y)^-1 parts) and on the OBC arm those of f_obc^n, built
+            # once for the rollout
             matrices = fit_sys.objective_matrices()
 
         # 1. Simulate the untrained model in closed loop, as training rolls it out (with f_obc^n on the OBC arm);

@@ -1,0 +1,19 @@
+# The environment the thesis results were produced with.
+# Create: conda env create -f environment.yml    Activate: conda activate gantry-augmentation
+name: gantry-augmentation
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11.14
+  - numpy=2.0.1
+  - scipy=1.17.0
+  - matplotlib=3.10.8
+  - pytorch=2.5.1
+  - pytorch-cuda=12.1   # GPU runs; remove this line (and the nvidia channel) for CPU only
+  - git                 # pip installs deepSI from GitHub
+  - pip
+  - pip:
+      # deepSI 0.3.29 is the legacy branch, not on PyPI (PyPI starts at 0.4); pinned to the installed commit
+      - deepSI @ git+https://github.com/GerbenBeintema/deepSI@109cf74f49a7b27539232c53981584befc1becc0
