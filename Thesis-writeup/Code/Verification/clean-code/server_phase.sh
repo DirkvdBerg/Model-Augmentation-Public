@@ -34,7 +34,7 @@ cd "$H"
 for P in "$WORK" "$COPY-final" "$COPY-reverted"; do [ -e "$P" ] && { echo "$P exists"; exit 1; }; done
 python -u d294_revert.py status --expect final
 mkdir -p "$WORK/logs" "$WORK/reports" "$WORK/cov"
-(cd "$REPO" && git rev-parse HEAD && git status --short Clean) > "$WORK/git.txt"
+(cd "$REPO" && git rev-parse HEAD && git status --short Clean) > "$WORK/git.txt" 2>&1 || echo "no git checkout" >> "$WORK/git.txt"
 
 # 1. The two trees: arm B the final tree as it is, arm A the same with the D-294 lines reverted; each with a manifest
 for ARM in final reverted; do
@@ -68,7 +68,7 @@ for R in $POLISH_RUNS; do
   add "polish-A-clean-$R" A $COVERAGE "phase_run.py --side clean --phase polish --run $R --staging $WORK/staging --out $WORK/polish/A-clean-$R"
   add "polish-B-clean-$R" B 0 "phase_run.py --side clean --phase polish --run $R --staging $WORK/staging --out $WORK/polish/B-clean-$R"
 done
-add "bb-B" B 0 "-m blackbox.eval_bb $BB_RUN $WORK/bb"         # a module of the copy (PYTHONPATH, arm B)
+add "bb-B" B 0 "bb_check.py $BB_RUN $WORK/bb"                  # converts the thesis checkpoint, then eval_bb
 N=$(wc -l < "$T")
 printf 'L4_RUNS=%q\nADAM_RUNS=%q\nPOLISH_RUNS=%q\nCSV=%q\nGPU_SMOKES=%s\nCOVERAGE=%s\nCOPY=%q\n' \
   "$L4_RUNS" "$ADAM_RUNS" "$POLISH_RUNS" "$CSV" "$GPU_SMOKES" "$COVERAGE" "$COPY" > "$WORK/settings.sh"

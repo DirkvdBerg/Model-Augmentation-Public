@@ -61,8 +61,11 @@ def bitwise(main_out, clean_out, path):
     rm, rc = _load(main_out), _load(clean_out)
     label = 'bitwise %s %s' % (rc['phase'], rc['run'])
     probs = []
-    if rc['clean_tree'] != 'reverted':
-        probs.append('clean output from the %s tree, not the reverted one (arm A)' % rc['clean_tree'])
+    # EXPECT_TREE=final: the clean output of the final tree (arm B) against mainline; its L4 evaluation is bitwise
+    # mainline on the thesis checkpoints, which the D-294 revert of today's Clean/ no longer is (2026-11-04)
+    want = os.environ.get('EXPECT_TREE', 'reverted')
+    if rc['clean_tree'] != want:
+        probs.append('clean output from the %s tree, not the %s one' % (rc['clean_tree'], want))
     with open(os.path.join(clean_out, 'meta.json')) as fh:
         probs += H.clean_tree_problems(json.load(fh)['sources']['clean'])
     if probs:

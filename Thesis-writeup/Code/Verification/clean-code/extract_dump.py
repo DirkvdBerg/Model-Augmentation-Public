@@ -14,6 +14,7 @@ import hcommon as H
 if len(sys.argv) != 3:
     sys.exit(__doc__)
 H.select_side('mainline')
+import gantry_dynamic  # noqa: E402,F401  (mainline's package puts the repository root, model_augmentation, on sys.path)
 import torch  # noqa: E402
 
 src, dst = sys.argv[1:]

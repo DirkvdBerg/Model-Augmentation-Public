@@ -42,6 +42,8 @@ ap.add_argument('--staging', required=True, help='the l4_stage.py folder: <job>/
 ap.add_argument('--dumps', default=None, help='folder with the thesis deepSI dumps (adam)')
 ap.add_argument('--out', required=True)
 ap.add_argument('--n-its', type=int, default=50, help='adam: Adam updates after the resume')
+ap.add_argument('--zero-moments', action='store_true',
+                help='adam, clean side: resume from zero Adam moments, as mainline does from a deepSI dump')
 ap.add_argument('--predict-truncate-s', type=float, default=None,
                 help='LOCAL SCRIPT TEST ONLY: predict on records cut to this length instead of the full records')
 args = ap.parse_args()
@@ -74,6 +76,7 @@ if args.side == 'clean' and dump is not None:
 
 H.select_side(args.side)
 sys.path.append(os.path.join(H.REPO, 'clean-up-verification'))
+import gantry_dynamic  # noqa: E402,F401  (mainline: puts model_augmentation on sys.path before a dump is unpickled)
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
@@ -128,20 +131,41 @@ if args.side == 'mainline':
     written = json.loads(json.dumps(config_json_dict(cfg), default=str))
 else:
     from convert_run import convert_dump, convert_run
-    convert_run(staged, run_dir)
-    if dump is not None:
-        convert_dump(os.path.join(OUT, 'dump_state.pt'),
-                     os.path.join(lad, 'deepSI', 'checkpoints', 'AugmentedModel_%d_last.pth' % job))
-    os.environ['SLURM_JOB_ID'] = run_id                  # the rerun id of the previous/ folder
     from gantry_dynamic.config import RunConfig
     import gantry_interconnect_dynamic as EP
+    convert_run(staged, run_dir)
+    clean_id = job
+    if dump is not None:
+        # deepSI keeps its checkpoints in one folder per user on Linux (~/.deepSI, LOCALAPPDATA on Windows), where
+        # both arms of a run resume at the same time: each gets its own run id, its pairs renamed to match
+        clean_id = '%s-%s%s' % (run_id, tree_state(), '-zero' if args.zero_moments else '')
+        cj_path = os.path.join(run_dir, 'config.json')
+        with open(cj_path, encoding='utf-8') as fh:
+            cj = json.load(fh)
+        cj['run_id'] = clean_id
+        with open(cj_path, 'w') as fh:
+            json.dump(cj, fh, indent=2)
+        for f in os.listdir(run_dir):
+            if f.startswith('gantry_ckpt_%d' % job):
+                os.rename(os.path.join(run_dir, f), os.path.join(run_dir, f.replace(str(job), clean_id, 1)))
+        convert_dump(os.path.join(OUT, 'dump_state.pt'), EP._deepsi_checkpoint_paths(clean_id)[1],
+                     zero_moments=args.zero_moments)
+    os.environ['SLURM_JOB_ID'] = run_id                  # the rerun id of the previous/ folder
     with open(os.path.join(run_dir, 'config.json'), encoding='utf-8') as fh:
         meta0 = json.load(fh)
     cfg = RunConfig.from_config_json(meta0, device='cpu', compile_mode=None, **H.clean_inner_iter(dict(env)))
     H.assert_roots()
-    EP.main(cfg, rerun=('resume', run_dir, 'last') if args.phase == 'adam' else ('polish-only', run_dir, None),
-            evaluate_run=False)
-    final_base = os.path.join(run_dir, 'gantry_ckpt_%d' % job)
+    try:
+        EP.main(cfg, rerun=('resume', run_dir, 'last') if args.phase == 'adam' else ('polish-only', run_dir, None),
+                evaluate_run=False)
+    finally:
+        # the deepSI checkpoints this job wrote belong to the task folder, not to the user's deepSI folder
+        if dump is not None:
+            os.makedirs(os.path.join(OUT, 'deepsi'), exist_ok=True)
+            for p in EP._deepsi_checkpoint_paths(clean_id):
+                if os.path.exists(p):
+                    shutil.move(p, os.path.join(OUT, 'deepsi', os.path.basename(p)))
+    final_base = os.path.join(run_dir, 'gantry_ckpt_%s' % clean_id)
     from convert_run import thesis_settings
     written = thesis_settings(cfg)
 H.assert_roots()
@@ -208,7 +232,8 @@ differs = {k: (thesis_cfg[k], written[k]) for k in sorted(set(thesis_cfg) & set(
            if k not in ENV_KEYS and thesis_cfg[k] != written[k]}
 result = dict(side=args.side, phase=args.phase, run=args.run, job=job, run_id=run_id, final_base=final_base,
               bestfit=bestfit, lbfgs_outcome=outcome, dump=dump, dump_epochs=done, done_epochs=done_after,
-              n_its=args.n_its if dump else None, budget=env, settings_differ_from_thesis=differs,
+              n_its=args.n_its if dump else None, zero_moments=args.zero_moments, budget=env,
+              settings_differ_from_thesis=differs,
               clean_tree=tree_state() if args.side == 'clean' else None,
               seconds_phase=seconds_phase, seconds=time.time() - T0)
 with open(os.path.join(OUT, 'result.json'), 'w') as fh:

@@ -142,17 +142,20 @@ class SavedState:
         return self.sd
 
 
-def convert_dump(plain_pt, dst_pth):
+def convert_dump(plain_pt, dst_pth, zero_moments=False):
     """A thesis deepSI dump, extracted by extract_dump.py into plain_pt, as a dump at dst_pth that Clean/ resumes from:
     hfn through convert_hfn_state; encoder, Adam state and progress (epochs_before, epoch_counter, bestfit,
-    ps2_opening) unchanged. Reading dst_pth needs this module importable (the harness puts it on sys.path)."""
+    ps2_opening) unchanged. zero_moments keeps Adam's settings but none of its moments, so Clean/ resumes from zero
+    moments as mainline does from a deepSI dump (it does not read the dump's Adam state). Reading dst_pth needs this
+    module importable (the harness puts it on sys.path)."""
     import torch
     if os.path.exists(dst_pth):
         raise FileExistsError(dst_pth)
     d = torch.load(plain_pt, map_location='cpu', weights_only=False)
     hfn, dropped = convert_hfn_state(d['hfn'])
     out = {k: d[k] for k in ('epochs_before', 'epoch_counter', 'bestfit', 'ps2_opening') if k in d}
-    out.update(hfn=SavedState(hfn), encoder=SavedState(d['encoder']), optimizer=SavedState(d['optimizer']))
+    adam = dict(state={}, param_groups=d['optimizer']['param_groups']) if zero_moments else d['optimizer']
+    out.update(hfn=SavedState(hfn), encoder=SavedState(d['encoder']), optimizer=SavedState(adam))
     os.makedirs(os.path.dirname(os.path.abspath(dst_pth)), exist_ok=True)
     torch.save(out, dst_pth)
     return dropped

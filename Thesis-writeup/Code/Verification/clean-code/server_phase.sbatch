@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J clean-phase
-#SBATCH -p kauai,molokai,lanai
+#SBATCH -p kauai,molokai,lanai,oahu,hawaii
 #SBATCH -N 1
 #SBATCH --ntasks=1
 #SBATCH -c 1
@@ -19,6 +19,9 @@ conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
 REPO=/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation
 cd "$REPO/Thesis-writeup/Code/Verification/clean-code"
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+# the two sides of a comparison may land on nodes with different CPUs: one kernel set on every node (MKL for numpy
+# and scipy, ATen for torch), so a bitwise difference can only come from the code
+export MKL_CBWR=AVX2 ATEN_CPU_CAPABILITY=avx2
 : "${WORK:?submit through server_phase.sh}"
 LINE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$WORK/tasks.tsv")
 IFS=$'\t' read -r NAME ARM COV CMD <<< "$LINE"

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J clean-phase-summary
-#SBATCH -p kauai,molokai,lanai
+#SBATCH -p kauai,molokai,lanai,oahu,hawaii
 #SBATCH -N 1
 #SBATCH --ntasks=1
 #SBATCH -c 1

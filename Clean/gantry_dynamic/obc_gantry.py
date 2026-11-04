@@ -122,12 +122,8 @@ class GantryOBCCorrection(nn.Module):
             chunk: tuples per Jacobian evaluation; sets the memory use, not the result.
         """
         super().__init__()
-        # the baseline matrices (K, C, parts of M(Y)^-1) at beta_lin, and their change when beta moves in the
-        # direction a, theta_aux = (a, c)
-        self.baseline_matrices_and_derivative = baseline_block.mats_and_tangent_from_beta
-        # one baseline step with those matrices: f_base^n(beta_lin) and varphi(beta_lin) a
-        self.baseline_step_and_derivative = baseline_block.rk4_with_tangent
-        self.baseline_step = baseline_block.transition_from_beta
+        # the baseline block, in a list so it is not registered a second time and the compiled rollout can call it
+        self.baseline = [baseline_block]
         self.chunk = chunk
         self.nx, self.nx_phys = nx, nx_phys
         # network output i is the correction of physical state i
@@ -161,7 +157,8 @@ class GantryOBCCorrection(nn.Module):
             dmats: the derivative of mats in the direction a.
             c: the coefficient of f_base^n.
         """
-        mats, dmats = self.baseline_matrices_and_derivative(self.beta_lin, theta_aux[:-1])
+        # the baseline matrices (K, C, parts of M(Y)^-1) at beta_lin, and their change in the direction a
+        mats, dmats = self.baseline[0].mats_and_tangent_from_beta(self.beta_lin, theta_aux[:-1])
         return mats, dmats, theta_aux[-1]
 
     def forward(self, x: Tensor, u: Tensor, obc_pass) -> Tensor:
@@ -181,8 +178,7 @@ class GantryOBCCorrection(nn.Module):
         mats, dmats, c = obc_pass
         # f_base^n(beta_lin) and varphi(beta_lin) a, the derivative of f_base^n in the direction a, in one RK4 step
         # from mats and dmats; x_tilde^n_k is an input of the step, so its derivative is zero (torch.zeros_like)
-        f_base, varphi_a = self.baseline_step_and_derivative(
-            x_tilde, torch.zeros_like(x_tilde), u, mats, dmats)
+        f_base, varphi_a = self.baseline[0].rk4_with_tangent(x_tilde, torch.zeros_like(x_tilde), u, mats, dmats)
         # f_obc^n = varphi a + c f_base^n on the six physical rows, zero on the n_a added rows
         n_a = self.nx - self.nx_phys
         return torch.nn.functional.pad(varphi_a + c * f_base, (0, 0, 0, n_a))
@@ -191,8 +187,8 @@ class GantryOBCCorrection(nn.Module):
         """J at beta_lin: at every tuple, how the baseline step changes with each of the 10 parameters, and the
         step itself."""
         # J = [Phi  col(f_base^n(beta_lin, x_tilde^n_i, u^n_i))], (6 N, 11)
-        return build_stacked_sensitivity(self.baseline_step, beta_lin, self.baseline_input, self.physical_rows,
-                                         chunk=self.chunk, append_value=True)
+        return build_stacked_sensitivity(self.baseline[0].transition_from_beta, beta_lin, self.baseline_input,
+                                         self.physical_rows, chunk=self.chunk, append_value=True)
 
     def network_field(self, ann: Static_ANN_Block) -> Tensor:
         """F^n_aug: the network's correction of the six physical states at every tuple, in the row order of J."""
