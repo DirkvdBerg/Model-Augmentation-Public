@@ -1,6 +1,7 @@
 """Fit the network correction to the baseline derivatives and next-state values, then subtract the fit.
 
-On fixed normalised reference tuples, Phi stacks the baseline derivatives with respect to beta at beta_lin,
+On fixed normalised reference tuples, Phi stacks the baseline derivatives with respect to its trained parameters
+beta at beta_lin (beta at the start of the epoch),
 F_base stacks the baseline next states, and F stacks the network's physical-state corrections:
     J = [Phi, F_base]
     theta_aux = argmin_theta ||F - J theta||^2
@@ -17,7 +18,7 @@ from torch import Tensor
 
 
 class OBCBasis:
-    """Store the basis factors for repeated least-squares fits."""
+    """J in factorised form (SVD), so theta_aux can be refitted cheaply at every update."""
 
     def __init__(self, J: Tensor, beta_lin: Tensor):
         """Factorise J D^-1 = U diag(S) V^T; D contains column norms (1 for zero columns).
@@ -35,7 +36,7 @@ class OBCBasis:
             column_norms = gram.diagonal().sqrt()
             column_scale = torch.where(column_norms > 0, column_norms, torch.ones_like(column_norms))
             U, S, Vh = torch.linalg.svd(J / column_scale, full_matrices=False)
-            # Numerical rank: S_i > S_max * max(rows, columns) * machine precision.
+            # Numerical rank: S_i > S_max * max(rows, columns) * machine precision, the numpy matrix_rank default.
             tol = float(S[0]) * (max(n_rows, n_cols) * torch.finfo(S.dtype).eps)
             rank = int((S > tol).sum())
             if rank < n_cols:
@@ -46,7 +47,7 @@ class OBCBasis:
         self.n_cols, self.rank, self.tol = n_cols, rank, tol
 
     def coefficient(self, F: Tensor) -> Tensor:
-        """Fit F using theta_aux = D^-1 V diag(1 / S) U^T F.
+        """Least-squares fit of F on J: theta_aux = D^-1 V diag(1 / S) U^T F.
 
         For full-column-rank J, this equals (J^T J)^-1 J^T F without forming the inverse.
         If singular values were discarded, the fit uses only the directions of the remaining singular vectors.
@@ -77,7 +78,7 @@ class OBCBasis:
 def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], beta_lin: Tensor, Z: Tensor,
                               physical_rows: Sequence[int], chunk: int,
                               device=None, append_value: bool = False) -> Tensor:
-    """Stack the baseline derivatives varphi_i = d step(beta, z_i) / d beta at beta_lin.
+    """Build Phi: the baseline's sensitivity to beta at every tuple, varphi_i = d step(beta, z_i) / d beta at beta_lin.
 
     Rows follow tuple order, then physical_rows order. With append_value, return J = [Phi, F_base].
     The extra column includes the baseline prediction in the projection. The thesis uses the offset
@@ -176,7 +177,7 @@ class OBCProjection:
             self.refresh(beta, epoch)
 
     def coefficient(self, learning_component) -> Tensor:
-        """Fit the current network correction F using the stored basis J.
+        """theta_aux for the current network: its correction F at the tuples, fitted on the stored J.
 
         Training accounts for how both F and the fitted part J theta_aux change with the network parameters.
 

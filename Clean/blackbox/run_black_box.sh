@@ -9,8 +9,9 @@
 #SBATCH --array=0-10
 #SBATCH -o <log folder>/bb_grid_%A_%a.out
 
-# Black-box grid: one array index trains one configuration of GRID on the CPU, since deepSI's eager loop is
-# dispatch-bound (about 1.1 h per 20000 updates); then python -m blackbox.select_bb on the job's run folders.
+# Black-box grid: one array index trains one configuration of GRID on the CPU, since deepSI's training loop runs
+# one small step at a time, which a GPU does not speed up (about 1.1 h per 20000 updates); then
+# python -m blackbox.select_bb on the job's run folders.
 #   sbatch Clean/blackbox/run_black_box.sh                      # all 11
 #   sbatch --array=9 Clean/blackbox/run_black_box.sh            # the selected configuration only
 # Before submitting, fill in the <...> placeholders: partition, log folder, conda environment and repository.

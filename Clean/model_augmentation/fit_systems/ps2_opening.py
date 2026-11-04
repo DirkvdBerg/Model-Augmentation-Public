@@ -1,7 +1,7 @@
 """Predictive-state (PS) initialisation of the added states.
 
 S1 trains the encoder's added states to predict the model's output residual through a temporary decoder,
-alongside Adam training on the closed-loop loss V. S2 pauses V to fit the added-state update to consecutive
+alongside Adam training on the closed-loop loss V. S2 pauses V to fit the added-state update g_aug to consecutive
 encoder estimates. The decoder is then removed and training on V continues, keeping S1 changes even if S2 is skipped.
 """
 __project_origin__ = "added"
@@ -25,14 +25,14 @@ class PS2Spec:
     eval_every: int      # updates between calibration checks
     s1_min: int          # earliest update at which a plateau can end S1
     s1_cap: int          # stop at the first calibration check at or after this update
-    s1_tol: float        # required relative reduction in nu; see _plateaued
+    s1_tol: float        # required relative reduction in nu, the unexplained-residual ratio; see _plateaued
     s1_window: int       # number of recent nu values compared with the best preceding value
     screen_at: int       # skip S2 if nu > screen_max here; must be a multiple of eval_every
     screen_max: float    # largest unexplained-residual ratio nu that allows S2
     n_cal: int           # fixed calibration windows for S1
     # S2: added-state transition fit
     n_snap: int          # number of fixed pairs of consecutive encoder estimates used to fit S2
-    n_snap_cal: int      # number of fixed pairs from left-out records used to evaluate S2
+    n_snap_cal: int      # number of fixed pairs from calibration records used to evaluate S2
     s2_batch: int        # pairs per step
     s2_check: int        # steps between calibration costs
     s2_window: int       # number of recent calibration costs compared with the best preceding cost
@@ -51,7 +51,8 @@ def _plateaued(values, window, tol):
 
 
 def calibration_split(names):
-    """Return (fit indices, calibration indices) into names.
+    """Split the training records into fit records and calibration records; S1 and S2 are only scored on the latter.
+    Returns (fit indices, calibration indices) into names.
 
     For each excitation class with >= 3 records, reserve the last listed record for calibration of S1 and S2.
     These records remain in the main loss V.
@@ -63,7 +64,7 @@ def calibration_split(names):
 
 
 class PS2Opening:
-    """Run S1 after each main Adam update, then optionally S2 once."""
+    """Initialise the added states during training: S1 after each main Adam update, then optionally S2 once."""
 
     def __init__(self, fit_sys, data, n_xb, n_a, width, spec):
         """Normalise the records and split them for fitting and calibration.
@@ -138,7 +139,7 @@ class PS2Opening:
                            'history': self.history, 'spec': asdict(self.spec)})
 
     def _start(self, fs):
-        """Build a one-hidden-layer tanh decoder, its Adam optimiser and fixed calibration windows.
+        """Set up S1: decoder p (added states to residual, one tanh layer), its Adam, fixed calibration windows.
 
         Map n_a added states to H * ny residual entries: H = fs.na future samples and ny output channels.
         """
@@ -161,13 +162,13 @@ class PS2Opening:
             self._M, [self.names[i] for i in self.cal_ix], json.dumps(asdict(self.spec))), flush=True)
 
     def _sample(self, fs, rec_ix, B, rng, pair=False):
-        """Draw B windows with replacement, uniformly over allowed starts in records rec_ix.
+        """Draw B random windows for S1 or S2 from records rec_ix, with replacement, uniformly over allowed starts.
 
-        Both stages use max(fs.na, fs.nb) <= k < N - self._M - 1 for a record of N samples;
+        Both stages use max(fs.na, fs.nb) <= k < N - H - 1, H = self._M = fs.na, for a record of N samples;
         each record must allow at least one start. The bound leaves >= 2 samples beyond the S1 future.
 
         Return normalised uh (B, fs.nb, inputs) and yh (B, fs.na, outputs), ending at k - 1.
-        S1 also returns uf and yf from k through k + self._M - 1, and each record's ctrl_ix.
+        S1 also returns uf and yf from k through k + H - 1, and each record's ctrl_ix.
         With pair=True, return u0 at k and shifted histories uh1, yh1 ending at k instead.
         """
         nb, na = fs.nb, fs.na
@@ -212,7 +213,7 @@ class PS2Opening:
         return x[:, self.n_xb:self.n_xb + self.n_a]
 
     def _s1_step(self, fs):
-        """Fit decoder p and the encoder's added-state parameters using encoded states xbar and target e from _residual:
+        """One S1 step: train decoder p and the encoder parameters of the added states xbar so p(xbar) predicts e:
             L_S1 = mean((p(xbar) - e)^2),
         averaging over windows, times and output channels.
 
@@ -234,7 +235,7 @@ class PS2Opening:
             p.grad = g
 
     def _cal_unexplained(self, fs):
-        """Evaluate decoder p on fixed calibration windows using added states xbar and residual target e:
+        """nu, the share of the residual e that the added states xbar do not explain, on the fixed calibration windows:
             nu = sum((p(xbar) - e)^2) / sum(e^2).
 
         Recompute xbar and e with the current encoder and model, as in _s1_step.
@@ -247,7 +248,7 @@ class PS2Opening:
             return float((self._decoder(self._added_states(x)) - e).pow(2).mean() / e.pow(2).mean())
 
     def _fit_added_state_transition(self, fs):
-        """Fit next-added-state network g_aug using fixed encoder pairs after S1, with V paused.
+        """S2: fit the network's added-state update g_aug to fixed encoder pairs (X, U, T), with V paused.
 
         X is the full state encoded from histories ending at k - 1, U the recorded input at k, and T the
         next added state encoded from histories ending at k. Keep these estimates and the encoder fixed.
@@ -271,7 +272,8 @@ class PS2Opening:
         srng = np.random.default_rng(sp.seed + 1000)
 
         def snap(ix, n):
-            """Encode n fixed (X, U, T) samples from records ix."""
+            """S2 pairs from records ix (fit or calibration): X, U = state and input at k;
+            T = added states at k + 1, the target."""
             b = self._sample(fs, ix, n, srng, pair=True)
             with torch.no_grad():
                 return fs.encoder(b['uh'], b['yh']), b['u0'], self._added_states(fs.encoder(b['uh1'], b['yh1']))

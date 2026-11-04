@@ -16,7 +16,7 @@ def to_tensor(input) -> torch.Tensor:
     return input if isinstance(input, torch.Tensor) else torch.Tensor(input)
 
 
-# CHANGED: local matrix names match the notation: E for expansion, S for selection.
+# CHANGED: local matrix names swapped to match the notation, E for expansion and S for selection (Jan's were reversed).
 def expansion_matrix(ix, n):
     """E places values at rows ix, with zeros elsewhere: E[ix[j], j] = 1.
 

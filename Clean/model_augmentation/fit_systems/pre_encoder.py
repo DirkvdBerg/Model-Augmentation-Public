@@ -1,6 +1,7 @@
 """Estimate each window's initial physical and added states from its past normalised inputs and outputs."""
-# CHANGED: replaced Jan's linear_encoder_init with AugmentedEncoder; least_squares_start fits the physical rows
-# to simulated baseline states instead of computing them from A, B, C, D, which hold only near one Y (LPV baseline).
+# CHANGED: replaced Jan's linear_encoder_init with AugmentedEncoder; least_squares_start (gantry_dynamic/model.py)
+# fits the physical rows to simulated baseline states instead of computing them from A, B, C, D, which hold only
+# near one Y (LPV baseline).
 # CHANGED: removed unused state-data helpers, SS_pre_encoder and the example; original: Model-Augmentation-Public-main
 from torch import nn
 import torch
@@ -19,7 +20,7 @@ class AugmentedEncoder(nn.Module):
     x_a = Wa_u u_hist + Wa_y y_hist + psi_tilde_a(chi)
 
     chi contains the input history followed by the output history, each written as one vector.
-    psi_tilde_b and psi_tilde_a are the physical and added rows of the network correction; psi = (x_b, x_a).
+    psi_tilde_b, psi_tilde_a: the physical and added rows of network correction; encoder output psi(chi) = (x_b, x_a).
     Extends Jan's linear-map-plus-network encoder with added states and a least-squares physical-state start.
     """
 

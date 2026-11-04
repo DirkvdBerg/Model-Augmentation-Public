@@ -5,15 +5,16 @@ beta could also give, so beta keeps its physical meaning. Superscript n = normal
              sample i; x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i
   beta_lin   beta at the start of the epoch
   varphi     d f_base^n(theta_base(beta), x_tilde^n, u^n) / d beta at beta_lin (6 x 10); Phi = col(varphi)
-  J          [Phi  col(f_base^n(beta_lin))], stacked over the tuples
+  J          [Phi  col(f_base^n(beta_lin))]; col( ) = stacked over all tuples
   F^n_aug    col(f^n_aug(theta_aug, (x_tilde^n_i, 0), u^n_i)), the network's correction on the tuples
   theta_aux  (a, c) = (J^T J)^-1 J^T F^n_aug, the least-squares coefficients of F^n_aug on J (solved in obc.py)
   f_obc^n    varphi(beta_lin) a + c f_base^n(beta_lin) on the six physical rows: the part of the network's
              correction that beta could also give; subtracted at every step
+  symbols    f_base^n: baseline step; f^n_aug: network correction; y: measured positions; P^-T: stage to X, Theta, Y
 
 The thesis uses [Phi Gamma], Gamma = col(f_base^n(beta_lin) - varphi beta_lin). J appends f_base^n(beta_lin)
-itself, which the Jacobian build already evaluates; both span the same space, so f_obc^n is the same and only
-theta_aux differs, (a + c beta_lin, c) in the thesis.
+itself instead; both span the same space, so f_obc^n is the same and only theta_aux differs, (a + c beta_lin, c)
+in the thesis.
 """
 __project_origin__ = "added"
 
@@ -66,7 +67,7 @@ def build_reference_set(cfg: RunConfig, norm, records: Sequence) -> GantryRefere
         norm: means and standard deviations of the training records (Norm).
         records: the training records at fs_new (Datasets.train_list).
     Returns:
-        GantryReferenceSet: baseline_input (N, 9, 1) and network_input (N, 9 + n_a, 1), normalised.
+        GantryReferenceSet: baseline_input (n_tuples, 9, 1) and network_input (n_tuples, 9 + n_a, 1), normalised.
     """
     x_mean = np.asarray(norm.x_mean, dtype=cfg.dtype_np).reshape(1, cfg.nx_phys)
     std_x = np.asarray(norm.std_x, dtype=cfg.dtype_np).reshape(1, cfg.nx_phys)
@@ -79,8 +80,8 @@ def build_reference_set(cfg: RunConfig, norm, records: Sequence) -> GantryRefere
         u, y = np.asarray(record.u, dtype=cfg.dtype_np), np.asarray(record.y, dtype=cfg.dtype_np)
         # x_tilde_i = (q_i, qdot_i), q_i = P^-T y_i, i = 2 .. N - 4; one sample per row, so q = y @ P_INV_T.T
         q = y @ P_INV_T.T
-        # qdot by central differences on the positions filtered by the anti-alias filter of data.py (zero phase,
-        # 1.6 kHz), so the noise above 1.6 kHz is not amplified by the difference
+        # qdot by central differences on positions whose noise data.py has low-passed (zero phase, 1.6 kHz, on y - r),
+        # so the difference does not amplify noise above 1.6 kHz
         qdot = fourth_order_central_difference(q, cfg.ts_new)
         i = np.arange(2, len(u) - 3)
         # row i - 2 of qdot is the velocity at sample i
@@ -104,9 +105,9 @@ def build_reference_set(cfg: RunConfig, norm, records: Sequence) -> GantryRefere
 
 class GantryOBCCorrection(nn.Module):
     """The OBC correction f_obc^n at the current state and input, subtracted from the network's correction of the
-    six physical states at every step. Training computes theta_aux at
-    every training step on the basis J, which is rebuilt at beta_lin once per epoch; validation, polish, PS2 and
-    evaluation use the copy of theta_aux and beta_lin stored here."""
+    six physical states at every step. Training computes theta_aux at every training step on the basis J, which is
+    rebuilt at beta_lin once per epoch; validation, polish, PS2 and evaluation use the copy of theta_aux and beta_lin
+    stored here."""
 
     def __init__(self, baseline_block: IdentifiableGantryStateBlock, nx: int, nx_phys: int, dtype: torch.dtype,
                  reference: GantryReferenceSet, chunk: int):
@@ -145,7 +146,7 @@ class GantryOBCCorrection(nn.Module):
         self.beta_lin.copy_(beta_lin)
 
     def correction_matrices(self, theta_aux: Tensor):
-        """Matrices for forward, built once per rollout because they do not depend on the state.
+        """The matrices f_obc needs at every step, built once per rollout because they do not depend on the state.
 
         varphi(beta_lin) a is the derivative of f_base^n in the direction a. f_base^n depends on beta only through
         its matrices, so forward needs the matrices at beta_lin and their derivative in the direction a.
@@ -157,7 +158,7 @@ class GantryOBCCorrection(nn.Module):
             dmats: the derivative of mats in the direction a.
             c: the coefficient of f_base^n.
         """
-        # the baseline matrices (K, C, parts of M(Y)^-1) at beta_lin, and their change in the direction a
+        # the baseline matrices (stiffness K, damping C, parts of M(Y)^-1) at beta_lin, and their change in direction a
         mats, dmats = self.baseline[0].mats_and_tangent_from_beta(self.beta_lin, theta_aux[:-1])
         return mats, dmats, theta_aux[-1]
 

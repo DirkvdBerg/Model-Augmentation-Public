@@ -1,5 +1,6 @@
 """Jan's dtype-preserving training windows and record normalisation, restricted to the thesis path."""
-# CHANGED: renamed fixed_System_data and fixed_System_data_norm to WindowedSystemData and SystemDataNormalizer.
+# CHANGED: renamed fixed_System_data and fixed_System_data_norm to WindowedSystemData (builds the training
+# windows) and SystemDataNormalizer (normalises records), after what each class does.
 # Original: Model-Augmentation-Public-main/model_augmentation/utils/deepSI_corrections.py
 
 from deepSI.system_data.system_data import System_data, System_data_list
@@ -76,7 +77,8 @@ class SystemDataNormalizer(object):
         Returns:
             normalised WindowedSystemData, or a System_data_list for multiple records.
         """
-        # CHANGED: also accept multiple records; normalise each separately
+        # CHANGED: also accept a list of records, as SSE_Interconnect.fit and the polish pass all training records
+        # at once; each is normalised separately
         if isinstance(sys_data, (list, tuple, System_data_list)):
             return System_data_list([self.transform(s) for s in sys_data])
         # CHANGED: name the accepted record types in the error.

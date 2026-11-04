@@ -1,5 +1,5 @@
 """Shared layer construction for the augmentation network phi_aug and encoder correction psi_tilde."""
-# CHANGED: reuse Jan's zero_init_feed_forward_nn layer construction; callers initialize selected output rows.
+# CHANGED: Jan's zero_init_feed_forward_nn layers, but only the output bias is zeroed; callers zero chosen rows.
 # CHANGED: removed unused network classes; original: Model-Augmentation-Public-main
 from torch import nn
 import torch
@@ -17,7 +17,7 @@ def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
     Args:
         n_in, n_out: input and output size.
         n_nodes_per_layer: width n_h of each hidden layer.
-        n_hidden_layers: number of hidden layers, at least 1.
+        n_hidden_layers: number of hidden layers; 0 also gives one hidden layer.
         activation: hidden-layer activation class; both callers use nn.Tanh.
     Returns:
         network (nn.Sequential) and its output layer, so callers can initialize selected output rows.
@@ -40,7 +40,7 @@ def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
 
 @added
 class AugmentationNetwork(nn.Module):
-    """phi_aug(x_hat^n, u^n): physical-state corrections f_aug^n followed by next added states g_aug^n."""
+    """Augmentation network phi_aug(x_hat^n, u^n): physical-state corrections f_aug^n, then added states g_aug^n."""
 
     def __init__(self, n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation, nx_phys):
         """Zero the physical correction so the physical transition starts as the baseline.

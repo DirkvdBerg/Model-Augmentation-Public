@@ -1,6 +1,6 @@
 """Predictions y_hat = r + e_hat of a trained black box on every split and the multisine twins, with the noise-free
-output of each record for the noise floor; written as preds_BB_<split>.npz, and preds_BB.npz for test, the name the
-thesis figures read."""
+output of each record for the noise floor (the error of the measurement noise alone, noisy minus noise-free y);
+written as preds_BB_<split>.npz, and preds_BB.npz for test, the name the thesis figures read."""
 __project_origin__ = "added"
 
 import csv

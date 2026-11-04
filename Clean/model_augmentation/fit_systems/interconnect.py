@@ -22,7 +22,7 @@ class Interconnect(nn.Module):
     """Blocks joined by signal connection matrices into one state-space step (x, u) -> (y, xp).
 
     Signals: x = state x_hat_k, u = input, xp = next state x_hat_{k+1}, y = output y_hat_k."""
-    # CHANGED: removed unused init_model, reset_saved_signals and convert_signal_ix_to_name
+    # CHANGED: removed init_model (its init_block calls did nothing), reset_saved_signals, convert_signal_ix_to_name
     def __init__(self, nx, nu, ny) -> None:
         """An empty interconnect with state size nx, input size nu and output size ny."""
         # CHANGED: removed unused debugging and recording fields; nb is local to forward
@@ -72,7 +72,7 @@ class Interconnect(nn.Module):
             y_hat^n_k (B, ny) and x_hat^n_{k+1} (B, nx).
         """
         # CHANGED: pass matrices explicitly so torch.compile receives them as graph inputs
-        # CHANGED: use the rollout's 2D arrays; removed Jan's check that the next state matches the input shape
+        # CHANGED: always (B, n) in and out, as the rollout passes; Jan's shape restoring and shape check removed
         # 1. Signals as column vectors (B, n, 1).
         x = x.view(x.size(0), self.nx, 1)
         u = u.view(u.size(0), self.nu, 1)
@@ -104,7 +104,7 @@ class Interconnect(nn.Module):
 
     @added
     def _propagate(self, x, u, order, pass_mats):
-        """Evaluate the requested signals, with sources before destinations.
+        """Run the wires and blocks for the requested signals, in the computation order (Jan's loop from forward).
 
         Each destination needs at least one source. The baseline block receives pass_mats.
 
@@ -119,6 +119,7 @@ class Interconnect(nn.Module):
         input_signals = [x, u] + [None] * (self.n_input_signals - 2)
         output_signals = [None] * self.n_output_signals
 
+        # CHANGED: sums start from the first source, not from Jan's CPU float32 zeros, so device and dtype follow x
         for output_signal_ix in order:
             # destination signal = sum over its sources j of (connection matrix j) @ (source j)
             matrices = self.array_connection_matrices[output_signal_ix]
@@ -177,7 +178,7 @@ class Interconnect(nn.Module):
                     # CHANGED: use Python indices to avoid NumPy scalar handling inside the compiled rollout
                     self.order_output_signal_computation.append(int(element))
                     connection_interconnect_matrix[:,element] = 0
-            # CHANGED: replace Jan's loop assertion with an error if no further signals can be computed
+            # CHANGED: Jan's separate algebraic-loop assertion replaced by this check in the loop, with a clear error
             if len(self.order_output_signal_computation) == n_computed:
                 raise ValueError('Algebraic loop in the signal connections.')
 
@@ -414,8 +415,10 @@ class DtypeDataLoader(My_Simple_DataLoader):
 class SSE_Interconnect(SS_encoder_general):
     """Jan's fit system: an encoder and an interconnect, trained on deepSI's simulation windows."""
     # CHANGED: removed measure_act_multi; predictions use the attached simulator
-    # CHANGED: AugmentedModel.loss replaces Jan's loss with weighted closed-loop error and OBC
-    # CHANGED: use the closed-loop simulator for training rollouts and validation
+    # CHANGED: AugmentedModel.loss replaces Jan's loss (open-loop error plus his parameter penalty param_loss):
+    # the data are closed-loop; param_loss is dropped (it limits drift, not the network taking over beta), and the
+    # OBC arm uses OBC for that
+    # CHANGED: use the closed-loop simulator for training rollouts and validation, as the data are closed-loop
     simulator = None
 
     # CHANGED: callbacks record per-record validation results for training.py
@@ -434,7 +437,8 @@ class SSE_Interconnect(SS_encoder_general):
         """
         super(SSE_Interconnect, self).__init__(nx=interconnect.nx, nb=nb, na=na, na_right=na_right, nb_right=nb_right)
 
-        # CHANGED: model.py sets the augmented encoder, replacing init_nets and e_net options; no unused multi_loss_val
+        # CHANGED: model.py sets the augmented encoder, replacing init_nets and e_net options; multi_loss_val dropped
+        # with the extra validation scores it held
         self.hfn = interconnect
 
         # CHANGED: use the renamed SystemDataNormalizer from deepSI_corrections
@@ -459,7 +463,7 @@ class SSE_Interconnect(SS_encoder_general):
     def make_training_data(self, sys_data, **Loss_kwargs):
         """Add controller indices and record weights to deepSI's training windows.
 
-        Returns uhist, yhist (N, n + 1, 3), ufuture, yfuture (N, nf, 3), ctrl_ix and loss_w."""
+        Returns uhist, yhist (N, 30, 3) (na = nb = 30 samples), ufuture, yfuture (N, nf, 3), ctrl_ix and loss_w."""
         data = super().make_training_data(sys_data, **Loss_kwargs)
         return self.simulator.augment_training_data(data, sys_data, self, **Loss_kwargs)
 
@@ -471,9 +475,10 @@ class SSE_Interconnect(SS_encoder_general):
             probe(self, val_sys_data, value)
         return value
 
-    # CHANGED: require an initialized model; model.py builds it and training.py handles its device
+    # CHANGED: init_model must be called first (build_model does); Jan's lazy init_model and optimizer refresh removed
     # CHANGED: removed Dataset and parallel-validation options unused by training.py
-    # CHANGED: removed timeout, verbosity and profiling options unused by training.py
+    # CHANGED: removed timeout, verbosity, profiling, norm fitting, optimizer and scheduler settings, extra validation
+    # scores and sqrt_train, all unused by training.py
     def fit(self, train_sys_data, val_sys_data, epochs=30, n_its=None, batch_size=256, loss_kwargs={}, \
             validation_measure='sim-NRMS', its_per_val='epoch', cuda=False):
         """Run Adam and the optional PS2 opening; finish with the weights selected by validation.
@@ -504,7 +509,7 @@ class SSE_Interconnect(SS_encoder_general):
             # >=: on equal errors the later weights become the best
             if self.bestfit>=Loss_val:
                 self.bestfit = Loss_val
-                # resolve_checkpoint loads GPU checkpoints onto the CPU
+                # saved on the training device; training.py's resolve_checkpoint maps GPU checkpoints to the CPU on load
                 self.checkpoint_save_system()
             # CHANGED: save _last at every validation so interrupted runs can resume
             self.checkpoint_save_system(name='_last')
@@ -675,7 +680,7 @@ class AugmentedModel(SSE_Interconnect):
         V = mean over windows tau, steps k and axes of (W_r (y^n_k - y_hat^n_{k|tau}))^2.
 
         Args:
-            uhist, yhist: (B, n + 1, 3) past u^n, y^n.
+            uhist, yhist: (B, 30, 3) past u^n, y^n (na = nb = 30 samples).
             ufuture, yfuture: (B, n_f, 3) recorded u^n, y^n of the window.
             Loss_kwargs: ctrl_ix (B,), loss_w (B, 3) = diag of W_r.
         Returns:
@@ -698,7 +703,8 @@ class AugmentedModel(SSE_Interconnect):
         # loss_w (windows, ny): W_r of each window's record
         w = Loss_kwargs.pop('loss_w')
         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
-        # THEORY: W_r = diag(sigma_y / sigma_e,r) scales the normalised error to the error over sigma_e
+        # W_r = diag(sigma_y / sigma_e,r) turns the normalised error into the error over the record's servo-error
+        # scale sigma_e,r, the same scaling as the validation score NRMS_e
         return ((y_pred - yfuture) * w[:, None, :]).square().mean()
 
     def checkpoint_save_system(self, name='_best'):

@@ -1,5 +1,6 @@
 """Training of one black-box configuration: deepSI's fit() on the loss weighted per record and axis by
-sigma_ebar / sigma_e,r, keeping the checkpoint with the lowest validation NRMS_e."""
+sigma_ebar / sigma_e,r (deepSI's pooled servo-error scale over the record's own), keeping the checkpoint with the
+lowest validation NRMS_e."""
 __project_origin__ = "added"
 
 import argparse
@@ -34,8 +35,9 @@ STRIDE = 25          # samples between window starts; the grey box uses 10, not 
 
 
 def per_record_rms(model, recs):
-    """Free-run RMS error per record and axis, RMS_j = ( 1/(N - k0) sum_{k=k0}^{N-1} (y_hat_{j,k} - y_{j,k})^2 )^(1/2)
-    with k0 = n + 1. Since y_hat = r + e_hat, y_hat - y = e_hat - e: r cancels.
+    """RMS error per record and axis of the whole-record simulation (bb.predict),
+    RMS_j = ( 1/(N - k0) sum_{k=k0}^{N-1} (y_hat_{j,k} - y_{j,k})^2 )^(1/2), k0 = 30 the first sample after the
+    encoder's input. Since y_hat = r + e_hat, y_hat - y = e_hat - e: r cancels.
 
     Args:
         model: the black box.
@@ -51,7 +53,7 @@ def per_record_rms(model, recs):
 
 
 class ServoWeightedEncoder(SS_encoder_general_hf):
-    """SUBNET with the loss weighted per record and axis and validation by NRMS_e."""
+    """deepSI's SUBNET model with two changes: the loss weighted per record and axis, and validation by NRMS_e."""
 
     def checkpoint_save_system(self, name='_best', directory=None):
         """Keep deepSI's checkpoints in this run folder on every platform."""
@@ -62,7 +64,7 @@ class ServoWeightedEncoder(SS_encoder_general_hf):
         return super().checkpoint_load_system(name=name, directory=directory or self.checkpoint_dir)
 
     def set_objective(self, train_sigma_e, val_sigma_e, val_recs, failure):
-        """Stores the objective's data on the model.
+        """Store what the weighted loss and NRMS_e validation need: sigma_e of both splits, the validation records.
 
         Args:
             train_sigma_e: (n_records, 3) sigma_e of the training records.
@@ -145,7 +147,7 @@ def main(args):
     np.random.seed(SEED)
     torch.manual_seed(SEED)
 
-    # data: input u = (r, u^ms) and target e = y - r per record; sigma_e from k0 = n + 1
+    # data: input u = (r, u^ms) and target e = y - r per record; sigma_e from k0 = 30, after the encoder's input
     k0 = GREY_BOX.na_nb
     train_files, val_files, test_files = record_files(GREY_BOX)
     train, val = load_records(train_files), load_records(val_files)

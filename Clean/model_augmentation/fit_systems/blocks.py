@@ -19,7 +19,7 @@ class Block(nn.Module):
 
     def __init__(self, nz, nw, **kwargs) -> None:
         """Store the block input size nz and output size nw."""
-        # CHANGED: no block name; add_block sets the block index
+        # CHANGED: no name, no block_ix default, no init_block (a no-op) or abstract forward; add_block sets block_ix
         super().__init__(**kwargs)
 
         self.nw = nw
@@ -27,8 +27,8 @@ class Block(nn.Module):
 
 
 class Static_ANN_Block(Block):
-    """Network block: (f_aug^n, g_aug^n) = phi_aug(x_hat^n, u^n), times a gate per output."""
-    # CHANGED: every argument required, no defaults
+    """Network block phi_aug: physical-state corrections f_aug^n and next added states g_aug^n, one gate per output."""
+    # CHANGED: nz and nw first, every argument required, no defaults, so every setting comes from build_model
     def __init__(self, nz, nw, net, n_nodes_per_layer, n_hidden_layers, activation, net_kwargs) -> None:
         """Network phi_aug: corrections f_aug^n to the physical states and next added states g_aug^n.
 
@@ -46,7 +46,7 @@ class Static_ANN_Block(Block):
         """
         super(Static_ANN_Block, self).__init__(nz, nw)
 
-        # CHANGED: net_kwargs reach the network's constructor (the number of physical rows)
+        # CHANGED: net_kwargs reach the network's constructor: nx_phys, so it can zero the f_aug^n rows at the start
         self.net = net(
             n_in=self.nz,
             n_out=self.nw,
@@ -66,7 +66,7 @@ class Static_ANN_Block(Block):
         Returns:
             (B, nw, 1) physical-state corrections followed by next added states.
         """
-        # CHANGED: no size assertion
+        # CHANGED: no size assertion; init_connection_matrices checks the sizes once
         w = self.net(z.view(-1, self.nz))
         w = w * self.out_gate
         return w.view(-1, self.nw, 1)
@@ -74,7 +74,7 @@ class Static_ANN_Block(Block):
 
 class Linear_Output_Block(Block):
     """Fixed output map y_hat^n = C^n x_tilde^n + D u^n; D = 0, so the output depends only on the physical state."""
-    # CHANGED: C and D required, as buffers; no empty-matrix cases
+    # CHANGED: C and D required, as buffers so they move to the GPU with the model; no empty-matrix cases
     def __init__(self, C, D) -> None:
         """Store C (ny, nx) and D (ny, nu) as buffers: they move with the model and are not trained."""
         _C = to_tensor(C)
@@ -99,7 +99,7 @@ class Linear_Output_Block(Block):
         Returns:
             (B, ny, 1) predicted output y_hat^n, normalised.
         """
-        # CHANGED: no size assertion
+        # CHANGED: no size assertion; init_connection_matrices checks the sizes once
         x = z[:, : self.nx, :]
         u = z[:, self.nx :, :]
         w = torch.matmul(self.C, x) + torch.matmul(self.D, u)
@@ -110,7 +110,7 @@ class Discrete_Nonlinear_Function_Block(Block):
     """Block whose subclass defines w = nonlinear_function(z, mats)."""
     def forward(self, z: Tensor, mats):
         """Evaluate the subclass's map with the matrices of this objective."""
-        # CHANGED: the per-objective matrices are passed on to nonlinear_function; no size assertion
+        # CHANGED: the matrices, built once per objective, are passed on to nonlinear_function; no size assertion
         return self.nonlinear_function(z, mats)
 
 
@@ -163,7 +163,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
         """
         h = self.Ts / self.up_sample
         for _ in range(self.up_sample):
-            # stages: k1 = h F(x, u), k2 = h F(x + k1/2, u), k3 = h F(x + k2/2, u), k4 = h F(x + k3, u)
+            # stages, F = _deriv_with: k1 = h F(x, u), k2 = h F(x + k1/2, u), k3 = h F(x + k2/2, u), k4 = h F(x + k3, u)
             k1 = h * self._deriv_with(x, u, mats)
             k2 = h * self._deriv_with(x + k1 / 2, u, mats)
             k3 = h * self._deriv_with(x + k2 / 2, u, mats)
@@ -291,7 +291,7 @@ class GantryStateBlock(Discrete_Nonlinear_Function_Block):
             xdot_phys = torch.cat([x2[:, 3:], a], dim=-1)
             s_xdot_phys = torch.cat([s_x2[:, 3:], s_a], dim=-1)
         else:
-            # LFR output equation, differentiated:
+            # LFR state equation, differentiated:
             # s_xdot = A_combined s_(x, w, u) + dA_combined (x, w, u), s_w = sY z + Y s_z, s_u = 0
             Y_val, sY_val = Y[:, None], sY[:, None]
             z = torch.cat([a, Y_val * a], dim=-1)
@@ -381,7 +381,8 @@ class _TrainableGantryStateBlock(GantryStateBlock):
         Returns:
             (K, C, A_combined, m_h, alpha, beta, gamma_, N0, N1, N2), in physical units:
             K, C, N0, N1, N2 each (3, 3), A_combined (6, 15), and scalar inertia terms
-            alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma_ = J_eff.
+            alpha = m_Sigma + m_h, beta = (L_b/2) m_Delta, gamma_ = J_eff;
+            this beta is an inertia term, not the trained beta.
         """
         (_, _, _, _, _, _, _,
          mh, m1, m2, mb, Jb, Jh, d) = p
@@ -424,7 +425,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
     MB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('mb')
     JB_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jb')
     JH_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jh')
-    # HEURISTIC: margin gamma = 0.99 of the |m_Delta| bound (_m_diff_bound)
+    # HEURISTIC: margin rho = 0.99 of the |m_Delta| bound (_m_diff_bound)
     M_DIFF_RHO = 0.99
     # version of the map beta -> theta_base; raise it when the map changes, so older checkpoints are refused
     COORDINATE_VERSION = 2
@@ -448,7 +449,8 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
 
         # 2. Set the offset and scale of the tanh map for m_Delta.
         # m_Delta map: r_0 = m_Delta,0 / b_0, eta_0 = atanh(r_0), s = m_Delta,0 / (b_0 (1 - r_0^2)),
-        # so beta = 0 gives m_Delta,0 with slope m_Delta,0, with the other coordinates fixed
+        # so beta = 0 gives m_Delta,0, and a small step in beta changes m_Delta by the same relative amount as
+        # the exp map changes the other nine; all ten coordinates are then on the same scale for Adam
         bound = self._m_diff_bound(combo_init)
         r0 = combo_init[self.M_DIFF_IX] / bound
         eta0 = torch.atanh(r0)
@@ -519,8 +521,8 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         """Bound on |m_Delta|, with m_Delta = m_1 - m_2 the mass of the X1 carriage minus that of the X2 carriage.
         The bound keeps M(Y) positive definite for every payload position Y.
 
-        b = gamma (2 / L_b) sqrt(m_Sigma J_eff), gamma = M_DIFF_RHO = 0.99. With the other combinations positive,
-        |m_Delta| < b keeps m_Sigma J_eff > (L_b^2/4) m_Delta^2; gamma keeps the bound below that limit.
+        b = rho (2 / L_b) sqrt(m_Sigma J_eff), rho = M_DIFF_RHO = 0.99. With the other combinations positive,
+        |m_Delta| < b keeps m_Sigma J_eff > (L_b^2/4) m_Delta^2; rho keeps the bound below that limit.
 
         Args:
             combo: (..., 10) physical combinations; uses m_Sigma and J_eff.

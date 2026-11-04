@@ -2,7 +2,8 @@
 
     x^bb_{k+1} = f_bb(x^bb_k, r_k, u^ms_k),   y_hat_k = r_k + e_hat_k,   e_hat_k = h_bb(x^bb_k),
 
-from the reference r and the injected multisine force u^ms to the servo error e = y - r.
+with the state x^bb (n_x numbers), two networks f_bb (state update) and h_bb (output), the reference r, the injected
+multisine force u^ms and the servo error e = y - r; the encoder psi gives the start state from past samples.
 This file holds the net constructor, the grey box's data settings, the record loader and the free-run prediction.
 Run the scripts from Clean/ as python -m blackbox.<script>."""
 __project_origin__ = "added"
@@ -38,8 +39,8 @@ def data_config(result):
 
 
 def model_kwargs(nx, fh_width, e_width, cfg=GREY_BOX):
-    """Constructor arguments of the black box; shared by training and selection, so the search table counts the
-    parameters of the trained nets.
+    """The settings that build one black box (encoder psi, f_bb, h_bb); shared by training and selection, so the
+    search table counts the parameters of the trained networks.
 
     Args:
         nx: state dimension n_x.
@@ -78,13 +79,14 @@ def load_records(files, folder=None, cfg=GREY_BOX):
 
 
 def system_data(recs, cfg=GREY_BOX):
-    """deepSI records with input (r, u^ms) and target y - r, contiguous for the encoder's .view calls."""
+    """deepSI records with input (r, u^ms) and target e = y - r, the servo error; each array stored as one block of
+    memory, which deepSI's reshaping (.view) needs."""
     return [deepSI.System_data(u=np.ascontiguousarray(u), y=np.ascontiguousarray(y - r), dt=cfg.ts_new)
             for u, r, y in recs]
 
 
 def predict(model, recs, cfg=GREY_BOX):
-    """Return y_hat = r + e_hat [m], one (N, 3) array per record.
+    """Simulate each whole record from one start state: y_hat = r + e_hat [m], one (N, 3) array per record.
 
     At k0 = max(model.na, model.nb), the encoder estimates the state from preceding
     input and servo-error histories. The model then runs without state resets.
