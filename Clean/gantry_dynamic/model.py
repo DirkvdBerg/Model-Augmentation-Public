@@ -125,8 +125,7 @@ def build_model(cfg: RunConfig, data, norm):
 
 @contextmanager
 def on_device(fit_sys, cfg: RunConfig):
-    """Run the encoder start on cfg.device: move the model there, and back to the CPU afterwards, also on an error;
-    the model is built and kept on the CPU."""
+    """Run the code inside on the GPU (cfg.device), then move the model back to the CPU, also after an error."""
     if cfg.device == 'cuda':
         fit_sys.cuda()
     try:
@@ -177,7 +176,7 @@ def encoder_start(fit_sys, cfg: RunConfig, data, norm):
             un = np.stack([(records[i].u - u0) / ustd for i in group])
             yn = np.stack([(records[i].y - y0) / ystd for i in group])
             # start state: q_0 = P^-T y_0, qdot_0 = 0, xbar_0 = 0, normalised; qdot_0 = 0 because every record
-            # starts with a 0.5 s hold at rest (t_hold in data_generation/tdg_config.m), far longer than the trim
+            # starts with a 0.5 s hold at rest (t_hold of the data generator), far longer than the trim
             x0 = np.zeros((len(group), nx + cfg.n_a))
             q0 = np.stack([np.asarray(records[i].y[0], cfg.dtype_np) @ P_INV_T.T for i in group])
             x0[:, :nx] = (np.hstack([q0, np.zeros_like(q0)]) - x_mean) / std_x
@@ -206,8 +205,8 @@ def encoder_start(fit_sys, cfg: RunConfig, data, norm):
             # time step k
             X = torch.stack(xs, 1).reshape(len(group), len(xs), -1)
             U = torch.stack(us, 1).reshape(len(group), len(us), -1)
-            # fit windows, one every stride samples: chi^0_tau holds the simulated outputs y_hat^n,0 and forces
-            # u_hat^n,0 of the na and nb samples before tau, the target is the simulated physical state x_tilde^n,0_tau
+            # fit windows, one every stride samples: chi^0_tau holds the simulated outputs y_hat^n and forces u_hat^n
+            # of the na and nb samples before tau; the target is the simulated physical state x_tilde^n at tau
             starts = torch.arange(0, X.shape[1] - max(na, nb), stride, device=device)
             input_windows.append(U[:, starts[:, None] + torch.arange(nb, device=device)].flatten(0, 1))
             output_windows.append(y_hat[:, starts[:, None] + torch.arange(na, device=device)].flatten(0, 1))

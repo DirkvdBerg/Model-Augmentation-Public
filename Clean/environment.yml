@@ -17,3 +17,11 @@ dependencies:
   - pip:
       # deepSI 0.3.29 is the legacy branch, not on PyPI (PyPI starts at 0.4); pinned to the installed commit
       - deepSI @ git+https://github.com/GerbenBeintema/deepSI@109cf74f49a7b27539232c53981584befc1becc0
+      # deepSI's own dependencies, pinned to the installed versions
+      - gym==0.26.2
+      - opencv-python==4.13.0.92
+      - scikit-learn==1.8.0
+      - progressbar==2.5
+      - rarfile==4.2
+      - requests==2.32.5
+      - tqdm==4.67.3

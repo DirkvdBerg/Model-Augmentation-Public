@@ -53,7 +53,8 @@ def per_record_rms(model, recs):
 
 
 class ServoWeightedEncoder(SS_encoder_general_hf):
-    """deepSI's SUBNET model with two changes: the loss weighted per record and axis, and validation by NRMS_e."""
+    """deepSI's SUBNET model with the loss weighted per record and axis, validation by NRMS_e, and checkpoints kept
+    in the run folder."""
 
     def checkpoint_save_system(self, name='_best', directory=None):
         """Keep deepSI's checkpoints in this run folder on every platform."""
@@ -116,7 +117,7 @@ class ServoWeightedEncoder(SS_encoder_general_hf):
         x = self.encoder(uhist, yhist)
         errors = []
         for y, u in zip(torch.transpose(yfuture, 0, 1), torch.transpose(ufuture, 0, 1)):
-            # e_hat_k = h_bb(x^bb_k), x^bb_k+1 = f_bb(x^bb_k, u_k)
+            # e_hat_k = h_bb(x^bb_k), x^bb_k+1 = f_bb(x^bb_k, u_k), with u_k = (r_k, u^ms_k) normalised
             e_hat, x = self.hfn(x, u)
             errors.append(((e_hat - y) * w) ** 2)
         L = torch.mean(torch.stack(errors))
@@ -126,7 +127,7 @@ class ServoWeightedEncoder(SS_encoder_general_hf):
         return L
 
     def cal_validation_error(self, val_sys_data, validation_measure):
-        """Validation score NRMS_e = mean over records and axes of RMS_j / sigma_e,j; deepSI keeps the checkpoint
+        """Validation score NRMS_e = mean over records r and axes j of RMS_j / sigma_e,r; deepSI keeps the checkpoint
         with the lowest score. deepSI's own sim-NRMS divides by the standard deviation of its output instead.
 
         Args:
