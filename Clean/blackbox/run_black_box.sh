@@ -12,15 +12,15 @@
 # Black-box grid: one array index trains one configuration of GRID on the CPU, since deepSI's training loop runs
 # one small step at a time, which a GPU does not speed up (about 1.1 h per 20000 updates); then
 # python -m blackbox.select_bb on the job's run folders.
-#   sbatch Clean/blackbox/run_black_box.sh                      # all 11
-#   sbatch --array=9 Clean/blackbox/run_black_box.sh            # the selected configuration only
-# Before submitting, fill in the <...> placeholders: partition, log folder, conda environment and repository.
+#   sbatch blackbox/run_black_box.sh                      # all 11
+#   sbatch --array=9 blackbox/run_black_box.sh            # the selected configuration only
+# Before submitting, fill in the <...> placeholders: partition, log folder, conda environment and code folder.
 
 set -eo pipefail
 IDX=${SLURM_ARRAY_TASK_ID:?run as an array job}
 N_ITS=80000   # Adam updates per configuration
 CONDA_ENV="<conda environment>"   # the environment of environment.yml
-REPO="<repository>"               # the folder that contains Clean/
+CODE_DIR="<code folder>"          # the folder that contains blackbox/ and gantry_interconnect_dynamic.py
 
 # name and arguments per array index: 0 to 8 nx x width at lr 3e-3, 9 and 10 the learning rate at nx 16, width 16.
 # The encoder width is twice the f_bb and h_bb width in every line; it is not varied on its own
@@ -41,8 +41,8 @@ read -r NAME ARGS <<< "${GRID[$IDX]:?no grid line for index $IDX}"
 
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate "$CONDA_ENV"
-# from Clean/, so the scripts run as python -m blackbox.<script>
-cd "$REPO/Clean"
+# from the code folder, so the scripts run as python -m blackbox.<script>
+cd "$CODE_DIR"
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4
 
