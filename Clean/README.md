@@ -1,14 +1,13 @@
 # Clean code of the thesis
 
 Minimal code that reproduces the thesis "Model Augmentation for a Dual-Gantry High-Precision Motion System": the
-simulated data, the grey-box augmented model with orthogonal projection (OBC), and the black-box reference model.
+grey-box augmented model with orthogonal projection (OBC) and the black-box reference model.
 Section names below refer to the thesis.
 
 ## Order of use
-1. Generate the data (MATLAB): `data_generation/`.
-2. Train the grey-box rows: `gantry_interconnect_dynamic.py`.
-3. Train the black-box grid and select one configuration: `blackbox/`.
-4. Evaluate both on train, validation and test: the grey box at the end of each run (`gantry_dynamic/evaluation.py`),
+1. Train the grey-box rows: `gantry_interconnect_dynamic.py`.
+2. Train the black-box grid and select one configuration: `blackbox/`.
+3. Evaluate both on train, validation and test: the grey box at the end of each run (`gantry_dynamic/evaluation.py`),
    the black box with `blackbox/eval_bb.py`.
 
 ## Grey box: augmented model and OBC
@@ -24,12 +23,11 @@ python -u Clean/gantry_interconnect_dynamic.py                                  
 python -u Clean/gantry_interconnect_dynamic.py --arm u --start correct --n-a 0 --no-ps2   # another model
 python -u Clean/gantry_interconnect_dynamic.py --evaluate RUN_DIR               # evaluation of a finished run, CPU
 ```
-Data are read from `Thesis-writeup/Data/<data set>`, results go to `simulations/gantry_clean/` (`--data-root`,
-`--out-root`).
 
 | File | Role | Thesis |
 |-|-|-|
 | `gantry_interconnect_dynamic.py` | all settings; fresh run, resume, polish-only rerun, evaluation | Models; Hyperparameters |
+| `run_grey_box.sh` | SLURM array over the nine grey-box runs of the thesis | Models |
 | `gantry_dynamic/config.py` | run configuration: the record of the settings, their checks, config.json, detuned start | |
 | `gantry_dynamic/data.py` | records of one data set, split, resampling to the training rate, normalisation | Records; Processing and checks |
 | `gantry_dynamic/controller.py` | the known controller K_fb per stage axis, Tustin-discretised | Closed loop and excitation |
@@ -62,31 +60,10 @@ the 11 grid configurations on the server (`sbatch --array=9` for the selected on
 | `blackbox/eval_bb.py` | predictions on every split: `python -u -m blackbox.eval_bb <run folder> <output folder>` | Metrics |
 | `blackbox/run_black_box.sh` | SLURM array over the grid | |
 
-## Data generation (MATLAB)
-`generate_thesis_data()` writes all 48 records (18 training, 6 validation, 12 test, 12 FRF), each noisy and
-noise-free, to `Thesis-writeup/Data/Coulomb-tanh-and-MSD-lowpass-noise` and `Coulomb-tanh-and-MSD-noise-free`.
-Simulink model `data_generation/model/gantry_tdg_2025a.slx`; option `simulator 'replica'` steps the same loop in
-plain MATLAB. Needs Jasper's unchanged functions in `Thesis-writeup/Code/Data/vendor/` (not in `Clean/`).
-
-| File | Role | Thesis |
-|-|-|-|
-| `generate_thesis_data.m` | runs the manifest, saves records and provenance | Records |
-| `tdg_config.m`, `tdg_init.m` | all generator constants and paths; loads the model | Simulated system |
-| `tdg_manifest.m`, `tdg_write_manifest.m` | record table; `MANIFEST.csv` per data set | Records |
-| `tdg_build_inputs.m` | plant, reference and multisine of one record | Closed loop and excitation |
-| `gantrySystemExtendedTanh.m` | truth: gantry with hidden absorber and tanh Coulomb friction | Data-generating system |
-| `gtd_build_plant.m` | nominal plant at Y_op and the fixed controller | Closed loop and excitation |
-| `gtd_make_reference.m`, `gtd_validate_ref.m` | stage reference of a record; hardware-limit check | Excitation and records |
-| `gtd_make_multisine.m` | injected multisine stage force | Excitation and records |
-| `gtd_run_simulation.m`, `tdg_replica.m` | closed-loop simulation (Simulink, or the MATLAB replica) | Simulated system |
-| `tdg_noise_psd.m`, `tdg_noise_draw.m`, `noise/noise_target.mat` | encoder-noise spectra and one realisation | Processing and checks |
-| `tdg_post_check.m` | limit check on the simulated truth | Processing and checks |
-| `gtd_save_record.m`, `tdg_seed.m` | record file; deterministic seeds from text keys | Records |
-
 ## Requirements
 `environment.yml` pins the environment the thesis results were produced with (Python 3.11.14, PyTorch 2.5.1 with
 CUDA 12.1, deepSI 0.3.29 from its GitHub legacy branch): `conda env create -f environment.yml`. CUDA for full
-grey-box runs. MATLAB with Simulink R2025a for data generation.
+grey-box runs.
 
 ## Attribution
 `model_augmentation/` is adapted from Model-Augmentation-Public by Jan H. Hoekstra (commit 8200923, BSD 3-Clause,

@@ -1,22 +1,25 @@
 #!/bin/bash
 #SBATCH -J black-box
-#SBATCH -p molokai,lanai
+#SBATCH -p <partition>
 #SBATCH -N 1
 #SBATCH --ntasks=1
 #SBATCH -c 4
 #SBATCH --mem=16gb
 #SBATCH -t 24:00:00
 #SBATCH --array=0-10
-#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/clean/bb_grid_%A_%a.out
+#SBATCH -o <log folder>/bb_grid_%A_%a.out
 
 # Black-box grid: one array index trains one configuration of GRID on the CPU, since deepSI's eager loop is
 # dispatch-bound (about 1.1 h per 20000 updates); then python -m blackbox.select_bb on the job's run folders.
 #   sbatch Clean/blackbox/run_black_box.sh                      # all 11
 #   sbatch --array=9 Clean/blackbox/run_black_box.sh            # the selected configuration only
+# Before submitting, fill in the <...> placeholders: partition, log folder, conda environment and repository.
 
 set -eo pipefail
 IDX=${SLURM_ARRAY_TASK_ID:?run as an array job}
 N_ITS=80000   # Adam updates per configuration
+CONDA_ENV="<conda environment>"   # the environment of environment.yml
+REPO="<repository>"               # the folder that contains Clean/
 
 # name and arguments per array index: 0 to 8 nx x width at lr 3e-3, 9 and 10 the learning rate at nx 16, width 16.
 # The encoder width is twice the f_bb and h_bb width in every line; it is not varied on its own
@@ -36,9 +39,9 @@ GRID=(
 read -r NAME ARGS <<< "${GRID[$IDX]:?no grid line for index $IDX}"
 
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
-conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
+conda activate "$CONDA_ENV"
 # from Clean/, so the scripts run as python -m blackbox.<script>
-cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/Clean
+cd "$REPO/Clean"
 export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4
 

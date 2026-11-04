@@ -255,7 +255,7 @@ class PS2Opening:
         A separate Adam fits the network parameters to minimise
             L_S2 = mean((g_aug(X, U) - T)^2) / mean(var(T, dim=0))
         Average error over pairs and added states. Calculate each target state's variance across B pairs,
-        then average across states. With divisor B - 1, this cost is (B - 1)/B times thesis eq:ps2_s2.
+        then average across states. With divisor B - 1, this cost is (B - 1)/B times the thesis's S2 cost.
         Use each training minibatch's variance and all fixed calibration pairs for evaluation.
         Require B > 1 and positive mean target variance.
 

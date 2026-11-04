@@ -2,7 +2,7 @@
 
     x^bb_{k+1} = f_bb(x^bb_k, r_k, u^ms_k),   y_hat_k = r_k + e_hat_k,   e_hat_k = h_bb(x^bb_k),
 
-from the reference r and the injected multisine force u^ms to the servo error e = y - r (thesis Eq. (setup_bb)).
+from the reference r and the injected multisine force u^ms to the servo error e = y - r.
 This file holds the net constructor, the grey box's data settings, the record loader and the free-run prediction.
 Run the scripts from Clean/ as python -m blackbox.<script>."""
 __project_origin__ = "added"
