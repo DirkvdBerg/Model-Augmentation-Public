@@ -442,8 +442,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         theta_init = self.params_init
         combo_init = to_tensor(combo_init).reshape(10).to(theta_init.dtype).clone()
 
-        # keep the saved parameter name, so existing checkpoints and Adam moments still load
-        self.register_parameter('free_params', nn.Parameter(torch.zeros(10, dtype=theta_init.dtype)))
+        self.register_parameter('beta', nn.Parameter(torch.zeros(10, dtype=theta_init.dtype)))
         self.register_buffer("combo_init", combo_init)
 
         # 2. Set the offset and scale of the tanh map for m_Delta.
@@ -456,11 +455,6 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         scale = combo_init[self.M_DIFF_IX] / (bound * (1 - r0 ** 2))
         self.register_buffer("m_diff_eta0", eta0)
         self.register_buffer("m_diff_scale", scale)
-
-    @property
-    def beta(self) -> Tensor:
-        """Training coordinates; stored as free_params in checkpoints."""
-        return self._parameters['free_params']
 
     @staticmethod
     def combos_of(theta: Tensor, Lb) -> Tensor:

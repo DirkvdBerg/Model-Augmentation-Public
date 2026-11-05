@@ -1,4 +1,5 @@
-"""Refine the selected model with L-BFGS on fixed training windows; accept only if validation improves."""
+"""Refine the selected model with L-BFGS on fixed training windows; accept only if validation improves.
+L-BFGS needs no bounds here, since every beta gives an admissible baseline."""
 __project_origin__ = "added"
 
 import time
@@ -15,7 +16,7 @@ HISTORY_SIZE = 50    # past parameter and gradient changes used to approximate c
 INNER_ITER = 20      # maximum iterations per optimizer call
 # Dividing output errors by the servo error increased the loss and largest absolute gradient
 # by about 2.6e7 on 128 training windows. We use this measured factor to scale the stopping
-# tolerances from 1e-12 and 1e-14 to 2.6e-5 and 2.6e-7.
+# tolerances from 1e-12 and 1e-14, set below the unscaled loss of about 1e-9, to 2.6e-5 and 2.6e-7.
 TOL_GRAD = 2.6e-5    # threshold for the largest absolute gradient entry
 TOL_CHANGE = 2.6e-7  # shared threshold for loss change, parameter step and directional derivative
 

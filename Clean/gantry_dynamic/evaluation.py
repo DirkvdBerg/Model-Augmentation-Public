@@ -5,7 +5,7 @@ they are drawn from.
 The score NRMS_e is the RMS of the prediction error y_hat - y over the standard deviation sigma_e of the servo error
 e = y - r, per record and axis; with the predicted servo error e_hat = y_hat - r, the prediction error is also
 e_hat - e. Scores are given in the stage frame (X1, X2, Y), as measured, and in the generalised frame (X, Theta, Y),
-with Theta the beam rotation, mapped by P_INV_T of gantry_ss; each frame uses sigma_e of the servo error in that
+with Theta the yaw angle, mapped by P_INV_T of gantry_ss; each frame uses sigma_e of the servo error in that
 frame.
 """
 __project_origin__ = "added"
