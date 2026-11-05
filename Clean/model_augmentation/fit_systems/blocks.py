@@ -428,8 +428,6 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
     JH_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jh')
     # HEURISTIC: margin rho = 0.99 of the |m_Delta| bound (_m_diff_bound)
     M_DIFF_RHO = 0.99
-    # version of the map beta -> theta_base, saved in checkpoints; raise it when the map changes (not compared on load)
-    COORDINATE_VERSION = 2
 
     def __init__(self, *args, combo_init, **kwargs) -> None:
         """Set beta = 0 at combo_init and calibrate the signed mass-difference coordinate.
@@ -456,8 +454,6 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
         r0 = combo_init[self.M_DIFF_IX] / bound
         eta0 = torch.atanh(r0)
         scale = combo_init[self.M_DIFF_IX] / (bound * (1 - r0 ** 2))
-        self.register_buffer("coordinate_version", torch.as_tensor(
-            self.COORDINATE_VERSION, dtype=torch.int64, device=combo_init.device))
         self.register_buffer("m_diff_eta0", eta0)
         self.register_buffer("m_diff_scale", scale)
 
