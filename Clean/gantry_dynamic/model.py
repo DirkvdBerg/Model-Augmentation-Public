@@ -222,7 +222,7 @@ def least_squares_start(encoder, nx, uh, yh, xt):
     """Least-squares start of the encoder: its physical rows reconstruct the untrained model's states from the past
     window; W^a and the added-state rows stay unchanged.
 
-    (W^b0, b^b0) = argmin mean ||W^b chi^0_tau + b - x_tilde^n,0_tau||^2, chi^0 = (y history, u history).
+    (W^b0, b^b0) = argmin mean ||W^b chi^0_tau + b - x_tilde^n,0_tau||^2, chi^0 the window's past outputs and inputs.
 
     Args:
         encoder: encoder psi; W^b and its physical output rows are overwritten.

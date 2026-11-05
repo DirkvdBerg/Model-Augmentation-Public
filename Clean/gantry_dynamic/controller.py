@@ -1,6 +1,6 @@
-"""The feedback controller K_fb of the closed loop: per actuator axis (X1, X2, Y) one controller K_1, tuned on the
+"""The feedback controller K_fb of the closed loop: K_1, one controller per actuator axis (X1, X2, Y), tuned on the
 nominal baseline at a design Y and discretised with Tustin's method. The controller bank holds one K_fb per design
-used in the data."""
+in the records; the thesis data use one, K_1."""
 __project_origin__ = "added"
 
 import numpy as np
@@ -57,7 +57,7 @@ def actuator_response_at_fixed_y(Y_op, s):
 
 
 def controller_shape():
-    """K_1 before its per-axis gain: integral action (s + w_b/6)/s, a lead filter (s + w_b/3)/(s + 3 w_b) and a
+    """Each axis's controller before its gain: integral action (s + w_b/6)/s, a lead filter (s + w_b/3)/(s + 3 w_b) and a
     low-pass 10 w_b/(s + 10 w_b), with w_b the bandwidth in rad/s.
 
     Returns:
@@ -70,7 +70,7 @@ def controller_shape():
 
 
 def axis_controllers(Y_op, ts):
-    """The three per-axis controllers K_1 for the design payload position Y_op: the shape times a gain per axis that
+    """The three per-axis controllers of K_1 for the design payload position Y_op: the shape times a gain per axis that
     sets the open-loop magnitude of that axis to 1 at the bandwidth, discretised with Tustin's method at ts.
 
     Args:
@@ -86,7 +86,7 @@ def axis_controllers(Y_op, ts):
     axis_coefficients = []
     for j in range(3):
         # 2. Gain that sets this axis's open-loop magnitude to 1 at the bandwidth, tuned on the diagonal entry of the
-        # plant only
+        # plant only, as the data generator does
         axis_gain = 1.0 / abs(plant_at_bandwidth[j, j] * shape_at_bandwidth)
         # 3. Tustin (scipy's 'bilinear') at ts, the rule the data generator used for K_1; ZOH not compared
         b, a, _ = cont2discrete((axis_gain * num, den), ts, method='bilinear')

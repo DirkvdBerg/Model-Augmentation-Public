@@ -428,7 +428,7 @@ class IdentifiableGantryStateBlock(_TrainableGantryStateBlock):
     JH_IX = _TrainableGantryStateBlock.PARAM_NAMES.index('Jh')
     # HEURISTIC: margin rho = 0.99 of the |m_Delta| bound (_m_diff_bound)
     M_DIFF_RHO = 0.99
-    # version of the map beta -> theta_base; raise it when the map changes, so older checkpoints are refused
+    # version of the map beta -> theta_base, saved in checkpoints; raise it when the map changes (not compared on load)
     COORDINATE_VERSION = 2
 
     def __init__(self, *args, combo_init, **kwargs) -> None:

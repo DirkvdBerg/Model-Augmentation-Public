@@ -10,10 +10,9 @@ import numpy as np
 import torch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO_ROOT = os.path.dirname(ROOT)
 # default folders; --data-root and --out-root override them
-DATA_ROOT = os.path.join(REPO_ROOT, 'Thesis-writeup', 'Data')      # the data sets made by data_generation/
-OUT_ROOT = os.path.join(REPO_ROOT, 'simulations', 'gantry_clean')  # run folders <out_root>/<noise>/<run_id>
+DATA_ROOT = os.path.join(ROOT, 'data')                             # the data sets; --data-root overrides it
+OUT_ROOT = os.path.join(ROOT, 'runs')                              # run folders <out_root>/<noise>/<run_id>
 
 # paths on the machine that runs the code; config.json leaves them out, so a run folder copied to another machine
 # (e.g. the cluster) uses that machine's paths
@@ -70,7 +69,7 @@ class RunConfig:
     nu: ClassVar[int] = 3                # inputs: actuator forces F_X1, F_X2, F_Y [N]
     ny: ClassVar[int] = 3                # outputs: measured positions X1, X2, Y [m]
     fs_orig: ClassVar[int] = 20000       # [Hz] sample rate of the data sets, set in data_generation/tdg_config.m
-    # float64: on the server GPU a compiled training step is not slower than in float32
+    # float64: float32 rounds Y by about 4 nm, the size of the noise; on the server GPU a compiled step is not slower
     dtype_np: ClassVar[type] = np.float64
     dtype_pt: ClassVar[torch.dtype] = torch.float64
 

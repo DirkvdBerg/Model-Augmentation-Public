@@ -47,7 +47,7 @@ export PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4
 
 # Keep each grid job separate: select with python -m blackbox.select_bb <GRID_OUT> after its tasks finish.
-GRID_OUT=../simulations/gantry_clean/blackbox/${SLURM_ARRAY_JOB_ID}
+GRID_OUT=runs/blackbox/${SLURM_ARRAY_JOB_ID}
 OUT=${GRID_OUT}/${IDX}_${NAME}_n${N_ITS}_${SLURM_ARRAY_JOB_ID}
 echo "index=${IDX} name=${NAME} args=${ARGS} git=$(git rev-parse --short HEAD 2>/dev/null || echo unavailable)"
 echo "job_id=${SLURM_JOB_ID} node_list=${SLURM_JOB_NODELIST}"; date

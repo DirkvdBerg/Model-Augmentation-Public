@@ -1,4 +1,4 @@
-"""Closed-loop simulation of the augmented model with the known controller K_fb, in residual form (Kessels): the
+"""Closed-loop simulation of the augmented model with the known controller K_fb, in residual form: the
 controller bank, one closed-loop step, the rollout, and the simulator that training and validation call."""
 __project_origin__ = "added"
 

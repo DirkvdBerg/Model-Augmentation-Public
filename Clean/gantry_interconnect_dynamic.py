@@ -33,7 +33,7 @@ SETTINGS = dict(
     # model
     arm='obc',          # 'obc': OBC projection of the network; 'u': unconstrained
     start='detuned',    # baseline parameters at the start: 'correct' (nominal) or 'detuned' (tests their recovery)
-    n_a=2,              # number of added states x_bar; the thesis runs 0, 2 and 8. The baseline has 2 missing states.
+    n_a=2,              # number of added states x_bar; the thesis runs 0, 2 and 8. The baseline lacks the absorber's 2 states.
     ps2=True,           # PS initialization of the added states (S1, then S2)
     noise='noisy',      # data set: 'noisy' (measurement noise) or 'noisefree'
     # sampling and windows

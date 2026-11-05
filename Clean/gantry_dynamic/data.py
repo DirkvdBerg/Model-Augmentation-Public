@@ -120,6 +120,8 @@ def _positions_at_fs_new(rec, cfg: RunConfig):
         (N, 3) y at fs_new [m].
     """
     decimation = cfg.decimation
+    # the anti-alias filter is for the measurement noise, a third of whose variance lies above 2.5 kHz; noise-free data
+    # are only decimated
     if cfg.noise != 'noisy':
         return rec['y'][::decimation]
     r = rec['r_sim']

@@ -65,7 +65,7 @@ class Interconnect(nn.Module):
 
         Args:
             x: (B, nx) state x_hat^n_k.
-            u: (B, nu) controller input u_hat^n_k.
+            u: (B, nu) closed-loop input u_hat^n_k = u^n_k + u_fb^n_k.
             obc_pass: (mats, dmats, c) of the OBC correction, None on the unconstrained arm.
             pass_mats: the baseline matrices of this objective, built once per objective.
         Returns:
@@ -469,7 +469,7 @@ class SSE_Interconnect(SS_encoder_general):
     def make_training_data(self, sys_data, **Loss_kwargs):
         """Add controller indices and record weights to deepSI's training windows.
 
-        Returns uhist, yhist (N, 30, 3) (na = nb = 30 samples), ufuture, yfuture (N, nf, 3), ctrl_ix and loss_w."""
+        Returns uhist, yhist (N, na, 3) (na = nb = na_nb, 30 here), ufuture, yfuture (N, nf, 3), ctrl_ix and loss_w."""
         data = super().make_training_data(sys_data, **Loss_kwargs)
         return self.simulator.augment_training_data(data, sys_data, self, **Loss_kwargs)
 
@@ -690,7 +690,7 @@ class AugmentedModel(SSE_Interconnect):
         V = mean over windows tau, steps k and axes of (W_r (y^n_k - y_hat^n_{k|tau}))^2.
 
         Args:
-            uhist, yhist: (B, 30, 3) past u^n, y^n (na = nb = 30 samples).
+            uhist, yhist: (B, na, 3) past u^n, y^n (na = nb = na_nb, 30 here).
             ufuture, yfuture: (B, n_f, 3) recorded u^n, y^n of the window.
             Loss_kwargs: ctrl_ix (B,), loss_w (B, 3) = diag of W_r.
         Returns:

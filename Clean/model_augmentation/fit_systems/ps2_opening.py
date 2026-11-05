@@ -90,7 +90,7 @@ class PS2Opening:
 
     @property
     def done(self):
-        """True when the opening ends (stored as 'S3')."""
+        """True when the opening has ended; phase 'S3' means ended, not a third stage."""
         return self.phase == 'S3'
 
     def after_step(self, fs):
@@ -281,8 +281,8 @@ class PS2Opening:
             b = self._sample(fs, ix, n, srng, pair=True)
             with torch.no_grad():
                 return fs.encoder(b['uh'], b['yh']), b['u0'], self._added_states(fs.encoder(b['uh1'], b['yh1']))
-        # At a window's first sample the controller state is zero, so recorded and closed-loop inputs agree
-        # if the encoder reproduces that sample's output. S2 uses the recorded input without this correction.
+        # S2 uses the recorded input u^n_k, not the closed-loop input u^n_k + u_fb^n_k. At a window's first sample
+        # x^c = 0, so u_fb^n_k = D_fb^n (y^n_k - y_hat^n_k), which is zero when the encoder reproduces y^n_k
         (Xf, Uf, Tf), (Xc, Uc, Tc) = snap(self.fit_ix, sp.n_snap), snap(self.cal_ix, sp.n_snap_cal)
 
         def state_map_loss(X, U, T, t_var):
