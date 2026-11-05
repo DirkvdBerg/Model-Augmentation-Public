@@ -210,5 +210,7 @@ def attach_obc(fit_sys, baseline_block: IdentifiableGantryStateBlock, cfg: RunCo
     reference = build_reference_set(cfg, norm, records=data.train_list)
     correction = GantryOBCCorrection(baseline_block, nx=fit_sys.hfn.nx, nx_phys=cfg.nx_phys, dtype=cfg.dtype_pt,
                                      reference=reference, chunk=cfg.obc_ref_chunk)
+    # f_obc^n: subtracted from the next state in every step of the interconnect
     fit_sys.hfn.obc_correction = correction
+    # theta_aux: fitted by the projection from F^n_aug (network_field) on J (basis)
     fit_sys.obc = OBCProjection(reference_field=correction.network_field, basis_builder=correction.basis)

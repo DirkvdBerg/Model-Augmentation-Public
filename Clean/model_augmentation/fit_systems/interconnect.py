@@ -89,6 +89,7 @@ class Interconnect(nn.Module):
         # CHANGED: loop moved to _propagate, so output_only can compute y_k before the controller sets u_k
         output_signals = self._propagate(x, u, self.order_output_signal_computation, pass_mats)
 
+        # signal 1 is y_hat^n_k; signal 0 is x_hat^n_{k+1} before the OBC correction
         y = output_signals[1]
         xp = output_signals[0]
 
@@ -140,6 +141,7 @@ class Interconnect(nn.Module):
 
     def init_forward(self):
         """Resolve the computation order and the connection matrices once, at the first forward call."""
+        # CHANGED: removed Jan's debug prints; n_nodes is local; columns 0 and 1 zeroed in one line, same result
         # 1. Directed graph of the connections.
         self.n_output_signals = self.nr_blocks+2
         self.n_input_signals = self.nr_blocks+2
@@ -223,6 +225,7 @@ class Interconnect(nn.Module):
         """
         x = x.view(x.size(0), self.nx, 1)
         nb = x.size(0)
+        # y_hat^n_k does not depend on u (no input feedthrough), so u is set to zero
         u = torch.zeros((nb, self.nu, 1), device=x.device, dtype=x.dtype)
 
         if not self.initialized_forward_function:
@@ -416,8 +419,8 @@ class SSE_Interconnect(SS_encoder_general):
     """Jan's fit system: an encoder and an interconnect, trained on deepSI's simulation windows."""
     # CHANGED: removed measure_act_multi; predictions use the attached simulator
     # CHANGED: AugmentedModel.loss replaces Jan's loss (open-loop error plus his parameter penalty param_loss):
-    # the data are closed-loop; param_loss is dropped (it limits drift, not the network taking over beta), and the
-    # OBC arm uses OBC for that
+    # the data are closed-loop; param_loss is dropped, as it limits the drift of beta but does not stop the network
+    # from taking over what beta models; the OBC arm uses OBC for that
     # CHANGED: use the closed-loop simulator for training rollouts and validation, as the data are closed-loop
     simulator = None
 
@@ -435,10 +438,11 @@ class SSE_Interconnect(SS_encoder_general):
             na, nb: past y and u samples in the encoder window.
             na_right, nb_right: future samples in the window (0 here).
         """
+        # CHANGED: interconnect is the first, required argument (Jan's default was the Interconnect class)
         super(SSE_Interconnect, self).__init__(nx=interconnect.nx, nb=nb, na=na, na_right=na_right, nb_right=nb_right)
 
-        # CHANGED: model.py sets the augmented encoder, replacing init_nets and e_net options; multi_loss_val dropped
-        # with the extra validation scores it held
+        # CHANGED: model.py sets the augmented encoder, replacing init_nets, e_net options and modified_encoder_net;
+        # multi_loss_val dropped with the extra validation scores it held
         self.hfn = interconnect
 
         # CHANGED: use the renamed SystemDataNormalizer from deepSI_corrections
@@ -449,6 +453,8 @@ class SSE_Interconnect(SS_encoder_general):
         # CHANGED: model.py already sets the encoder and normalisation; training.py handles the device
         # CHANGED: removed Jan's optional scheduler (off by default; the thesis uses a fixed learning rate) and his
         # init_block call on each block, which did nothing; build_model sets each block's values when it creates it
+        # CHANGED: removed per-parameter optimizer settings (one setting for all parameters here) and the nu/ny
+        # option without data; fit resets the loss history
         self.nu, self.ny = sys_data.nu, sys_data.ny
         self.optimizer = self.init_optimizer(list(self.parameters_with_names.values()), **optimizer_kwargs)
         self.bestfit = float('inf')
@@ -518,6 +524,7 @@ class SSE_Interconnect(SS_encoder_general):
 
         # 1. Windows, data loader and the initial validation.
         # CHANGED: reset counters and history for this job; training.py tracks earlier jobs
+        # CHANGED: removed self.dt (unused) and the move to the GPU (training.py does it with on_device)
         self.train()
 
         self.epoch_counter = 0
@@ -609,6 +616,7 @@ class SSE_Interconnect(SS_encoder_general):
             selected_checkpoint = '_last'
         if self.sync_obc_coefficient(refresh_basis=True):
             self.checkpoint_save_system(name=selected_checkpoint)
+        # CHANGED: log says "update" instead of Jan's "epoch", since best_it counts updates
         print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4}, selected at update {best_it}; last validation epoch_id={self.epoch_id[-1]:.2f}')
 
 
@@ -654,7 +662,9 @@ class AugmentedModel(SSE_Interconnect):
         epoch = self._epoch_index()
         with torch.no_grad():
             if refresh_basis or self.obc.basis is None:
+                # J: rebuild the OBC basis at the current beta
                 self.obc.refresh(self.hfn.connected_blocks[self._mats_ix].beta, epoch)
+            # theta_aux: least-squares fit of the current network's correction F on J
             theta = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])
             correction.set_theta_aux(theta, self.obc.basis.beta_lin)
         return True

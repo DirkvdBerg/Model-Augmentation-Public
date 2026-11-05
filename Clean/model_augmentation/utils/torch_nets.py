@@ -23,6 +23,7 @@ def build_mlp(n_in, n_out, n_nodes_per_layer, n_hidden_layers, activation):
         network (nn.Sequential) and its output layer, so callers can initialize selected output rows.
     """
     # Keep layer creation order: changing it changes which seeded random draws initialize each layer.
+    # CHANGED: no check that n_hidden_layers > 0; 0 also gives one hidden layer
     seq = [nn.Linear(n_in, n_nodes_per_layer), activation()]
     for _ in range(n_hidden_layers - 1):
         seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))

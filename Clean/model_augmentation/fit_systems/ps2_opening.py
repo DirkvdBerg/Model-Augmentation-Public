@@ -119,6 +119,7 @@ class PS2Opening:
         end = plateau or self.it >= self.spec.s1_cap
         print('[ps2] update %d: calibration unexplained %.4f%s' % (self.it, u, ' (S1 ends: %s)' % (
             'plateau' if plateau else 'cap') if end else ''), flush=True)
+        # nu above screen_max: the added states do not predict the residual, so S2 is skipped
         if (end or self.it == self.spec.screen_at) and u > self.spec.screen_max:
             self.phase, self.status = 'S3', 'fallback: residual not predictable (%.4f > %.2f at update %d)' % (
                 u, self.spec.screen_max, self.it)
@@ -223,7 +224,9 @@ class PS2Opening:
         """
         b = self._sample(fs, self.fit_ix, self.spec.aux_batch, self._rng)
         x = fs.encoder(b['uh'], b['yh'])
+        # e: normalised closed-loop residual of the current model over the next H samples
         e = self._residual(fs, b, x.detach())
+        # L_S1: squared error of the decoder's prediction from the added states against e
         loss = (self._decoder(self._added_states(x)) - e).pow(2).mean()
         grads = torch.autograd.grad(loss, self._aux, allow_unused=True)
         # Use S1 gradients for this step, then restore the gradients left by V. Each Adam keeps its own moments.
@@ -245,6 +248,7 @@ class PS2Opening:
         with torch.no_grad():
             x = fs.encoder(self._cal['uh'], self._cal['yh'])
             e = self._residual(fs, self._cal, x)
+            # nu: squared error of the decoder's prediction against e, divided by the mean square of e
             return float((self._decoder(self._added_states(x)) - e).pow(2).mean() / e.pow(2).mean())
 
     def _fit_added_state_transition(self, fs):
@@ -283,6 +287,8 @@ class PS2Opening:
 
         def state_map_loss(X, U, T, t_var):
             """Evaluate L_S2 with supplied mean target variance t_var."""
+            # L_S2: squared error of the network's added-state update against the encoder's added states at k + 1,
+            # divided by their variance
             return (ann(torch.cat((X, U), dim=1))[:, self._added_cols, 0] - T).pow(2).mean() / t_var
         opt = torch.optim.Adam(params, lr=sp.lr)
         g = torch.Generator(device='cpu').manual_seed(sp.seed)
@@ -307,6 +313,7 @@ class PS2Opening:
                 best, state = rc, [p.detach().clone() for p in params]
             if s >= sp.s2_min and _plateaued(checks, sp.s2_window, sp.s2_tol):
                 break
+        # keep the network parameters with the lowest L_S2 on the calibration pairs
         with torch.no_grad():
             for p, v in zip(params, state):
                 p.copy_(v)

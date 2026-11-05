@@ -32,9 +32,11 @@ class OBCBasis:
         """
         with torch.no_grad():
             n_rows, n_cols = J.shape
+            # D: column norms of J, so every column counts equally in the rank test
             gram = J.T @ J
             column_norms = gram.diagonal().sqrt()
             column_scale = torch.where(column_norms > 0, column_norms, torch.ones_like(column_norms))
+            # SVD of the scaled J, computed once per refresh and reused for every theta_aux fit
             U, S, Vh = torch.linalg.svd(J / column_scale, full_matrices=False)
             # Numerical rank: S_i > S_max * max(rows, columns) * machine precision, the numpy matrix_rank default.
             tol = float(S[0]) * (max(n_rows, n_cols) * torch.finfo(S.dtype).eps)
@@ -107,9 +109,11 @@ def build_stacked_sensitivity(step: Callable[[Tensor, Tensor], Tensor], beta_lin
         # Use forward-mode differentiation: few parameters, many reference-state outputs.
         for s in range(0, Z.shape[0], chunk):
             Zc = Z[s:s + chunk].to(device=dev, dtype=torch.float64)
+            # Phi rows of this chunk: derivative of the baseline next state with respect to beta at beta_lin
             Jc = torch.func.jacfwd(lambda v: step(v, Zc))(beta_lin)
             out.append(Jc[:, physical_rows, 0, :].reshape(-1, beta_lin.shape[0]))
             if append_value:
+                # F_base: baseline next states at beta_lin, the last column of J
                 values.append(step(beta_lin, Zc)[:, physical_rows, 0].reshape(-1))
     J = torch.cat(out, 0)
     if append_value:
@@ -154,6 +158,7 @@ class OBCProjection:
         del J
         if self.basis is not None and candidate_basis.device != self.basis.device:
             candidate_basis.to(self.basis.device)
+        # rank loss: keep the previous J; stop if there is none or this is the second in a row
         if candidate_basis.rank < candidate_basis.n_cols:
             self.consecutive_rank_loss += 1
             msg = ('[obc] refresh at epoch %s: numerical rank %d < %d (tol %.3e)'
@@ -184,6 +189,7 @@ class OBCProjection:
         Returns:
             Float64 coefficients, one per column of J (11 for the gantry).
         """
+        # F: the current network's physical-state corrections at the reference tuples
         F = self.reference_field(learning_component)
         if F.device != self.basis.device:
             self.basis.to(F.device)

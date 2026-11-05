@@ -111,6 +111,7 @@ class Discrete_Nonlinear_Function_Block(Block):
     def forward(self, z: Tensor, mats):
         """Evaluate the subclass's map with the matrices of this objective."""
         # CHANGED: the matrices, built once per objective, are passed on to nonlinear_function; no size assertion
+        # CHANGED: removed Jan's pass-through __init__ and the placeholders init_norm and nonlinear_function
         return self.nonlinear_function(z, mats)
 
 
