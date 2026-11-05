@@ -3,18 +3,19 @@ L-BFGS polish, and the checkpoints from which a run can be continued.
 
 A job is one launch of gantry_interconnect_dynamic.py. A run folder is trained in one job, or in more when it is
 resumed (e.g. after the server's time limit) or its polish is rerun. Two kinds of checkpoint: deepSI saves the whole
-model at every validation during Adam (_best.pth, _last.pth), from which a resume starts; this module writes the
+model during Adam, _last.pth at every validation and _best.pth at each new lowest score, from which a resume
+starts; this module writes the
 pairs below. The Adam moments are Adam's running averages of the gradients; with them, Adam continues exactly where
-it stopped. The validation score sim-NRMSe is the free-run error on the validation records relative to their servo
-error sigma_e, averaged over records and axes.
+it stopped. The validation score sim-NRMSe is the error of the closed-loop simulation of each whole validation
+record relative to its servo error sigma_e, averaged over records and axes.
 
 Files written to the run folder:
   gantry_ckpt_<run_id>_pre_lbfgs   (.pt, .npz) the weights Adam selected
   gantry_ckpt_<run_id>             (.pt, .npz) the final weights: the polished ones if kept, else Adam's
   val_hist.npz                     every validation score, and which one was selected and kept
   loss.npz                         the mean training loss between validations
-Each .pt holds the weights, each .npz the run's progress: epochs done (done_epochs) and the lowest validation
-score (bestfit).
+Each .pt holds the weights, each .npz the run's progress: epochs done (done_epochs) and the validation score of
+these weights (bestfit).
 """
 __project_origin__ = "added"
 
@@ -55,8 +56,8 @@ def save_checkpoint_pair(fit_sys, base_path, save_adam_moments=True, **meta):
         fit_sys: the augmented model.
         base_path: file path without extension.
         save_adam_moments: also save the Adam moments, so Adam can continue where it stopped.
-        **meta: values for base_path.npz: done_epochs (epochs done in all jobs) and bestfit (lowest validation
-            score); the final pair also lbfgs_outcome (the polish result), resumed_at_epoch (epochs done when
+        **meta: values for base_path.npz: done_epochs (epochs done in all jobs) and bestfit (validation score of
+            these weights); the final pair also lbfgs_outcome (the polish result), resumed_at_epoch (epochs done when
             this job started, -1 for a fresh run) and ps2_summary (the PS opening's record).
     """
     # hfn (the model's one-step map) and the encoder psi hold all trained weights
@@ -97,8 +98,8 @@ def resolve_checkpoint(base_path):
     d = torch.load(base_path, map_location='cpu', weights_only=False)
     # done_epochs: Adam epochs of the run up to this checkpoint, rounded, since deepSI saves at validations,
     # which can fall inside an epoch
-    # ps2_opening: (phase, Adam updates in the PS opening so far), phase 'S1' while the opening runs; missing in a
-    # run without the opening
+    # ps2_opening: (phase, Adam updates in the PS opening so far), phase 'S1' while the opening runs and 'S3' once
+    # it has ended; missing in a run without the opening
     meta = {
         'done_epochs': np.array(round(float(d['epochs_before']) + float(d['epoch_counter']))),
         'bestfit': np.array(float(d['bestfit'])),
@@ -116,7 +117,8 @@ def load_checkpoint(fit_sys, base_path, polish_only=False):
         polish_only: True loads the weights only, for a polish rerun or an evaluation; False also loads the Adam
             moments, so a resume continues Adam where it stopped.
     Returns:
-        progress: done_epochs, bestfit, and ps2_opening (deepSI checkpoint) or lbfgs_outcome (final pair).
+        progress: done_epochs, bestfit, plus ps2_opening (deepSI checkpoint) or lbfgs_outcome (final pair; neither in
+        the pre-polish pair).
     """
     # 1. Refuse a deepSI checkpoint saved during the PS opening: the opening's own network and Adam are not saved,
     #    so the opening cannot continue.

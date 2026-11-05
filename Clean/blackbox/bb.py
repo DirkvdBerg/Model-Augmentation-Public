@@ -3,8 +3,8 @@
     x^bb_{k+1} = f_bb(x^bb_k, r_k, u^ms_k),   y_hat_k = r_k + e_hat_k,   e_hat_k = h_bb(x^bb_k),
 
 with the state x^bb (n_x numbers), two networks f_bb (state update) and h_bb (output), the reference r, the injected
-multisine force u^ms and the servo error e = y - r; the encoder psi gives the start state from past samples.
-This file holds the net constructor, the grey box's data settings, the record loader and the free-run prediction.
+multisine force u^ms and the servo error e = y - r; the encoder psi gives the start state from past (r, u^ms) and e.
+This file holds the network settings, the grey box's data settings, the record loader and the whole-record prediction.
 Run the scripts from Clean/ as python -m blackbox.<script>."""
 __project_origin__ = "added"
 
@@ -50,7 +50,7 @@ def model_kwargs(nx, fh_width, e_width, cfg=GREY_BOX):
         Keyword arguments of `SS_encoder_general_hf` and its subclasses.
     """
     fh_kwargs = dict(n_hidden_layers=N_HIDDEN_LAYERS, n_nodes_per_layer=fh_width)
-    # encoder window: the grey box's n + 1 past samples of u and e
+    # encoder window: the grey box's na_nb = 30 past samples of u and e
     return dict(nx=nx, na=cfg.na_nb, nb=cfg.na_nb, e_net=default_encoder_net,
                 e_net_kwargs=dict(n_hidden_layers=N_HIDDEN_LAYERS, n_nodes_per_layer=e_width),
                 hf_net_kwargs=dict(f_net=default_state_net, f_net_kwargs=dict(fh_kwargs), h_net=default_output_net,

@@ -1,4 +1,4 @@
-"""Evaluation of a finished run: the free-run prediction error of the augmented model and of the baseline with the
+"""Evaluation of a finished run: the whole-record simulation error of the augmented model and of the baseline with the
 trained and with the true parameters on the training, validation and test records, with the figures and the data
 they are drawn from.
 
@@ -43,7 +43,7 @@ TEX = {'Theta': r'$\Theta$'}
 
 
 def _baseline_block(fit_sys):
-    """The identifiable baseline block of a model: the block that holds beta."""
+    """The identifiable baseline block of a model: the block that holds beta, the trained parameter coordinates."""
     return next(b for b in fit_sys.hfn.connected_blocks if hasattr(b, 'beta'))
 
 
@@ -110,7 +110,7 @@ def _noise_free_twins(cfg: RunConfig):
 def _split_scores(models, record_signals, e_list, e_noise_free_list, bank, rows, k0):
     """Scores of one split in the stage and in the generalised frame.
 
-    Each model runs once per record in closed-loop free run. Per frame and axis, NRMS_e is the RMS of the prediction
+    Each model simulates each whole record once, in closed loop. Per frame and axis, NRMS_e is the RMS of the prediction
     error y_hat - y from sample k0 on, over the standard deviation sigma_e of the record's servo error in that frame.
     The noise floor is the same score for a model that predicts the noise-free servo error exactly: the RMS of
     e - e_noise_free over sigma_e.
@@ -240,8 +240,9 @@ def _loss_figure(path, title, loss, hist):
 def evaluate(run_dir, data_root=DATA_ROOT):
     """Evaluate the final checkpoint of a run folder on every split.
 
-    NRMS_e per record and axis, in closed-loop free run from the first sample the encoder leaves, for the augmented
-    model, the baseline with the trained parameters and the baseline with the true parameters. Prints the tables and
+    NRMS_e per record and axis, in a closed-loop simulation of the whole record from the first sample after the
+    encoder's input, for the augmented model, the baseline with the trained parameters and the baseline with the
+    true parameters. Prints the tables and
     writes the figures and their data to <run_dir>/evaluation/.
 
     Args:
@@ -249,7 +250,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         data_root: folder of the data sets.
     """
     t_start = time.time()
-    # 1. The run on the CPU, where deepSI also runs the validation: configuration, records, final checkpoint.
+    # 1. The run on the CPU: configuration, records, final checkpoint.
     with open(os.path.join(run_dir, 'config.json')) as file:
         meta = json.load(file)
     run_id = str(meta['run_id'])
@@ -285,7 +286,7 @@ def evaluate(run_dir, data_root=DATA_ROOT):
         '[evaluate] NRMS_e = RMS(e_hat - e) / sigma_e per record and axis, from k0 = %d, free-run closed loop' % k0,
         '=' * 100]), flush=True)
 
-    # 2. Per split: free runs, scores in both frames, figures.
+    # 2. Per split: whole-record simulations, scores in both frames, figures.
     saved, score_rows, tables = {}, [], {frame: [] for frame in FRAMES}
     offset = 0
     for split, split_files in zip(SPLITS, files):

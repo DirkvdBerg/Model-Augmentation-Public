@@ -16,7 +16,8 @@ from .data import servo_sigma
 BANDWIDTH_HZ = 100.0                         # [Hz] bandwidth the controller is tuned to
 BANDWIDTH_RAD_S = 2 * np.pi * BANDWIDTH_HZ   # [rad/s]
 
-# the controller is designed on the nominal baseline: theta^0, P, K and C of gantry_ss
+# the controller is designed on the nominal baseline: nominal parameters theta^0, P, stiffness K and damping C of
+# gantry_ss
 P = gantry_ss.P.numpy()
 K_STIFF, C_DAMP = (m.numpy() for m in gantry_ss.stiffness_and_damping(
     gantry_ss.kb1, gantry_ss.kb2, gantry_ss.cg1, gantry_ss.cg2, gantry_ss.cy, gantry_ss.cb1, gantry_ss.cb2,
@@ -177,8 +178,8 @@ def build_closed_loop(model, norm, cfg, *, train_files, val_files, controllers, 
         print('[closed loop] stepped at ts = %g s (%d Hz), %d controller states'
               % (cfg.ts_new, round(1 / cfg.ts_new), bank.nc))
     # 2. Compiled closed-loop step (residual form, closed_loop.py).
-    # compiled for the training rollouts only; validation runs eager: deepSI moves the model to the CPU for every
-    # validation, where a compiled step would recompile each time
+    # used only for training rollouts on CUDA; validation and evaluation simulate whole records uncompiled, without
+    # gradients
     compiled = None
     if cfg.compile_mode is not None:
         compiled = torch.compile(closed_loop_step(model.hfn, bank), mode=cfg.compile_mode, fullgraph=True)

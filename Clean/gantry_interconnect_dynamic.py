@@ -46,8 +46,9 @@ SETTINGS = dict(
                         # record and its noise-free twin cover the same samples
     nf_seconds=0.100,   # [s] training window; twice the 50 ms settling time of the closed loop
     stride=10,          # samples between window starts
-    na_nb=30,           # past samples of y and u in the encoder input; Hoekstra's 2 n_x + 1 for n_a = 8, plus one
-                        # because it ends at tau - 1, the sample before the window start tau; kept at 30 for n_a = 2
+    na_nb=30,           # past samples of y and u in the encoder input; Hoekstra's 2 n_x + 1, n_x = 14 states for
+                        # n_a = 8, plus one because it ends at tau - 1, the sample before the window start tau; kept
+                        # at 30 for n_a = 2
     seed=1,             # seed of weights, detune signs, polish batch, PS opening
     detune=0.10,        # relative detuning of each baseline parameter
     # networks: 2 hidden layers of 16 nodes, as Hoekstra et al. (2026)
@@ -57,7 +58,8 @@ SETTINGS = dict(
     # Adam
     batch_size=512,     # windows per update
     lr=1e-5,            # learning rate; compared different orders of magnitude
-    adam_eps=1e-16,     # Adam epsilon; with the 1e-8 default the hidden layers do not train, gradient issue
+    adam_eps=1e-16,     # Adam epsilon; the hidden-layer gradients are so small that the 1e-8 default would dominate
+                        # Adam's step size and freeze those layers
     epochs=200,         # epochs; limited by compute
     n_its=None,         # budget in updates instead of epochs; None: epochs
     its_per_val=1300,   # updates between validations; each validation simulates every full record, so kept rare
@@ -66,7 +68,8 @@ SETTINGS = dict(
     lbfgs_windows=16384,  # training windows the polish fits, drawn once; lower it if the polish runs out of memory
     # PS initialization
     # S1 trains the encoder so the added states predict the model's output error, scored by nu, the share
-    # of that error left unexplained on the calibration records (one per excitation class, also in the training loss)
+    # of that error left unexplained on the calibration records (the last of each excitation class with at least 3
+    # records; also in the training loss)
     # S2 then fits the network's added-state update to those states, scored by its cost on calibration pairs
     ps2_opening=dict(
         aux_batch=64, lr=1e-3,                        # S1: training windows per step; learning rate of the S1 and S2 Adam
@@ -77,15 +80,15 @@ SETTINGS = dict(
                                                       # end of S1; fixed calibration windows nu is computed on
         n_snap=8192, n_snap_cal=2048, s2_batch=512,   # S2: pairs (state at k, added states at k + 1) it fits, pairs
                                                       # of calibration records it is scored on, pairs per step
-        s2_check=100, s2_min=500, s2_cap=8000,        # S2: steps between held-out costs, earliest stop, latest stop
+        s2_check=100, s2_min=500, s2_cap=8000,        # S2: steps between calibration costs, earliest stop, latest stop
         s2_tol=0.01, s2_window=5,                     # S2 stops when none of its last s2_window costs improves the
                                                       # prior best by at least s2_tol (relative)
     ),
     # environment
     device='cuda',                   # 'cuda' or 'cpu'
-    compile_mode='reduce-overhead',  # torch.compile mode on CUDA; None: eager; 6 to 7x faster than eager
+    compile_mode='reduce-overhead',  # torch.compile mode, CUDA training rollouts only (about 6.5x faster); None: off
     truncate_s=None,                 # [s] keep only the start of each record; None: whole records
-    baseline_form='lfr',             # baseline derivative: 'lfr' evaluates the LFR output equation through its latent
+    baseline_form='lfr',             # baseline derivative: 'lfr' evaluates the LFR state equation through its latent
                                      # signals, as in the thesis runs; 'closed' returns (qdot, a) directly, same up to
                                      # rounding and 3 to 8 % faster
     obc_ref_chunk=16384,             # reference tuples per Jacobian call in the OBC basis build; lower it if that
@@ -115,7 +118,7 @@ def _rerun_checkpoint(kind, run_dir, source):
         cj = json.load(fh)
     run_id = str(cj['run_id'])
     if kind == 'polish-only':
-        # the pre-polish pair: the Adam-selected weights and their Adam moments
+        # the pre-polish pair: the Adam-selected weights, without Adam moments
         src = os.path.join(run_dir, 'gantry_ckpt_%s_pre_lbfgs' % run_id)
         need = [src + '.pt', src + '.npz']
     else:

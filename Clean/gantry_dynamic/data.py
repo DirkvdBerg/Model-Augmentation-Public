@@ -89,8 +89,8 @@ class Norm:
 
 def dataset_dir(cfg: RunConfig) -> str:
     """Folder of the run's data set: data_root plus DATASETS[cfg.noise], the noisy or the noise-free records. A noisy
-    run also needs the noise-free records for its noise floor; evaluation finds each record's noise-free twin through
-    the pair_file column of MANIFEST.csv."""
+    run also needs the noise-free records for its noise floor; the grey-box evaluation finds each record's noise-free
+    twin through the pair_file column of MANIFEST.csv."""
     return os.path.join(cfg.data_root, DATASETS[cfg.noise])
 
 
@@ -99,10 +99,10 @@ def _force_at_fs_new(u, cfg: RunConfig):
     so the model holds the average force over that step.
 
     Args:
-        u: (N_sim, 3) u_act at fs_orig [N].
+        u: (N_sim, 3) force at fs_orig [N]: the actuator force u_total, or the multisine force u^ms for the black box.
         cfg: run configuration.
     Returns:
-        (N, 3) u_act at fs_new [N].
+        (N, 3) the same force at fs_new [N].
     """
     decimation = cfg.decimation
     n_blocks = u.shape[0] // decimation
@@ -130,7 +130,8 @@ def _positions_at_fs_new(rec, cfg: RunConfig):
 
 def record_at_fs_new(rec, cfg: RunConfig, reference=False):
     """The record at fs_new: forces u and positions y, plus the reference r when reference=True, on the same samples.
-    record_trim samples are dropped at both ends, and the record is cut to truncate_s seconds if set."""
+    record_trim samples (aa_trim_s at fs_new) are dropped at both ends, and the record is cut to truncate_s seconds
+    if set."""
     # u_total = [F_X1, F_X2, F_Y], the plant input
     u = _force_at_fs_new(rec['u_total'], cfg)
     n_samples = len(u)
