@@ -502,7 +502,7 @@ class SSE_Interconnect(SS_encoder_general):
 
         def validation(train_loss=None, time_elapsed_total=None):
             """Return the validation score; save _best if it improves or ties, and always save _last."""
-            # CHANGED: validate on the training device instead of the CPU; update theta_aux for the current network
+            # CHANGED: validate on the training device (a CPU round trip recompiles the training step); update theta_aux
             self.eval()
             self.sync_obc_coefficient(refresh_basis=False)
             Loss_val = self.cal_validation_error(val_sys_data)

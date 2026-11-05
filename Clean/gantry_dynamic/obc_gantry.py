@@ -12,9 +12,11 @@ beta could also give, so beta keeps its physical meaning. Superscript n = normal
              correction that beta could also give; subtracted at every step
   symbols    f_base^n: baseline step; f^n_aug: network correction; y: measured positions; P^-T: stage to X, Theta, Y
 
-The thesis uses [Phi Gamma], Gamma = col(f_base^n(beta_lin) - varphi beta_lin). J appends f_base^n(beta_lin)
-itself instead; both span the same space, so f_obc^n is the same and only theta_aux differs, (a + c beta_lin, c)
-in the thesis.
+The thesis uses Phi_Gamma = [Phi Gamma], Gamma = col(f_base^n(beta_lin) - varphi beta_lin). J appends
+f_base^n(beta_lin) itself instead, because rk4_with_tangent already returns f_base^n(beta_lin) when it computes
+varphi a, so Gamma never has to be formed. Since f_base^n(beta_lin) = Phi beta_lin + Gamma, both span the same
+space, so f_obc^n is the same. Only theta_aux differs: the thesis's theta_aux on Phi_Gamma equals
+(a + c beta_lin, c) in the code's (a, c).
 """
 __project_origin__ = "added"
 
