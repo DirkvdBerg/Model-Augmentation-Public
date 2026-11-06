@@ -1,14 +1,16 @@
-function [r, t] = gtd_make_reference(record, cfg)
-% GTD_MAKE_REFERENCE  The [X1, X2, Y] stage reference of one record, motion only, N_record x 3.
-%   [r, t] = GTD_MAKE_REFERENCE(record, cfg) builds the reference of record.class from the
-%   parameters record.p and pads the final hold to the 12 s record:
-%     standstill   hold at [0, 0, Y_op]; the multisine is the only excitation
-%     oscillatory  Y sweep or Lissajous with a half-cosine fade in and out
-%     aprbs        jerk-limited point-to-point moves with log-strata distances (seed record.seed)
-%     telica       the ILC-shape route: cycloidal moves of the measured stroke, X and Y together
-%     route        the ASMPT test routes: cycloidal or S-curve moves, together or alternating
-%   Every record starts at [0, 0, Y_op], the operating point of the linear pre-check, and every
-%   move ends at rest inside the 10 s active window, between two 0.5 s holds.
+function [r, t] = make_reference(record, cfg)
+% MAKE_REFERENCE  The stage reference [X1, X2, Y] of one record (N_record x 3), checked against the machine limits.
+%   Each record starts at [0, 0, Y_op] and its motion ends at rest inside the 10 s window between two 0.5 s holds.
+
+    % the motion of each record class
+    %   standstill   hold at [0, 0, Y_op]; the multisine is the only excitation
+    %   oscillatory  slow sweep of Y or X-Y Lissajous path, with a half-cosine fade in and out
+    %   aprbs        random point-to-point moves with S-curve profiles, each distance drawn from one of
+    %                six bands between 1 mm and the range, so small and large moves occur equally often
+    %   telica       operational motion profile: sine-shaped moves of 40 mm on X and 80 mm on Y, X and Y
+    %                together, with the shape of the ASMPT machine's logged setpoints
+    %   route        operational motion profiles of the test records: sine-shaped or S-curve moves,
+    %                X and Y together or alternating
     switch record.class
         case 'standstill'
             r = repmat([0, 0, record.Y_op], cfg.n_hold + cfg.n_active + cfg.n_hold, 1);
@@ -19,19 +21,40 @@ function [r, t] = gtd_make_reference(record, cfg)
         case {'telica', 'route'}
             r = ref_route(record, cfg);
         otherwise
-            error('gtd_make_reference: unknown record class ''%s''', record.class);
+            error('make_reference: unknown record class ''%s''', record.class);
     end
     N = size(r, 1);
     assert(N <= cfg.N_record, 'reference (%d) longer than the 12 s record (%d)', N, cfg.N_record);
     r = [r; repmat(r(end,:), cfg.N_record - N, 1)];
     t = cfg.ts * (0:cfg.N_record-1)';
+    check_limits(r, record, cfg);
 end
 
-% ── reference shapes ────────────────────────────────────────────────────────
+function check_limits(r, record, cfg)
+% The reference must stay inside the position, yaw, speed and acceleration limits. E3 runs at 100 % of
+% the acceleration limit and may exceed it by the margin; E6 is the machine's own move above the rated
+% acceleration and skips that check
+    lim = cfg.lim;  p = record.p;  id = record.file;
+    vel = diff(r) / cfg.ts;
+    acc = diff(vel) / cfg.ts;
+    assert(max(abs(r(:,1)))          <= lim.pos_X, '%s: X1 position limit', id);
+    assert(max(abs(r(:,2)))          <= lim.pos_X, '%s: X2 position limit', id);
+    assert(max(abs(r(:,3)))          <= lim.pos_Y, '%s: Y position limit', id);
+    assert(max(abs(r(:,1)-r(:,2)))   <= lim.diff,  '%s: yaw |X1-X2| limit', id);
+    assert(max(abs(vel), [], 'all')  <= lim.vel,   '%s: velocity limit', id);
+    fa = 1;
+    if isfield(p, 'acc_margin') && p.acc_margin, fa = 1 + cfg.acc_margin; end
+    if ~(isfield(p, 'acc_exception') && p.acc_exception)
+        assert(max(abs(acc(:,1:2)), [], 'all') <= fa*lim.acc_X, '%s: X acceleration limit', id);
+        assert(max(abs(acc(:,3)))              <= fa*lim.acc_Y, '%s: Y acceleration limit', id);
+    end
+end
+
+% Reference shapes
 
 function r = ref_oscillatory(p, cfg)
 % Sinusoids in generalised coordinates with a half-cosine fade, so position, velocity and
-% acceleration start and end at zero (Y sweep and Lissajous differ only in p).
+% acceleration start and end at zero. Y sweeps and Lissajous paths differ only in the parameters p
     N     = cfg.n_active;
     t_osc = (0:N-1)' * cfg.ts;
     fade  = fade_envelope(N, round(0.5/cfg.ts));
@@ -47,13 +70,12 @@ function r = ref_oscillatory(p, cfg)
 end
 
 function r = ref_aprbs(record, cfg)
-% Jerk-limited point-to-point moves with 0.1 s holds. X_sym and Y each cycle through the
-% distance strata 1-3, 3-10, 10-30, 30-100, 100-300 mm and 300 mm to the range in shuffled
-% order, log-uniform inside a stratum, random sign, reflected at the range bound; X_anti is
-% uniform in its range. HEURISTIC: the rule the excitation evidence of the data design was
-% computed on; the RNG call order fixes the reference for a seed.
+% Point-to-point moves with S-curve profiles and 0.1 s holds. X_sym and Y each cycle through the
+% distance bands 1-3, 3-10, 10-30, 30-100, 100-300 mm and 300 mm to the range in shuffled
+% order, log-uniform inside a band, random sign, reflected at the range bound; X_anti is
+% uniform in its range. Changing the order of the random draws changes the reference of a seed
     p = record.p;
-    rng(record.seed);
+    rng(record.seed_sp);
     strata = [1 3; 3 10; 10 30; 30 100; 100 300; 300 1e9] * 1e-3;   % [m]
     cur = [0, 0, record.Y_op];  body = zeros(0, 3);  qs = [];  qy = [];
     while true
@@ -126,7 +148,7 @@ function r = ref_route(record, cfg)
     r = [repmat(xy2stage([0, record.Y_op]), cfg.n_hold, 1); body; repmat(body(end,:), cfg.n_hold, 1)];
 end
 
-% ── move profiles ───────────────────────────────────────────────────────────
+% Move profiles
 
 function d = draw_stratum(st, pos, range)
 % One signed distance from stratum st = [lo hi] [m], reflected at the range bound.
@@ -177,8 +199,7 @@ function s = cyc_profile(D, vmax, amax, ts)
 % Velocity-limited cycloidal displacement 0 -> D sampled at ts, empty for a zero move:
 % half-sine acceleration, constant-velocity cruise, half-sine deceleration; no cruise when the
 % move is too short to reach vmax. Fitted to the machine's logged setpoints.
-%   THEORY: v(t) = (v/2)(1 - cos(pi t/Ta)), so a_max = pi v / (2 Ta), Ta = pi v / (2 a_max),
-%   D_acc = v Ta / 2
+%   v(t) = (v/2)(1 - cos(pi t/Ta)), so a_max = pi v / (2 Ta), Ta = pi v / (2 a_max), D_acc = v Ta / 2
     if D == 0
         s = zeros(0,1);
         return
@@ -191,7 +212,7 @@ function s = cyc_profile(D, vmax, amax, ts)
         v  = vmax;
         Tc = (Dm - 2*Dacc)/vmax;
     else
-        v  = sqrt(2*Dm*amax/pi);        % THEORY: peak of a pure cycloid, Dm = pi v^2 / (2 a_max)
+        v  = sqrt(2*Dm*amax/pi);        % peak of a pure cycloid, Dm = pi v^2 / (2 a_max)
         Ta = pi*v/(2*amax);
         Tc = 0;
     end
@@ -231,7 +252,7 @@ function [nxt, dir_out] = shuttle(cur, dir_in, stroke, range)
            stroke, range(1), range(2), cur);
 end
 
-% ── helpers ─────────────────────────────────────────────────────────────────
+% Helpers
 
 function v = pvpad(v, K)
 % Pad a position profile to length K by holding its final value (zeros if empty).

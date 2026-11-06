@@ -1,4 +1,4 @@
-"""Predictions y_hat = r + e_hat of a trained black box on every split and the multisine twins, with the noise-free
+"""Predictions y_hat = r + e_hat of a trained black box on every split and the multisine repeats, with the noise-free
 output of each record for the noise floor (the error of the measurement noise alone, noisy minus noise-free y);
 written as preds_BB_<split>.npz, and preds_BB.npz for test, the name the thesis figures read."""
 __project_origin__ = "added"
@@ -16,13 +16,10 @@ import torch
 from deepSI.fit_systems.encoders import SS_encoder_general_hf
 
 from blackbox.bb import N_THREADS, data_config, load_records, predict
-from gantry_dynamic.config import DATA_ROOT
 from gantry_dynamic.data import DATASETS, record_files, record_name, servo_sigma
 
 RUN_DIR = None     # run folder with result.json; the first command-line argument overrides it
 OUT_DIR = None     # output folder; None: <RUN_DIR>/evaluation; the second argument overrides it
-# multisine twins: the motion-only test records repeated with the multisine force added; evaluation only
-TWINS_DIR = os.path.join(DATA_ROOT, 'Multisine-test-twins')
 
 
 def main(run, out, data_root=None):
@@ -53,17 +50,16 @@ def main(run, out, data_root=None):
 
     # splits, each with its record folder (None: the noisy data set) and the folder of its noise-free versions
     nf_dir = os.path.join(cfg.data_root, DATASETS['noisefree'])
-    twins_dir = os.path.join(data_root, 'Multisine-test-twins') if data_root is not None else TWINS_DIR
-    with open(os.path.join(twins_dir, DATASETS['noisy'], 'MANIFEST.csv'), newline='') as fh:
-        twins = ['%s/%s.mat' % (row['folder'], row['file']) for row in csv.DictReader(fh)]
+    # multisine repeats: the motion-only test records repeated with the multisine force added (block test-M);
+    # evaluation only
+    with open(os.path.join(cfg.data_root, DATASETS['noisy'], 'MANIFEST.csv'), newline='') as fh:
+        repeats = ['%s/%s.mat' % (row['folder'], row['file']) for row in csv.DictReader(fh) if row['block'] == 'test-M']
     if 'records' in res:
         train_files, val_files, test_files = (res['records'][key] for key in ('train', 'val', 'test'))
     else:
         train_files, val_files, test_files = record_files(cfg)
     splits = {'train': (train_files, None, nf_dir), 'val': (val_files, None, nf_dir),
-              'test': (test_files, None, nf_dir),
-              'twins': (twins, os.path.join(twins_dir, DATASETS['noisy']),
-                        os.path.join(twins_dir, DATASETS['noisefree']))}
+              'test': (test_files, None, nf_dir), 'multisine': (repeats, None, nf_dir)}
     # predictions from k0 on, the first sample after the encoder input, with the noise-free output for the floor
     out.mkdir(parents=True, exist_ok=True)
     for split, (files, folder, folder_nf) in splits.items():

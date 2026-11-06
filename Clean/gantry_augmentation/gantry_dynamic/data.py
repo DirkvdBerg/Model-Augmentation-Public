@@ -25,7 +25,8 @@ from .config import RunConfig
 # data set folder per noise setting; the true system is the baseline plus tanh Coulomb friction and a hidden absorber
 DATASETS = {'noisy': 'Coulomb-tanh-and-MSD-lowpass-noise', 'noisefree': 'Coulomb-tanh-and-MSD-noise-free'}
 # the record list of the data set (MANIFEST.csv) gives each record a block; this maps the block to its split.
-# test-I and test-E (interpolation, extrapolation) both go to test
+# test-I and test-E (interpolation, extrapolation) both go to test; test-M, the multisine repeats of the test
+# records, is in no split, since only blackbox/eval_bb.py evaluates it
 _SPLIT_OF_BLOCK ={'training': 'train', 'validation': 'val', 'test-I': 'test', 'test-E': 'test'}
 
 
@@ -36,8 +37,8 @@ def record_files(cfg: RunConfig):
     with open(os.path.join(dataset_dir(cfg), 'MANIFEST.csv'), newline='') as fh:
         for row in csv.DictReader(fh):
             split = _SPLIT_OF_BLOCK.get(row['block'])
-            # K1 records only; the data set also has a record under a changed controller (K2), which the thesis does
-            # not use
+            # K1 records only; the code allows records under another controller, stored in their meta, which the
+            # thesis does not use
             if split is not None and row['controller'] == 'K1':
                 out[split].append('%s/%s.mat' % (row['folder'], row['file']))
     return out['train'], out['val'], out['test']

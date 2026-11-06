@@ -10,8 +10,10 @@ Pins the environment of the thesis results: Python 3.11.14, PyTorch 2.5.1 with C
 legacy branch). Full grey-box runs need a CUDA GPU (OBC polish: about 28 GB).
 
 ## Data
-Not included; `data_generation/` generates it in MATLAB. Set the data and output folders in
-`DATA_ROOT` and `OUT_ROOT` of `gantry_dynamic/config.py`.
+`data/` holds the thesis data sets, with and without encoder noise: 18 training, 6 validation and 11 test records,
+and the 7 test records repeated with the multisine (block `test-M` in `MANIFEST.csv`, evaluation only).
+`data_generation/` reproduces them bitwise in MATLAB. Set the data and output folders in `DATA_ROOT` and
+`OUT_ROOT` of `gantry_dynamic/config.py`.
 
 ## Reproducing the thesis
 1. **Grey box**: `sbatch run_grey_box.sh` trains the nine thesis models (table below); each run ends with its
@@ -85,7 +87,33 @@ SUBNET on the servo error e = y - r, on the grey box's samples and windows (Blac
 - **eval_bb.py**: predictions on every split (Metrics)
 - **run_black_box.sh**: SLURM array over the grid
 ## data_generation
-MATLAB generation of the data sets, with Simulink or the plain-MATLAB `tdg_replica.m` (Records).
+MATLAB and Simulink generation of the data sets (Records). Jasper's `getss.m`, `ruleOfThumb.m`,
+`thirdOrderSetpointETEL.m` and `model/gantry_2025a.slx` are unchanged copies.
+- **generate_data.m**: run it to write all 42 records, with and without encoder noise, to `data/`
+- **build_model.m**: builds the truth loop `model/gantry_truth.slx` from Jasper's model
+- **data_config.m**: all constants, with their sources
+- **record_table.m**: the records and their seeds
+- **make_reference.m**, **make_multisine.m**, **encoder_noise.m**: reference, injected force, encoder noise
+- **build_loop.m**, **precheck_limits.m**: controller K1 and the linear limit check that sets the multisine scale
+- **run_simulation.m**, **gantrySystemExtendedTanh.m**: one closed-loop run; the truth plant
+
+**Motion profiles** (`make_reference.m`). Each record is 12 s: a 0.5 s hold at [0, 0, Y_op], 10 s of motion and a
+final hold. Five types:
+- standstill at a fixed Y; the multisine is the only excitation
+- slow sweeps of Y and X-Y Lissajous paths: sinusoids that fade in and out with a half cosine
+- point-to-point moves with S-curve profiles (Jasper's `thirdOrderSetpointETEL.m`); each distance is drawn from
+  one of six bands between 1 mm and the range, so small and large moves occur equally often
+- operational motion profiles: sine-shaped moves of 40 mm on X and 80 mm on Y with X and Y together, the shape of
+  the ASMPT machine's logged setpoints (half-sine acceleration up to a velocity limit)
+- the test routes I3 to I6 and E2 to E6 vary these: other ranges, alternating X and Y moves, S-curve profiles,
+  long strokes
+
+Every reference is checked against the position, yaw, speed and acceleration limits before it is simulated.
+
+**Encoder noise** (`encoder_noise.m`). Independent coloured noise on each measured stage position X1, X2 and Y:
+a second-order low-pass on a white floor. Its parameters in `data_config.m` are set so that at standstill the
+simulated servo error matches the noise level and spectral shape of the ASMPT gantry; the machine's resonances
+are left out. Each record and axis has a fixed seed. The noise-free version is the same simulation without the noise.
 
 # License and attribution
 `model_augmentation/` is adapted from Model-Augmentation-Public by Jan H. Hoekstra (BSD 3-Clause,
