@@ -88,14 +88,21 @@ SUBNET on the servo error e = y - r, on the grey box's samples and windows (Blac
 - **run_black_box.sh**: SLURM array over the grid
 ## data_generation
 MATLAB and Simulink generation of the data sets (Records). Jasper's `getss.m`, `ruleOfThumb.m`,
-`thirdOrderSetpointETEL.m` and `model/gantry_2025a.slx` are unchanged copies.
+`thirdOrderSetpointETEL.m` and `gantry_2025a.slx` are unchanged copies.
 - **generate_data.m**: run it to write all 42 records, with and without encoder noise, to `data/`
-- **build_model.m**: builds the truth loop `model/gantry_truth.slx` from Jasper's model
 - **data_config.m**: all constants, with their sources
 - **record_table.m**: the records and their seeds
-- **make_reference.m**, **make_multisine.m**, **encoder_noise.m**: reference, injected force, encoder noise
-- **build_loop.m**, **precheck_limits.m**: controller K1 and the linear limit check that sets the multisine scale
-- **run_simulation.m**, **gantrySystemExtendedTanh.m**: one closed-loop run; the truth plant
+- **system/**: the simulated gantry, the truth
+  - **gantrySystemExtendedTanh.m**: equations of motion with the hidden absorber and the friction
+  - **build_model.m**: builds the truth loop `model/gantry_truth.slx` from Jasper's `model/gantry_2025a.slx`
+  - **run_simulation.m**: one closed-loop run of the truth
+- **controller/**: controller K1 and the linear closed loop
+  - **build_loop.m**: K1 (with Jasper's `ruleOfThumb.m`) and the linear loop on the rigid plant (Jasper's `getss.m`)
+  - **precheck_limits.m**: the linear limit check that sets the multisine scale
+- **inputs/**: what enters the loop
+  - **make_reference.m**: the setpoint generators (with Jasper's `thirdOrderSetpointETEL.m`)
+  - **make_multisine.m**: the injected multisine force
+  - **encoder_noise.m**: the encoder noise
 
 **Motion profiles** (`make_reference.m`). Each record is 12 s: a 0.5 s hold at [0, 0, Y_op], 10 s of motion and a
 final hold. Five types:

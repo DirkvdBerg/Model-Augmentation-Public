@@ -7,15 +7,15 @@ if ~exist('OUT_DIR', 'var')                            % data folder; the defaul
 end
 
 cfg = data_config();
-addpath(cfg.here);
+addpath(cfg.here, fullfile(cfg.here, 'system'), fullfile(cfg.here, 'controller'), fullfile(cfg.here, 'inputs'));
 dirs = struct('noisy', fullfile(OUT_DIR, cfg.name_noisy), 'free', fullfile(OUT_DIR, cfg.name_free));
 
 % the truth model; Simulink writes its build files to a short temporary folder, since long paths exceed
 % the 260-character limit of Windows
-if ~isfile(fullfile(cfg.here, 'model', [cfg.mdl '.slx'])), build_model(); end
+if ~isfile(fullfile(cfg.here, 'system', 'model', [cfg.mdl '.slx'])), build_model(); end
 if ~exist(cfg.cache_dir, 'dir'), mkdir(cfg.cache_dir); end
 Simulink.fileGenControl('set', 'CacheFolder', cfg.cache_dir, 'CodeGenFolder', cfg.cache_dir);
-load_system(fullfile(cfg.here, 'model', [cfg.mdl '.slx']));
+load_system(fullfile(cfg.here, 'system', 'model', [cfg.mdl '.slx']));
 
 recs = record_table(cfg);
 if ~isempty(RECORDS)
